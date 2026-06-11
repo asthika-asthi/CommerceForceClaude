@@ -23,8 +23,16 @@ async def get_section(section_id: str, db: AsyncSession) -> LandingSection:
 
 
 async def create_section(data: LandingSectionCreate, db: AsyncSession) -> LandingSection:
+    try:
+        section_type = SectionType(data.section_type)
+    except ValueError:
+        valid = [e.value for e in SectionType]
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid section_type '{data.section_type}'. Valid values: {valid}",
+        )
     section = LandingSection(
-        section_type=SectionType(data.section_type),
+        section_type=section_type,
         title=data.title,
         subtitle=data.subtitle,
         content=data.content,

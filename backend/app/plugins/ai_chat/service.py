@@ -1,11 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
-
-try:
-    import anthropic as _anthropic
-except ImportError:
-    _anthropic = None
+import httpx
 
 
 async def _get_system_prompt(db: AsyncSession) -> str:
@@ -26,24 +22,36 @@ async def chat(
     history: list[dict],
     db: AsyncSession,
     api_key: Optional[str] = None,
+    model: str = "anthropic/claude-haiku-4-5-20251001",
 ) -> str:
-    if _anthropic is None:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                            detail="AI chat requires the anthropic package")
     if not api_key:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                            detail="AI chat is not configured (ANTHROPIC_API_KEY not set)")
+                            detail="AI chat is not configured (OPENROUTER_API_KEY not set)")
 
     system_prompt = await _get_system_prompt(db)
 
     messages = [{"role": m["role"], "content": m["content"]} for m in history]
     messages.append({"role": "user", "content": message})
 
-    client = _anthropic.AsyncAnthropic(api_key=api_key)
-    response = await client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=1024,
-        system=system_prompt,
-        messages=messages,
-    )
-    return response.content[0].text
+    payload = {
+        "model": model,
+        "messages": [{"role": "system", "content": system_prompt}] + messages,
+        "max_tokens": 1024,
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
+                            detail=f"OpenRouter error: {resp.text}")
+
+    data = resp.json()
+    return data["choices"][0]["message"]["content"]

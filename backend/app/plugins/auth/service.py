@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.config import settings
 from app.plugins.auth.models import User, RefreshToken, UserRole
-from app.plugins.auth.schemas import RegisterRequest, UpdateProfileRequest
+from app.plugins.auth.schemas import RegisterRequest, UpdateProfileRequest, ChangePasswordRequest
 
 
 async def create_user(data: RegisterRequest, db: AsyncSession) -> User:
@@ -78,6 +78,13 @@ async def revoke_refresh_token(raw_token: str, db: AsyncSession) -> None:
     stored = result.scalar_one_or_none()
     if stored:
         stored.revoked = True
+
+
+async def change_password(user: User, data: ChangePasswordRequest, db: AsyncSession) -> None:
+    if not verify_password(data.current_password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+    user.hashed_password = get_password_hash(data.new_password)
+    await db.flush()
 
 
 async def update_profile(user: User, data: UpdateProfileRequest, db: AsyncSession) -> User:

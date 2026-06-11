@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class ProductImageOut(BaseModel):
@@ -67,7 +67,15 @@ class ProductOut(BaseModel):
     weight: Optional[Decimal] = None
     tags: Optional[str] = None
     images: List[ProductImageOut] = []
+    primary_image: Optional[str] = None
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def set_primary_image(self) -> "ProductOut":
+        if self.primary_image is None and self.images:
+            primary = next((img.url for img in self.images if img.is_primary), None)
+            self.primary_image = primary or self.images[0].url
+        return self
 
 
 class ProductListOut(BaseModel):

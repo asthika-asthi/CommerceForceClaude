@@ -9,14 +9,14 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params
-  const product = await serverFetch<Product>(`/api/products/${slug}`)
+  const product = await serverFetch<Product>(`/api/products/by-slug/${slug}`)
   if (!product) return {}
   return { title: product.name, description: product.description }
 }
 
 export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params
-  const product = await serverFetch<Product>(`/api/products/${slug}`)
+  const product = await serverFetch<Product>(`/api/products/by-slug/${slug}`)
   if (!product) notFound()
 
   const price = parseFloat(product.price)

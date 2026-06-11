@@ -32,8 +32,9 @@ class Settings(BaseSettings):
     SMTP_FROM: str = "noreply@commerceforce.app"
     SMTP_TLS: bool = True
 
-    # AI
-    ANTHROPIC_API_KEY: str = ""
+    # AI (OpenRouter)
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = "anthropic/claude-haiku-4.5"
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000"

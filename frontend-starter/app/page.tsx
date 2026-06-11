@@ -5,8 +5,8 @@ import { ProductCard } from "@/components/shop/product-card"
 
 export default async function HomePage() {
   const [sectionsRes, productsRes] = await Promise.all([
-    serverFetch<LandingSection[]>("/api/landing_page/sections?active_only=true"),
-    serverFetch<PaginatedResponse<Product>>("/api/products?limit=8&is_active=true"),
+    serverFetch<LandingSection[]>("/api/landing_page?active_only=true"),
+    serverFetch<PaginatedResponse<Product>>("/api/products?page_size=8&featured_only=true"),
   ])
 
   const sections = sectionsRes ?? []

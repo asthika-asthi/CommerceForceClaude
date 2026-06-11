@@ -1,5 +1,6 @@
+import json
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, field_serializer
 
 
 class BrandingConfigOut(BaseModel):
@@ -14,8 +15,18 @@ class BrandingConfigOut(BaseModel):
     custom_css: Optional[str] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
-    social_links: Optional[str] = None
+    social_links: Optional[dict] = None
     model_config = {"from_attributes": True}
+
+    @field_validator("social_links", mode="before")
+    @classmethod
+    def parse_social_links(cls, v: object) -> Optional[dict]:
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, ValueError):
+                return None
+        return v
 
 
 class BrandingConfigUpdate(BaseModel):
@@ -29,4 +40,8 @@ class BrandingConfigUpdate(BaseModel):
     custom_css: Optional[str] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
-    social_links: Optional[str] = None
+    social_links: Optional[dict] = None
+
+    @field_serializer("social_links")
+    def serialize_social_links(self, v: Optional[dict]) -> Optional[str]:
+        return json.dumps(v) if v is not None else None

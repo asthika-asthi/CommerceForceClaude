@@ -15,6 +15,7 @@ async def chat(data: ChatRequest, db: AsyncSession = Depends(get_db)):
         message=data.message,
         history=[m.model_dump() for m in data.history],
         db=db,
-        api_key=getattr(settings, "ANTHROPIC_API_KEY", None) or None,
+        api_key=settings.OPENROUTER_API_KEY or None,
+        model=settings.OPENROUTER_MODEL,
     )
     return ChatResponse(reply=reply)

@@ -96,6 +96,18 @@ async def create_order(
 
 async def update_status(order_id: str, data: UpdateStatusRequest, db: AsyncSession) -> Order:
     order = await get_order(order_id, db)
+    prev_status = order.status
+
+    # Restore stock before flush so ORM items are still accessible
+    if data.status == OrderStatus.cancelled and prev_status != OrderStatus.cancelled:
+        try:
+            from app.plugins.products import service as product_service
+            for item in order.items:
+                if item.product_id:
+                    await product_service.restore_stock(item.product_id, item.quantity, db)
+        except ImportError:
+            pass
+
     order.status = data.status
     await db.flush()
     return order

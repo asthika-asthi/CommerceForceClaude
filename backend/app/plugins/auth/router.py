@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.core.dependencies import get_current_user
-from app.plugins.auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest
+from app.plugins.auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest
 from app.plugins.auth import service
 
 REFRESH_COOKIE = "refresh_token"
@@ -75,3 +75,12 @@ async def update_me(
 ):
     user = await service.update_profile(current_user, data, db)
     return UserOut.model_validate(user)
+
+
+@router.post("/me/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await service.change_password(current_user, data, db)

@@ -1,9 +1,10 @@
 from typing import Optional
 from pydantic import BaseModel
+from app.plugins.landing_page.models import SectionType
 
 
 class LandingSectionCreate(BaseModel):
-    section_type: str
+    section_type: SectionType
     title: Optional[str] = None
     subtitle: Optional[str] = None
     content: Optional[str] = None
@@ -28,7 +29,7 @@ class LandingSectionUpdate(BaseModel):
 
 class LandingSectionOut(BaseModel):
     id: str
-    section_type: str
+    section_type: SectionType
     title: Optional[str] = None
     subtitle: Optional[str] = None
     content: Optional[str] = None
