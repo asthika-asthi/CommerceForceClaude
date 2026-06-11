@@ -17,6 +17,11 @@ export default function AccountSettingsPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState("")
 
+  const [pwForm, setPwForm] = useState({ current_password: "", new_password: "", confirm_password: "" })
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwSaved, setPwSaved] = useState(false)
+  const [pwError, setPwError] = useState("")
+
   // Redirect guard — waits for auth to hydrate
   useEffect(() => {
     if (isLoading) return
@@ -47,6 +52,29 @@ export default function AccountSettingsPage() {
       setError(err instanceof Error ? err.message : "Update failed")
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setPwError("")
+    if (pwForm.new_password !== pwForm.confirm_password) {
+      setPwError("Passwords do not match")
+      return
+    }
+    setPwLoading(true)
+    try {
+      await api.post("/api/auth/me/change-password", {
+        current_password: pwForm.current_password,
+        new_password: pwForm.new_password,
+      })
+      setPwForm({ current_password: "", new_password: "", confirm_password: "" })
+      setPwSaved(true)
+      setTimeout(() => setPwSaved(false), 2500)
+    } catch (err) {
+      setPwError(err instanceof Error ? err.message : "Password change failed")
+    } finally {
+      setPwLoading(false)
     }
   }
 
@@ -90,6 +118,35 @@ export default function AccountSettingsPage() {
             saved ? "bg-green-600 text-white" : "bg-brand hover:bg-brand-hover text-white"
           }`}>
           {loading ? "Saving…" : saved ? "Saved!" : "Save changes"}
+        </button>
+      </form>
+
+      <h2 className="text-xl font-bold text-slate-900 mt-10 mb-4">Change password</h2>
+      <form onSubmit={handlePasswordSubmit} className="bg-white border border-slate-100 rounded-2xl p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Current password</label>
+          <input type="password" required value={pwForm.current_password}
+            onChange={(e) => setPwForm((f) => ({ ...f, current_password: e.target.value }))}
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">New password</label>
+          <input type="password" required minLength={8} value={pwForm.new_password}
+            onChange={(e) => setPwForm((f) => ({ ...f, new_password: e.target.value }))}
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Confirm new password</label>
+          <input type="password" required minLength={8} value={pwForm.confirm_password}
+            onChange={(e) => setPwForm((f) => ({ ...f, confirm_password: e.target.value }))}
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
+        </div>
+        {pwError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{pwError}</div>}
+        <button type="submit" disabled={pwLoading}
+          className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50 ${
+            pwSaved ? "bg-green-600 text-white" : "bg-brand hover:bg-brand-hover text-white"
+          }`}>
+          {pwLoading ? "Changing…" : pwSaved ? "Password changed!" : "Change password"}
         </button>
       </form>
     </div>
