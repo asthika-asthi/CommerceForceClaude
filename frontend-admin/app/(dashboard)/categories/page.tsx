@@ -1,0 +1,201 @@
+"use client"
+import { useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { api } from "@/lib/api"
+import type { Category } from "@/lib/types"
+import { PageHeader } from "@/components/page-header"
+import { StatusBadge } from "@/components/status-badge"
+import { Trash2, Pencil, X } from "lucide-react"
+
+export default function CategoriesPage() {
+  const qc = useQueryClient()
+  const { data: categories = [], isLoading } = useQuery<Category[]>({
+    queryKey: ["categories"],
+    queryFn: () => api.get("/api/categories"),
+  })
+  const [createForm, setCreateForm] = useState({ name: "", slug: "", description: "", parent_id: "" })
+  const [editTarget, setEditTarget] = useState<Category | null>(null)
+  const [editForm, setEditForm] = useState({ name: "", description: "", is_active: true })
+  const [error, setError] = useState("")
+
+  const create = useMutation({
+    mutationFn: (d: typeof createForm) =>
+      api.post("/api/categories", { ...d, parent_id: d.parent_id || undefined }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] })
+      setCreateForm({ name: "", slug: "", description: "", parent_id: "" })
+      setError("")
+    },
+    onError: (e) => setError(e instanceof Error ? e.message : "Failed"),
+  })
+
+  const update = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: typeof editForm }) =>
+      api.put(`/api/categories/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] })
+      setEditTarget(null)
+      setError("")
+    },
+    onError: (e) => setError(e instanceof Error ? e.message : "Failed"),
+  })
+
+  const remove = useMutation({
+    mutationFn: (id: string) => api.del(`/api/categories/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] })
+      setEditTarget(null)
+    },
+  })
+
+  function startEdit(cat: Category) {
+    setEditTarget(cat)
+    setEditForm({ name: cat.name, description: cat.description ?? "", is_active: cat.is_active })
+    setError("")
+  }
+
+  function flattenCategories(cats: Category[], depth = 0): (Category & { depth: number })[] {
+    return cats.flatMap((c) => [
+      { ...c, depth },
+      ...flattenCategories(c.children ?? [], depth + 1),
+    ])
+  }
+
+  const flat = flattenCategories(categories)
+
+  return (
+    <div className="grid grid-cols-2 gap-6">
+      {/* List */}
+      <div>
+        <PageHeader title="Categories" description="Product taxonomy" />
+        {isLoading ? (
+          <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
+        ) : (
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600">Name</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600">Status</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {flat.length === 0 && (
+                  <tr><td colSpan={3} className="text-center py-8 text-slate-400">No categories</td></tr>
+                )}
+                {flat.map((c) => (
+                  <tr key={c.id} className={`hover:bg-slate-50 ${editTarget?.id === c.id ? "bg-blue-50" : ""}`}>
+                    <td className="px-4 py-2.5 text-slate-800" style={{ paddingLeft: `${16 + c.depth * 20}px` }}>
+                      {c.depth > 0 && <span className="text-slate-300 mr-1">└</span>}
+                      {c.name}
+                    </td>
+                    <td className="px-4 py-2.5"><StatusBadge value={c.is_active ? "active" : "inactive"} /></td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex gap-1">
+                        <button onClick={() => startEdit(c)}
+                          className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600">
+                          <Pencil size={13} />
+                        </button>
+                        <button onClick={() => remove.mutate(c.id)}
+                          className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Create or Edit Form */}
+      <div>
+        {editTarget ? (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Edit Category</h2>
+                <p className="text-sm text-slate-500 mt-0.5">Editing: {editTarget.name}</p>
+              </div>
+              <button onClick={() => setEditTarget(null)} className="text-slate-400 hover:text-slate-700">
+                <X size={18} />
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => { e.preventDefault(); update.mutate({ id: editTarget.id, data: editForm }) }}
+              className="bg-white rounded-xl border border-slate-200 p-5 space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                <input required value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <input value={editForm.description}
+                  onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" checked={editForm.is_active}
+                  onChange={(e) => setEditForm((f) => ({ ...f, is_active: e.target.checked }))} />
+                Active
+              </label>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <div className="flex gap-2">
+                <button type="submit" disabled={update.isPending}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium disabled:opacity-50">
+                  {update.isPending ? "Saving…" : "Save Changes"}
+                </button>
+                <button type="button" onClick={() => setEditTarget(null)}
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <>
+            <PageHeader title="New Category" />
+            <form
+              onSubmit={(e) => { e.preventDefault(); create.mutate(createForm) }}
+              className="bg-white rounded-xl border border-slate-200 p-5 space-y-4"
+            >
+              {["name", "slug", "description"].map((key) => (
+                <div key={key}>
+                  <label className="block text-sm font-medium text-slate-700 mb-1 capitalize">{key}</label>
+                  <input value={(createForm as Record<string, string>)[key]}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, [key]: e.target.value }))}
+                    required={key === "name"}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder={key === "slug" ? "auto-generated if blank" : ""}
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Parent Category</label>
+                <select value={createForm.parent_id}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, parent_id: e.target.value }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">None (top-level)</option>
+                  {flat.filter((c) => c.depth === 0).map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <button type="submit" disabled={create.isPending}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium disabled:opacity-50">
+                {create.isPending ? "Creating…" : "Create Category"}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}

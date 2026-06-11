@@ -1,0 +1,6 @@
+fix: add missing FOR UPDATE locks to inventory set_stock and rfq submit_rfq
+
+- inventory/service.py set_stock: add .with_for_update() to WarehouseStock SELECT (line 62) to prevent last-write-wins data loss on concurrent updates
+- rfq/service.py submit_rfq: add for_update=True parameter to _load() call (line 77) for consistency with other status-mutating functions
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>

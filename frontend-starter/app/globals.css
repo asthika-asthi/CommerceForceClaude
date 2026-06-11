@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  /* Tarpaulins To Go brand */
+  --brand: #B6C1A1;
+  --brand-hover: #A3AE8E;
+  --brand-dark: #0D3328;
+  --brand-secondary: #555555;
+  --alert: #FF0000;
+  /* Neutral */
+  --bg: #ffffff;
+  --fg: #000000;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --card-bg: #f8fafc;
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-alert: var(--alert);
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --font-sans: var(--font-poppins), system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+* { box-sizing: border-box; }

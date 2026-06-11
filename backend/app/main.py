@@ -1,0 +1,64 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.core.plugin_registry import register_plugins, get_manifests
+from app.shared.exceptions import AppException, app_exception_handler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(f"\nCommerceForce — environment: {settings.ENVIRONMENT}")
+    print(f"Plugins active: {settings.enabled_plugins}")
+    print("Ready.\n")
+    yield
+
+
+app = FastAPI(
+    title="CommerceForce API",
+    version="0.1.0",
+    lifespan=lifespan,
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.add_exception_handler(AppException, app_exception_handler)
+
+# Register plugins at module load time so routes are in the routing table
+# before any request (including test clients) is processed.
+register_plugins(app)
+
+
+@app.get("/api/health", tags=["System"])
+async def health():
+    return {
+        "status": "ok",
+        "environment": settings.ENVIRONMENT,
+        "plugins": settings.enabled_plugins,
+    }
+
+
+@app.get("/api/menu", tags=["System"])
+async def menu():
+    """Returns nav items from all active plugins. Used by the admin shell to build navigation."""
+    manifests = get_manifests()
+    return {
+        "admin_menu": [
+            {"plugin": m["name"], "label": m["label"], "icon": m.get("icon"), "items": m["admin_menu"]}
+            for m in manifests
+        ],
+        "superadmin_menu": [
+            {"plugin": m["name"], "label": m["label"], "icon": m.get("icon"), "items": m["superadmin_menu"]}
+            for m in manifests
+            if m.get("superadmin_menu")
+        ],
+    }
