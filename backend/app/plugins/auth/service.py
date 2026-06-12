@@ -87,6 +87,25 @@ async def change_password(user: User, data: ChangePasswordRequest, db: AsyncSess
     await db.flush()
 
 
+async def list_users(db: AsyncSession) -> list[User]:
+    result = await db.execute(select(User).order_by(User.email))
+    return list(result.scalars().all())
+
+
+async def patch_user(user_id: str, data: dict, db: AsyncSession) -> User:
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if "is_active" in data and data["is_active"] is not None:
+        user.is_active = data["is_active"]
+    if "role" in data and data["role"] is not None:
+        from app.plugins.auth.models import UserRole
+        user.role = UserRole(data["role"])
+    await db.flush()
+    return user
+
+
 async def update_profile(user: User, data: UpdateProfileRequest, db: AsyncSession) -> User:
     if data.first_name is not None:
         user.first_name = data.first_name

@@ -7,12 +7,15 @@ import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Pencil, Trash2 } from "lucide-react"
 
+interface ProductsResponse { items: Product[]; total: number }
+
 export default function ProductsPage() {
   const qc = useQueryClient()
-  const { data: products = [], isLoading } = useQuery<Product[]>({
+  const { data, isLoading } = useQuery<ProductsResponse>({
     queryKey: ["products"],
     queryFn: () => api.get("/api/products"),
   })
+  const products = data?.items ?? []
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.del(`/api/products/${id}`),
@@ -28,7 +31,7 @@ export default function ProductsPage() {
     <div>
       <PageHeader
         title="Products"
-        description="Manage your product catalog"
+        description={data ? `${data.total} products` : "Manage your product catalog"}
         action={{ label: "+ New Product", href: "/products/new" }}
       />
 

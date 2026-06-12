@@ -1,25 +1,45 @@
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$pidsFile = "$root\.server-pids.json"
 
 Write-Host "Starting CommerceForce..." -ForegroundColor Cyan
 
-$backendCmd = "Set-Location '$root\backend'; Write-Host 'BACKEND -- http://localhost:8000' -ForegroundColor Cyan; .venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd
+# 1. Backend first
+$backendCmd = "Set-Location '$root\backend'; .venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000"
+$backend = Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd -PassThru
 
+# Poll until backend is ready
 Write-Host "  Waiting for backend..." -ForegroundColor Gray
-Start-Sleep -Seconds 3
+$ready = $false
+for ($i = 0; $i -lt 20; $i++) {
+    Start-Sleep -Seconds 2
+    try {
+        Invoke-WebRequest "http://localhost:8000/api/products" -UseBasicParsing -TimeoutSec 2 | Out-Null
+        $ready = $true
+        break
+    } catch {}
+}
+if ($ready) {
+    Write-Host "  Backend ready." -ForegroundColor Green
+} else {
+    Write-Host "  Backend slow to start - continuing anyway." -ForegroundColor Yellow
+}
 
-$storefrontCmd = "Set-Location '$root\frontend-starter'; Write-Host 'STOREFRONT -- http://localhost:3000' -ForegroundColor Cyan; npm run dev"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $storefrontCmd
+# 2. Storefront
+$storefrontCmd = "Set-Location '$root\frontend-starter'; npm run dev"
+$storefront = Start-Process powershell -ArgumentList "-NoExit", "-Command", $storefrontCmd -PassThru
 
-$adminCmd = "Set-Location '$root\frontend-admin'; Write-Host 'ADMIN -- http://localhost:3001' -ForegroundColor Cyan; npm run dev -- --port 3001"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $adminCmd
+# 3. Admin panel
+$adminCmd = "Set-Location '$root\frontend-admin'; npm run dev -- --port 3001"
+$admin = Start-Process powershell -ArgumentList "-NoExit", "-Command", $adminCmd -PassThru
 
-Write-Host "  Waiting for frontends to compile (~15s)..." -ForegroundColor Gray
-Start-Sleep -Seconds 15
+# Save PIDs so stop.ps1 can kill the windows and their children
+@{ backend = $backend.Id; storefront = $storefront.Id; admin = $admin.Id } | ConvertTo-Json | Set-Content $pidsFile
+
+Write-Host "  Waiting for frontends to compile (~20s)..." -ForegroundColor Gray
+Start-Sleep -Seconds 20
 
 Write-Host "Opening browsers..." -ForegroundColor Green
 Start-Process "http://localhost:3000"
 Start-Process "http://localhost:3001"
 
-Write-Host ""
-Write-Host "All servers running. Close their windows or run stop.ps1 to shut down." -ForegroundColor Green
+Write-Host "All servers running. Run stop.ps1 to shut down." -ForegroundColor Green

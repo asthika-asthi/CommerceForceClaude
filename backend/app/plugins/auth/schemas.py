@@ -72,3 +72,15 @@ class ChangePasswordRequest(BaseModel):
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters")
         return v
+
+
+class UpdateUserRequest(BaseModel):
+    is_active: Optional[bool] = None
+    role: Optional[str] = None
+
+    @field_validator("role")
+    @classmethod
+    def valid_role(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in ("superadmin", "admin", "customer"):
+            raise ValueError("Invalid role")
+        return v
