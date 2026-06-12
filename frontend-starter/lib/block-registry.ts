@@ -7,7 +7,8 @@ import { LoyaltyWidgetSection } from '@/components/blocks/loyalty-widget-section
 import { CTABanner } from '@/components/blocks/cta-banner'
 
 export interface BlockRegistryEntry {
-  component: ComponentType<Record<string, unknown>>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  component: ComponentType<any>
 }
 
 export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
