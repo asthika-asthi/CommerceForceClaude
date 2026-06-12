@@ -48,11 +48,12 @@ function NavItem({ href, label, icon }: { href: string; label: string; icon?: Re
 }
 
 export function Sidebar() {
-  const { data: menu } = useQuery<PluginMenu[]>({
+  const { data: menuData } = useQuery<{ admin_menu: PluginMenu[] }>({
     queryKey: ["menu"],
-    queryFn: () => api.get<PluginMenu[]>("/api/menu"),
+    queryFn: () => api.get<{ admin_menu: PluginMenu[] }>("/api/menu"),
     staleTime: 5 * 60_000,
   })
+  const menu = menuData?.admin_menu
   const logout = useAuthStore((s) => s.logout)
   const user = useAuthStore((s) => s.user)
   const router = useRouter()
@@ -78,7 +79,7 @@ export function Sidebar() {
 
         {/* Dynamic plugin menu items */}
         {menu?.map((plugin) =>
-          plugin.admin_menu.map((item) => {
+          plugin.items.map((item) => {
             // Skip items already shown statically
             const staticPaths = ["/admin/products", "/admin/categories", "/admin/orders"]
             if (staticPaths.some((p) => item.path.includes(p))) return null

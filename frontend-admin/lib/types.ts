@@ -21,10 +21,10 @@ export interface MenuItem {
 }
 
 export interface PluginMenu {
-  name: string
+  plugin: string
   label: string
   icon: string
-  admin_menu: MenuItem[]
+  items: MenuItem[]
 }
 
 // ── Categories ────────────────────────────────────────────────────────────────
