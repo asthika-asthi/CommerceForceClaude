@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Star, Sparkles, TrendingUp, Gift, ArrowRight, Loader2 } from 'lucide-react'
@@ -14,7 +14,7 @@ interface LoyaltyWidgetSectionProps {
   joinCtaUrl?: string
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+function StatCard({ icon, label, value }: { icon: ReactNode; label: string; value: string | number }) {
   return (
     <div className="bg-white/10 border border-white/20 rounded-2xl p-5 flex flex-col items-center gap-2 text-center">
       <div className="text-brand">{icon}</div>
