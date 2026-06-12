@@ -16,6 +16,7 @@ interface CheckoutForm {
   country: string
   coupon_code: string
   redeem_points: number
+  guest_email: string
 }
 
 export default function CheckoutPage() {
@@ -24,20 +25,48 @@ export default function CheckoutPage() {
   const { cart, fetch, clear } = useCartStore()
   const [form, setForm] = useState<CheckoutForm>({
     name: "", line1: "", line2: "", city: "", state: "", zip: "", country: "US",
-    coupon_code: "", redeem_points: 0,
+    coupon_code: "", redeem_points: 0, guest_email: "",
   })
+  const [guestMode, setGuestMode] = useState<"choose" | "guest" | "signin">("choose")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
   useEffect(() => { fetch() }, [fetch])
 
+  // Unauthenticated: show sign-in vs guest choice, or guest email entry
   if (!user) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <p className="text-slate-600 mb-4">Please sign in to checkout</p>
-        <Link href="/login" className="inline-block bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-lg">Sign in</Link>
-      </div>
-    )
+    if (guestMode === "choose") {
+      return (
+        <div className="max-w-md mx-auto px-4 py-20">
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">How would you like to continue?</h1>
+          <p className="text-slate-500 text-sm mb-8">Sign in for faster checkout and order tracking, or continue as a guest.</p>
+          <div className="space-y-3">
+            <Link
+              href={`/login?redirect=/checkout`}
+              className="flex items-center justify-between w-full bg-brand hover:bg-brand-hover text-white font-semibold px-5 py-3.5 rounded-xl transition-colors"
+            >
+              <span>Sign in to your account</span>
+              <span className="text-sm opacity-80">Faster checkout</span>
+            </Link>
+            <button
+              onClick={() => setGuestMode("guest")}
+              className="flex items-center justify-between w-full border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-5 py-3.5 rounded-xl transition-colors"
+            >
+              <span>Continue as guest</span>
+              <span className="text-sm text-slate-400">No account needed</span>
+            </button>
+          </div>
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="text-brand-dark font-medium hover:underline">Create one</Link>
+          </p>
+        </div>
+      )
+    }
+
+    if (guestMode === "guest") {
+      // Guest continues — show email capture then fall through to form below
+    }
   }
 
   const items = cart?.items ?? []
@@ -60,6 +89,7 @@ export default function CheckoutPage() {
       }
       if (form.coupon_code) payload.coupon_code = form.coupon_code
       if (form.redeem_points > 0) payload.redeem_points = form.redeem_points
+      if (!user && form.guest_email) payload.guest_email = form.guest_email
 
       const res = await api.post<{ order_id: string }>("/api/checkout", payload)
       clear()
@@ -88,6 +118,22 @@ export default function CheckoutPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white border border-slate-100 rounded-xl p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Shipping address</h2>
+            {!user && (
+              <div className="mb-4 pb-4 border-b border-slate-100">
+                <label className="block text-sm text-slate-600 mb-1">Email address *</label>
+                <input
+                  required
+                  type="email"
+                  value={form.guest_email}
+                  onChange={(e) => setForm((f) => ({ ...f, guest_email: e.target.value }))}
+                  placeholder="you@example.com"
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark"
+                />
+                <p className="mt-1 text-xs text-slate-400">Order confirmation will be sent here.{" "}
+                  <Link href={`/login?redirect=/checkout`} className="text-brand-dark hover:underline">Sign in instead</Link>
+                </p>
+              </div>
+            )}
             <div className="space-y-3">
               <div>
                 <label className="block text-sm text-slate-600 mb-1">Full name</label>

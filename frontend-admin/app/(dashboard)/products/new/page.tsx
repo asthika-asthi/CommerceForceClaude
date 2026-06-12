@@ -21,6 +21,8 @@ export default function NewProductPage() {
     queryFn: () => api.get("/api/categories"),
   })
 
+  const flatCategories = flattenCategories(categories)
+
   const mutation = useMutation({
     mutationFn: (data: typeof form) =>
       api.post("/api/products", {
@@ -64,7 +66,9 @@ export default function NewProductPage() {
             <select value={form.category_id} onChange={(e) => set("category_id", e.target.value)}
               className={input}>
               <option value="">None</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {flatCategories.map((c) => (
+                <option key={c.id} value={c.id}>{c.label}</option>
+              ))}
             </select>
           </Field>
         </div>
@@ -104,6 +108,18 @@ export default function NewProductPage() {
       </form>
     </div>
   )
+}
+
+function flattenCategories(
+  cats: Category[],
+  depth = 0
+): { id: string; label: string }[] {
+  const result: { id: string; label: string }[] = []
+  for (const c of cats) {
+    result.push({ id: c.id, label: depth === 0 ? c.name : `${"— ".repeat(depth)}${c.name}` })
+    if (c.children?.length) result.push(...flattenCategories(c.children, depth + 1))
+  }
+  return result
 }
 
 const input = "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
