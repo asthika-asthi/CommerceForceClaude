@@ -52,7 +52,7 @@ export function NewsletterSection({
       {backgroundImage ? (
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
+          style={{ backgroundImage: `url("${backgroundImage}")` }}
         />
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-brand-dark via-slate-800 to-slate-900" />
