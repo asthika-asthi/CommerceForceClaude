@@ -65,12 +65,23 @@ export default function LandingPagePage() {
       />
 
       {showForm && (
-        <form onSubmit={(e) => { e.preventDefault(); create.mutate(form) }}
+        <form onSubmit={(e) => {
+          e.preventDefault()
+          if (form.section_type === 'block' && form.content.trim() === '') {
+            setError('Please select a block type first.')
+            return
+          }
+          create.mutate(form)
+        }}
           className="bg-white rounded-xl border border-slate-200 p-5 mb-6 grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Section Type</label>
             <select value={form.section_type}
-              onChange={(e) => setForm((f) => ({ ...f, section_type: e.target.value as SectionType }))}
+              onChange={(e) => {
+                const newType = e.target.value as SectionType
+                setForm((f) => ({ ...f, section_type: newType }))
+                if (newType !== 'block') setBlockType('')
+              }}
               className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm">
               {SECTION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -124,7 +135,7 @@ export default function LandingPagePage() {
             </div>
           )}
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Content (JSON or HTML)</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{form.section_type === 'block' ? 'Content (JSON — edit values from the template above)' : 'Content (JSON or HTML)'}</label>
             <textarea value={form.content}
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
               className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm h-20 resize-none font-mono" />

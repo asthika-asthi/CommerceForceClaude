@@ -11,14 +11,13 @@ export function LandingSectionRenderer({ section }: { section: LandingSection })
       const { __block, ...props } = config
       if (typeof __block !== 'string') return null
       const entry = BLOCK_REGISTRY[__block]
-      if (!entry) {
-        // Unknown block type — render nothing (silently, not an error to users)
-        return null
-      }
+      if (!entry) return null
       const BlockComponent = entry.component
+      if (style) {
+        return <section style={style}><BlockComponent {...props} /></section>
+      }
       return <BlockComponent {...props} />
     } catch {
-      // Malformed JSON in content — render nothing
       return null
     }
   }
