@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Trash2, GripVertical, Eye, EyeOff } from "lucide-react"
 
-const SECTION_TYPES: SectionType[] = ["hero", "features", "testimonials", "cta", "html", "products"]
+const SECTION_TYPES: SectionType[] = ["hero", "features", "testimonials", "cta", "html", "products", "block"]
 
 export default function LandingPagePage() {
   const qc = useQueryClient()

@@ -28,7 +28,7 @@ export interface BrandingConfig {
 }
 
 // ── Landing page ──────────────────────────────────────────────────────────────
-export type SectionType = "hero" | "features" | "testimonials" | "cta" | "html" | "products"
+export type SectionType = "hero" | "features" | "testimonials" | "cta" | "html" | "products" | "block"
 
 export interface LandingSection {
   id: string
