@@ -1,0 +1,6 @@
+export { ScrollExpandHero } from './scroll-expand-hero'
+export { FeaturedProductsGrid } from './featured-products-grid'
+export { TestimonialsCarousel } from './testimonials-carousel'
+export { NewsletterSection } from './newsletter-section'
+export { LoyaltyWidgetSection } from './loyalty-widget-section'
+export { CTABanner } from './cta-banner'

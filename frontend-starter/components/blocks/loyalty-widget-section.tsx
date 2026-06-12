@@ -143,14 +143,16 @@ export function LoyaltyWidgetSection({
 
   const [account, setAccount] = useState<LoyaltyAccount | null>(null)
   const [loyaltyLoading, setLoyaltyLoading] = useState(false)
+  const [loyaltyError, setLoyaltyError] = useState(false)
 
   useEffect(() => {
     if (!user) return
     setLoyaltyLoading(true)
+    setLoyaltyError(false)
     api
       .get<LoyaltyAccount>('/api/loyalty/me')
-      .then(setAccount)
-      .catch(() => setAccount(null))
+      .then((data) => { setAccount(data); setLoyaltyError(false) })
+      .catch(() => { setAccount(null); setLoyaltyError(true) })
       .finally(() => setLoyaltyLoading(false))
   }, [user])
 
@@ -163,6 +165,10 @@ export function LoyaltyWidgetSection({
           <div className="flex flex-col items-center gap-4 text-white/60 py-16">
             <Loader2 size={32} className="animate-spin text-brand" />
             <p className="text-sm">Loading your rewards...</p>
+          </div>
+        ) : user && loyaltyError ? (
+          <div className="flex flex-col items-center gap-3 text-white/70 py-16">
+            <p className="text-base">Could not load your loyalty points.</p>
           </div>
         ) : user && account ? (
           <LoggedInWidget account={account} />

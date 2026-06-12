@@ -47,7 +47,7 @@ export function CTABanner({
         {backgroundImage ? (
           <div
             className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${backgroundImage})` }}
+            style={{ backgroundImage: `url("${backgroundImage}")` }}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-brand-dark via-slate-800 to-slate-950" />

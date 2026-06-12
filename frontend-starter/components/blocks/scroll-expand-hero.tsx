@@ -1,4 +1,5 @@
 'use client'
+import type { ReactNode } from 'react'
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
@@ -11,7 +12,7 @@ interface ScrollExpandHeroProps {
   date?: string
   scrollToExpand?: string
   textBlend?: boolean
-  children?: React.ReactNode
+  children?: ReactNode
 }
 
 export function ScrollExpandHero({
@@ -49,7 +50,7 @@ export function ScrollExpandHero({
       className="relative min-h-[200vh]"
       style={
         bgImageSrc
-          ? { backgroundImage: `url(${bgImageSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+          ? { backgroundImage: `url("${bgImageSrc}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
           : undefined
       }
     >
