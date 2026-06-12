@@ -1,3 +1,5 @@
+// Kept in sync with frontend-admin/lib/block-defaults.ts.
+// If you add or rename a block, update both files.
 export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
   'scroll-expand-hero': {
     mediaType: 'image',
