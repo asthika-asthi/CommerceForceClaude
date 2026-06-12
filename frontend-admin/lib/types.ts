@@ -6,6 +6,8 @@ export interface User {
   last_name: string
   role: "superadmin" | "admin" | "customer"
   is_active: boolean
+  company_name?: string
+  phone?: string
 }
 
 export interface TokenResponse {

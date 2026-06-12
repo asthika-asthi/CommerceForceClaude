@@ -3,7 +3,7 @@ MANIFEST = {
     "label": "Credit",
     "icon": "credit-card",
     "admin_menu": [
-        {"label": "Credit Accounts", "path": "/admin/credit/accounts"},
+        {"label": "Credit Accounts", "path": "/admin/credit"},
     ],
     "superadmin_menu": [],
     "required_permissions": ["credit:read"],

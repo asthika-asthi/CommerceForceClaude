@@ -3,8 +3,7 @@ MANIFEST = {
     "label": "Loyalty",
     "icon": "star",
     "admin_menu": [
-        {"label": "Loyalty Config", "path": "/admin/loyalty/config"},
-        {"label": "Points Adjust", "path": "/admin/loyalty/adjust"},
+        {"label": "Loyalty", "path": "/admin/loyalty"},
     ],
     "superadmin_menu": [],
     "required_permissions": ["loyalty:read"],

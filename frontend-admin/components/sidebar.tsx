@@ -80,9 +80,9 @@ export function Sidebar() {
         {/* Dynamic plugin menu items */}
         {menu?.map((plugin) =>
           plugin.items.map((item) => {
-            // Skip items already shown statically
+            // Skip items already shown statically (exact match only, not sub-paths)
             const staticPaths = ["/admin/products", "/admin/categories", "/admin/orders"]
-            if (staticPaths.some((p) => item.path.includes(p))) return null
+            if (staticPaths.includes(item.path)) return null
             // Map /admin/X → /X
             const href = item.path.replace(/^\/admin/, "")
             return (

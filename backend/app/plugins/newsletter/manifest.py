@@ -3,7 +3,7 @@ MANIFEST = {
     "label": "Newsletter",
     "icon": "mail",
     "admin_menu": [
-        {"label": "Subscribers", "path": "/admin/newsletter/subscribers"},
+        {"label": "Newsletter", "path": "/admin/newsletter"},
     ],
     "superadmin_menu": [],
     "required_permissions": ["newsletter:read"],

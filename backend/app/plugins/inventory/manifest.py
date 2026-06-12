@@ -3,8 +3,7 @@ MANIFEST = {
     "label": "Inventory",
     "icon": "warehouse",
     "admin_menu": [
-        {"label": "Warehouses", "path": "/admin/inventory/warehouses"},
-        {"label": "Stock Levels", "path": "/admin/inventory/stock"},
+        {"label": "Inventory", "path": "/admin/inventory"},
     ],
     "superadmin_menu": [],
     "required_permissions": ["inventory:read"],
