@@ -6,6 +6,7 @@ import type { LandingSection, SectionType } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Trash2, GripVertical, Eye, EyeOff } from "lucide-react"
+import { BLOCK_DEFAULTS } from "@/lib/block-defaults"
 
 const SECTION_TYPES: SectionType[] = ["hero", "features", "testimonials", "cta", "html", "products", "block"]
 
@@ -22,6 +23,7 @@ export default function LandingPagePage() {
     sort_order: "0", background_color: "",
   })
   const [showForm, setShowForm] = useState(false)
+  const [blockType, setBlockType] = useState('')
   const [error, setError] = useState("")
 
   const create = useMutation({
@@ -36,6 +38,7 @@ export default function LandingPagePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["landing-sections"] })
       setShowForm(false)
+      setBlockType('')
     },
     onError: (e) => setError(e instanceof Error ? e.message : "Failed"),
   })
@@ -93,6 +96,33 @@ export default function LandingPagePage() {
                 className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm" />
             </div>
           ))}
+          {form.section_type === 'block' && (
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-slate-600 mb-1">Block Component</label>
+              <select
+                value={blockType}
+                onChange={(e) => {
+                  const bt = e.target.value
+                  setBlockType(bt)
+                  if (bt && BLOCK_DEFAULTS[bt]) {
+                    setForm(f => ({
+                      ...f,
+                      content: JSON.stringify({ __block: bt, ...BLOCK_DEFAULTS[bt] }, null, 2)
+                    }))
+                  }
+                }}
+                className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+              >
+                <option value="">Pick a block type…</option>
+                {Object.keys(BLOCK_DEFAULTS).map(k => (
+                  <option key={k} value={k}>{k}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-400 mt-1">
+                Selecting a block auto-fills the Content field with a template — edit the values as needed.
+              </p>
+            </div>
+          )}
           <div className="col-span-2">
             <label className="block text-xs font-medium text-slate-600 mb-1">Content (JSON or HTML)</label>
             <textarea value={form.content}
@@ -105,7 +135,7 @@ export default function LandingPagePage() {
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50">
               {create.isPending ? "Adding…" : "Add Section"}
             </button>
-            <button type="button" onClick={() => setShowForm(false)}
+            <button type="button" onClick={() => { setShowForm(false); setBlockType('') }}
               className="px-4 py-2 rounded-lg text-sm border border-slate-300 text-slate-600">
               Cancel
             </button>
