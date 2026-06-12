@@ -12,6 +12,7 @@ class SectionType(str, enum.Enum):
     cta = "cta"
     html = "html"
     products = "products"
+    block = "block"
 
 
 class LandingSection(BaseModel):
