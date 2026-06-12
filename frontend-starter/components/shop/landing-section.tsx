@@ -1,8 +1,27 @@
 import type { LandingSection } from "@/lib/types"
 import Link from "next/link"
+import { BLOCK_REGISTRY } from '@/lib/block-registry'
 
 export function LandingSectionRenderer({ section }: { section: LandingSection }) {
   const style = section.background_color ? { backgroundColor: section.background_color } : undefined
+
+  if (section.section_type === 'block') {
+    try {
+      const config = JSON.parse(section.content ?? '{}') as Record<string, unknown>
+      const { __block, ...props } = config
+      if (typeof __block !== 'string') return null
+      const entry = BLOCK_REGISTRY[__block]
+      if (!entry) {
+        // Unknown block type — render nothing (silently, not an error to users)
+        return null
+      }
+      const BlockComponent = entry.component
+      return <BlockComponent {...props} />
+    } catch {
+      // Malformed JSON in content — render nothing
+      return null
+    }
+  }
 
   if (section.section_type === "hero") {
     return (
