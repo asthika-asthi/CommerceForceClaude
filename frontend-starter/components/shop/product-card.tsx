@@ -1,20 +1,34 @@
 "use client"
+import { useState } from "react"
 import Link from "next/link"
-import { ShoppingCart } from "lucide-react"
+import { ShoppingCart, Check } from "lucide-react"
 import { useCartStore } from "@/store/cart"
 import type { Product } from "@/lib/types"
 
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem)
   const image = product.images?.[0]
+  const [adding, setAdding] = useState(false)
+  const [added, setAdded] = useState(false)
 
   const price = parseFloat(product.price)
   const salePrice = product.sale_price ? parseFloat(product.sale_price) : null
   const displayPrice = salePrice ?? price
 
+  async function handleAdd() {
+    if (adding) return
+    setAdding(true)
+    try {
+      await addItem(product.id)
+      setAdded(true)
+      setTimeout(() => setAdded(false), 2000)
+    } finally {
+      setAdding(false)
+    }
+  }
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group">
-      {/* Image */}
       <Link href={`/products/${product.slug}`}>
         <div className="aspect-square bg-slate-50 overflow-hidden">
           {image ? (
@@ -44,11 +58,14 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
           {product.stock_quantity > 0 ? (
             <button
-              onClick={() => addItem(product.id)}
-              className="p-2 bg-brand hover:bg-brand-hover text-white rounded-lg transition-colors"
-              title="Add to cart"
+              onClick={handleAdd}
+              disabled={adding}
+              className={`p-2 rounded-lg transition-colors disabled:opacity-60 ${
+                added ? "bg-green-600 text-white" : "bg-brand hover:bg-brand-hover text-white"
+              }`}
+              title={added ? "Added!" : "Add to cart"}
             >
-              <ShoppingCart size={15} />
+              {added ? <Check size={15} /> : <ShoppingCart size={15} />}
             </button>
           ) : (
             <span className="text-xs text-slate-400 font-medium">Out of stock</span>

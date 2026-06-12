@@ -13,6 +13,18 @@ interface AuthState {
   setUser: (user: User) => void
 }
 
+async function mergeCartAfterAuth() {
+  try {
+    const { useCartStore } = await import("@/store/cart")
+    await useCartStore.getState().fetch()
+    // attempt merge — if there's a guest cart it merges into the user cart
+    try {
+      await api.post("/api/cart/merge")
+      await useCartStore.getState().fetch()
+    } catch { /* no guest cart or not applicable */ }
+  } catch { /* non-fatal */ }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: true,
@@ -21,18 +33,24 @@ export const useAuthStore = create<AuthState>((set) => ({
     const data = await api.post<{ access_token: string; user: User }>("/api/auth/login", { email, password })
     setToken(data.access_token)
     set({ user: data.user })
+    await mergeCartAfterAuth()
   },
 
   register: async (formData) => {
     const data = await api.post<{ access_token: string; user: User }>("/api/auth/register", formData)
     setToken(data.access_token)
     set({ user: data.user })
+    await mergeCartAfterAuth()
   },
 
   logout: async () => {
     await api.post("/api/auth/logout").catch(() => {})
     clearToken()
     set({ user: null })
+    try {
+      const { useCartStore } = await import("@/store/cart")
+      useCartStore.setState({ cart: null })
+    } catch { /* ignore */ }
   },
 
   init: async () => {

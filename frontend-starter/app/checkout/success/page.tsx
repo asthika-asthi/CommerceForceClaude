@@ -2,13 +2,14 @@ import Link from "next/link"
 import { CheckCircle } from "lucide-react"
 
 interface Props {
-  searchParams: Promise<{ order?: string }>
+  searchParams: Promise<{ order_id?: string; order_number?: string }>
 }
 
 export const metadata = { title: "Order confirmed" }
 
 export default async function OrderSuccessPage({ searchParams }: Props) {
-  const { order } = await searchParams
+  const { order_id, order_number } = await searchParams
+  const displayNumber = order_number ?? order_id
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
@@ -17,17 +18,19 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
           <CheckCircle className="text-green-600" size={32} />
         </div>
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Order confirmed!</h1>
-        {order && (
-          <p className="text-slate-500 mb-2">Order #{order}</p>
+        {displayNumber && (
+          <p className="text-slate-500 mb-2 font-medium">Order {displayNumber}</p>
         )}
         <p className="text-slate-500 mb-8">
-          Thank you for your purchase. You'll receive an email confirmation shortly.
+          Thank you for your purchase. A confirmation email has been sent to you.
         </p>
         <div className="flex gap-3 justify-center">
-          <Link href={`/account/orders/${order}`}
-            className="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-sm hover:bg-slate-50 transition-colors">
-            View order
-          </Link>
+          {order_id && (
+            <Link href={`/account/orders/${order_id}`}
+              className="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-sm hover:bg-slate-50 transition-colors">
+              View order
+            </Link>
+          )}
           <Link href="/products"
             className="px-5 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-xl text-sm transition-colors">
             Continue shopping

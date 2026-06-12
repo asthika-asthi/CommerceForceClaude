@@ -128,7 +128,7 @@ async def request_password_reset(email: str, db: AsyncSession) -> None:
     # Build the reset URL (frontend handles it at /reset-password?token=...)
     reset_url = f"http://localhost:3000/reset-password?token={raw_token}"
     logger.info("Password reset link for %s: %s", email, reset_url)
-    print(f"\n[PASSWORD RESET] {email} → {reset_url}\n", flush=True)
+    print(f"\n[PASSWORD RESET] {email} -> {reset_url}\n", flush=True)
 
     if settings.SMTP_USER:
         _send_reset_email(email, reset_url)

@@ -41,6 +41,7 @@ export default function AccountPage() {
           <p className="text-slate-500 text-sm mt-1">{user.email}</p>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/account/orders" className="text-sm text-slate-500 hover:text-slate-800">All orders</Link>
           <Link href="/account/settings" className="text-sm text-slate-500 hover:text-slate-800">Settings</Link>
           <button onClick={handleLogout} className="text-sm text-slate-400 hover:text-slate-700">Sign out</button>
         </div>
@@ -68,7 +69,7 @@ export default function AccountPage() {
               <Link key={order.id} href={`/account/orders/${order.id}`}
                 className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors">
                 <div>
-                  <p className="text-sm font-medium text-slate-900">Order #{order.id}</p>
+                  <p className="text-sm font-medium text-slate-900">Order {order.order_number}</p>
                   {order.created_at && <p className="text-xs text-slate-400 mt-0.5">{new Date(order.created_at).toLocaleDateString()}</p>}
                 </div>
                 <div className="text-right">

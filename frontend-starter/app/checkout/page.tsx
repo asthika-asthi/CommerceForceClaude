@@ -17,7 +17,13 @@ interface CheckoutForm {
   coupon_code: string
   redeem_points: number
   guest_email: string
+  payment_method: "cash" | "credit_limit"
 }
+
+const PAYMENT_METHODS: { value: "cash" | "credit_limit"; label: string; description: string }[] = [
+  { value: "cash", label: "Cash on Delivery", description: "Pay when your order arrives" },
+  { value: "credit_limit", label: "Credit Account", description: "Charge to your business credit account" },
+]
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -25,48 +31,42 @@ export default function CheckoutPage() {
   const { cart, fetch, clear } = useCartStore()
   const [form, setForm] = useState<CheckoutForm>({
     name: "", line1: "", line2: "", city: "", state: "", zip: "", country: "US",
-    coupon_code: "", redeem_points: 0, guest_email: "",
+    coupon_code: "", redeem_points: 0, guest_email: "", payment_method: "cash",
   })
-  const [guestMode, setGuestMode] = useState<"choose" | "guest" | "signin">("choose")
+  const [guestMode, setGuestMode] = useState<"choose" | "guest">("choose")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
   useEffect(() => { fetch() }, [fetch])
 
-  // Unauthenticated: show sign-in vs guest choice, or guest email entry
-  if (!user) {
-    if (guestMode === "choose") {
-      return (
-        <div className="max-w-md mx-auto px-4 py-20">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">How would you like to continue?</h1>
-          <p className="text-slate-500 text-sm mb-8">Sign in for faster checkout and order tracking, or continue as a guest.</p>
-          <div className="space-y-3">
-            <Link
-              href={`/login?redirect=/checkout`}
-              className="flex items-center justify-between w-full bg-brand hover:bg-brand-hover text-white font-semibold px-5 py-3.5 rounded-xl transition-colors"
-            >
-              <span>Sign in to your account</span>
-              <span className="text-sm opacity-80">Faster checkout</span>
-            </Link>
-            <button
-              onClick={() => setGuestMode("guest")}
-              className="flex items-center justify-between w-full border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-5 py-3.5 rounded-xl transition-colors"
-            >
-              <span>Continue as guest</span>
-              <span className="text-sm text-slate-400">No account needed</span>
-            </button>
-          </div>
-          <p className="mt-6 text-center text-sm text-slate-500">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-brand-dark font-medium hover:underline">Create one</Link>
-          </p>
+  // Unauthenticated: show sign-in vs guest choice
+  if (!user && guestMode === "choose") {
+    return (
+      <div className="max-w-md mx-auto px-4 py-20">
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">How would you like to continue?</h1>
+        <p className="text-slate-500 text-sm mb-8">Sign in for faster checkout and order tracking, or continue as a guest.</p>
+        <div className="space-y-3">
+          <Link
+            href="/login?redirect=/checkout"
+            className="flex items-center justify-between w-full bg-brand hover:bg-brand-hover text-white font-semibold px-5 py-3.5 rounded-xl transition-colors"
+          >
+            <span>Sign in to your account</span>
+            <span className="text-sm opacity-80">Faster checkout</span>
+          </Link>
+          <button
+            onClick={() => setGuestMode("guest")}
+            className="flex items-center justify-between w-full border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-5 py-3.5 rounded-xl transition-colors"
+          >
+            <span>Continue as guest</span>
+            <span className="text-sm text-slate-400">No account needed</span>
+          </button>
         </div>
-      )
-    }
-
-    if (guestMode === "guest") {
-      // Guest continues — show email capture then fall through to form below
-    }
+        <p className="mt-6 text-center text-sm text-slate-500">
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="text-brand-dark font-medium hover:underline">Create one</Link>
+        </p>
+      </div>
+    )
   }
 
   const items = cart?.items ?? []
@@ -86,14 +86,15 @@ export default function CheckoutPage() {
       const payload: Record<string, unknown> = {
         shipping_address: addressParts.join("\n"),
         use_cart: true,
+        payment_method: form.payment_method,
       }
       if (form.coupon_code) payload.coupon_code = form.coupon_code
       if (form.redeem_points > 0) payload.redeem_points = form.redeem_points
       if (!user && form.guest_email) payload.guest_email = form.guest_email
 
-      const res = await api.post<{ order_id: string }>("/api/checkout", payload)
+      const res = await api.post<{ order_id: string; order_number: string }>("/api/checkout", payload)
       clear()
-      router.push(`/checkout/success?order=${res.order_id}`)
+      router.push(`/checkout/success?order_id=${res.order_id}&order_number=${encodeURIComponent(res.order_number)}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed")
     } finally {
@@ -110,12 +111,16 @@ export default function CheckoutPage() {
     )
   }
 
+  const availablePaymentMethods = user
+    ? PAYMENT_METHODS
+    : PAYMENT_METHODS.filter((m) => m.value === "cash")
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-slate-900 mb-8">Checkout</h1>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Shipping */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Shipping */}
           <div className="bg-white border border-slate-100 rounded-xl p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Shipping address</h2>
             {!user && (
@@ -130,7 +135,7 @@ export default function CheckoutPage() {
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark"
                 />
                 <p className="mt-1 text-xs text-slate-400">Order confirmation will be sent here.{" "}
-                  <Link href={`/login?redirect=/checkout`} className="text-brand-dark hover:underline">Sign in instead</Link>
+                  <Link href="/login?redirect=/checkout" className="text-brand-dark hover:underline">Sign in instead</Link>
                 </p>
               </div>
             )}
@@ -177,6 +182,41 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* Payment method */}
+          <div className="bg-white border border-slate-100 rounded-xl p-6">
+            <h2 className="font-semibold text-slate-900 mb-4">Payment method</h2>
+            <div className="space-y-3">
+              {availablePaymentMethods.map((pm) => (
+                <label
+                  key={pm.value}
+                  className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
+                    form.payment_method === pm.value
+                      ? "border-brand-dark bg-brand/5"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value={pm.value}
+                    checked={form.payment_method === pm.value}
+                    onChange={() => setForm((f) => ({ ...f, payment_method: pm.value }))}
+                    className="mt-0.5 accent-brand-dark"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{pm.label}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{pm.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+            {form.payment_method === "cash" && (
+              <p className="mt-3 text-xs text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
+                Your order will be confirmed immediately. Payment is collected when the order is delivered.
+              </p>
+            )}
+          </div>
+
           {/* Discounts */}
           <div className="bg-white border border-slate-100 rounded-xl p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Discounts</h2>
@@ -186,12 +226,14 @@ export default function CheckoutPage() {
                 <input value={form.coupon_code} onChange={field("coupon_code")} placeholder="Enter code"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
               </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Loyalty points to redeem</label>
-                <input type="number" min={0} value={form.redeem_points}
-                  onChange={(e) => setForm((f) => ({ ...f, redeem_points: parseInt(e.target.value) || 0 }))}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
-              </div>
+              {user && (
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">Loyalty points to redeem</label>
+                  <input type="number" min={0} value={form.redeem_points}
+                    onChange={(e) => setForm((f) => ({ ...f, redeem_points: parseInt(e.target.value) || 0 }))}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -209,7 +251,7 @@ export default function CheckoutPage() {
               ))}
             </div>
             <div className="border-t border-slate-100 pt-4 flex justify-between font-semibold text-slate-900 mb-6">
-              <span>Subtotal</span>
+              <span>Total</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
             {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-4">{error}</div>}
