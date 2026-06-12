@@ -1,19 +1,5 @@
 @import "tailwindcss";
-
-:root {
-  /* Tarpaulins To Go brand */
-  --brand: #B6C1A1;
-  --brand-hover: #A3AE8E;
-  --brand-dark: #0D3328;
-  --brand-secondary: #555555;
-  --alert: #FF0000;
-  /* Neutral */
-  --bg: #ffffff;
-  --fg: #000000;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --card-bg: #f8fafc;
-}
+@import '../themes/default/globals.css';
 
 @theme inline {
   --color-brand: var(--brand);
