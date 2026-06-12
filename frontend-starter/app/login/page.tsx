@@ -57,7 +57,12 @@ function LoginForm() {
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
-        <p className="text-center text-sm text-slate-500 mt-6">
+        <div className="mt-4 text-center">
+          <Link href="/forgot-password" className="text-sm text-brand-dark hover:underline">
+            Forgot your password?
+          </Link>
+        </div>
+        <p className="text-center text-sm text-slate-500 mt-3">
           Don&apos;t have an account?{" "}
           <Link href="/register" className="text-brand-dark hover:underline font-medium">Register</Link>
         </p>

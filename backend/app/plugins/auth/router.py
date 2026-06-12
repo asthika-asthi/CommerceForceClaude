@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.core.dependencies import get_current_user, require_admin
-from app.plugins.auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest
+from app.plugins.auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest, ForgotPasswordRequest, ResetPasswordRequest
 from app.plugins.auth import service
 
 REFRESH_COOKIE = "refresh_token"
@@ -52,6 +52,16 @@ async def refresh(request: Request, response: Response, db: AsyncSession = Depen
     access_token = create_access_token(user.id, user.role.value)
     _set_refresh_cookie(response, new_raw, max_age_days=7)
     return TokenResponse(access_token=access_token)
+
+
+@router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
+async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    await service.request_password_reset(data.email, db)
+
+
+@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    await service.reset_password(data.token, data.new_password, db)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
