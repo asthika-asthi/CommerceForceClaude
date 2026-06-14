@@ -9,8 +9,7 @@ UPLOAD_DIR = "uploads"
 
 @router.post("/upload")
 async def upload_file(request: Request, file: UploadFile = File(...)):
-    ext = os.path.splitext(file.filename or "file")[1]
-    filename = f"{uuid.uuid4()}{ext}"
+    filename = f"{uuid.uuid4()}-{file.filename or 'file'}"
     filepath = os.path.join(UPLOAD_DIR, filename)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     contents = await file.read()
