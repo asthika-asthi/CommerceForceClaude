@@ -5,18 +5,9 @@ import { Providers } from "./providers"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { ChatWidget } from "@/components/chat-widget"
-import { NavBar } from "@/components/ui/tubelight-navbar"
+import { BottomNav } from "@/components/layout/bottom-nav"
 import { serverFetch } from "@/lib/api"
 import type { BrandingConfig } from "@/lib/types"
-import Link from "next/link"
-import { Home, Package, ShoppingCart, User } from "lucide-react"
-
-const bottomNavItems = [
-  { name: 'Home',     url: '/',         icon: Home },
-  { name: 'Products', url: '/products', icon: Package },
-  { name: 'Cart',     url: '/cart',     icon: ShoppingCart },
-  { name: 'Account',  url: '/account',  icon: User },
-]
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -46,7 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="flex-1">{children}</main>
           <Footer branding={branding} />
           <ChatWidget />
-          <NavBar items={bottomNavItems} LinkComponent={Link} />
+          <BottomNav />
         </Providers>
       </body>
     </html>
