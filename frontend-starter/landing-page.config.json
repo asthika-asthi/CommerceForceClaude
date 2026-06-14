@@ -1,0 +1,44 @@
+{
+  "sections": [
+    {
+      "__block": "scroll-expand-hero",
+      "title": "Premium Tarpaulins & Covers",
+      "subtitle": "Heavy-duty protection for industrial, agricultural, and commercial use",
+      "mediaSrc": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200",
+      "bgImageSrc": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1800",
+      "mediaType": "image"
+    },
+    {
+      "__block": "featured-products-grid",
+      "title": "Best Sellers",
+      "subtitle": "Our most popular tarpaulins and covers",
+      "maxProducts": 8,
+      "cardStyle": "rounded-shadow"
+    },
+    {
+      "__block": "promotions-banner",
+      "requiredPlugin": "promotions"
+    },
+    {
+      "__block": "announcement-bar",
+      "requiredPlugin": "announcements"
+    },
+    {
+      "__block": "coupon-spotlight",
+      "requiredPlugin": "coupons"
+    },
+    {
+      "__block": "cta-banner",
+      "title": "Need a Custom Size?",
+      "subtitle": "We cut to measure — any shape, any size.",
+      "ctaText": "Get a Quote",
+      "ctaUrl": "/contact"
+    },
+    {
+      "__block": "newsletter-section",
+      "requiredPlugin": "newsletter",
+      "title": "Trade Deals & New Stock Alerts",
+      "subtitle": "Join 5,000+ trade customers getting weekly deals"
+    }
+  ]
+}

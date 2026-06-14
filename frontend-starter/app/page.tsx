@@ -1,23 +1,32 @@
+import { getFilteredSections } from "@/lib/landing-config"
+import type { LandingConfigSection } from "@/lib/landing-config"
 import { serverFetch } from "@/lib/api"
 import type { LandingSection, PaginatedResponse, Product } from "@/lib/types"
 import { LandingSectionRenderer } from "@/components/shop/landing-section"
 import { ProductCard } from "@/components/shop/product-card"
 
 export default async function HomePage() {
-  const [sectionsRes, productsRes] = await Promise.all([
-    serverFetch<LandingSection[]>("/api/landing_page?active_only=true"),
+  let sections: LandingConfigSection[]
+  try {
+    sections = getFilteredSections()
+  } catch {
+    // Config file absent — fall back to DB-driven sections
+    const data = await serverFetch<LandingSection[]>("/api/landing_page?active_only=true")
+    sections = (data ?? []) as unknown as LandingConfigSection[]
+  }
+
+  const [productsRes] = await Promise.all([
     serverFetch<PaginatedResponse<Product>>("/api/products?page_size=8&featured_only=true"),
   ])
 
-  const sections = sectionsRes ?? []
   const products = productsRes?.items ?? []
 
-  const hasFeaturedProducts = sections.some((s) => s.section_type === "products")
+  const hasFeaturedProducts = sections.some((s) => (s as unknown as LandingSection).section_type === "products")
 
   return (
     <div>
-      {sections.map((section) => (
-        <LandingSectionRenderer key={section.id} section={section} />
+      {sections.map((section, i) => (
+        <LandingSectionRenderer key={(section as unknown as LandingSection).id ?? i} section={section as unknown as LandingSection} />
       ))}
 
       {hasFeaturedProducts && products.length > 0 && (

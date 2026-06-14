@@ -171,3 +171,14 @@ export interface ChatMessage {
   role: "user" | "assistant"
   content: string
 }
+
+// Landing page config types
+export interface LandingConfigSection {
+  __block: string
+  requiredPlugin?: string
+  [key: string]: unknown
+}
+
+export interface LandingConfig {
+  sections: LandingConfigSection[]
+}
