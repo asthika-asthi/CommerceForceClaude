@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,8 +37,10 @@ app.add_middleware(
 app.add_exception_handler(AppException, app_exception_handler)
 
 # Serve uploaded files as static assets
-os.makedirs("uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# UPLOAD_DIR is created at module level in app.routers.media; guard here too for safety
+from app.routers.media import UPLOAD_DIR as _UPLOAD_DIR
+_UPLOAD_DIR.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(_UPLOAD_DIR)), name="uploads")
 
 # System routers
 app.include_router(media_router, prefix="/api/media", tags=["Media"])
