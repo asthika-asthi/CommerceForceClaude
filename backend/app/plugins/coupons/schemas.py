@@ -37,7 +37,12 @@ class CouponOut(BaseModel):
     used_count: int
     is_active: bool
     expires_at: Optional[datetime] = None
+    show_on_homepage: bool = False
     model_config = {"from_attributes": True}
+
+
+# Alias used by the /featured endpoint
+CouponRead = CouponOut
 
 
 class CouponValidateOut(BaseModel):

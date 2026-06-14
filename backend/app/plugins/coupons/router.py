@@ -1,9 +1,13 @@
 from decimal import Decimal
+from datetime import datetime, timezone
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import require_admin
-from app.plugins.coupons.schemas import CouponCreate, CouponUpdate, CouponOut, CouponValidateOut
+from app.plugins.coupons.models import Coupon
+from app.plugins.coupons.schemas import CouponCreate, CouponUpdate, CouponOut, CouponRead, CouponValidateOut
 from app.plugins.coupons import service
 
 router = APIRouter()
@@ -18,6 +22,19 @@ async def list_coupons(db: AsyncSession = Depends(get_db)):
              dependencies=[Depends(require_admin())])
 async def create_coupon(data: CouponCreate, db: AsyncSession = Depends(get_db)):
     return await service.create_coupon(data, db)
+
+
+@router.get("/featured", response_model=Optional[CouponRead])
+async def get_featured_coupon(db: AsyncSession = Depends(get_db)):
+    now = datetime.now(timezone.utc)
+    result = await db.execute(
+        select(Coupon)
+        .where(Coupon.show_on_homepage == True)
+        .where(Coupon.is_active == True)
+        .where(or_(Coupon.expires_at == None, Coupon.expires_at > now))
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
 
 
 @router.put("/{coupon_id}", response_model=CouponOut, dependencies=[Depends(require_admin())])
