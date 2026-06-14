@@ -12,10 +12,14 @@ import { MenuBlock } from '@/components/blocks/menu-block'
 import { ShinyButtonBlock } from '@/components/blocks/shiny-button'
 import { GlowingShadow } from '@/components/blocks/glowing-shadow'
 import { TubelightNavbarBlock } from '@/components/blocks/tubelight-navbar-block'
+import { PromotionsBanner } from '@/components/blocks/promotions-banner'
+import { AnnouncementBar } from '@/components/blocks/announcement-bar'
+import { CouponSpotlight } from '@/components/blocks/coupon-spotlight'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: ComponentType<any>
+  requiredPlugin?: string
 }
 
 export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
@@ -32,4 +36,7 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'shiny-button': { component: ShinyButtonBlock },
   'glowing-shadow': { component: GlowingShadow },
   'tubelight-navbar': { component: TubelightNavbarBlock },
+  'promotions-banner': { component: PromotionsBanner },
+  'announcement-bar': { component: AnnouncementBar },
+  'coupon-spotlight': { component: CouponSpotlight },
 }

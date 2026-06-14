@@ -94,6 +94,9 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
       { name: 'Contact',  url: '/contact',  icon: 'FileText' },
     ],
   },
+  'promotions-banner': {},
+  'announcement-bar': {},
+  'coupon-spotlight': {},
   'menu': {
     title: 'Browse',
     layout: 'horizontal',
