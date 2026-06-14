@@ -16,7 +16,12 @@ interface Props {
 }
 
 export async function PromotionsBanner(_props: Props) {
-  const banner = await serverFetch<PromotionBanner | null>("/api/promotions/active")
+  let banner: PromotionBanner | null = null
+  try {
+    banner = await serverFetch<PromotionBanner | null>("/api/promotions/active")
+  } catch {
+    return null
+  }
   if (!banner) return null
 
   return (

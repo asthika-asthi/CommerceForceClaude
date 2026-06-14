@@ -13,7 +13,12 @@ interface Props {
 }
 
 export async function AnnouncementBar(_props: Props) {
-  const announcement = await serverFetch<Announcement | null>("/api/announcements/active")
+  let announcement: Announcement | null = null
+  try {
+    announcement = await serverFetch<Announcement | null>("/api/announcements/active")
+  } catch {
+    return null
+  }
   if (!announcement) return null
 
   return (

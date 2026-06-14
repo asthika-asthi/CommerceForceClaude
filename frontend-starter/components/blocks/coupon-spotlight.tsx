@@ -14,7 +14,12 @@ interface Props {
 }
 
 export async function CouponSpotlight(_props: Props) {
-  const coupon = await serverFetch<FeaturedCoupon | null>("/api/coupons/featured")
+  let coupon: FeaturedCoupon | null = null
+  try {
+    coupon = await serverFetch<FeaturedCoupon | null>("/api/coupons/featured")
+  } catch {
+    return null
+  }
   if (!coupon) return null
 
   const discountLabel =
