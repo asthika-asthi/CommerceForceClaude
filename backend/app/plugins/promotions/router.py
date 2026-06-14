@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, or_
@@ -36,7 +36,7 @@ class PromotionBannerUpdate(PydanticBase):
 
 
 class PromotionBannerRead(PydanticBase):
-    id: int
+    id: str
     headline: str
     body: str
     cta_text: str
@@ -68,6 +68,23 @@ async def create_promotion(data: PromotionBannerCreate, db: AsyncSession = Depen
     return banner
 
 
+# ---------------------------------------------------------------------------
+# Public storefront endpoint (no auth)
+# ---------------------------------------------------------------------------
+
+@router.get("/active", response_model=Optional[PromotionBannerRead])
+async def get_active_promotion(db: AsyncSession = Depends(get_db)):
+    now = datetime.now(timezone.utc)
+    result = await db.execute(
+        select(PromotionBanner)
+        .where(PromotionBanner.is_active == True)
+        .where(or_(PromotionBanner.expires_at == None, PromotionBanner.expires_at > now))
+        .order_by(PromotionBanner.id.desc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
 @router.put("/{id}", response_model=PromotionBannerRead, dependencies=[Depends(require_admin())])
 async def update_promotion(id: int, data: PromotionBannerUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PromotionBanner).where(PromotionBanner.id == id))
@@ -90,20 +107,3 @@ async def delete_promotion(id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promotion not found")
     await db.delete(banner)
     await db.commit()
-
-
-# ---------------------------------------------------------------------------
-# Public storefront endpoint (no auth)
-# ---------------------------------------------------------------------------
-
-@router.get("/active", response_model=Optional[PromotionBannerRead])
-async def get_active_promotion(db: AsyncSession = Depends(get_db)):
-    now = datetime.utcnow()
-    result = await db.execute(
-        select(PromotionBanner)
-        .where(PromotionBanner.is_active == True)
-        .where(or_(PromotionBanner.expires_at == None, PromotionBanner.expires_at > now))
-        .order_by(PromotionBanner.id.desc())
-        .limit(1)
-    )
-    return result.scalar_one_or_none()
