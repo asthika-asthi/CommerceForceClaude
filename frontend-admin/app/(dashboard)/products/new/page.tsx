@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type { Category } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
+import { ImageUpload } from "@/components/ui/image-upload"
 
 export default function NewProductPage() {
   const router = useRouter()
@@ -12,7 +13,7 @@ export default function NewProductPage() {
   const [form, setForm] = useState({
     name: "", description: "", sku: "",
     price: "", sale_price: "", stock_quantity: "0",
-    category_id: "", is_active: true,
+    category_id: "", image_url: "", is_active: true,
   })
   const [error, setError] = useState("")
 
@@ -56,6 +57,11 @@ export default function NewProductPage() {
         <Field label="Description">
           <textarea value={form.description} onChange={(e) => set("description", e.target.value)}
             className={`${input} h-24 resize-none`} placeholder="Optional description" />
+        </Field>
+        <Field label="Image URL">
+          <input value={form.image_url} onChange={(e) => set("image_url", e.target.value)}
+            className={input} placeholder="https://example.com/image.jpg" />
+          <ImageUpload value={form.image_url} onUpload={(url) => set("image_url", url)} />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="SKU">

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type { Product, Category } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
+import { ImageUpload } from "@/components/ui/image-upload"
 
 export default async function EditProductPage(props: PageProps<"/products/[id]">) {
   const { id } = await props.params
@@ -29,7 +30,7 @@ function EditProduct({ id }: { id: string }) {
   const [form, setForm] = useState({
     name: "", description: "", sku: "",
     price: "", sale_price: "", stock_quantity: "0",
-    category_id: "", is_active: true,
+    category_id: "", image_url: "", is_active: true,
   })
   const [error, setError] = useState("")
 
@@ -43,6 +44,7 @@ function EditProduct({ id }: { id: string }) {
         sale_price: product.sale_price ?? "",
         stock_quantity: String(product.stock_quantity),
         category_id: product.category_id ?? "",
+        image_url: product.images?.[0]?.url ?? "",
         is_active: product.is_active,
       })
     }
@@ -86,6 +88,11 @@ function EditProduct({ id }: { id: string }) {
         <Field label="Description">
           <textarea value={form.description} onChange={(e) => set("description", e.target.value)}
             className={`${input} h-24 resize-none`} />
+        </Field>
+        <Field label="Image URL">
+          <input value={form.image_url} onChange={(e) => set("image_url", e.target.value)}
+            className={input} placeholder="https://example.com/image.jpg" />
+          <ImageUpload value={form.image_url} onUpload={(url) => set("image_url", url)} />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="SKU">
