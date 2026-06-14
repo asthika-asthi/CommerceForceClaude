@@ -1,9 +1,12 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.plugin_registry import register_plugins, get_manifests
 from app.shared.exceptions import AppException, app_exception_handler
+from app.routers.media import router as media_router
 
 
 @asynccontextmanager
@@ -32,6 +35,13 @@ app.add_middleware(
 )
 
 app.add_exception_handler(AppException, app_exception_handler)
+
+# Serve uploaded files as static assets
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+# System routers
+app.include_router(media_router, prefix="/api/media", tags=["Media"])
 
 # Register plugins at module load time so routes are in the routing table
 # before any request (including test clients) is processed.
