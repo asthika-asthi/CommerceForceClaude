@@ -86,7 +86,7 @@ async def get_active_promotion(db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/{id}", response_model=PromotionBannerRead, dependencies=[Depends(require_admin())])
-async def update_promotion(id: int, data: PromotionBannerUpdate, db: AsyncSession = Depends(get_db)):
+async def update_promotion(id: str, data: PromotionBannerUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PromotionBanner).where(PromotionBanner.id == id))
     banner = result.scalar_one_or_none()
     if banner is None:
@@ -100,7 +100,7 @@ async def update_promotion(id: int, data: PromotionBannerUpdate, db: AsyncSessio
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT,
                dependencies=[Depends(require_admin())])
-async def delete_promotion(id: int, db: AsyncSession = Depends(get_db)):
+async def delete_promotion(id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PromotionBanner).where(PromotionBanner.id == id))
     banner = result.scalar_one_or_none()
     if banner is None:
