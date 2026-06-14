@@ -42,6 +42,12 @@ export default function CouponsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["coupons"] }),
   })
 
+  const toggleHomepage = useMutation({
+    mutationFn: ({ id, value }: { id: string; value: boolean }) =>
+      api.put(`/api/coupons/${id}`, { show_on_homepage: value }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["coupons"] }),
+  })
+
   return (
     <div>
       <PageHeader
@@ -99,14 +105,14 @@ export default function CouponsPage() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                {["Code", "Name", "Type", "Value", "Uses", "Status", "Expires", ""].map((h) => (
+                {["Code", "Name", "Type", "Value", "Uses", "Status", "Expires", "Homepage", ""].map((h) => (
                   <th key={h} className="text-left px-4 py-3 font-medium text-slate-600">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {coupons.length === 0 && (
-                <tr><td colSpan={8} className="text-center py-10 text-slate-400">No coupons</td></tr>
+                <tr><td colSpan={9} className="text-center py-10 text-slate-400">No coupons</td></tr>
               )}
               {coupons.map((c) => (
                 <tr key={c.id} className="hover:bg-slate-50">
@@ -122,6 +128,19 @@ export default function CouponsPage() {
                   <td className="px-4 py-2.5"><StatusBadge value={c.is_active ? "active" : "inactive"} /></td>
                   <td className="px-4 py-2.5 text-slate-500 text-xs">
                     {c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <button
+                        title={c.show_on_homepage ? "Shown on homepage — click to hide" : "Click to show on homepage (only one coupon can be shown at a time)"}
+                        onClick={() => toggleHomepage.mutate({ id: c.id, value: !c.show_on_homepage })}
+                        disabled={toggleHomepage.isPending}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${c.show_on_homepage ? "bg-blue-600" : "bg-slate-200"}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ${c.show_on_homepage ? "translate-x-4" : "translate-x-0"}`} />
+                      </button>
+                      {c.show_on_homepage && <span className="text-xs text-blue-600 font-medium">On</span>}
+                    </div>
                   </td>
                   <td className="px-4 py-2.5">
                     {c.is_active && (

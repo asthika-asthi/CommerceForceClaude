@@ -126,6 +126,7 @@ export interface Coupon {
   used_count: number
   is_active: boolean
   expires_at?: string
+  show_on_homepage: boolean
 }
 
 // ── Loyalty ───────────────────────────────────────────────────────────────────
