@@ -1,6 +1,7 @@
 import type { LandingSection } from "@/lib/types"
 import Link from "next/link"
 import { BLOCK_REGISTRY } from '@/lib/block-registry'
+import { GlowButton } from '@/components/ui/shiny-button'
 
 export function LandingSectionRenderer({ section }: { section: LandingSection }) {
   const style = section.background_color ? { backgroundColor: section.background_color } : undefined
@@ -32,12 +33,7 @@ export function LandingSectionRenderer({ section }: { section: LandingSection })
           {section.title && <h1 className="text-4xl md:text-6xl font-bold mb-4">{section.title}</h1>}
           {section.subtitle && <p className="text-xl text-slate-300 mb-8">{section.subtitle}</p>}
           {section.cta_url && section.cta_text && (
-            <Link
-              href={section.cta_url}
-              className="inline-block bg-brand hover:bg-brand-hover text-white font-semibold px-8 py-3 rounded-xl text-lg transition-colors"
-            >
-              {section.cta_text}
-            </Link>
+            <GlowButton href={section.cta_url}>{section.cta_text}</GlowButton>
           )}
         </div>
       </section>

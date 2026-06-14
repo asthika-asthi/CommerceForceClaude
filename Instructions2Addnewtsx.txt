@@ -1,0 +1,228 @@
+HOW TO ADD A NEW BLOCK COMPONENT
+=================================
+Project: CommerceForce / frontend-starter
+Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4
+
+An engineer adding a new block delivers UP TO THREE files:
+  1. componentname.tsx         — required
+  2. componentname.css         — only if the component needs global CSS classes or @property rules
+  3. componentname.defaults.json — recommended (documents props and defaults clearly)
+
+Then make FOUR small edits in the codebase (Steps 3–6).
+
+IMPORTANT — TWO LOCATIONS FOR COMPONENTS:
+  components/ui/      — reusable UI primitives (third-party / design-system components
+                        that other parts of the app may also import directly)
+  components/blocks/  — block system wrappers (what the registry uses)
+
+  If the component belongs in components/ui/ (e.g. it came from shadcn, uses cn(),
+  or is intended as a shared primitive), ALSO create a thin block wrapper in
+  components/blocks/ that imports from it. The registry always points to the wrapper.
+  See the tubelight-navbar example below.
+
+---
+
+FILE 1 — THE TSX FILE  (required)
+----------------------------------
+Rules the engineer must follow:
+
+  a) First line must be:   'use client'
+     (add it always — required for any hook: useState, useEffect, useId, etc.
+      Safe to include even for pure CSS components)
+
+  b) Use a NAMED export, not default:
+     CORRECT:   export function MyBlock(...) { ... }
+     WRONG:     export default function MyBlock(...) { ... }
+
+  c) Define and export a TypeScript props interface:
+     export interface MyBlockProps {
+       title?: string
+       children?: ReactNode
+     }
+
+  d) All props should have sensible defaults via destructuring:
+     export function MyBlock({ title = 'Hello' }: MyBlockProps) { ...
+     Exception: if a prop is truly required (like children), no default is needed
+     in the component — but a fallback string must be provided in the .defaults.json
+     so the admin form can pre-fill something.
+
+  e) File naming: use kebab-case.   Example: glowing-shadow.tsx
+     Drop it into:  frontend-starter/components/blocks/
+
+  f) Do NOT provide a Tailwind JS config snippet (extend.keyframes, etc.).
+     This project uses Tailwind v4 — JS config is not used at all.
+     For custom animations, see FILE 2 below.
+
+  g) If the component uses cn() from "@/lib/utils" — that file exists at
+     frontend-starter/lib/utils.ts. Do not recreate it; just import from it.
+
+  h) If the component uses shadcn CSS variable names (bg-background, text-primary,
+     text-foreground, bg-muted, border-border, bg-primary/5, etc.) — these are
+     already aliased in globals.css and will resolve to our brand tokens.
+     Do NOT change the component to use our brand class names.
+
+  i) ICON PROPS — if a prop accepts a LucideIcon component (e.g. icon: LucideIcon),
+     it CANNOT be serialized to JSON for the block system.
+     Solution: create a block wrapper (in components/blocks/) that accepts icon
+     names as strings, maps them via a lookup table, then passes the component to
+     the underlying UI component. See tubelight-navbar-block.tsx as the pattern:
+
+       const ICON_MAP: Record<string, LucideIcon> = { Home, User, ShoppingCart, ... }
+       // In the block:
+       icon: ICON_MAP[item.icon] ?? Home
+
+---
+
+FILE 2 — THE CSS FILE  (only if needed)
+-----------------------------------------
+Provide a companion CSS file when the component needs ANY of:
+  - @property (CSS Houdini / custom property registration)
+  - @keyframes that are referenced by class names (not inline style)
+  - CSS classes used in JSX (e.g. className="glow-container")
+
+Name it the same as the TSX:   glowing-shadow.css
+Drop it in the SAME folder:    frontend-starter/components/blocks/
+
+Contents: plain CSS — @property rules, class definitions, @keyframes.
+No Tailwind directives, no JS.
+
+If the component only needs simple @keyframes (no @property, no class names),
+you may instead inline a <style> tag inside the component JSX — that also works.
+
+DO NOT provide a .ts Tailwind config file. That format is not used in v4.
+
+---
+
+FILE 3 — THE DEFAULTS JSON  (recommended)
+------------------------------------------
+A <componentname>.defaults.json file that documents the props and provides
+the default values that pre-fill the admin form.
+
+Minimum required shape:
+
+  {
+    "component": "MyBlock",
+    "props": {
+      "title": { "default": "Your Headline Here" },
+      "subtitle": { "default": "Supporting text" }
+    }
+  }
+
+Full optional shape (used by glowing-shadow as reference):
+
+  {
+    "component": "GlowingShadow",
+    "import": "@/components/ui/glowing-shadow",
+    "props": {
+      "children": {
+        "type": "ReactNode",
+        "required": true,
+        "default": "Glowing Shadow",
+        "description": "Content rendered inside the card."
+      }
+    },
+    "requirements": {
+      "browserSupport": "Requires @property (Houdini). Works in Chrome/Edge/Safari 16.4+. Firefox shows static version.",
+      "cssImport": "glowing-shadow.css must be @imported in globals.css"
+    },
+    "usageExample": "..."
+  }
+
+Note: even if the component marks a prop as `required: true` with `default: null`,
+you must still provide a non-null string default here so the admin content JSON
+field is never empty.
+
+---
+
+STEP 3 — REGISTER THE EXPORT (1 line)
+--------------------------------------
+File: frontend-starter/components/blocks/index.ts
+
+Add one line at the bottom:
+  export { MyBlock } from './my-block'
+
+---
+
+STEP 4 — ADD TO BLOCK REGISTRY (2 lines)
+-----------------------------------------
+File: frontend-starter/lib/block-registry.ts
+
+Add one import near the top:
+  import { MyBlock } from '@/components/blocks/my-block'
+
+Add one entry inside BLOCK_REGISTRY:
+  'my-block': { component: MyBlock },
+
+The key string ('my-block') is what the superadmin picks in the admin dropdown
+and what goes in the __block field of the database JSON.
+
+---
+
+STEP 5 — ADD DEFAULTS (same edit in TWO files)
+-----------------------------------------------
+Both files must stay identical. Open each and add the defaults object:
+
+  File A: frontend-starter/lib/block-defaults.ts
+  File B: frontend-admin/lib/block-defaults.ts
+
+Use the values from the .defaults.json file (or ask the engineer).
+Example:
+
+  'my-block': {
+    title: 'Your Headline Here',
+    subtitle: 'Supporting text',
+  },
+
+If the component has a required `children` prop with no default, use a
+placeholder string:
+  'glowing-shadow': {
+    children: 'Glowing Shadow',
+  },
+
+---
+
+STEP 6 — IMPORT CSS (only if a .css file was provided)
+-------------------------------------------------------
+File: frontend-starter/app/globals.css
+
+Add one @import line after the existing imports:
+  @import '../components/blocks/my-block.css';
+
+Order matters for @property rules — import BEFORE @theme inline.
+The existing file already has the correct structure; just append to the imports block.
+
+---
+
+CHECKLIST SUMMARY
+-----------------
+  [ ] TSX file in components/blocks/       (has 'use client', named export, typed props)
+  [ ] (if CSS file) in components/blocks/  (plain CSS, no Tailwind JS config)
+  [ ] (if CSS file) @import added to app/globals.css
+  [ ] 1 line added to components/blocks/index.ts
+  [ ] 2 lines added to lib/block-registry.ts  (import + registry entry)
+  [ ] Defaults added to frontend-starter/lib/block-defaults.ts
+  [ ] Same defaults added to frontend-admin/lib/block-defaults.ts
+
+Total: 1–2 new files + edits across 4–5 existing files, each edit is 1–3 lines.
+
+---
+
+BROWSER SUPPORT NOTE
+--------------------
+Components using @property (CSS Houdini) — like glowing-shadow — require:
+  Chrome 85+, Edge 85+, Safari 16.4+
+  Firefox: animations are static (component renders but does not animate)
+The component will NOT break in Firefox — it just loses the animation effect.
+
+---
+
+TO TEST
+-------
+1. Run:  cd frontend-starter && npm run build
+   Should complete with zero TypeScript errors.
+
+2. In the admin panel (localhost:3001):
+   Landing Page > Add Section > Section Type: block > Block Component: my-block
+   The defaults should auto-fill the Content JSON field.
+
+3. Visit localhost:3000 and refresh — the block should render.

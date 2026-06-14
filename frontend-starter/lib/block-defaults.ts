@@ -41,4 +41,74 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
     ctaUrl: '/products',
     backgroundImage: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&auto=format&fit=crop',
   },
+  'button-group': {
+    alignment: 'center',
+    buttons: [
+      { label: 'Shop Now', url: '/products', variant: 'primary' },
+      { label: 'Learn More', url: '/about', variant: 'outline' },
+    ],
+  },
+  'navbar': {
+    logoText: 'My Store',
+    logoUrl: '/',
+    links: [
+      { label: 'Home', url: '/' },
+      { label: 'Products', url: '/products' },
+      { label: 'About', url: '/about' },
+    ],
+    ctaLabel: 'Shop Now',
+    ctaUrl: '/products',
+  },
+  'footer': {
+    logoText: 'My Store',
+    tagline: 'Quality products delivered to your door.',
+    columns: [
+      {
+        heading: 'Shop',
+        links: [
+          { label: 'All Products', url: '/products' },
+          { label: 'New Arrivals', url: '/products?sort=newest' },
+        ],
+      },
+      {
+        heading: 'Help',
+        links: [
+          { label: 'Contact Us', url: '/contact' },
+          { label: 'FAQ', url: '/faq' },
+        ],
+      },
+    ],
+    copyrightText: '© 2026 My Store. All rights reserved.',
+  },
+  'shiny-button': {
+    children: 'Register',
+  },
+  'glowing-shadow': {
+    children: 'Glowing Shadow',
+  },
+  'tubelight-navbar': {
+    items: [
+      { name: 'Home',     url: '/',         icon: 'Home' },
+      { name: 'Products', url: '/products', icon: 'ShoppingCart' },
+      { name: 'About',    url: '/about',    icon: 'User' },
+      { name: 'Contact',  url: '/contact',  icon: 'FileText' },
+    ],
+  },
+  'menu': {
+    title: 'Browse',
+    layout: 'horizontal',
+    items: [
+      { label: 'All Products', url: '/products' },
+      { label: 'New Arrivals', url: '/products?sort=newest' },
+      { label: 'Sale', url: '/products?sale=true' },
+      {
+        label: 'Categories',
+        url: '/categories',
+        children: [
+          { label: 'Category A', url: '/products?category=a' },
+          { label: 'Category B', url: '/products?category=b' },
+        ],
+      },
+    ],
+  },
 }

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import '../themes/default/globals.css';
+@import '../components/blocks/glowing-shadow.css';
 
 @theme inline {
   --color-brand: var(--brand);
@@ -10,12 +11,32 @@
   --color-bg: var(--bg);
   --color-fg: var(--fg);
   --font-sans: var(--font-poppins), system-ui, sans-serif;
+
+  /* shadcn-compatible aliases — lets third-party components using
+     bg-background / text-primary / border-border etc. work out of the box */
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-primary: var(--brand-dark);
+  --color-muted: var(--card-bg);
+  --color-border: var(--border);
 }
 
 body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
+  padding-bottom: 5rem; /* space for fixed bottom TubelightNavbar */
 }
 
 * { box-sizing: border-box; }
+
+@keyframes speen {
+  0%   { transform: rotate(10deg); }
+  50%  { transform: rotate(190deg); }
+  100% { transform: rotate(370deg); }
+}
+
+@keyframes woah {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(0.75); }
+}

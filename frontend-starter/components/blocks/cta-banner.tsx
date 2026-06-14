@@ -1,8 +1,7 @@
 'use client'
 import { useRef } from 'react'
-import Link from 'next/link'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import { GlowButton } from '@/components/ui/shiny-button'
 
 interface CTABannerProps {
   title: string
@@ -80,16 +79,7 @@ export function CTABanner({
         )}
 
         {/* CTA button */}
-        <Link
-          href={ctaUrl}
-          className="group inline-flex items-center gap-2.5 px-9 py-4 rounded-xl bg-white text-brand-dark font-bold text-base hover:bg-brand hover:text-white transition-all duration-200 shadow-lg hover:shadow-brand/30"
-        >
-          {ctaText}
-          <ArrowRight
-            size={18}
-            className="transition-transform duration-200 group-hover:translate-x-1"
-          />
-        </Link>
+        <GlowButton href={ctaUrl}>{ctaText}</GlowButton>
       </motion.div>
 
       {/* Bottom decorative gradient bleed */}

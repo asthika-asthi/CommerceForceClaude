@@ -5,6 +5,13 @@ import { TestimonialsCarousel } from '@/components/blocks/testimonials-carousel'
 import { NewsletterSection } from '@/components/blocks/newsletter-section'
 import { LoyaltyWidgetSection } from '@/components/blocks/loyalty-widget-section'
 import { CTABanner } from '@/components/blocks/cta-banner'
+import { ButtonGroup } from '@/components/blocks/button-group'
+import { NavbarBlock } from '@/components/blocks/navbar-block'
+import { FooterBlock } from '@/components/blocks/footer-block'
+import { MenuBlock } from '@/components/blocks/menu-block'
+import { ShinyButtonBlock } from '@/components/blocks/shiny-button'
+import { GlowingShadow } from '@/components/blocks/glowing-shadow'
+import { TubelightNavbarBlock } from '@/components/blocks/tubelight-navbar-block'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,4 +25,11 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'newsletter-section': { component: NewsletterSection },
   'loyalty-widget': { component: LoyaltyWidgetSection },
   'cta-banner': { component: CTABanner },
+  'button-group': { component: ButtonGroup },
+  'navbar': { component: NavbarBlock },
+  'footer': { component: FooterBlock },
+  'menu': { component: MenuBlock },
+  'shiny-button': { component: ShinyButtonBlock },
+  'glowing-shadow': { component: GlowingShadow },
+  'tubelight-navbar': { component: TubelightNavbarBlock },
 }
