@@ -1,5 +1,4 @@
 import uuid
-import os
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Request, HTTPException, Depends
 from app.core.dependencies import require_admin
