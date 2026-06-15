@@ -1,67 +1,1320 @@
 {
   "store": {
-    "name": "Tarpaulins To Go",
-    "tagline": "The UK's trusted tarpaulin specialists",
+    "name": "Tri Star UK Ltd",
+    "tagline": "Quality protective covers at trade prices",
     "logo_url": "/images/logo.png",
     "favicon_url": "/images/favicon.ico",
-    "contact_email": "info@tarpaulinstogo.co.uk"
+    "contact_email": "sales@tristarltd.co.uk",
+    "contact_phone_primary": "01438 880 178",
+    "contact_phone_secondary": "01438 221 009",
+    "contact_fax": "01438 880 862",
+    "address": {
+      "line1": "Redwings Farm",
+      "line2": "Lanterns Lane",
+      "line3": "Aston End",
+      "city": "Stevenage",
+      "county": "Hertfordshire",
+      "postcode": "SG2 7HP",
+      "country": "UK",
+      "display_short": "Redwings Farm, Stevenage, Hertfordshire SG2 7HP",
+      "display_full": "Redwings Farm, Lanterns Lane, Aston End, Stevenage, Hertfordshire SG2 7HP"
+    },
+    "established": 1995,
+    "company_type": "Family-owned importer and distributor",
+    "registration": "Registered in England & Wales",
+    "vat_registered": true,
+    "logo_monogram": "TS",
+    "logo_subtitle": "Est. 1995 · Stevenage, Hertfordshire"
   },
+
   "brand": {
-    "primary": "#B6C1A1",
-    "primaryHover": "#A3AE8E",
-    "dark": "#0D3328",
-    "secondary": "#555555",
-    "background": "#ffffff",
-    "text": "#000000",
-    "font": "Poppins"
+    "primary": "#C8102E",
+    "primaryHover": "#A50D24",
+    "primaryDarkHover": "#8B0019",
+    "dark": "#1B2A4A",
+    "darkHover": "#0F1E38",
+    "secondary": "#5C5C5C",
+    "gold": "#D4A017",
+    "goldHover": "#f0c040",
+    "background": "#F5F5F3",
+    "surface": "#FFFFFF",
+    "text": "#1a1a1a",
+    "textNavy": "#1B2A4A",
+    "textMuted": "#5C5C5C",
+    "textPlaceholder": "#9a9a9a",
+    "textStrikethrough": "#9a9a9a",
+    "textLightOnDark": "#CBD8EE",
+    "textMidOnDark": "#A8BDD8",
+    "textFooterBody": "#7A92B0",
+    "textFooterBottom": "#4A6280",
+    "border": "#E0DED8",
+    "borderSubtle": "#F0EEEA",
+    "lightRedBg": "#FDF0F2",
+    "lightRedBorder": "#FBBFC9",
+    "footerBg": "#0F1E38",
+    "footerDivider": "#1B2A4A",
+    "footerBorderSubtle": "#253A58",
+    "greenTrust": "#4CAF50",
+    "greenStock": "#059669",
+    "greenStockBg": "#D1FAE5",
+    "greenTrustpilot": "#00B67A",
+    "amberLimited": "#D97706",
+    "amberLimitedBg": "#FEF3C7",
+    "heroEmColor": "#ffb3bf",
+    "promoLinkColor": "#ffb3bf",
+    "fontStack": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    "fontSizeBase": "16px",
+    "fontColorBase": "#1a1a1a",
+    "lineHeightBody": "1.7"
   },
+
+  "theme": {
+    "typography": {
+      "topbar": { "fontSize": "12px" },
+      "logoName": { "fontSize": "18px", "fontWeight": "700", "color": "#1B2A4A" },
+      "logoSub": { "fontSize": "10px", "color": "#5C5C5C", "letterSpacing": "0.5px", "textTransform": "uppercase" },
+      "searchInput": { "fontSize": "14px" },
+      "headerCta": { "fontSize": "13px", "fontWeight": "600" },
+      "navLink": { "fontSize": "13px", "fontWeight": "500" },
+      "navSpecial": { "fontWeight": "600", "color": "#D4A017" },
+      "promoBadge": { "fontSize": "11px", "fontWeight": "700", "letterSpacing": "0.5px", "textTransform": "uppercase" },
+      "promoText": { "fontSize": "14px", "fontWeight": "500" },
+      "promoLink": { "fontSize": "14px", "fontWeight": "600" },
+      "heroEyebrow": { "fontSize": "11px", "letterSpacing": "0.8px", "textTransform": "uppercase" },
+      "heroH1": { "fontSize": "42px", "fontWeight": "700", "lineHeight": "1.18", "color": "#FFFFFF" },
+      "heroEmphasis": { "color": "#ffb3bf", "fontStyle": "normal" },
+      "heroSubheading": { "fontSize": "16px", "lineHeight": "1.65", "color": "#A8BDD8" },
+      "heroBtn": { "fontSize": "15px", "fontWeightPrimary": "600", "fontWeightSecondary": "500" },
+      "heroTrust": { "fontSize": "13px", "color": "#A8BDD8" },
+      "heroCardTitle": { "fontSize": "13px", "fontWeight": "700", "letterSpacing": "0.6px", "textTransform": "uppercase" },
+      "heroProdName": { "fontSize": "14px", "fontWeight": "600", "color": "#1B2A4A" },
+      "heroProdMeta": { "fontSize": "12px", "color": "#5C5C5C" },
+      "heroProdTag": { "fontSize": "11px", "fontWeight": "600", "color": "#C8102E", "bg": "#FDF0F2" },
+      "trustStrong": { "fontSize": "13px", "fontWeight": "600", "color": "#1B2A4A" },
+      "trustSub": { "fontSize": "11px", "color": "#5C5C5C" },
+      "sectionH2": { "fontSize": "26px", "fontWeight": "700", "color": "#1B2A4A" },
+      "sectionH2Highlight": { "color": "#C8102E" },
+      "seeAll": { "fontSize": "13px", "fontWeight": "600", "color": "#C8102E" },
+      "catName": { "fontSize": "16px", "fontWeight": "700", "color": "#1B2A4A" },
+      "catDesc": { "fontSize": "12px", "color": "#5C5C5C", "lineHeight": "1.55" },
+      "catCta": { "fontSize": "12px", "fontWeight": "600", "color": "#C8102E" },
+      "catCount": { "fontSize": "10px", "fontWeight": "600", "color": "#5C5C5C" },
+      "prodCategory": { "fontSize": "10px", "fontWeight": "700", "color": "#C8102E", "letterSpacing": "0.6px", "textTransform": "uppercase" },
+      "prodName": { "fontSize": "14px", "fontWeight": "600", "color": "#1B2A4A", "lineHeight": "1.35" },
+      "prodDesc": { "fontSize": "12px", "color": "#5C5C5C", "lineHeight": "1.5" },
+      "prodPrice": { "fontSize": "17px", "fontWeight": "700", "color": "#1B2A4A" },
+      "prodPriceOld": { "fontSize": "12px", "color": "#9a9a9a", "textDecoration": "line-through" },
+      "prodTradeLogin": { "fontSize": "11px", "fontWeight": "600", "color": "#C8102E" },
+      "prodVariants": { "fontSize": "11px", "color": "#5C5C5C" },
+      "addBtn": { "fontSize": "12px", "fontWeight": "600" },
+      "splitEyebrow": { "fontSize": "11px", "fontWeight": "700", "letterSpacing": "0.8px", "textTransform": "uppercase", "color": "#FFFFFF", "opacity": "0.75" },
+      "splitTitle": { "fontSize": "26px", "fontWeight": "700", "color": "#FFFFFF", "lineHeight": "1.25" },
+      "splitBody": { "fontSize": "14px", "color": "rgba(255,255,255,0.75)", "lineHeight": "1.6" },
+      "splitFeat": { "fontSize": "12px", "fontWeight": "500", "color": "rgba(255,255,255,0.9)" },
+      "splitBtn": { "fontSize": "14px", "fontWeight": "700" },
+      "statNum": { "fontSize": "40px", "fontWeight": "700", "color": "#FFFFFF", "lineHeight": "1" },
+      "statNumHighlight": { "color": "#C8102E" },
+      "statLabel": { "fontSize": "13px", "color": "#A8BDD8", "marginTop": "8px" },
+      "stepNum": { "fontSize": "22px", "fontWeight": "700", "color": "#C8102E" },
+      "stepTitle": { "fontSize": "15px", "fontWeight": "700", "color": "#1B2A4A" },
+      "stepDesc": { "fontSize": "13px", "color": "#5C5C5C", "lineHeight": "1.55" },
+      "tableHeader": { "fontSize": "12px", "fontWeight": "600", "color": "#CBD8EE", "letterSpacing": "0.4px", "textTransform": "uppercase" },
+      "tableCell": { "fontSize": "13px", "color": "#1a1a1a" },
+      "tableTag": { "fontSize": "10px", "fontWeight": "700" },
+      "reviewStars": { "fontSize": "16px", "color": "#D4A017", "letterSpacing": "2px" },
+      "reviewQuote": { "fontSize": "14px", "color": "#3a3a3a", "lineHeight": "1.65", "fontStyle": "italic" },
+      "reviewName": { "fontSize": "13px", "fontWeight": "700", "color": "#1B2A4A" },
+      "reviewRole": { "fontSize": "11px", "color": "#5C5C5C" },
+      "tpScore": { "fontSize": "28px", "fontWeight": "700", "color": "#1B2A4A" },
+      "newsletterH2": { "fontSize": "28px", "fontWeight": "700", "color": "#FFFFFF" },
+      "newsletterBody": { "fontSize": "15px", "color": "#A8BDD8" },
+      "newsletterInput": { "fontSize": "14px" },
+      "newsletterBtn": { "fontSize": "14px", "fontWeight": "700" },
+      "newsletterNote": { "fontSize": "11px", "color": "rgba(255,255,255,0.4)" },
+      "footerColH4": { "fontSize": "12px", "fontWeight": "700", "color": "#CBD8EE", "letterSpacing": "0.8px", "textTransform": "uppercase" },
+      "footerColLink": { "fontSize": "13px", "color": "#7A92B0" },
+      "footerBrandP": { "fontSize": "13px", "color": "#7A92B0", "lineHeight": "1.7" },
+      "footerContact": { "fontSize": "13px", "color": "#7A92B0" },
+      "footerCopyright": { "fontSize": "12px", "color": "#4A6280" },
+      "cert": { "fontSize": "10px", "fontWeight": "600", "color": "#7A92B0" },
+      "payIcon": { "fontSize": "11px", "fontWeight": "600", "color": "#A8BDD8" }
+    },
+
+    "spacing": {
+      "containerMaxWidth": "1280px",
+      "containerPaddingX": "40px",
+      "sectionPaddingY": "56px",
+      "sectionSmPaddingY": "40px",
+      "headerHeight": "72px",
+      "topbarPadding": "7px 40px",
+      "navLinkPadding": "14px 18px",
+      "promoPadding": "14px 40px",
+      "heroPadding": "60px 40px",
+      "heroGridGap": "60px",
+      "heroCardPadding": "28px",
+      "trustStripPadding": "18px 40px",
+      "catGridGap": "16px",
+      "catImgHeight": "160px",
+      "catBodyPadding": "16px",
+      "prodGridGap": "16px",
+      "prodImgHeight": "180px",
+      "prodBodyPadding": "14px 16px",
+      "prodFooterPadding": "12px 16px",
+      "splitSectionPadding": "0 40px 56px",
+      "splitCardPadding": "40px",
+      "splitGridGap": "20px",
+      "statsBandPadding": "48px 40px",
+      "statsGridGap": "20px",
+      "reviewCardPadding": "24px",
+      "reviewGridGap": "16px",
+      "newsletterSectionPadding": "60px 40px",
+      "newsletterMaxWidth": "600px",
+      "footerPadding": "60px 40px 0",
+      "footerTopGridGap": "40px",
+      "footerTopMarginBottom": "48px",
+      "footerBottomPadding": "20px 0 24px",
+      "sectionHdMarginBottom": "32px"
+    },
+
+    "layout": {
+      "heroGridCols": "1fr 420px",
+      "heroSidebarWidth": "420px",
+      "catGridCols": "repeat(4, 1fr)",
+      "prodGridCols": "repeat(4, 1fr)",
+      "splitGridCols": "1fr 1fr",
+      "statsGridCols": "repeat(4, 1fr)",
+      "stepsGridCols": "repeat(4, 1fr)",
+      "reviewGridCols": "repeat(3, 1fr)",
+      "footerGridCols": "2.5fr 1fr 1fr 1fr 1.5fr",
+      "scrollBehavior": "smooth",
+      "boxSizing": "border-box",
+      "bodyBg": "#F5F5F3"
+    },
+
+    "borders": {
+      "radiusSm": "4px",
+      "radiusMd": "8px",
+      "radiusLg": "12px",
+      "radiusXl": "16px",
+      "radiusPill": "100px",
+      "radiusCircle": "50%",
+      "defaultBorder": "1px solid #E0DED8",
+      "headerBorderBottom": "1px solid #E0DED8",
+      "navBorderBottom": "3px solid #C8102E",
+      "navLinkActiveBorder": "3px solid #FFFFFF",
+      "stepNumBorder": "3px solid #C8102E",
+      "stepConnectorHeight": "2px",
+      "stepConnectorLeft": "12%",
+      "stepConnectorRight": "12%",
+      "stepConnectorTop": "32px",
+      "wishlistBorder": "1px solid #E0DED8"
+    },
+
+    "shadows": {
+      "heroCard": "0 8px 40px rgba(0,0,0,0.25)",
+      "productCardHover": "0 4px 20px rgba(200,16,46,0.10)",
+      "catCardHover": "0 4px 20px rgba(200,16,46,0.12)"
+    },
+
+    "transitions": {
+      "default": "0.15s",
+      "cardHover": "0.2s",
+      "productCardHoverTransform": "translateY(-2px)",
+      "catCardHoverTransform": "translateY(-2px)"
+    },
+
+    "gradients": {
+      "heroBgPattern": "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+      "promoBar": "linear-gradient(90deg, #C8102E 0%, #8B0019 100%)",
+      "newsletter": "linear-gradient(135deg, #1B2A4A 0%, #0F1E38 100%)",
+      "stepConnector": "linear-gradient(90deg, #C8102E, #1B2A4A)",
+      "catTarp": "linear-gradient(135deg, #E8F4FD, #C8E6FA)",
+      "catDust": "linear-gradient(135deg, #FFF8E1, #FFF0C0)",
+      "catSack": "linear-gradient(135deg, #F3E5F5, #E1BEE7)",
+      "catBrush": "linear-gradient(135deg, #E8F5E9, #C8E6C9)",
+      "prodImgBlue": "linear-gradient(135deg, #DBEAFE, #BFDBFE)",
+      "prodImgGreen": "linear-gradient(135deg, #DCFCE7, #BBF7D0)",
+      "prodImgYellow": "linear-gradient(135deg, #FEF9C3, #FEF08A)",
+      "prodImgOrange": "linear-gradient(135deg, #FFEDD5, #FED7AA)",
+      "prodImgPurple": "linear-gradient(135deg, #F3E8FF, #E9D5FF)",
+      "prodImgTeal": "linear-gradient(135deg, #CCFBF1, #99F6E4)",
+      "prodImgGray": "linear-gradient(135deg, #F1F5F9, #E2E8F0)",
+      "prodImgRed": "linear-gradient(135deg, #FEE2E2, #FECACA)"
+    },
+
+    "heroRedBar": {
+      "enabled": true,
+      "position": "right",
+      "width": "38%",
+      "color": "#C8102E",
+      "clipPath": "polygon(12% 0, 100% 0, 100% 100%, 0 100%)"
+    },
+
+    "badges": {
+      "bestSeller": { "label": "Best Seller", "bg": "#1B2A4A", "color": "#FFFFFF" },
+      "tradeFave":  { "label": "Trade Fave",  "bg": "#1B2A4A", "color": "#FFFFFF" },
+      "new":        { "label": "New",         "bg": "#059669", "color": "#FFFFFF" },
+      "newRange":   { "label": "New Range",   "bg": "#059669", "color": "#FFFFFF" },
+      "sale":       { "label": "Sale",        "bg": "#C8102E", "color": "#FFFFFF" },
+      "trade":      { "label": "Trade",       "bg": "#D4A017", "color": "#FFFFFF" },
+      "inStock":    { "label": "In Stock",    "bg": "#059669", "color": "#FFFFFF" }
+    },
+
+    "tableStatus": {
+      "inStock":  { "label": "In stock",    "color": "#059669", "bg": "#D1FAE5" },
+      "limited":  { "label": "Limited qty", "color": "#D97706", "bg": "#FEF3C7" }
+    },
+
+    "productCard": {
+      "bg": "#FFFFFF",
+      "border": "1px solid #E0DED8",
+      "borderRadius": "12px",
+      "hoverBorder": "#C8102E",
+      "hoverShadow": "0 4px 20px rgba(200,16,46,0.10)",
+      "hoverTransform": "translateY(-2px)",
+      "imgHeight": "180px",
+      "bodyPadding": "14px 16px",
+      "footerPadding": "12px 16px",
+      "footerBorderTop": "1px solid #F0EEEA",
+      "variantsBorderRadius": "4px",
+      "variantsHoverBorder": "#C8102E",
+      "variantsHoverColor": "#C8102E",
+      "variantsBg": "#F5F5F3",
+      "wishlistSize": "28px",
+      "wishlistBg": "rgba(255,255,255,0.9)",
+      "wishlistHoverBg": "#FDF0F2",
+      "wishlistHoverBorder": "#C8102E",
+      "addBtnBg": "#1B2A4A",
+      "addBtnText": "#FFFFFF",
+      "addBtnHoverBg": "#C8102E",
+      "addBtnBorderRadius": "8px",
+      "addBtnPadding": "8px 14px",
+      "addBtnLabel": "+ Add"
+    },
+
+    "categoryCard": {
+      "bg": "#FFFFFF",
+      "border": "1px solid #E0DED8",
+      "borderRadius": "12px",
+      "hoverBorder": "#C8102E",
+      "hoverShadow": "0 4px 20px rgba(200,16,46,0.12)",
+      "hoverTransform": "translateY(-2px)",
+      "imgHeight": "160px",
+      "bodyPadding": "16px"
+    },
+
+    "splitCard": {
+      "borderRadius": "16px",
+      "padding": "40px",
+      "decorationCircle": {
+        "bottom": "-40px",
+        "right": "-40px",
+        "size": "200px",
+        "bg": "rgba(255,255,255,0.06)"
+      },
+      "featPill": {
+        "bg": "rgba(255,255,255,0.12)",
+        "border": "1px solid rgba(255,255,255,0.15)",
+        "borderRadius": "100px"
+      }
+    },
+
+    "stepProcess": {
+      "numSize": "64px",
+      "numBg": "#FFFFFF",
+      "numBorder": "3px solid #C8102E",
+      "numColor": "#C8102E",
+      "connectorTop": "32px",
+      "connectorLeft": "12%",
+      "connectorRight": "12%",
+      "connectorHeight": "2px",
+      "connectorGradient": "linear-gradient(90deg, #C8102E, #1B2A4A)"
+    },
+
+    "heroCard": {
+      "bg": "#FFFFFF",
+      "borderRadius": "12px",
+      "padding": "28px",
+      "shadow": "0 8px 40px rgba(0,0,0,0.25)",
+      "prodItemHoverBg": "#FDF0F2",
+      "prodTagColor": "#C8102E",
+      "prodTagBg": "#FDF0F2",
+      "iconTarpBg": "#E8F4FD",
+      "iconDustBg": "#FFF8E1",
+      "iconSackBg": "#F3E5F5",
+      "iconBrushBg": "#E8F5E9"
+    },
+
+    "footer": {
+      "bg": "#0F1E38",
+      "dividerColor": "#1B2A4A",
+      "certBg": "#1B2A4A",
+      "certBorder": "1px solid #253A58",
+      "certBorderRadius": "4px",
+      "payBg": "#1B2A4A",
+      "payBorder": "1px solid #253A58",
+      "payBorderRadius": "4px"
+    },
+
+    "trustStrip": {
+      "iconSize": "36px",
+      "iconBorderRadius": "50%",
+      "iconBg": "#FDF0F2"
+    },
+
+    "newsletter": {
+      "inputBg": "rgba(255,255,255,0.1)",
+      "inputBorder": "1.5px solid rgba(255,255,255,0.2)",
+      "inputFocusBorder": "rgba(255,255,255,0.5)",
+      "inputBorderRadius": "8px",
+      "inputPadding": "13px 16px",
+      "inputColor": "#FFFFFF",
+      "inputPlaceholderColor": "rgba(255,255,255,0.45)",
+      "btnBg": "#C8102E",
+      "btnHoverBg": "#A50D24",
+      "btnBorderRadius": "8px",
+      "btnPadding": "13px 22px",
+      "notemarginTop": "12px"
+    },
+
+    "promoBar": {
+      "badgeBg": "rgba(255,255,255,0.2)",
+      "badgeBorder": "1px solid rgba(255,255,255,0.3)",
+      "badgeTextColor": "#FFFFFF",
+      "textColor": "#FFFFFF",
+      "linkColor": "#ffb3bf",
+      "linkBorderBottom": "1px solid #ffb3bf"
+    },
+
+    "heroEyebrow": {
+      "bg": "rgba(255,255,255,0.1)",
+      "border": "1px solid rgba(255,255,255,0.15)",
+      "borderRadius": "100px",
+      "padding": "5px 14px",
+      "color": "#CBD8EE",
+      "dotColor": "#4CAF50",
+      "dotSize": "6px"
+    }
+  },
+
   "plugins": [
     "products", "orders", "cart", "checkout", "categories",
     "coupons", "newsletter", "promotions", "announcements",
-    "loyalty", "branding", "landing_page", "auth"
+    "loyalty", "branding", "landing_page", "auth",
+    "trade_accounts", "wishlist", "price_list_download", "bespoke_quote"
   ],
+
   "sections": [
+
+    {
+      "__block": "topbar",
+      "background": "#1B2A4A",
+      "textColor": "#CBD8EE",
+      "fontSize": "12px",
+      "padding": "7px 40px",
+      "leftItems": [
+        { "icon": "📍", "text": "Redwings Farm, Stevenage, Hertfordshire SG2 7HP" },
+        { "icon": "📞", "text": "01438 880 178" },
+        { "icon": "✉️", "text": "sales@tristarltd.co.uk" }
+      ],
+      "rightLinks": [
+        { "label": "Trade Login",          "href": "/trade-login" },
+        { "label": "Register",             "href": "/register" },
+        { "label": "Download Price List",  "href": "/price-list" }
+      ],
+      "linkColor": "#CBD8EE",
+      "linkHoverColor": "#FFFFFF"
+    },
+
+    {
+      "__block": "header",
+      "background": "#FFFFFF",
+      "borderBottom": "1px solid #E0DED8",
+      "sticky": true,
+      "zIndex": 200,
+      "height": "72px",
+      "maxWidth": "1280px",
+      "paddingX": "40px",
+      "logo": {
+        "monogram": "TS",
+        "monogramBg": "#C8102E",
+        "monogramColor": "#FFFFFF",
+        "monogramBorderRadius": "8px",
+        "monogramSize": "44px",
+        "monogramFontSize": "18px",
+        "monogramFontWeight": "700",
+        "name": "Tri Star UK Ltd",
+        "nameFontSize": "18px",
+        "nameFontWeight": "700",
+        "nameColor": "#1B2A4A",
+        "subtitle": "Est. 1995 · Stevenage, Hertfordshire",
+        "subtitleFontSize": "10px",
+        "subtitleColor": "#5C5C5C",
+        "subtitleLetterSpacing": "0.5px",
+        "subtitleTextTransform": "uppercase"
+      },
+      "search": {
+        "placeholder": "Search tarpaulins, dust sheets, brushes, sacks…",
+        "maxWidth": "480px",
+        "border": "1.5px solid #E0DED8",
+        "borderRadius": "8px",
+        "padding": "10px 44px 10px 16px",
+        "fontSize": "14px",
+        "bg": "#F5F5F3",
+        "focusBorder": "#1B2A4A",
+        "focusBg": "#FFFFFF",
+        "placeholderColor": "#9a9a9a"
+      },
+      "actions": [
+        { "id": "account", "icon": "👤", "label": "Account", "href": "/account" },
+        { "id": "cart",    "icon": "🛒", "label": "Cart",    "href": "/cart",
+          "showBadge": true, "badgeInitialCount": 0,
+          "badgeBg": "#C8102E", "badgeTextColor": "#FFFFFF" }
+      ],
+      "ctaButton": {
+        "label": "Get a Quote",
+        "href": "/contact",
+        "bg": "#C8102E",
+        "textColor": "#FFFFFF",
+        "hoverBg": "#A50D24",
+        "borderRadius": "8px",
+        "padding": "10px 20px",
+        "fontSize": "13px",
+        "fontWeight": "600"
+      }
+    },
+
+    {
+      "__block": "navigation",
+      "background": "#1B2A4A",
+      "borderBottom": "3px solid #C8102E",
+      "maxWidth": "1280px",
+      "paddingX": "40px",
+      "linkColor": "#CBD8EE",
+      "linkHoverColor": "#FFFFFF",
+      "linkActiveColor": "#FFFFFF",
+      "linkFontSize": "13px",
+      "linkFontWeight": "500",
+      "linkPadding": "14px 18px",
+      "linkActiveBorderBottom": "3px solid #FFFFFF",
+      "linkActiveBg": "rgba(255,255,255,0.06)",
+      "linkHoverBg": "rgba(255,255,255,0.06)",
+      "hasDropdownIndicator": true,
+      "items": [
+        { "label": "Home",                    "href": "/",                      "active": true,  "hasDropdown": false },
+        { "label": "Tarpaulins",              "href": "/tarpaulins",            "active": false, "hasDropdown": true },
+        { "label": "Dust Sheets",             "href": "/dust-sheets",           "active": false, "hasDropdown": true },
+        { "label": "Sacks & Bags",            "href": "/sacks-bags",            "active": false, "hasDropdown": true },
+        { "label": "Paint Brushes & Rollers", "href": "/paint-brushes-rollers", "active": false, "hasDropdown": true },
+        { "label": "Bespoke Orders",          "href": "/bespoke",               "active": false, "hasDropdown": false },
+        { "label": "Trade Accounts",          "href": "/trade-accounts",        "active": false, "hasDropdown": false }
+      ],
+      "specialItem": {
+        "label": "🏷️ Special Offers",
+        "href": "/special-offers",
+        "color": "#D4A017",
+        "hoverColor": "#f0c040",
+        "fontWeight": "600",
+        "position": "right"
+      }
+    },
+
+    {
+      "__block": "announcement-bar",
+      "requiredPlugin": "announcements",
+      "background": "linear-gradient(90deg, #C8102E 0%, #8B0019 100%)",
+      "padding": "14px 40px",
+      "layout": "center",
+      "gap": "16px",
+      "badgeBg": "rgba(255,255,255,0.2)",
+      "badgeBorder": "1px solid rgba(255,255,255,0.3)",
+      "badgeTextColor": "#FFFFFF",
+      "badgeFontSize": "11px",
+      "badgeFontWeight": "700",
+      "badgeLetterSpacing": "0.5px",
+      "badgeTextTransform": "uppercase",
+      "textColor": "#FFFFFF",
+      "textFontSize": "14px",
+      "textFontWeight": "500",
+      "linkColor": "#ffb3bf",
+      "linkFontSize": "14px",
+      "linkFontWeight": "600",
+      "linkBorderBottom": "1px solid #ffb3bf",
+      "announcements": [
+        {
+          "badge": "Limited Time",
+          "text": "Order before 2pm for same-day despatch — free delivery on orders over £75",
+          "linkLabel": "Shop now →",
+          "linkHref": "/shop"
+        },
+        {
+          "badge": "New",
+          "text": "Trade accounts now available — login to see wholesale pricing",
+          "linkLabel": "Register →",
+          "linkHref": "/register"
+        }
+      ]
+    },
+
     {
       "__block": "scroll-expand-hero",
-      "title": "Premium Tarpaulins & Covers",
-      "subtitle": "Heavy-duty protection for industrial, agricultural, and commercial use",
+      "background": "#1B2A4A",
+      "backgroundPattern": "crosshatch-svg",
+      "backgroundPatternOpacity": "0.03",
+      "minHeight": "500px",
+      "maxWidth": "1280px",
+      "padding": "60px 40px",
+      "gridCols": "1fr 420px",
+      "gridGap": "60px",
+      "redBar": {
+        "enabled": true,
+        "position": "right",
+        "width": "38%",
+        "color": "#C8102E",
+        "clipPath": "polygon(12% 0, 100% 0, 100% 100%, 0 100%)"
+      },
+      "eyebrow": {
+        "text": "Sourced from Europe, India & Far East · Est. 1995",
+        "indicatorDotColor": "#4CAF50",
+        "indicatorDotSize": "6px",
+        "bg": "rgba(255,255,255,0.1)",
+        "border": "1px solid rgba(255,255,255,0.15)",
+        "borderRadius": "100px",
+        "padding": "5px 14px",
+        "fontSize": "11px",
+        "color": "#CBD8EE",
+        "letterSpacing": "0.8px",
+        "textTransform": "uppercase",
+        "marginBottom": "20px"
+      },
+      "title": "Quality protective covers at trade prices",
+      "titleHtml": "Quality protective<br>covers at <em>trade prices</em>",
+      "titleFontSize": "42px",
+      "titleFontWeight": "700",
+      "titleLineHeight": "1.18",
+      "titleColor": "#FFFFFF",
+      "titleEmColor": "#ffb3bf",
+      "subtitle": "Tri Star UK Ltd — Hertfordshire's leading importer and distributor of tarpaulins, cotton dust sheets, sacks, bags, and decorating supplies. Trade and retail welcome.",
+      "subtitleFontSize": "16px",
+      "subtitleColor": "#A8BDD8",
+      "subtitleLineHeight": "1.65",
+      "subtitleMaxWidth": "440px",
       "mediaSrc": "/images/hero.jpg",
       "bgImageSrc": "/images/hero-bg.jpg",
-      "mediaType": "image"
+      "mediaType": "image",
+      "ctaButtons": [
+        {
+          "id": "primary",
+          "label": "Shop all products",
+          "href": "/shop",
+          "bg": "#C8102E",
+          "color": "#FFFFFF",
+          "hoverBg": "#A50D24",
+          "borderRadius": "8px",
+          "padding": "14px 28px",
+          "fontSize": "15px",
+          "fontWeight": "600"
+        },
+        {
+          "id": "secondary",
+          "label": "Download price list",
+          "href": "/price-list",
+          "bg": "transparent",
+          "color": "#FFFFFF",
+          "border": "1.5px solid rgba(255,255,255,0.4)",
+          "hoverBorder": "1.5px solid #FFFFFF",
+          "hoverBg": "rgba(255,255,255,0.08)",
+          "borderRadius": "8px",
+          "padding": "14px 28px",
+          "fontSize": "15px",
+          "fontWeight": "500"
+        }
+      ],
+      "trustPoints": [
+        { "text": "30 years' experience",      "iconColor": "#4CAF50" },
+        { "text": "Trade & retail pricing",    "iconColor": "#4CAF50" },
+        { "text": "UK-wide delivery",          "iconColor": "#4CAF50" },
+        { "text": "Superior quality sourcing", "iconColor": "#4CAF50" }
+      ],
+      "trustFontSize": "13px",
+      "trustColor": "#A8BDD8",
+      "trustGap": "24px",
+      "sidebarCard": {
+        "bg": "#FFFFFF",
+        "borderRadius": "12px",
+        "padding": "28px",
+        "shadow": "0 8px 40px rgba(0,0,0,0.25)",
+        "title": "🔥 Best selling products",
+        "titleFontSize": "13px",
+        "titleFontWeight": "700",
+        "titleColor": "#5C5C5C",
+        "titleTextTransform": "uppercase",
+        "titleLetterSpacing": "0.6px",
+        "titleBorderBottom": "1px solid #E0DED8",
+        "itemHoverBg": "#FDF0F2",
+        "tagColor": "#C8102E",
+        "tagBg": "#FDF0F2",
+        "footerText": "Login to see trade prices",
+        "footerLink": "Register for trade →",
+        "footerLinkHref": "/register",
+        "footerLinkColor": "#C8102E",
+        "products": [
+          { "name": "Extra Strong PVC Tarpaulin",    "meta": "Multiple sizes · Blue & Green",                      "tag": "Best seller", "iconBg": "#E8F4FD" },
+          { "name": "Calico Cotton Dust Sheet 12×9ft","meta": "100% cotton · 10 per bale",                         "tag": "Trade fave",  "iconBg": "#FFF8E1" },
+          { "name": "Heavy Duty Rubble Sacks",        "meta": "Bulk packs · Various sizes",                        "tag": "In stock",    "iconBg": "#F3E5F5" },
+          { "name": "Paint Brush & Roller Sets",      "meta": "Block brush, contractor brush, tiger stripe roller", "tag": "New range",   "iconBg": "#E8F5E9" }
+        ]
+      }
     },
+
+    {
+      "__block": "trust-strip",
+      "background": "#FFFFFF",
+      "borderBottom": "1px solid #E0DED8",
+      "maxWidth": "1280px",
+      "padding": "18px 40px",
+      "layout": "space-between",
+      "wrap": true,
+      "gap": "12px",
+      "iconSize": "36px",
+      "iconBorderRadius": "50%",
+      "iconBg": "#FDF0F2",
+      "headingFontSize": "13px",
+      "headingFontWeight": "600",
+      "headingColor": "#1B2A4A",
+      "subtextFontSize": "11px",
+      "subtextColor": "#5C5C5C",
+      "items": [
+        { "icon": "🚚", "heading": "Free UK Delivery",  "subtext": "On all orders over £75 ex VAT" },
+        { "icon": "📦", "heading": "Same Day Despatch", "subtext": "Orders placed before 2pm" },
+        { "icon": "🏭", "heading": "Direct Importing",  "subtext": "Europe, India & Far East" },
+        { "icon": "💼", "heading": "Trade Accounts",    "subtext": "Wholesale prices available" },
+        { "icon": "📅", "heading": "Est. 1995",         "subtext": "30 years of reliable supply" }
+      ]
+    },
+
+    {
+      "__block": "category-grid",
+      "title": "Shop by product range",
+      "titleHighlight": "product range",
+      "seeAllLabel": "All categories →",
+      "seeAllHref": "/categories",
+      "seeAllColor": "#C8102E",
+      "columns": 4,
+      "gap": "16px",
+      "cardBg": "#FFFFFF",
+      "cardBorder": "1px solid #E0DED8",
+      "cardBorderRadius": "12px",
+      "cardHoverBorder": "#C8102E",
+      "cardHoverShadow": "0 4px 20px rgba(200,16,46,0.12)",
+      "cardHoverTransform": "translateY(-2px)",
+      "imgHeight": "160px",
+      "categories": [
+        {
+          "id": "tarpaulins",
+          "name": "Tarpaulins",
+          "href": "/tarpaulins",
+          "icon": "🛡️",
+          "imgGradient": "linear-gradient(135deg, #E8F4FD, #C8E6FA)",
+          "productCount": 24,
+          "description": "Leno/clear, extra strong, all-purpose and waterproof covers in multiple sizes and weights.",
+          "cta": "Browse tarpaulins →"
+        },
+        {
+          "id": "dust_sheets",
+          "name": "Dust Sheets",
+          "href": "/dust-sheets",
+          "icon": "🧹",
+          "imgGradient": "linear-gradient(135deg, #FFF8E1, #FFF0C0)",
+          "productCount": 12,
+          "description": "Cotton calico, cotton twill, canvas, rayon, polythene, non-woven and laminated dust sheets.",
+          "cta": "Browse dust sheets →"
+        },
+        {
+          "id": "sacks_bags",
+          "name": "Sacks & Bags",
+          "href": "/sacks-bags",
+          "icon": "🪣",
+          "imgGradient": "linear-gradient(135deg, #F3E5F5, #E1BEE7)",
+          "productCount": 22,
+          "description": "Woven rubble sacks, tonne bags, heavy duty garden sacks, wheelie bin liners and dustbin liners.",
+          "cta": "Browse sacks & bags →"
+        },
+        {
+          "id": "paint_brushes_rollers",
+          "name": "Paint Brushes & Rollers",
+          "href": "/paint-brushes-rollers",
+          "icon": "🖌️",
+          "imgGradient": "linear-gradient(135deg, #E8F5E9, #C8E6C9)",
+          "productCount": 15,
+          "description": "Block brush, contractor brush, Acer, cage frame, wood preservative brush and tiger stripe roller sets.",
+          "cta": "Browse brushes →"
+        }
+      ]
+    },
+
     {
       "__block": "featured-products-grid",
-      "title": "Best Sellers",
-      "subtitle": "Our most popular tarpaulins and covers",
-      "maxProducts": 8,
-      "cardStyle": "rounded-shadow"
+      "title": "🛡️ Featured Tarpaulins",
+      "titleHighlight": "tarpaulins",
+      "subtitle": "Our most popular covers — waterproof, UV-stabilised, trade and retail",
+      "seeAllLabel": "View all tarpaulins →",
+      "seeAllHref": "/tarpaulins",
+      "seeAllColor": "#C8102E",
+      "maxProducts": 4,
+      "cardStyle": "rounded-shadow",
+      "background": "#FFFFFF",
+      "sectionPadding": "56px 0",
+      "gridCols": "repeat(4, 1fr)",
+      "gridGap": "16px",
+      "cardBorderRadius": "12px",
+      "cardHoverShadow": "0 4px 20px rgba(200,16,46,0.10)",
+      "cardHoverTransform": "translateY(-2px)",
+      "cardImgHeight": "180px",
+      "addBtnBg": "#1B2A4A",
+      "addBtnHoverBg": "#C8102E",
+      "addBtnLabel": "+ Add",
+      "products": [
+        {
+          "id": "tarp_all_purpose",
+          "sku": "TARP-APB",
+          "name": "All-Purpose Tarpaulin",
+          "category": "Tarpaulin",
+          "badge": "Best Seller",
+          "badgeStyle": "bestSeller",
+          "imgGradient": "linear-gradient(135deg, #DBEAFE, #BFDBFE)",
+          "description": "Waterproof PE tarp with aluminium grommets at 1m intervals. Heat sealed, PE rope through hem. Ideal for temporary cover work.",
+          "retailPrice": 6.99,
+          "currency": "GBP",
+          "tradePriceVisible": false,
+          "tradePriceLabel": "Trade: Login",
+          "variants": ["6×4ft", "8×6ft", "10×8ft", "+5 sizes"],
+          "availableSizes": "6×4ft to 30×20ft",
+          "features": ["Heat sealed reinforced sides", "PE rope through hem", "Aluminium grommet at 1m intervals", "Waterproof and tear resistant"],
+          "availability": "in_stock"
+        },
+        {
+          "id": "tarp_extra_strong",
+          "sku": "TARP-ESG",
+          "name": "Extra Strong Tarpaulin",
+          "category": "Tarpaulin",
+          "badge": "Best Seller",
+          "badgeStyle": "bestSeller",
+          "imgGradient": "linear-gradient(135deg, #DCFCE7, #BBF7D0)",
+          "description": "Heavy-duty reinforced PVC tarpaulin. Tear resistant, UV stabilised. Brass eyelets every 500mm. Long-lasting outdoor protection.",
+          "retailPrice": 14.99,
+          "currency": "GBP",
+          "tradePriceVisible": false,
+          "tradePriceLabel": "Trade: Login",
+          "variants": ["8×6ft", "10×8ft", "12×10ft", "+4 sizes"],
+          "availableSizes": "8×6ft to 20×16ft",
+          "features": ["Heavy-duty reinforced PVC", "Tear resistant", "UV stabilised", "Brass eyelets every 500mm"],
+          "availability": "in_stock"
+        },
+        {
+          "id": "tarp_leno_clear",
+          "sku": "TARP-LC",
+          "name": "Leno / Clear Tarpaulin",
+          "category": "Tarpaulin",
+          "badge": "New",
+          "badgeStyle": "new",
+          "imgGradient": "linear-gradient(135deg, #CCFBF1, #99F6E4)",
+          "description": "Extra strong, waterproof and rot proof. Allows 70% light transmission. Ideal for work that needs to be carried out undercover.",
+          "retailPrice": 9.50,
+          "currency": "GBP",
+          "tradePriceVisible": false,
+          "tradePriceLabel": "Trade: Login",
+          "variants": ["3×4m", "4×5m", "4×10m", "10×17m"],
+          "features": ["70% light transmission", "Waterproof and rot proof", "Extra strong", "5 sheets per bale (smaller sizes)"],
+          "availability": "in_stock"
+        },
+        {
+          "id": "tarp_scaffolding",
+          "sku": "TARP-SSHD",
+          "name": "Heavy Duty Scaffolding Sheet",
+          "category": "Tarpaulin",
+          "badge": "Trade",
+          "badgeStyle": "trade",
+          "imgGradient": "linear-gradient(135deg, #FFEDD5, #FED7AA)",
+          "description": "Flame retardant option available. Reinforced edges and eyelets for scaffold wrapping, skip covers, and building enclosures.",
+          "retailPrice": 24.99,
+          "currency": "GBP",
+          "tradePriceVisible": false,
+          "tradePriceLabel": "Trade: Login",
+          "variants": ["3×2m", "5×3m", "8×4m"],
+          "flameRetardantAvailable": true,
+          "features": ["Reinforced edges", "Heavy-duty eyelets", "Flame retardant option available"],
+          "availability": "in_stock"
+        }
+      ]
     },
+
+    {
+      "__block": "featured-products-grid",
+      "title": "🧹 Dust Sheets, Sacks & Brushes",
+      "titleHighlight": "Sacks & Brushes",
+      "subtitle": "Cotton dust sheets, heavy-duty sacks and professional painting accessories",
+      "seeAllLabel": "See all products →",
+      "seeAllHref": "/shop",
+      "seeAllColor": "#C8102E",
+      "maxProducts": 4,
+      "cardStyle": "rounded-shadow",
+      "background": "#F5F5F3",
+      "sectionPadding": "56px 40px",
+      "gridCols": "repeat(4, 1fr)",
+      "gridGap": "16px",
+      "cardBorderRadius": "12px",
+      "cardHoverShadow": "0 4px 20px rgba(200,16,46,0.10)",
+      "cardHoverTransform": "translateY(-2px)",
+      "cardImgHeight": "180px",
+      "addBtnBg": "#1B2A4A",
+      "addBtnHoverBg": "#C8102E",
+      "addBtnLabel": "+ Add",
+      "products": [
+        {
+          "id": "dust_calico_cotton",
+          "sku": "CDS6",
+          "name": "Calico Cotton Dust Sheet 12×9ft",
+          "category": "Dust Sheets",
+          "badge": "Trade Fave",
+          "badgeStyle": "tradeFave",
+          "imgGradient": "linear-gradient(135deg, #FEF9C3, #FEF08A)",
+          "description": "100% Cotton Dust Sheet. Weight: 1.6kg. Size: 12ft × 9ft. 10 sheets per bale. Ideal while decorating to protect floors and furnishings.",
+          "retailPrice": 3.49,
+          "retailPriceOld": 4.25,
+          "currency": "GBP",
+          "variants": ["Single", "5 pack", "Bale ×10"],
+          "dimensions": "12ft × 9ft",
+          "weight": "1.6kg",
+          "packSize": "10 sheets per bale",
+          "features": ["100% cotton calico", "Weight: 1.6kg", "Absorbent and reusable", "Machine washable"],
+          "availability": "in_stock"
+        },
+        {
+          "id": "dust_cotton_twill",
+          "sku": "CDS7",
+          "name": "Cotton Twill Dust Sheet 12×5ft",
+          "category": "Dust Sheets",
+          "badge": "In Stock",
+          "badgeStyle": "inStock",
+          "imgGradient": "linear-gradient(135deg, #FEF9C3, #FEF08A)",
+          "description": "Pure cotton twill dust sheet. Weight: 1.0kg. Size: 12ft × 5ft. 20 sheets per bale. Sturdy cotton twill fabric, machine-washable.",
+          "retailPrice": null,
+          "currency": "GBP",
+          "tradePriceLabel": "Login to see prices",
+          "variants": ["Single", "Bale ×20"],
+          "dimensions": "12ft × 5ft",
+          "weight": "1.0kg",
+          "packSize": "20 sheets per bale",
+          "features": ["Pure cotton twill fabric", "Weight: 1.0kg", "Machine washable"],
+          "availability": "in_stock"
+        },
+        {
+          "id": "sack_woven_rubble",
+          "sku": "SACK-WR-100",
+          "name": "Woven Rubble Sacks",
+          "category": "Sacks & Bags",
+          "badge": "Best Seller",
+          "badgeStyle": "bestSeller",
+          "imgGradient": "linear-gradient(135deg, #F1F5F9, #E2E8F0)",
+          "description": "Size: 36\" × 24\". Weight: 90g. Packed 100 bags per bale. Suitable for clearing rubble and general building waste.",
+          "retailPrice": null,
+          "currency": "GBP",
+          "tradePriceLabel": "Login to see prices",
+          "variants": ["Pack ×5", "Bale ×100"],
+          "dimensions": "36\" × 24\"",
+          "weight": "90g per bag",
+          "features": ["Woven polypropylene", "90g weight", "100 bags per bale", "Suitable for rubble and building waste"],
+          "availability": "in_stock"
+        },
+        {
+          "id": "brush_block_contractor",
+          "sku": "BRUSH-BC",
+          "name": "Block Brush & Contractor Paint Brush Set",
+          "category": "Paint Brushes & Rollers",
+          "badge": "New Range",
+          "badgeStyle": "newRange",
+          "imgGradient": "linear-gradient(135deg, #FEE2E2, #FECACA)",
+          "description": "Range includes: block brush, contractor paint brush, Acer brush, personal cage frame with wooden handle, and 4\" acrylic tiger stripe roller set.",
+          "retailPrice": 8.99,
+          "retailPriceOld": 12.50,
+          "currency": "GBP",
+          "variants": ["Block Brush", "Contractor Brush", "Tiger Stripe Roller Set"],
+          "contents": ["Block brush", "Contractor paint brush", "Acer brush", "Cage frame with wooden handle", "4\" acrylic tiger stripe roller set"],
+          "availability": "in_stock"
+        }
+      ]
+    },
+
     {
       "__block": "promotions-banner",
       "requiredPlugin": "promotions"
     },
-    {
-      "__block": "announcement-bar",
-      "requiredPlugin": "announcements"
-    },
+
     {
       "__block": "coupon-spotlight",
       "requiredPlugin": "coupons"
     },
+
+    {
+      "__block": "dual-cta-banner",
+      "sectionPadding": "0 40px 56px",
+      "maxWidth": "1280px",
+      "gridCols": "1fr 1fr",
+      "gap": "20px",
+      "cardBorderRadius": "16px",
+      "cardPadding": "40px",
+      "decorationCircle": { "bottom": "-40px", "right": "-40px", "size": "200px", "bg": "rgba(255,255,255,0.06)" },
+      "common": {
+        "eyebrowFontSize": "11px",
+        "eyebrowFontWeight": "700",
+        "eyebrowLetterSpacing": "0.8px",
+        "eyebrowTextTransform": "uppercase",
+        "eyebrowOpacity": "0.75",
+        "eyebrowColor": "#FFFFFF",
+        "titleFontSize": "26px",
+        "titleFontWeight": "700",
+        "titleColor": "#FFFFFF",
+        "titleLineHeight": "1.25",
+        "bodyFontSize": "14px",
+        "bodyColor": "rgba(255,255,255,0.75)",
+        "bodyLineHeight": "1.6",
+        "bodyMaxWidth": "340px",
+        "featBg": "rgba(255,255,255,0.12)",
+        "featColor": "rgba(255,255,255,0.9)",
+        "featFontSize": "12px",
+        "featFontWeight": "500",
+        "featBorder": "1px solid rgba(255,255,255,0.15)",
+        "featBorderRadius": "100px",
+        "btnBorderRadius": "8px",
+        "btnPadding": "12px 24px",
+        "btnFontSize": "14px",
+        "btnFontWeight": "700"
+      },
+      "cards": [
+        {
+          "id": "trade_account",
+          "bg": "#1B2A4A",
+          "eyebrow": "For businesses & contractors",
+          "title": "Open a trade account — buy at wholesale prices",
+          "body": "Painters, decorators, builders, and site managers — register for a Tri Star trade account and unlock exclusive pricing, monthly invoicing, and bulk order discounts.",
+          "features": ["Wholesale pricing", "30-day payment terms", "Dedicated account manager", "Priority despatch", "Volume discounts from 10+ cases"],
+          "ctaLabel": "Register for trade →",
+          "ctaHref": "/register",
+          "btnBg": "#FFFFFF",
+          "btnText": "#1B2A4A",
+          "btnHoverBg": "#C8102E",
+          "btnHoverText": "#FFFFFF"
+        },
+        {
+          "id": "bespoke_bulk",
+          "bg": "#C8102E",
+          "eyebrow": "Can't find what you need?",
+          "title": "Bespoke & bulk orders — we'll source it",
+          "body": "With direct sourcing relationships in Europe, India, and the Far East, we can fulfil custom specifications, unusual sizes, and large volume orders that aren't on the shelf.",
+          "features": ["Custom sizing available", "Bespoke spec tarpaulins", "Container load quantities", "Private label options"],
+          "ctaLabel": "Enquire about bulk →",
+          "ctaHref": "/contact",
+          "btnBg": "#FFFFFF",
+          "btnText": "#C8102E",
+          "btnHoverBg": "#1B2A4A",
+          "btnHoverText": "#FFFFFF"
+        }
+      ]
+    },
+
     {
       "__block": "cta-banner",
-      "title": "Need a Custom Size?",
-      "subtitle": "We cut to measure — any shape, any size.",
+      "title": "Need a bespoke tarpaulin or bulk order?",
+      "subtitle": "We source directly from Europe, India and the Far East — any spec, any quantity. Call us on 01438 880 178 or send an enquiry.",
       "ctaText": "Get a Quote",
       "ctaUrl": "/contact",
-      "backgroundImage": "/images/cta-bg.jpg"
+      "backgroundImage": "/images/cta-bg.jpg",
+      "background": "#1B2A4A"
     },
+
+    {
+      "__block": "stats-band",
+      "background": "#1B2A4A",
+      "padding": "48px 40px",
+      "maxWidth": "1280px",
+      "gridCols": "repeat(4, 1fr)",
+      "gap": "20px",
+      "numFontSize": "40px",
+      "numFontWeight": "700",
+      "numColor": "#FFFFFF",
+      "numHighlightColor": "#C8102E",
+      "labelFontSize": "13px",
+      "labelColor": "#A8BDD8",
+      "labelMarginTop": "8px",
+      "stats": [
+        { "number": "30",  "suffix": "+",  "label": "Years supplying UK trade & retail" },
+        { "number": "79",  "suffix": "+",  "label": "Products across 4 categories" },
+        { "number": "3",   "suffix": null, "label": "Sourcing continents — Europe, India, Far East" },
+        { "prefix": "£",  "number": "75", "suffix": null, "label": "Free UK delivery threshold ex VAT" }
+      ]
+    },
+
+    {
+      "__block": "how-to-order",
+      "title": "How to order from us",
+      "titleHighlight": "order from us",
+      "background": "#FFFFFF",
+      "sectionPadding": "56px 0",
+      "gridCols": "repeat(4, 1fr)",
+      "connectorTop": "32px",
+      "connectorLeft": "12%",
+      "connectorRight": "12%",
+      "connectorHeight": "2px",
+      "connectorGradient": "linear-gradient(90deg, #C8102E, #1B2A4A)",
+      "stepNumSize": "64px",
+      "stepNumBg": "#FFFFFF",
+      "stepNumBorder": "3px solid #C8102E",
+      "stepNumColor": "#C8102E",
+      "stepNumFontSize": "22px",
+      "stepNumFontWeight": "700",
+      "stepTitleFontSize": "15px",
+      "stepTitleFontWeight": "700",
+      "stepTitleColor": "#1B2A4A",
+      "stepDescFontSize": "13px",
+      "stepDescColor": "#5C5C5C",
+      "stepDescLineHeight": "1.55",
+      "steps": [
+        { "number": 1, "title": "Browse & select",    "description": "Find your product by category or search. Filter by size, material, or type. Not sure? Download our full price list." },
+        { "number": 2, "title": "Login or register",  "description": "Create a retail account to see prices, or apply for a trade account for wholesale pricing and terms." },
+        { "number": 3, "title": "Checkout securely",  "description": "Pay by card, bank transfer, or on account (trade customers). Order confirmation sent instantly." },
+        { "number": 4, "title": "Fast UK delivery",   "description": "Orders placed before 2pm despatched same day. Track your delivery online or call 01438 880 178." }
+      ]
+    },
+
+    {
+      "__block": "product-range-table",
+      "title": "Product range quick reference",
+      "titleHighlight": "quick reference",
+      "seeAllLabel": "Full catalogue →",
+      "seeAllHref": "/catalogue",
+      "tableBg": "#FFFFFF",
+      "tableBorder": "1px solid #E0DED8",
+      "tableBorderRadius": "12px",
+      "headerBg": "#1B2A4A",
+      "headerTextColor": "#CBD8EE",
+      "headerFontSize": "12px",
+      "headerFontWeight": "600",
+      "headerPadding": "14px 20px",
+      "headerLetterSpacing": "0.4px",
+      "headerTextTransform": "uppercase",
+      "rowEvenBg": "#FAFAF8",
+      "rowHoverBg": "#FDF0F2",
+      "cellPadding": "12px 20px",
+      "cellFontSize": "13px",
+      "cellBorderBottom": "1px solid #F0EEEA",
+      "columns": ["Product", "Category", "Sizes / Variants", "Use case", "Availability"],
+      "statusInStock": { "label": "In stock",    "color": "#059669", "bg": "#D1FAE5" },
+      "statusLimited": { "label": "Limited qty", "color": "#D97706", "bg": "#FEF3C7" },
+      "rows": [
+        { "product": "All-Purpose Tarpaulin",          "category": "Tarpaulins",            "sizes": "6×4ft to 30×20ft",          "useCase": "General outdoor cover, gardening, camping, temporary cover",      "availability": "in_stock" },
+        { "product": "Extra Strong Tarpaulin",         "category": "Tarpaulins",            "sizes": "8×6ft to 20×16ft",          "useCase": "Construction sites, haulage, agriculture",                       "availability": "in_stock" },
+        { "product": "Leno / Clear Tarpaulin",         "category": "Tarpaulins",            "sizes": "3×4m, 4×5m, 4×10m, 10×17m","useCase": "Greenhouses, market stalls, undercover work needing light",       "availability": "in_stock" },
+        { "product": "Calico Cotton Dust Sheet",       "category": "Dust Sheets",           "sizes": "12×9ft · Bale ×10",         "useCase": "Decorating, floor and furniture protection",                     "availability": "in_stock" },
+        { "product": "Cotton Twill Dust Sheet",        "category": "Dust Sheets",           "sizes": "12×5ft · Bale ×20",         "useCase": "Decorating, floor and furniture protection",                     "availability": "in_stock" },
+        { "product": "Canvas Heavyweight Dust Sheet",  "category": "Dust Sheets",           "sizes": "Various",                   "useCase": "Heavy-duty decorating, construction protection",                  "availability": "in_stock" },
+        { "product": "Non-Woven Laminated Dust Sheet", "category": "Dust Sheets",           "sizes": "12×9ft · Box ×40",          "useCase": "Lightweight floor and furniture protection",                     "availability": "limited"  },
+        { "product": "Woven Rubble Sacks",             "category": "Sacks & Bags",          "sizes": "36\"×24\" · Bale ×100",     "useCase": "Building waste, demolition, rubble clearance",                  "availability": "in_stock" },
+        { "product": "White Woven Rubble Sacks",       "category": "Sacks & Bags",          "sizes": "3ft×2ft · Pack ×5",         "useCase": "General building waste, rubble clearance",                      "availability": "in_stock" },
+        { "product": "Heavy Duty Garden Sacks",        "category": "Sacks & Bags",          "sizes": "Rim 142cm, L 86cm, 140g",   "useCase": "Garden waste, heavy outdoor clearance",                         "availability": "in_stock" },
+        { "product": "Heavy Duty Dustbin Liners",      "category": "Sacks & Bags",          "sizes": "18×29×39in · 120g · ×10",  "useCase": "Commercial waste management, dustbin lining",                   "availability": "in_stock" },
+        { "product": "Block Brush",                    "category": "Paint Brushes & Rollers","sizes": "Various widths",           "useCase": "Masonry, fencing, general painting",                             "availability": "in_stock" },
+        { "product": "Contractor Paint Brush",         "category": "Paint Brushes & Rollers","sizes": "Various widths",           "useCase": "Interior and exterior decorating",                               "availability": "in_stock" },
+        { "product": "Wood Preservative Brush",        "category": "Paint Brushes & Rollers","sizes": "40mm × 100mm",             "useCase": "Woodcare preservatives, timber treatment",                       "availability": "in_stock" },
+        { "product": "4\" Acrylic Tiger Stripe Roller","category": "Paint Brushes & Rollers","sizes": "4\" roller with frame",    "useCase": "Walls, ceilings, emulsion and gloss",                            "availability": "in_stock" }
+      ]
+    },
+
+    {
+      "__block": "testimonials-carousel",
+      "title": "What our customers say",
+      "testimonials": [
+        {
+          "name": "David W.",
+          "role": "Painting & decorating contractor, Luton",
+          "quote": "We've been ordering cotton dust sheets from Tri Star for 12 years. The calico quality has never dropped, the prices are better than any other supplier I've found, and they always get our bulk orders out fast."
+        },
+        {
+          "name": "Kevin S.",
+          "role": "Scaffolding company owner, Hertfordshire",
+          "quote": "The extra strong tarpaulins are brilliant — we use them on scaffolding every week. Heavy, well made, grommets hold up to the wind. The trade account means I don't have to pay every order, which is a big help for cash flow."
+        },
+        {
+          "name": "Mike T.",
+          "role": "Plant hire & groundworks, Stevenage",
+          "quote": "Good range of rubble sacks and tonne bags at sensible prices. Delivery was quick and well packed. Would like even more size options on the tonne bags — but have already ordered three times and will keep coming back."
+        }
+      ]
+    },
+
     {
       "__block": "newsletter-section",
       "requiredPlugin": "newsletter",
-      "title": "Trade Deals & New Stock Alerts",
-      "subtitle": "Join 5,000+ trade customers getting weekly deals",
-      "backgroundImage": "/images/newsletter-bg.jpg"
+      "background": "linear-gradient(135deg, #1B2A4A 0%, #0F1E38 100%)",
+      "backgroundImage": "/images/newsletter-bg.jpg",
+      "padding": "60px 40px",
+      "maxWidth": "600px",
+      "textAlign": "center",
+      "title": "Stay ahead — trade offers & new stock",
+      "titleFontSize": "28px",
+      "titleFontWeight": "700",
+      "titleColor": "#FFFFFF",
+      "subtitle": "Join 1,800+ decorators, builders, and site managers who get early access to promotions, new product lines, and price list updates.",
+      "subtitleFontSize": "15px",
+      "subtitleColor": "#A8BDD8",
+      "inputPlaceholder": "Enter your email address",
+      "inputType": "email",
+      "inputBg": "rgba(255,255,255,0.1)",
+      "inputBorder": "1.5px solid rgba(255,255,255,0.2)",
+      "inputFocusBorder": "rgba(255,255,255,0.5)",
+      "inputBorderRadius": "8px",
+      "inputPadding": "13px 16px",
+      "inputFontSize": "14px",
+      "inputColor": "#FFFFFF",
+      "inputPlaceholderColor": "rgba(255,255,255,0.45)",
+      "buttonLabel": "Subscribe",
+      "buttonBg": "#C8102E",
+      "buttonHoverBg": "#A50D24",
+      "buttonTextColor": "#FFFFFF",
+      "buttonBorderRadius": "8px",
+      "buttonPadding": "13px 22px",
+      "buttonFontSize": "14px",
+      "buttonFontWeight": "700",
+      "note": "No spam. Unsubscribe any time. We never share your details.",
+      "noteFontSize": "11px",
+      "noteColor": "rgba(255,255,255,0.4)",
+      "noteMarginTop": "12px"
+    },
+
+    {
+      "__block": "footer",
+      "background": "#0F1E38",
+      "padding": "60px 40px 0",
+      "maxWidth": "1280px",
+      "gridCols": "2.5fr 1fr 1fr 1fr 1.5fr",
+      "gridGap": "40px",
+      "topMarginBottom": "48px",
+      "brand": {
+        "description": "Leading importer and distributor of cotton dust sheets, tarpaulins, sacks, bags, and painting accessories. Family-owned business serving the UK trade and retail for 30 years. All products directly sourced from Europe, India and the Far East.",
+        "descriptionColor": "#7A92B0",
+        "descriptionFontSize": "13px",
+        "descriptionLineHeight": "1.7",
+        "descriptionMaxWidth": "260px",
+        "descriptionMarginTop": "14px",
+        "subtitle": "Est. 1995 · Stevenage, Hertfordshire",
+        "subtitleColor": "#4A6280",
+        "subtitleFontSize": "10px",
+        "subtitleLetterSpacing": "0.5px"
+      },
+      "colHeadingFontSize": "12px",
+      "colHeadingFontWeight": "700",
+      "colHeadingColor": "#CBD8EE",
+      "colHeadingLetterSpacing": "0.8px",
+      "colHeadingTextTransform": "uppercase",
+      "colHeadingMarginBottom": "16px",
+      "colLinkFontSize": "13px",
+      "colLinkColor": "#7A92B0",
+      "colLinkHoverColor": "#CBD8EE",
+      "colLinkMarginBottom": "10px",
+      "contactIconColor": "#C8102E",
+      "contactIconFontSize": "14px",
+      "columns": [
+        {
+          "heading": "Products",
+          "links": [
+            { "label": "Tarpaulins",     "href": "/tarpaulins" },
+            { "label": "Dust Sheets",    "href": "/dust-sheets" },
+            { "label": "Sacks & Bags",   "href": "/sacks-bags" },
+            { "label": "Paint Brushes",  "href": "/paint-brushes-rollers" },
+            { "label": "Rollers",        "href": "/paint-brushes-rollers" },
+            { "label": "Special Offers", "href": "/special-offers" }
+          ]
+        },
+        {
+          "heading": "Trade",
+          "links": [
+            { "label": "Register for trade",    "href": "/register" },
+            { "label": "Trade login",           "href": "/trade-login" },
+            { "label": "Download price list",   "href": "/price-list" },
+            { "label": "Bulk & bespoke orders", "href": "/contact" },
+            { "label": "30-day terms",          "href": "/trade-terms" }
+          ]
+        },
+        {
+          "heading": "Help",
+          "links": [
+            { "label": "Delivery information",  "href": "/delivery" },
+            { "label": "Returns policy",        "href": "/returns" },
+            { "label": "FAQs",                  "href": "/faq" },
+            { "label": "Choosing a tarpaulin",  "href": "/guides/choosing-a-tarpaulin" },
+            { "label": "Contact us",            "href": "/contact" },
+            { "label": "Privacy Policy",        "href": "/privacy-policy" },
+            { "label": "Trading Terms",         "href": "/trading-terms" }
+          ]
+        },
+        {
+          "heading": "Contact",
+          "type": "contact",
+          "items": [
+            { "icon": "📍", "text": "Redwings Farm, Lanterns Lane, Aston End, Stevenage, Hertfordshire SG2 7HP" },
+            { "icon": "📞", "text": "01438 880 178 / 01438 221 009" },
+            { "icon": "📠", "text": "Fax: 01438 880 862" },
+            { "icon": "✉️", "text": "sales@tristarltd.co.uk" }
+          ]
+        }
+      ],
+      "divider": { "borderTop": "1px solid #1B2A4A" },
+      "bottom": {
+        "padding": "20px 0 24px",
+        "copyright": "© 2025 Tri Star UK Ltd. All rights reserved. Registered in England & Wales.",
+        "copyrightColor": "#4A6280",
+        "copyrightFontSize": "12px",
+        "legalLinks": [
+          { "label": "Privacy Policy", "href": "/privacy-policy" },
+          { "label": "Terms",          "href": "/trading-terms" },
+          { "label": "Cookie Policy",  "href": "/cookies" }
+        ],
+        "certifications": [
+          { "label": "UK Importer",    "bg": "#1B2A4A", "color": "#7A92B0", "border": "1px solid #253A58", "borderRadius": "4px" },
+          { "label": "VAT Registered", "bg": "#1B2A4A", "color": "#7A92B0", "border": "1px solid #253A58", "borderRadius": "4px" }
+        ],
+        "paymentMethods": [
+          { "label": "VISA", "bg": "#1B2A4A", "border": "1px solid #253A58", "borderRadius": "4px", "color": "#A8BDD8" },
+          { "label": "MC",   "bg": "#1B2A4A", "border": "1px solid #253A58", "borderRadius": "4px", "color": "#A8BDD8" },
+          { "label": "AMEX", "bg": "#1B2A4A", "border": "1px solid #253A58", "borderRadius": "4px", "color": "#A8BDD8" },
+          { "label": "BACS", "bg": "#1B2A4A", "border": "1px solid #253A58", "borderRadius": "4px", "color": "#A8BDD8" }
+        ]
+      }
     }
-  ]
+
+  ],
+
+  "_meta": {
+    "schema_version": "1.0.0",
+    "template_base": "landing-page_config.json",
+    "generated": "2025-06-15",
+    "source_site": "https://tristarltd.co.uk/",
+    "branding_source": "tristar-ecommerce.html (dummy site design — navy #1B2A4A / red #C8102E)",
+    "content_source": "tristarltd.co.uk live site — real products, SKUs, descriptions, contact details, categories",
+    "gaps_filled_with": "dummy HTML design (featured products, testimonials, stats, how-to-order) — to be replaced when real data is ready",
+    "html_design_tokens_captured": true,
+    "notes": [
+      "ALL HTML design tokens now captured: typography (42px h1, 26px h2, 13px nav, 12px cat count etc), spacing (1280px container, 40px padding, 56px section, 72px header, 420px sidebar), layout grids (4-col products, 4-col categories, 3-col reviews, 2.5/1/1/1/1.5 footer), shadows (hero card 0 8px 40px, product hover 0 4px 20px), border-radii (4/8/12/16/100px), transitions (0.15s default, 0.2s card), gradients (crosshatch hero pattern, promo bar, newsletter, step connector, all product/category image gradients), hover transforms (translateY(-2px)), red bar clip-path (polygon(12% 0, 100% 0, 100% 100%, 0 100%)), hero em colour (#ffb3bf), all badge definitions, all table status colours",
+      "Theme block added as top-level key containing all HTML CSS tokens for renderer use",
+      "Brand colours: primary=#C8102E, dark=#1B2A4A, footerBg=#0F1E38 — from dummy HTML NOT real site",
+      "Real SKUs from site: CDS6 (Calico Cotton Dustsheet), CDS7 (Cotton Twill Dustsheet), TARP (All-Purpose Tarpaulin), NON WOVEN (Non-Woven Laminated Dustsheet)",
+      "Real leno sizes confirmed from product page: 3×4m, 4×5m, 4×10m, 10×17m",
+      "Real brush range from site: Block Brush, Contractor Paint Brush, Acer, Personal Cage Frame Wooden Handle, Wood Preserve Brush 40×100mm, 4in Acrylic Tiger Stripe Roller",
+      "Real sacks from site: Woven Rubble Sacks 36x24in/100 bale, White Woven 3x2ft/pack 5, Heavy Duty Garden Sacks (Rim 142cm, L 86cm, 140 gauge), Heavy Duty Dustbin Liners (18x29x39in, 120 gauge)",
+      "Real dust sheet subtypes from site: cotton, laminated cotton, canvas heavyweight, rayon and polythene, non-woven, carpet protectors",
+      "Real product counts: Dust Sheets=12 (confirmed from site showing 1-9 of 12), Sacks=22 (confirmed from site showing 1-9 of 22)",
+      "Pricing hidden behind login on real site — retailPrice null where not publicly confirmed",
+      "All contact details real: address, 2 phone numbers, fax, email confirmed from tristarltd.co.uk/contact"
+    ]
+  }
 }

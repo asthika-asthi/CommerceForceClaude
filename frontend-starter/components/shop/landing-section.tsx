@@ -6,6 +6,16 @@ import { GlowButton } from '@/components/ui/shiny-button'
 export function LandingSectionRenderer({ section }: { section: LandingSection }) {
   const style = section.background_color ? { backgroundColor: section.background_color } : undefined
 
+  // Config-sourced section: __block is top-level, not inside section.content
+  const asConfig = section as unknown as { __block?: string; requiredPlugin?: string; [key: string]: unknown }
+  if (typeof asConfig.__block === 'string') {
+    const entry = BLOCK_REGISTRY[asConfig.__block]
+    if (!entry) return null
+    const { __block: _, requiredPlugin: __, ...props } = asConfig
+    const BlockComponent = entry.component
+    return <BlockComponent {...props} />
+  }
+
   if (section.section_type === 'block') {
     try {
       const config = JSON.parse(section.content ?? '{}') as Record<string, unknown>
