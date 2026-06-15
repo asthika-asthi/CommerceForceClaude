@@ -41,7 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     store_name: branding?.store_name || storeFromConfig.name || "My Store",
     tagline: branding?.tagline || storeFromConfig.tagline,
     logo_url: branding?.logo_url || storeFromConfig.logo_url,
-    favicon_url: branding?.favicon_url,
+    favicon_url: branding?.favicon_url || storeFromConfig.favicon_url,
     primary_color: branding?.primary_color ?? "#000000",
     secondary_color: branding?.secondary_color ?? "#000000",
     font_family: branding?.font_family ?? "Poppins",
@@ -54,6 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={`${poppins.variable} h-full`}>
       <head>
+        {effectiveBranding.favicon_url && <link rel="icon" href={effectiveBranding.favicon_url} />}
         {fontLink && <link rel="stylesheet" href={fontLink} />}
         {fontLink && fontName && (
           <style>{`:root { --font-sans: ${JSON.stringify(fontName)}, system-ui, sans-serif }`}</style>

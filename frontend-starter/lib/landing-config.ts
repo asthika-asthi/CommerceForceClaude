@@ -19,6 +19,7 @@ export interface StoreConfig {
   name?: string
   tagline?: string
   logo_url?: string
+  favicon_url?: string
   contact_email?: string
   contact_phone?: string
 }

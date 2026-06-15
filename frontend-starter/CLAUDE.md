@@ -55,6 +55,35 @@ All client-specific colours and the font are defined as CSS custom properties in
 
 ---
 
+## Image Assets — Two Lanes
+
+There are two distinct image stores with different owners and URL patterns:
+
+| Image type | Where | URL pattern | Who sets it |
+|---|---|---|---|
+| Logo, favicon, hero, section backgrounds | `public/images/` (committed to git branch) | `/images/filename.ext` | Superadmin |
+| Product photos, promo banners | Backend `uploads/` (uploaded via admin panel) | `http://host/uploads/uuid-file.jpg` | Admin |
+
+**Superadmin images** (per-client branding, committed to the client's git branch):
+
+| File | Config key | Purpose |
+|---|---|---|
+| `public/images/logo.png` | `store.logo_url` | Navbar / footer logo |
+| `public/images/favicon.ico` | `store.favicon_url` | Browser tab icon |
+| `public/images/hero.jpg` | `sections[scroll-expand-hero].mediaSrc` | Hero foreground image |
+| `public/images/hero-bg.jpg` | `sections[scroll-expand-hero].bgImageSrc` | Hero full-bleed background |
+| `public/images/cta-bg.jpg` | `sections[cta-banner].backgroundImage` | CTA section background |
+| `public/images/newsletter-bg.jpg` | `sections[newsletter-section].backgroundImage` | Newsletter section background |
+
+All `/images/...` paths are relative to the Next.js `public/` directory and work on any host without URL changes. Place image files in `public/images/` and commit them to the client's branch.
+
+**Admin-managed images** (uploaded through the admin panel, stored in the backend):
+- These are product photos, promotion banners, and other content the client manages day-to-day.
+- URLs are absolute (e.g. `http://localhost:8000/uploads/uuid-file.jpg`) and are stored in the database.
+- Do not commit these to git.
+
+---
+
 ## Applying a New Client's Design
 
 Given a `design.md` file with the client's brand, follow these steps in order.
@@ -175,16 +204,15 @@ Update `backend/seed.py`'s `_CATEGORIES` list and `_products()` function with th
 
 ## Customisation Checklist (new client deployment)
 
-- [ ] Copy `frontend-starter/` to the client's project directory
-- [ ] Update `app/globals.css` `:root` tokens with client's colours
-- [ ] Update font in `app/layout.tsx`
-- [ ] Run bulk class-replace script (Step 3 above) if starting from template
-- [ ] Set store name, logo, and contact info via admin panel or `seed.py`
-- [ ] Update product categories and demo products in `seed.py`
+- [ ] Copy `frontend-starter/` to the client's project directory (or create a git branch)
+- [ ] Edit `landing-page.config.json`: set `brand` colours + font, `store` name/tagline/contact, `plugins` list
+- [ ] Add client image files to `public/images/`: `logo.png`, `favicon.ico`, `hero.jpg`, `hero-bg.jpg`, `cta-bg.jpg`, `newsletter-bg.jpg`
+- [ ] Run bulk class-replace script (Step 3 in Applying a New Client's Design) if starting from template
+- [ ] Update product categories and demo products in `backend/seed.py`
 - [ ] Run `python seed.py` to populate the database
 - [ ] Run `npm run build` to verify no TypeScript errors
 - [ ] Test golden path: browse → add to cart → checkout → order confirmed
-- [ ] Update `backend/.env` `ENABLED_PLUGINS` to match client's purchased plugins
+- [ ] Update `backend/.env` `ENABLED_PLUGINS` to match the `plugins` list in config
 - [ ] Configure SMTP credentials in `backend/.env` for order emails
 
 ---

@@ -2,6 +2,8 @@
   "store": {
     "name": "Tarpaulins To Go",
     "tagline": "The UK's trusted tarpaulin specialists",
+    "logo_url": "/images/logo.png",
+    "favicon_url": "/images/favicon.ico",
     "contact_email": "info@tarpaulinstogo.co.uk"
   },
   "brand": {
@@ -23,8 +25,8 @@
       "__block": "scroll-expand-hero",
       "title": "Premium Tarpaulins & Covers",
       "subtitle": "Heavy-duty protection for industrial, agricultural, and commercial use",
-      "mediaSrc": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200",
-      "bgImageSrc": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1800",
+      "mediaSrc": "/images/hero.jpg",
+      "bgImageSrc": "/images/hero-bg.jpg",
       "mediaType": "image"
     },
     {
@@ -51,13 +53,15 @@
       "title": "Need a Custom Size?",
       "subtitle": "We cut to measure — any shape, any size.",
       "ctaText": "Get a Quote",
-      "ctaUrl": "/contact"
+      "ctaUrl": "/contact",
+      "backgroundImage": "/images/cta-bg.jpg"
     },
     {
       "__block": "newsletter-section",
       "requiredPlugin": "newsletter",
       "title": "Trade Deals & New Stock Alerts",
-      "subtitle": "Join 5,000+ trade customers getting weekly deals"
+      "subtitle": "Join 5,000+ trade customers getting weekly deals",
+      "backgroundImage": "/images/newsletter-bg.jpg"
     }
   ]
 }
