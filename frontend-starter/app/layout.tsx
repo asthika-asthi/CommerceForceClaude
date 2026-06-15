@@ -35,14 +35,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const storeFromConfig = getStoreConfig()
   const fontName = (() => { try { return getLandingConfig().brand?.font ?? null } catch { return null } })()
 
-  // Merge: DB branding wins over config, config wins over empty string
-  const effectiveBranding = {
-    ...branding,
-    store_name: branding?.store_name || storeFromConfig.name,
+  // Merge: DB branding wins over config, config wins over hardcoded defaults
+  const effectiveBranding: BrandingConfig = {
+    id: branding?.id ?? "default",
+    store_name: branding?.store_name || storeFromConfig.name || "My Store",
     tagline: branding?.tagline || storeFromConfig.tagline,
     logo_url: branding?.logo_url || storeFromConfig.logo_url,
+    favicon_url: branding?.favicon_url,
+    primary_color: branding?.primary_color ?? "#000000",
+    secondary_color: branding?.secondary_color ?? "#000000",
+    font_family: branding?.font_family ?? "Poppins",
+    custom_css: branding?.custom_css,
     contact_email: branding?.contact_email || storeFromConfig.contact_email,
     contact_phone: branding?.contact_phone || storeFromConfig.contact_phone,
+    social_links: branding?.social_links,
   }
 
   return (
@@ -50,7 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         {fontLink && <link rel="stylesheet" href={fontLink} />}
         {fontLink && fontName && (
-          <style>{`:root { --font-sans: '${fontName}', system-ui, sans-serif }`}</style>
+          <style>{`:root { --font-sans: ${JSON.stringify(fontName)}, system-ui, sans-serif }`}</style>
         )}
         {brandCss && <style>{brandCss}</style>}
         {effectiveBranding?.custom_css && <style>{effectiveBranding.custom_css}</style>}
