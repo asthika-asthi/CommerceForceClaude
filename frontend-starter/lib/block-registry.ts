@@ -15,6 +15,12 @@ import { TubelightNavbarBlock } from '@/components/blocks/tubelight-navbar-block
 import { PromotionsBanner } from '@/components/blocks/promotions-banner'
 import { AnnouncementBar } from '@/components/blocks/announcement-bar'
 import { CouponSpotlight } from '@/components/blocks/coupon-spotlight'
+import { TrustStrip } from '@/components/blocks/trust-strip'
+import { CategoryGrid } from '@/components/blocks/category-grid'
+import { DualCtaBanner } from '@/components/blocks/dual-cta-banner'
+import { StatsBand } from '@/components/blocks/stats-band'
+import { HowToOrder } from '@/components/blocks/how-to-order'
+import { ProductRangeTable } from '@/components/blocks/product-range-table'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,4 +45,10 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'promotions-banner': { component: PromotionsBanner },
   'announcement-bar': { component: AnnouncementBar },
   'coupon-spotlight': { component: CouponSpotlight },
+  'trust-strip': { component: TrustStrip },
+  'category-grid': { component: CategoryGrid },
+  'dual-cta-banner': { component: DualCtaBanner },
+  'stats-band': { component: StatsBand },
+  'how-to-order': { component: HowToOrder },
+  'product-range-table': { component: ProductRangeTable },
 }
