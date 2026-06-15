@@ -8,7 +8,10 @@ interface ScrollExpandHeroProps {
   mediaSrc: string
   posterSrc?: string
   bgImageSrc?: string
+  background?: string
   title: string
+  eyebrow?: string
+  subtitle?: string
   date?: string
   scrollToExpand?: string
   textBlend?: boolean
@@ -20,7 +23,10 @@ export function ScrollExpandHero({
   mediaSrc,
   posterSrc,
   bgImageSrc,
+  background = '#0f172a',
   title,
+  eyebrow,
+  subtitle,
   date,
   scrollToExpand = 'Scroll to explore',
   textBlend = false,
@@ -47,35 +53,40 @@ export function ScrollExpandHero({
   return (
     <div
       ref={containerRef}
-      className="relative min-h-[200vh]"
+      className="relative min-h-[150vh]"
       style={
         bgImageSrc
           ? { backgroundImage: `url("${bgImageSrc}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
-          : undefined
+          : { backgroundColor: background }
       }
     >
       {/* Sticky viewport-filling section */}
-      <div className="sticky top-0 h-screen overflow-hidden flex flex-col items-center justify-center bg-slate-950">
-        {/* Background tint behind the media */}
-        <div className="absolute inset-0 bg-slate-950/70" />
+      <div className="sticky top-0 h-screen overflow-hidden flex flex-col items-center justify-center" style={{ backgroundColor: background }}>
+        {/* Background tint */}
+        <div className="absolute inset-0 bg-black/40" />
 
         {/* Title block — above media */}
         <motion.div
-          className="relative z-20 text-center px-6 mb-8 pointer-events-none"
+          className="relative z-20 text-center px-6 mb-8 pointer-events-none max-w-3xl"
           style={{ y: titleY, opacity: titleOpacity }}
         >
-          {date && (
-            <p className="text-brand text-sm font-semibold uppercase tracking-widest mb-3">
-              {date}
+          {(eyebrow || date) && (
+            <p className="text-white/70 text-xs font-semibold uppercase tracking-[0.8px] mb-4">
+              {eyebrow ?? date}
             </p>
           )}
           <h1
-            className={`text-5xl md:text-7xl font-extrabold leading-tight tracking-tight ${
+            className={`text-4xl md:text-6xl font-extrabold leading-tight tracking-tight mb-4 ${
               textBlend ? 'mix-blend-overlay text-white' : 'text-white'
             }`}
           >
             {title}
           </h1>
+          {subtitle && (
+            <p className="text-white/70 text-base md:text-lg leading-relaxed max-w-xl mx-auto">
+              {subtitle}
+            </p>
+          )}
         </motion.div>
 
         {/* Expanding media container */}

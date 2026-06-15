@@ -46,7 +46,7 @@ export function DualCtaBanner({ cards = [] }: DualCtaBannerProps) {
                 </p>
               )}
               {card.features && card.features.length > 0 && (
-                <ul className="flex flex-wrap gap-2 mb-8">
+                <ul className="list-none flex flex-wrap gap-2 mb-8 p-0 m-0">
                   {card.features.map((f, j) => (
                     <li
                       key={j}
