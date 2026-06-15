@@ -4,11 +4,12 @@ import "./globals.css"
 import { Providers } from "./providers"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
+import { Topbar } from "@/components/layout/topbar"
 import { ChatWidget } from "@/components/chat-widget"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { serverFetch } from "@/lib/api"
 import type { BrandingConfig } from "@/lib/types"
-import { getBrandCss, getFontLink, getStoreConfig, getLandingConfig } from "@/lib/landing-config"
+import { getBrandCss, getFontLink, getStoreConfig, getLandingConfig, getTopbarSection } from "@/lib/landing-config"
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -33,6 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const brandCss = getBrandCss()
   const fontLink = getFontLink()
   const storeFromConfig = getStoreConfig()
+  const topbar = getTopbarSection()
   const fontName = (() => { try { return getLandingConfig().brand?.font ?? null } catch { return null } })()
 
   // Merge: DB branding wins over config, config wins over hardcoded defaults
@@ -64,6 +66,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-full flex flex-col antialiased">
         <Providers>
+          {topbar && (
+            <Topbar
+              leftItems={topbar.leftItems as { icon?: string; text: string; href?: string }[]}
+              rightLinks={topbar.rightLinks as { label: string; href: string }[]}
+            />
+          )}
           <Navbar branding={effectiveBranding} />
           <main className="flex-1">{children}</main>
           <Footer branding={effectiveBranding} />

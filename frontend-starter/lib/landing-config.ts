@@ -104,6 +104,15 @@ export function getStoreConfig(): StoreConfig {
   }
 }
 
+export function getTopbarSection(): Record<string, unknown> | null {
+  try {
+    const section = getLandingConfig().sections.find(s => s.__block === 'topbar')
+    return section ? (section as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
 export function getFontLink(): string | null {
   try {
     const font = getLandingConfig().brand?.font
