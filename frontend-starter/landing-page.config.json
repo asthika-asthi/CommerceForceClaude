@@ -1227,44 +1227,37 @@
         {
           "heading": "Products",
           "links": [
-            { "label": "Tarpaulins",     "href": "/tarpaulins" },
-            { "label": "Dust Sheets",    "href": "/dust-sheets" },
-            { "label": "Sacks & Bags",   "href": "/sacks-bags" },
-            { "label": "Paint Brushes",  "href": "/paint-brushes-rollers" },
-            { "label": "Rollers",        "href": "/paint-brushes-rollers" },
-            { "label": "Special Offers", "href": "/special-offers" }
+            { "label": "Tarpaulins",     "url": "/products?category=tarpaulins" },
+            { "label": "Dust Sheets",    "url": "/products?category=dust-sheets" },
+            { "label": "Sacks & Bags",   "url": "/products?category=sacks-bags" },
+            { "label": "Paint Brushes",  "url": "/products?category=brushes-rollers" },
+            { "label": "Special Offers", "url": "/products?sale=true" }
           ]
         },
         {
           "heading": "Trade",
           "links": [
-            { "label": "Register for trade",    "href": "/register" },
-            { "label": "Trade login",           "href": "/trade-login" },
-            { "label": "Download price list",   "href": "/price-list" },
-            { "label": "Bulk & bespoke orders", "href": "/contact" },
-            { "label": "30-day terms",          "href": "/trade-terms" }
+            { "label": "Register for trade",    "url": "/register" },
+            { "label": "Trade login",           "url": "/login" },
+            { "label": "Bulk & bespoke orders", "url": "/contact" }
           ]
         },
         {
           "heading": "Help",
           "links": [
-            { "label": "Delivery information",  "href": "/delivery" },
-            { "label": "Returns policy",        "href": "/returns" },
-            { "label": "FAQs",                  "href": "/faq" },
-            { "label": "Choosing a tarpaulin",  "href": "/guides/choosing-a-tarpaulin" },
-            { "label": "Contact us",            "href": "/contact" },
-            { "label": "Privacy Policy",        "href": "/privacy-policy" },
-            { "label": "Trading Terms",         "href": "/trading-terms" }
+            { "label": "FAQs",             "url": "/faq" },
+            { "label": "Contact us",       "url": "/contact" },
+            { "label": "Privacy Policy",   "url": "/privacy-policy" },
+            { "label": "Trading Terms",    "url": "/trading-terms" }
           ]
         },
         {
           "heading": "Contact",
-          "type": "contact",
-          "items": [
-            { "icon": "📍", "text": "Redwings Farm, Lanterns Lane, Aston End, Stevenage, Hertfordshire SG2 7HP" },
-            { "icon": "📞", "text": "01438 880 178 / 01438 221 009" },
-            { "icon": "📠", "text": "Fax: 01438 880 862" },
-            { "icon": "✉️", "text": "sales@tristarltd.co.uk" }
+          "links": [
+            { "label": "01438 880 178",          "url": "tel:01438880178" },
+            { "label": "01438 221 009",          "url": "tel:01438221009" },
+            { "label": "sales@tristarltd.co.uk", "url": "mailto:sales@tristarltd.co.uk" },
+            { "label": "Stevenage, Hertfordshire SG2 7HP", "url": "/contact" }
           ]
         }
       ],

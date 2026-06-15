@@ -36,7 +36,7 @@ export function FooterBlock({
             <div key={i}>
               <p className="text-white font-semibold text-sm mb-3">{col.heading}</p>
               <ul className="space-y-2">
-                {col.links.map((l, j) => (
+                {(col.links ?? []).map((l, j) => (
                   <li key={j}>
                     <a href={l.url} className="text-sm hover:text-white transition-colors">{l.label}</a>
                   </li>
