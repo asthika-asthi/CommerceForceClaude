@@ -1,19 +1,15 @@
-/* Theme: default (Tarpaulins To Go)
-   Primary: Sage Green (#B6C1A1), Emphasis: Deep Green (#0D3328), Font: Poppins
-   To create a new client theme: copy this folder to themes/[client-name]/
-   and update the token values. */
+/* Theme: Tri Star UK Ltd
+   Primary: Red (#C8102E), Emphasis: Navy (#1B2A4A), Font: Poppins */
 
 :root {
-  /* Tarpaulins To Go brand */
-  --brand: #B6C1A1;
-  --brand-hover: #A3AE8E;
-  --brand-dark: #0D3328;
-  --brand-secondary: #555555;
+  --brand: #C8102E;
+  --brand-hover: #A50D24;
+  --brand-dark: #1B2A4A;
+  --brand-secondary: #5C5C5C;
   --alert: #FF0000;
-  /* Neutral */
-  --bg: #ffffff;
-  --fg: #000000;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --card-bg: #f8fafc;
+  --bg: #F5F5F3;
+  --fg: #1a1a1a;
+  --muted: #5C5C5C;
+  --border: #E0DED8;
+  --card-bg: #FFFFFF;
 }

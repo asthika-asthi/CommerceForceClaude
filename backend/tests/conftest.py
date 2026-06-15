@@ -17,6 +17,9 @@ from app.core.database import get_db  # noqa: E402
 from app.main import app  # noqa: E402
 
 TEST_DB_URL = "sqlite+aiosqlite:///./test_commerceforce.db"
+assert "test_" in TEST_DB_URL, (
+    f"Safety check: tests must use test_commerceforce.db, got: {TEST_DB_URL}"
+)
 
 test_engine = create_async_engine(TEST_DB_URL, echo=False)
 TestSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
