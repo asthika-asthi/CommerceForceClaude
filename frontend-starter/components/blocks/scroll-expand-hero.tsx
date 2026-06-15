@@ -10,7 +10,7 @@ interface ScrollExpandHeroProps {
   bgImageSrc?: string
   background?: string
   title: string
-  eyebrow?: string
+  eyebrow?: string | { text?: string; [key: string]: unknown }
   subtitle?: string
   date?: string
   scrollToExpand?: string
@@ -72,7 +72,7 @@ export function ScrollExpandHero({
         >
           {(eyebrow || date) && (
             <p className="text-white/70 text-xs font-semibold uppercase tracking-[0.8px] mb-4">
-              {eyebrow ?? date}
+              {typeof eyebrow === 'object' ? eyebrow?.text : (eyebrow ?? date)}
             </p>
           )}
           <h1
