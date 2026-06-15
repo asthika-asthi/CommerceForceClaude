@@ -8,6 +8,7 @@ import { ChatWidget } from "@/components/chat-widget"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { serverFetch } from "@/lib/api"
 import type { BrandingConfig } from "@/lib/types"
+import { getBrandCss, getFontLink, getStoreConfig, getLandingConfig } from "@/lib/landing-config"
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -17,25 +18,48 @@ const poppins = Poppins({
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await serverFetch<BrandingConfig>("/api/branding")
+  const storeFromConfig = getStoreConfig()
+  const storeName = branding?.store_name || storeFromConfig.name
+  const tagline = branding?.tagline || storeFromConfig.tagline
   return {
-    title: { default: branding?.store_name ?? "Store", template: `%s | ${branding?.store_name ?? "Store"}` },
-    description: branding?.tagline,
+    title: { default: storeName ?? "Store", template: `%s | ${storeName ?? "Store"}` },
+    description: tagline,
   }
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const branding = await serverFetch<BrandingConfig>("/api/branding")
 
+  const brandCss = getBrandCss()
+  const fontLink = getFontLink()
+  const storeFromConfig = getStoreConfig()
+  const fontName = (() => { try { return getLandingConfig().brand?.font ?? null } catch { return null } })()
+
+  // Merge: DB branding wins over config, config wins over empty string
+  const effectiveBranding = {
+    ...branding,
+    store_name: branding?.store_name || storeFromConfig.name,
+    tagline: branding?.tagline || storeFromConfig.tagline,
+    logo_url: branding?.logo_url || storeFromConfig.logo_url,
+    contact_email: branding?.contact_email || storeFromConfig.contact_email,
+    contact_phone: branding?.contact_phone || storeFromConfig.contact_phone,
+  }
+
   return (
     <html lang="en" className={`${poppins.variable} h-full`}>
-      {branding?.custom_css && (
-        <head><style>{branding.custom_css}</style></head>
-      )}
+      <head>
+        {fontLink && <link rel="stylesheet" href={fontLink} />}
+        {fontLink && fontName && (
+          <style>{`:root { --font-sans: '${fontName}', system-ui, sans-serif }`}</style>
+        )}
+        {brandCss && <style>{brandCss}</style>}
+        {effectiveBranding?.custom_css && <style>{effectiveBranding.custom_css}</style>}
+      </head>
       <body className="min-h-full flex flex-col antialiased">
         <Providers>
-          <Navbar branding={branding} />
+          <Navbar branding={effectiveBranding} />
           <main className="flex-1">{children}</main>
-          <Footer branding={branding} />
+          <Footer branding={effectiveBranding} />
           <ChatWidget />
           <BottomNav />
         </Providers>

@@ -1,4 +1,23 @@
 {
+  "store": {
+    "name": "Tarpaulins To Go",
+    "tagline": "The UK's trusted tarpaulin specialists",
+    "contact_email": "info@tarpaulinstogo.co.uk"
+  },
+  "brand": {
+    "primary": "#B6C1A1",
+    "primaryHover": "#A3AE8E",
+    "dark": "#0D3328",
+    "secondary": "#555555",
+    "background": "#ffffff",
+    "text": "#000000",
+    "font": "Poppins"
+  },
+  "plugins": [
+    "products", "orders", "cart", "checkout", "categories",
+    "coupons", "newsletter", "promotions", "announcements",
+    "loyalty", "branding", "landing_page", "auth"
+  ],
   "sections": [
     {
       "__block": "scroll-expand-hero",

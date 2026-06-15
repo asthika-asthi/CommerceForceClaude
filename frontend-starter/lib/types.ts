@@ -182,3 +182,26 @@ export interface LandingConfigSection {
 export interface LandingConfig {
   sections: LandingConfigSection[]
 }
+
+// Config-driven brand and store types
+export interface BrandConfig {
+  primary?: string
+  primaryHover?: string
+  dark?: string
+  secondary?: string
+  background?: string
+  text?: string
+  alert?: string
+  muted?: string
+  border?: string
+  cardBg?: string
+  font?: string
+}
+
+export interface StoreConfig {
+  name?: string
+  tagline?: string
+  logo_url?: string
+  contact_email?: string
+  contact_phone?: string
+}
