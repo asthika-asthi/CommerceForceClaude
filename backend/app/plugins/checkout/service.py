@@ -1,7 +1,5 @@
 import logging
-import smtplib
 from decimal import Decimal
-from email.mime.text import MIMEText
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -13,6 +11,7 @@ from app.plugins.products import service as product_service
 from app.plugins.orders import service as order_service
 from app.plugins.orders.models import Order, PaymentMethod, PaymentStatus
 from app.plugins.checkout.schemas import CheckoutRequest, CheckoutItem
+from app.shared.email import send_email
 
 logger = logging.getLogger(__name__)
 
@@ -206,16 +205,18 @@ async def checkout(
             pass
     if recipient:
         try:
-            _send_order_confirmation_email(recipient, order, items)
+            await _send_order_confirmation_email(recipient, order, items, db)
         except Exception as exc:
             logger.warning("Order confirmation email failed for order %s: %s", order.id, exc)
 
     return order
 
 
-def _send_order_confirmation_email(to: str, order: Order, items: list[dict]) -> None:
+async def _send_order_confirmation_email(
+    to: str, order: Order, items: list[dict], db: AsyncSession
+) -> None:
     items_text = "\n".join(
-        f"  {i['product_name']} x{i['quantity']}  ${float(i['unit_price']) * i['quantity']:.2f}"
+        f"  {i['product_name']} x{i['quantity']}  £{float(i['unit_price']) * i['quantity']:.2f}"
         for i in items
     )
     payment_label = {
@@ -228,33 +229,19 @@ def _send_order_confirmation_email(to: str, order: Order, items: list[dict]) -> 
         f"Thank you for your order!\n\n"
         f"Order number: {order.order_number}\n\n"
         f"Items:\n{items_text}\n\n"
-        f"Subtotal:  ${order.subtotal:.2f}\n"
+        f"Subtotal:  £{order.subtotal:.2f}\n"
     )
     if order.discount_amount > 0:
-        body += f"Discount:  -${order.discount_amount:.2f}\n"
+        body += f"Discount:  -£{order.discount_amount:.2f}\n"
     body += (
-        f"Total:     ${order.total:.2f}\n\n"
+        f"Total:     £{order.total:.2f}\n\n"
         f"Payment:   {payment_label}\n"
     )
     if order.shipping_address:
         body += f"\nShipping address:\n{order.shipping_address}\n"
     body += "\nWe will keep you updated on your order status. Thank you for shopping with us!"
 
-    logger.info("Order confirmation for %s: %s — $%s", to, order.order_number, order.total)
-    print(f"\n[ORDER CONFIRMATION] {to} — {order.order_number} — ${order.total:.2f}\n", flush=True)
+    logger.info("Order confirmation for %s: %s — £%s", to, order.order_number, order.total)
+    print(f"\n[ORDER CONFIRMATION] {to} — {order.order_number} — £{order.total:.2f}\n", flush=True)
 
-    if not settings.SMTP_USER:
-        return
-    msg = MIMEText(body, "plain")
-    msg["Subject"] = f"Order confirmed — {order.order_number}"
-    msg["From"] = settings.SMTP_FROM
-    msg["To"] = to
-    try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as smtp:
-            if settings.SMTP_TLS:
-                smtp.starttls()
-            smtp.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            smtp.sendmail(settings.SMTP_FROM, [to], msg.as_string())
-        logger.info("Order confirmation email sent to %s", to)
-    except Exception as exc:
-        logger.warning("Failed to send order confirmation email to %s: %s", to, exc)
+    await send_email(to, f"Order confirmed — {order.order_number}", body, db)

@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import String, Boolean, DateTime, Enum as SAEnum, ForeignKey
+from sqlalchemy import String, Boolean, DateTime, Enum as SAEnum, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.base_model import BaseModel
 
@@ -27,6 +27,8 @@ class User(BaseModel):
     vat_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     business_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     trade_status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # pending | approved | rejected
+    email_verification_token: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class RefreshToken(BaseModel):

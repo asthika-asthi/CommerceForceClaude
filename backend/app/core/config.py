@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_MODEL: str = "anthropic/claude-haiku-4.5"
 
+    # Storefront URL — used for email links (verify email, password reset)
+    STOREFRONT_URL: str = "http://localhost:3000"
+
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000"
 

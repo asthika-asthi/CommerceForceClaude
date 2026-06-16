@@ -63,6 +63,12 @@ async def refresh(request: Request, response: Response, db: AsyncSession = Depen
     return TokenResponse(access_token=access_token)
 
 
+@router.get("/verify-email", response_model=UserOut)
+async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
+    user = await service.verify_email_token(token, db)
+    return UserOut.model_validate(user)
+
+
 @router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
 async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     await service.request_password_reset(data.email, db)

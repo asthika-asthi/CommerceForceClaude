@@ -1,9 +1,7 @@
 import hashlib
 import logging
 import secrets
-import smtplib
 from datetime import datetime, timedelta, timezone
-from email.mime.text import MIMEText
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
@@ -11,16 +9,24 @@ from app.core.security import get_password_hash, verify_password, create_access_
 from app.core.config import settings
 from app.plugins.auth.models import User, RefreshToken, PasswordResetToken, UserRole
 from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, UpdateProfileRequest, ChangePasswordRequest
+from app.shared.email import send_email
 
 logger = logging.getLogger(__name__)
 
 PASSWORD_RESET_EXPIRE_MINUTES = 30
 
 
+EMAIL_VERIFICATION_EXPIRE_HOURS = 24
+
+
 async def create_user(data: RegisterRequest, db: AsyncSession) -> User:
     result = await db.execute(select(User).where(User.email == data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=EMAIL_VERIFICATION_EXPIRE_HOURS)
 
     user = User(
         email=data.email,
@@ -30,8 +36,51 @@ async def create_user(data: RegisterRequest, db: AsyncSession) -> User:
         role=UserRole.customer,
         company_name=data.company_name,
         phone=data.phone,
+        email_verification_token=token_hash,
+        email_verification_expires_at=expires_at,
     )
     db.add(user)
+    await db.flush()
+
+    verify_url = f"{settings.STOREFRONT_URL}/verify-email?token={raw_token}"
+    logger.info("Email verification link for %s: %s", data.email, verify_url)
+    print(f"\n[EMAIL VERIFY] {data.email} -> {verify_url}\n", flush=True)
+    await send_email(
+        data.email,
+        "Please verify your email address",
+        f"Hi {data.first_name},\n\n"
+        f"Thanks for creating an account! Please verify your email address by clicking the link below "
+        f"(valid for {EMAIL_VERIFICATION_EXPIRE_HOURS} hours):\n\n"
+        f"{verify_url}\n\n"
+        f"If you didn't create this account, you can safely ignore this email.",
+        db,
+    )
+
+    return user
+
+
+async def verify_email_token(raw_token: str, db: AsyncSession) -> User:
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    result = await db.execute(select(User).where(User.email_verification_token == token_hash))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification link")
+
+    if user.is_email_verified:
+        return user  # already verified — idempotent
+
+    expires = user.email_verification_expires_at
+    if expires is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification link")
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires < datetime.now(timezone.utc):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification link has expired. Please request a new one.")
+
+    user.is_email_verified = True
+    user.email_verification_token = None
+    user.email_verification_expires_at = None
     await db.flush()
     return user
 
@@ -170,35 +219,19 @@ async def request_password_reset(email: str, db: AsyncSession) -> None:
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=PASSWORD_RESET_EXPIRE_MINUTES)
     db.add(PasswordResetToken(user_id=user.id, token_hash=token_hash, expires_at=expires_at))
 
-    # Build the reset URL (frontend handles it at /reset-password?token=...)
-    reset_url = f"http://localhost:3000/reset-password?token={raw_token}"
+    reset_url = f"{settings.STOREFRONT_URL}/reset-password?token={raw_token}"
     logger.info("Password reset link for %s: %s", email, reset_url)
     print(f"\n[PASSWORD RESET] {email} -> {reset_url}\n", flush=True)
 
-    if settings.SMTP_USER:
-        _send_reset_email(email, reset_url)
-
-
-def _send_reset_email(to: str, reset_url: str) -> None:
-    msg = MIMEText(
+    await send_email(
+        email,
+        "Reset your password",
         f"You requested a password reset.\n\n"
         f"Click the link below to set a new password (expires in {PASSWORD_RESET_EXPIRE_MINUTES} minutes):\n\n"
         f"{reset_url}\n\n"
         f"If you did not request this, you can safely ignore this email.",
-        "plain",
+        db,
     )
-    msg["Subject"] = "Reset your password"
-    msg["From"] = settings.SMTP_FROM
-    msg["To"] = to
-    try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as smtp:
-            if settings.SMTP_TLS:
-                smtp.starttls()
-            if settings.SMTP_USER:
-                smtp.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            smtp.sendmail(settings.SMTP_FROM, [to], msg.as_string())
-    except Exception as exc:
-        logger.warning("Failed to send password reset email: %s", exc)
 
 
 async def reset_password(token: str, new_password: str, db: AsyncSession) -> None:
