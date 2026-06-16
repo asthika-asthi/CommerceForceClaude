@@ -1,8 +1,9 @@
-"use client"
+﻿"use client"
 import { useState } from "react"
 import Link from "next/link"
 import { ShoppingCart, Check } from "lucide-react"
 import { useCartStore } from "@/store/cart"
+import { WishlistButton } from "@/components/shop/wishlist-button"
 import type { Product } from "@/lib/types"
 
 export function ProductCard({ product }: { product: Product }) {
@@ -29,18 +30,23 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group">
-      <Link href={`/products/${product.slug}`}>
-        <div className="aspect-square bg-slate-50 overflow-hidden">
-          {image ? (
-            <img src={image.url} alt={image.alt_text ?? product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-200">
-              <ShoppingCart size={40} />
-            </div>
-          )}
+      <div className="relative">
+        <Link href={`/products/${product.slug}`}>
+          <div className="aspect-square bg-slate-50 overflow-hidden">
+            {image ? (
+              <img src={image.url} alt={image.alt_text ?? product.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-200">
+                <ShoppingCart size={40} />
+              </div>
+            )}
+          </div>
+        </Link>
+        <div className="absolute top-2 right-2">
+          <WishlistButton productId={product.id} size={15} className="bg-white/90 hover:bg-white shadow-sm" />
         </div>
-      </Link>
+      </div>
 
       <div className="p-4">
         <Link href={`/products/${product.slug}`}>
@@ -51,9 +57,9 @@ export function ProductCard({ product }: { product: Product }) {
 
         <div className="flex items-center justify-between mt-3">
           <div>
-            <span className="font-bold text-slate-900">${displayPrice.toFixed(2)}</span>
+            <span className="font-bold text-slate-900">&#163;{displayPrice.toFixed(2)}</span>
             {salePrice && (
-              <span className="ml-2 text-xs text-slate-400 line-through">${price.toFixed(2)}</span>
+              <span className="ml-2 text-xs text-slate-400 line-through">&#163;{price.toFixed(2)}</span>
             )}
           </div>
           {product.stock_quantity > 0 ? (

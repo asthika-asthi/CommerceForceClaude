@@ -1,4 +1,4 @@
-// ── Auth ──────────────────────────────────────────────────────────────────────
+﻿// ── Auth ──────────────────────────────────────────────────────────────────────
 export interface User {
   id: string
   email: string
@@ -204,4 +204,43 @@ export interface StoreConfig {
   logo_url?: string
   contact_email?: string
   contact_phone?: string
+}
+
+// ── Addresses ─────────────────────────────────────────────────────────────────
+export interface Address {
+  id: string
+  user_id: string
+  label?: string
+  line1: string
+  line2?: string
+  city: string
+  county?: string
+  postcode: string
+  country: string
+  is_default: boolean
+}
+
+// ── Wishlist ──────────────────────────────────────────────────────────────────
+export interface WishlistItem {
+  id: string
+  user_id: string
+  product_id: string
+}
+
+// ── Reviews ───────────────────────────────────────────────────────────────────
+export interface Review {
+  id: string
+  product_id: string
+  user_id: string
+  rating: number
+  title?: string
+  body?: string
+  is_approved: boolean
+  reviewer_name?: string
+  created_at: string
+}
+
+export interface ReviewSummary {
+  average_rating: number
+  total_reviews: number
 }

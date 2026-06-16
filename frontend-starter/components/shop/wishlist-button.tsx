@@ -1,0 +1,58 @@
+﻿"use client"
+import { useState, useEffect } from "react"
+import { Heart } from "lucide-react"
+import { useAuthStore } from "@/store/auth"
+import { api } from "@/lib/api"
+
+interface WishlistButtonProps {
+  productId: string
+  className?: string
+  size?: number
+}
+
+export function WishlistButton({ productId, className = "", size = 16 }: WishlistButtonProps) {
+  const user = useAuthStore((s) => s.user)
+  const [inWishlist, setInWishlist] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    api.get<string[]>("/api/wishlist/ids")
+      .then((ids) => setInWishlist(ids.includes(productId)))
+      .catch(() => {})
+  }, [user, productId])
+
+  if (!user) return null
+
+  async function toggle() {
+    if (loading) return
+    setLoading(true)
+    try {
+      if (inWishlist) {
+        await api.del(`/api/wishlist/${productId}`)
+        setInWishlist(false)
+      } else {
+        await api.post(`/api/wishlist/${productId}`, {})
+        setInWishlist(true)
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={(e) => { e.preventDefault(); toggle() }}
+      disabled={loading}
+      className={`p-1.5 rounded-full transition-colors disabled:opacity-50 ${
+        inWishlist ? "text-red-500 hover:text-red-600" : "text-slate-400 hover:text-red-400"
+      } ${className}`}
+      title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+      aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+    >
+      <Heart size={size} fill={inWishlist ? "currentColor" : "none"} />
+    </button>
+  )
+}

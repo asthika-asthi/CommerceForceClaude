@@ -42,6 +42,8 @@ export default function AccountPage() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/account/orders" className="text-sm text-slate-500 hover:text-slate-800">All orders</Link>
+          <Link href="/account/wishlist" className="text-sm text-slate-500 hover:text-slate-800">Wishlist</Link>
+          <Link href="/account/addresses" className="text-sm text-slate-500 hover:text-slate-800">Addresses</Link>
           <Link href="/account/settings" className="text-sm text-slate-500 hover:text-slate-800">Settings</Link>
           <button onClick={handleLogout} className="text-sm text-slate-400 hover:text-slate-700">Sign out</button>
         </div>

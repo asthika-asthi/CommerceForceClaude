@@ -12,6 +12,7 @@ import { useCartStore } from "@/store/cart"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import Link from "next/link"
+import type { Address } from "@/lib/types"
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""
@@ -58,11 +59,33 @@ function CheckoutContent() {
   const [guestMode, setGuestMode] = useState<"choose" | "guest">("choose")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
 
   const stripe = useStripe()
   const elements = useElements()
 
   useEffect(() => { fetch() }, [fetch])
+
+  useEffect(() => {
+    if (!user) return
+    api.get<Address[]>("/api/addresses").then((addrs) => {
+      setSavedAddresses(addrs)
+      const def = addrs.find((a) => a.is_default) ?? addrs[0]
+      if (def) {
+        setSelectedAddressId(def.id)
+        setForm((f) => ({
+          ...f,
+          line1: def.line1,
+          line2: def.line2 ?? "",
+          city: def.city,
+          county: def.county ?? "",
+          zip: def.postcode,
+          country: def.country,
+        }))
+      }
+    }).catch(() => {})
+  }, [user])
 
   if (!user && guestMode === "choose") {
     return (
@@ -167,6 +190,44 @@ function CheckoutContent() {
           {/* Shipping */}
           <div className="bg-white border border-slate-100 rounded-xl p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Shipping address</h2>
+            {user && savedAddresses.length > 0 && (
+              <div className="mb-4 pb-4 border-b border-slate-100">
+                <p className="text-sm text-slate-600 mb-2">Saved addresses</p>
+                <div className="space-y-2">
+                  {savedAddresses.map((addr) => (
+                    <label key={addr.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedAddressId === addr.id ? "border-brand-dark bg-brand/5" : "border-slate-200 hover:border-slate-300"}`}>
+                      <input
+                        type="radio"
+                        name="saved_address"
+                        checked={selectedAddressId === addr.id}
+                        onChange={() => {
+                          setSelectedAddressId(addr.id)
+                          setForm((f) => ({
+                            ...f,
+                            line1: addr.line1,
+                            line2: addr.line2 ?? "",
+                            city: addr.city,
+                            county: addr.county ?? "",
+                            zip: addr.postcode,
+                            country: addr.country,
+                          }))
+                        }}
+                        className="mt-0.5 accent-brand-dark"
+                      />
+                      <div className="text-xs text-slate-700">
+                        {addr.label && <p className="font-semibold uppercase tracking-wide text-slate-500 mb-0.5">{addr.label}</p>}
+                        <p>{addr.line1}{addr.line2 ? `, ${addr.line2}` : ""}</p>
+                        <p>{addr.city}{addr.county ? `, ${addr.county}` : ""} {addr.postcode}</p>
+                      </div>
+                    </label>
+                  ))}
+                  <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedAddressId === null ? "border-brand-dark bg-brand/5" : "border-slate-200 hover:border-slate-300"}`}>
+                    <input type="radio" name="saved_address" checked={selectedAddressId === null} onChange={() => setSelectedAddressId(null)} className="mt-0.5 accent-brand-dark" />
+                    <span className="text-xs text-slate-600 font-medium">Enter a different address</span>
+                  </label>
+                </div>
+              </div>
+            )}
             {!user && (
               <div className="mb-4 pb-4 border-b border-slate-100">
                 <label className="block text-sm text-slate-600 mb-1">Email address *</label>
