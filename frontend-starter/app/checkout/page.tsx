@@ -1,45 +1,69 @@
-"use client"
+﻿"use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { loadStripe } from "@stripe/stripe-js"
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js"
 import { useCartStore } from "@/store/cart"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import Link from "next/link"
+
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""
+)
+
+type PaymentMethodKey = "cash" | "credit_limit" | "stripe"
 
 interface CheckoutForm {
   name: string
   line1: string
   line2: string
   city: string
-  state: string
+  county: string
   zip: string
   country: string
   coupon_code: string
   redeem_points: number
   guest_email: string
-  payment_method: "cash" | "credit_limit"
+  payment_method: PaymentMethodKey
 }
 
-const PAYMENT_METHODS: { value: "cash" | "credit_limit"; label: string; description: string }[] = [
+const PAYMENT_METHODS: { value: PaymentMethodKey; label: string; description: string }[] = [
   { value: "cash", label: "Cash on Delivery", description: "Pay when your order arrives" },
   { value: "credit_limit", label: "Credit Account", description: "Charge to your business credit account" },
+  { value: "stripe", label: "Pay by Card", description: "Pay securely with credit or debit card" },
 ]
 
 export default function CheckoutPage() {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutContent />
+    </Elements>
+  )
+}
+
+function CheckoutContent() {
   const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const { cart, fetch, clear } = useCartStore()
   const [form, setForm] = useState<CheckoutForm>({
-    name: "", line1: "", line2: "", city: "", state: "", zip: "", country: "US",
+    name: "", line1: "", line2: "", city: "", county: "", zip: "", country: "GB",
     coupon_code: "", redeem_points: 0, guest_email: "", payment_method: "cash",
   })
   const [guestMode, setGuestMode] = useState<"choose" | "guest">("choose")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  const stripe = useStripe()
+  const elements = useElements()
+
   useEffect(() => { fetch() }, [fetch])
 
-  // Unauthenticated: show sign-in vs guest choice
   if (!user && guestMode === "choose") {
     return (
       <div className="max-w-md mx-auto px-4 py-20">
@@ -81,7 +105,7 @@ export default function CheckoutPage() {
     setError("")
     setLoading(true)
     try {
-      const addressParts = [form.name, form.line1, form.line2, `${form.city}, ${form.state} ${form.zip}`, form.country]
+      const addressParts = [form.name, form.line1, form.line2, `${form.city}, ${form.county} ${form.zip}`, form.country]
         .filter(Boolean)
       const payload: Record<string, unknown> = {
         shipping_address: addressParts.join("\n"),
@@ -92,7 +116,27 @@ export default function CheckoutPage() {
       if (form.redeem_points > 0) payload.redeem_points = form.redeem_points
       if (!user && form.guest_email) payload.guest_email = form.guest_email
 
-      const res = await api.post<{ order_id: string; order_number: string }>("/api/checkout", payload)
+      const res = await api.post<{
+        order_id: string
+        order_number: string
+        client_secret?: string
+      }>("/api/checkout", payload)
+
+      if (form.payment_method === "stripe") {
+        if (!res.client_secret) throw new Error("Payment session not created. Please try again.")
+        if (!stripe || !elements) throw new Error("Card payment not ready. Please try again.")
+
+        const cardElement = elements.getElement(CardElement)
+        if (!cardElement) throw new Error("Card details not entered.")
+
+        const { error: stripeError } = await stripe.confirmCardPayment(res.client_secret, {
+          payment_method: { card: cardElement },
+        })
+        if (stripeError) {
+          throw new Error(stripeError.message ?? "Card payment failed.")
+        }
+      }
+
       clear()
       router.push(`/checkout/success?order_id=${res.order_id}&order_number=${encodeURIComponent(res.order_number)}`)
     } catch (err) {
@@ -113,7 +157,7 @@ export default function CheckoutPage() {
 
   const availablePaymentMethods = user
     ? PAYMENT_METHODS
-    : PAYMENT_METHODS.filter((m) => m.value === "cash")
+    : PAYMENT_METHODS.filter((m) => m.value !== "credit_limit")
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -157,19 +201,19 @@ export default function CheckoutPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-slate-600 mb-1">City</label>
+                  <label className="block text-sm text-slate-600 mb-1">Town / City</label>
                   <input required value={form.city} onChange={field("city")}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-600 mb-1">State</label>
-                  <input required value={form.state} onChange={field("state")}
+                  <label className="block text-sm text-slate-600 mb-1">County (optional)</label>
+                  <input value={form.county} onChange={field("county")}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-slate-600 mb-1">Postal code</label>
+                  <label className="block text-sm text-slate-600 mb-1">Postcode</label>
                   <input required value={form.zip} onChange={field("zip")}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
                 </div>
@@ -210,10 +254,32 @@ export default function CheckoutPage() {
                 </label>
               ))}
             </div>
+
             {form.payment_method === "cash" && (
               <p className="mt-3 text-xs text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
-                Your order will be confirmed immediately. Payment is collected when the order is delivered.
+                Your order will be confirmed immediately. Payment is collected on delivery.
               </p>
+            )}
+
+            {form.payment_method === "stripe" && (
+              <div className="mt-4 border border-slate-200 rounded-xl p-4">
+                <label className="block text-sm text-slate-600 mb-2">Card details</label>
+                <CardElement
+                  options={{
+                    style: {
+                      base: {
+                        fontSize: "14px",
+                        color: "#1e293b",
+                        "::placeholder": { color: "#94a3b8" },
+                      },
+                    },
+                  }}
+                  className="border border-slate-200 rounded-lg px-3 py-2.5"
+                />
+                <p className="mt-2 text-xs text-slate-400">
+                  Payments are processed securely by Stripe. We never store your card details.
+                </p>
+              </div>
             )}
           </div>
 
@@ -245,19 +311,21 @@ export default function CheckoutPage() {
             <div className="space-y-2 mb-4">
               {items.map((item) => (
                 <div key={item.id} className="flex justify-between text-sm">
-                  <span className="text-slate-600">{item.product_name} × {item.quantity}</span>
-                  <span className="text-slate-900">${parseFloat(item.line_total).toFixed(2)}</span>
+                  <span className="text-slate-600">{item.product_name} x {item.quantity}</span>
+                  <span className="text-slate-900">&#163;{parseFloat(item.line_total).toFixed(2)}</span>
                 </div>
               ))}
             </div>
             <div className="border-t border-slate-100 pt-4 flex justify-between font-semibold text-slate-900 mb-6">
               <span>Total</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>&#163;{subtotal.toFixed(2)}</span>
             </div>
             {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-4">{error}</div>}
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading || (form.payment_method === "stripe" && !stripe)}
               className="w-full bg-brand hover:bg-brand-hover text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
-              {loading ? "Placing order…" : "Place order"}
+              {loading
+                ? form.payment_method === "stripe" ? "Processing payment..." : "Placing order..."
+                : form.payment_method === "stripe" ? "Pay now" : "Place order"}
             </button>
           </div>
         </div>

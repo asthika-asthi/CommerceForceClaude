@@ -35,3 +35,4 @@ class CheckoutSummary(BaseModel):
     payment_method: PaymentMethod
     payment_status: str
     status: str
+    client_secret: Optional[str] = None

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from decimal import Decimal
 from typing import Optional
@@ -9,7 +10,7 @@ from app.plugins.cart.models import Cart
 from app.plugins.products.models import Product
 from app.plugins.products import service as product_service
 from app.plugins.orders import service as order_service
-from app.plugins.orders.models import Order, PaymentMethod, PaymentStatus
+from app.plugins.orders.models import Order, OrderStatus, PaymentMethod, PaymentStatus
 from app.plugins.checkout.schemas import CheckoutRequest, CheckoutItem
 from app.shared.email import send_email
 
@@ -90,7 +91,7 @@ async def checkout(
     db: AsyncSession,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
-) -> Order:
+) -> tuple[Order, Optional[str]]:
     if data.use_cart:
         items = await _resolve_cart_items(user_id, session_id, db)
     elif data.items:
@@ -163,13 +164,32 @@ async def checkout(
         from app.plugins.loyalty import service as loyalty_service
         await loyalty_service.redeem_points(user_id, _points_to_redeem, order.id, _points_discount, db)
 
-    # Mark cash orders as paid immediately; deduct credit for credit_limit orders
+    # Mark cash orders as paid immediately; deduct credit for credit_limit orders;
+    # create Stripe PaymentIntent for card payments.
+    client_secret: Optional[str] = None
     if data.payment_method == PaymentMethod.cash:
         order.payment_status = PaymentStatus.paid
     elif data.payment_method == PaymentMethod.credit_limit:
         from app.plugins.credit import service as credit_service
         await credit_service.check_and_deduct(user_id, order.total, db)
         order.payment_status = PaymentStatus.paid
+    elif data.payment_method == PaymentMethod.stripe:
+        if not settings.STRIPE_SECRET_KEY:
+            raise HTTPException(status_code=503, detail="Card payments are not configured on this platform")
+        try:
+            import stripe as stripe_lib
+            stripe_lib.api_key = settings.STRIPE_SECRET_KEY
+            pi = await asyncio.to_thread(
+                stripe_lib.PaymentIntent.create,
+                amount=int(order.total * 100),
+                currency="gbp",
+                metadata={"order_id": order.id},
+            )
+            order.stripe_payment_intent_id = pi.id
+            client_secret = pi.client_secret
+        except Exception as exc:
+            logger.error("Stripe PaymentIntent creation failed: %s", exc)
+            raise HTTPException(status_code=502, detail="Payment processing unavailable")
 
     # Earn loyalty points on the final order total (if loyalty plugin active, authenticated user)
     if user_id:
@@ -203,13 +223,63 @@ async def checkout(
                 recipient = user_obj.email
         except Exception:
             pass
-    if recipient:
+    if recipient and data.payment_method != PaymentMethod.stripe:
         try:
             await _send_order_confirmation_email(recipient, order, items, db)
         except Exception as exc:
             logger.warning("Order confirmation email failed for order %s: %s", order.id, exc)
 
-    return order
+    return order, client_secret
+
+
+async def handle_stripe_webhook(payload: bytes, sig_header: str, db: AsyncSession) -> None:
+    import stripe as stripe_lib
+    try:
+        event = stripe_lib.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except stripe_lib.error.SignatureVerificationError:
+        raise HTTPException(status_code=400, detail="Invalid Stripe signature")
+    except Exception as exc:
+        logger.error("Stripe webhook parse error: %s", exc)
+        raise HTTPException(status_code=400, detail="Webhook parse error")
+
+    if event["type"] == "payment_intent.succeeded":
+        pi = event["data"]["object"]
+        order_id = (pi.get("metadata") or {}).get("order_id")
+        if order_id:
+            result = await db.execute(select(Order).where(Order.id == order_id))
+            order = result.scalar_one_or_none()
+            if order and order.payment_status != PaymentStatus.paid:
+                order.payment_status = PaymentStatus.paid
+                order.status = OrderStatus.confirmed
+                await db.flush()
+
+                recipient = order.guest_email
+                if not recipient and order.user_id:
+                    try:
+                        from app.plugins.auth.models import User as UserModel
+                        user_result = await db.execute(
+                            select(UserModel).where(UserModel.id == order.user_id)
+                        )
+                        user_obj = user_result.scalar_one_or_none()
+                        if user_obj:
+                            recipient = user_obj.email
+                    except Exception:
+                        pass
+                if recipient:
+                    try:
+                        item_rows = [
+                            {
+                                "product_name": i.product_name,
+                                "quantity": i.quantity,
+                                "unit_price": i.unit_price,
+                            }
+                            for i in order.items
+                        ]
+                        await _send_order_confirmation_email(recipient, order, item_rows, db)
+                    except Exception as exc:
+                        logger.warning("Post-payment email failed for order %s: %s", order_id, exc)
 
 
 async def _send_order_confirmation_email(

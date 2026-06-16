@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_MODEL: str = "anthropic/claude-haiku-4.5"
 
+    # Stripe
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+
     # Storefront URL — used for email links (verify email, password reset)
     STOREFRONT_URL: str = "http://localhost:3000"
 

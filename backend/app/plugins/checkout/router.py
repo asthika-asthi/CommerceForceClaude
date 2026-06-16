@@ -22,7 +22,7 @@ async def checkout(
     db: AsyncSession = Depends(get_db),
 ):
     session_id = request.cookies.get(GUEST_SESSION_COOKIE) if not current_user else None
-    order = await service.checkout(
+    order, client_secret = await service.checkout(
         data=data,
         db=db,
         user_id=current_user.id if current_user else None,
@@ -37,4 +37,13 @@ async def checkout(
         payment_method=order.payment_method,
         payment_status=order.payment_status,
         status=order.status,
+        client_secret=client_secret,
     )
+
+
+@router.post("/stripe-webhook", status_code=200)
+async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature", "")
+    await service.handle_stripe_webhook(payload, sig_header, db)
+    return {"status": "ok"}
