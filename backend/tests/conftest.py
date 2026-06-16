@@ -1,7 +1,7 @@
 import os
 
 # Set env vars BEFORE any app module is imported — config uses @lru_cache
-os.environ["ENABLED_PLUGINS"] = "auth,categories,products,cart,orders,checkout,rfq,credit,inventory,coupons,loyalty,newsletter,branding,landing_page,ai_chat"
+os.environ["ENABLED_PLUGINS"] = "auth,categories,products,cart,orders,checkout,rfq,credit,inventory,coupons,loyalty,newsletter,branding,landing_page,ai_chat,contact"
 os.environ["ANTHROPIC_API_KEY"] = "test-key"
 
 import pytest  # noqa: E402
@@ -40,6 +40,7 @@ async def setup_test_db():
     from app.plugins.newsletter.models import NewsletterSubscriber  # noqa
     from app.plugins.branding.models import BrandingConfig  # noqa
     from app.plugins.landing_page.models import LandingSection  # noqa
+    from app.plugins.contact.models import Enquiry  # noqa
     from app.shared.email import EmailLog  # noqa
 
     async with test_engine.begin() as conn:

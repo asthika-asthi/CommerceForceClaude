@@ -24,6 +24,9 @@ class User(BaseModel):
     is_email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     company_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    vat_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    business_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    trade_status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # pending | approved | rejected
 
 
 class RefreshToken(BaseModel):

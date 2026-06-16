@@ -10,7 +10,7 @@ from fastapi import HTTPException, status
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.config import settings
 from app.plugins.auth.models import User, RefreshToken, PasswordResetToken, UserRole
-from app.plugins.auth.schemas import RegisterRequest, UpdateProfileRequest, ChangePasswordRequest
+from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, UpdateProfileRequest, ChangePasswordRequest
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,49 @@ async def create_user(data: RegisterRequest, db: AsyncSession) -> User:
     )
     db.add(user)
     await db.flush()
+    return user
+
+
+async def create_trade_user(data: TradeRegisterRequest, db: AsyncSession) -> User:
+    result = await db.execute(select(User).where(User.email == data.email))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+
+    user = User(
+        email=data.email,
+        hashed_password=get_password_hash(data.password),
+        first_name=data.first_name,
+        last_name=data.last_name,
+        role=UserRole.customer,
+        company_name=data.company_name,
+        phone=data.phone,
+        vat_number=data.vat_number,
+        business_type=data.business_type,
+        trade_status="pending",
+    )
+    db.add(user)
+    await db.flush()
+
+    # Notify admin of new trade application
+    if settings.SMTP_USER:
+        from app.plugins.branding.service import get_config
+        from app.shared.email import send_email
+        branding = await get_config(db)
+        store_email = branding.contact_email or "admin@commerceforce.dev"
+        store_name = branding.store_name or "Store"
+        await send_email(
+            store_email,
+            f"[{store_name}] New trade account application from {data.first_name} {data.last_name}",
+            f"A new trade account application has been submitted:\n\n"
+            f"Name: {data.first_name} {data.last_name}\n"
+            f"Email: {data.email}\n"
+            f"Company: {data.company_name}\n"
+            f"VAT number: {data.vat_number or '—'}\n"
+            f"Business type: {data.business_type or '—'}\n\n"
+            f"Log in to the admin panel to approve or reject this application.",
+            db,
+        )
+
     return user
 
 
@@ -109,6 +152,8 @@ async def patch_user(user_id: str, data: dict, db: AsyncSession) -> User:
     if "role" in data and data["role"] is not None:
         from app.plugins.auth.models import UserRole
         user.role = UserRole(data["role"])
+    if "trade_status" in data and data["trade_status"] is not None:
+        user.trade_status = data["trade_status"]
     await db.flush()
     return user
 

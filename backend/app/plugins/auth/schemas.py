@@ -28,6 +28,12 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class TradeRegisterRequest(RegisterRequest):
+    company_name: str  # required for trade
+    vat_number: Optional[str] = None
+    business_type: Optional[str] = None  # decorator | builder | scaffolding | groundworks | other
+
+
 class UserOut(BaseModel):
     id: str
     email: str
@@ -38,6 +44,9 @@ class UserOut(BaseModel):
     is_email_verified: bool
     company_name: Optional[str] = None
     phone: Optional[str] = None
+    vat_number: Optional[str] = None
+    business_type: Optional[str] = None
+    trade_status: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -93,10 +102,18 @@ class ResetPasswordRequest(BaseModel):
 class UpdateUserRequest(BaseModel):
     is_active: Optional[bool] = None
     role: Optional[str] = None
+    trade_status: Optional[str] = None
 
     @field_validator("role")
     @classmethod
     def valid_role(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and v not in ("superadmin", "admin", "customer"):
             raise ValueError("Invalid role")
+        return v
+
+    @field_validator("trade_status")
+    @classmethod
+    def valid_trade_status(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in ("pending", "approved", "rejected"):
+            raise ValueError("Invalid trade_status")
         return v

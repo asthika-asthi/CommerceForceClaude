@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.core.dependencies import get_current_user, require_admin
-from app.plugins.auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest, ForgotPasswordRequest, ResetPasswordRequest
+from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest, ForgotPasswordRequest, ResetPasswordRequest
 from app.plugins.auth import service
 
 REFRESH_COOKIE = "refresh_token"
@@ -28,6 +28,15 @@ def _set_refresh_cookie(response: Response, token: str, max_age_days: int) -> No
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(data: RegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
     user = await service.create_user(data, db)
+    access_token = create_access_token(user.id, user.role.value)
+    refresh_raw = await service.issue_refresh_token(user.id, db)
+    _set_refresh_cookie(response, refresh_raw, max_age_days=7)
+    return AuthResponse(access_token=access_token, user=UserOut.model_validate(user))
+
+
+@router.post("/register-trade", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+async def register_trade(data: TradeRegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
+    user = await service.create_trade_user(data, db)
     access_token = create_access_token(user.id, user.role.value)
     refresh_raw = await service.issue_refresh_token(user.id, db)
     _set_refresh_cookie(response, refresh_raw, max_age_days=7)

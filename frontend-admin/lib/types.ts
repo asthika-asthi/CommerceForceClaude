@@ -8,6 +8,9 @@ export interface User {
   is_active: boolean
   company_name?: string
   phone?: string
+  vat_number?: string
+  business_type?: string
+  trade_status?: "pending" | "approved" | "rejected" | null
 }
 
 export interface TokenResponse {
@@ -231,6 +234,26 @@ export interface BrandingConfig {
   contact_email?: string
   contact_phone?: string
   social_links?: string
+}
+
+// ── Enquiries ─────────────────────────────────────────────────────────────────
+export type EnquiryType = "general" | "bespoke"
+
+export interface Enquiry {
+  id: string
+  enquiry_type: EnquiryType
+  name: string
+  email: string
+  phone?: string
+  company?: string
+  subject?: string
+  message: string
+  material_type?: string
+  quantity_description?: string
+  size_spec?: string
+  deadline?: string
+  is_read: boolean
+  created_at: string
 }
 
 // ── Landing Page ──────────────────────────────────────────────────────────────
