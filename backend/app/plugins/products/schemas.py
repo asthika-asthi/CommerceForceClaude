@@ -19,6 +19,11 @@ class ProductImageCreate(BaseModel):
     sort_order: int = 0
 
 
+class ImageSortItem(BaseModel):
+    id: str
+    sort_order: int
+
+
 class ProductCreate(BaseModel):
     name: str
     description: Optional[str] = None

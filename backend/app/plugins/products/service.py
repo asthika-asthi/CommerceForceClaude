@@ -7,7 +7,7 @@ from sqlalchemy import select, or_, func, asc, desc
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from app.plugins.products.models import Product, ProductImage
-from app.plugins.products.schemas import ProductCreate, ProductUpdate, ProductImageCreate
+from app.plugins.products.schemas import ProductCreate, ProductUpdate, ProductImageCreate, ImageSortItem
 from app.shared.slug import slugify, generate_sku
 
 
@@ -176,6 +176,35 @@ async def remove_image(product_id: str, image_id: str, db: AsyncSession) -> None
     if not img:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
     await db.delete(img)
+
+
+async def reorder_images(product_id: str, items: list[ImageSortItem], db: AsyncSession) -> list[ProductImage]:
+    result = await db.execute(
+        select(ProductImage).where(ProductImage.product_id == product_id)
+    )
+    images = {img.id: img for img in result.scalars().all()}
+
+    for item in items:
+        img = images.get(item.id)
+        if not img:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Image {item.id} not found")
+        img.sort_order = item.sort_order
+        # First image in sorted order is primary
+        img.is_primary = False
+
+    await db.flush()
+
+    sorted_ids = [i.id for i in sorted(items, key=lambda x: x.sort_order)]
+    if sorted_ids:
+        images[sorted_ids[0]].is_primary = True
+    await db.flush()
+
+    result = await db.execute(
+        select(ProductImage)
+        .where(ProductImage.product_id == product_id)
+        .order_by(ProductImage.sort_order)
+    )
+    return list(result.scalars().all())
 
 
 async def deduct_stock(product_id: str, quantity: int, db: AsyncSession) -> None:

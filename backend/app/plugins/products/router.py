@@ -5,7 +5,7 @@ from app.core.database import get_db
 from app.core.dependencies import require_admin
 from app.plugins.products.schemas import (
     ProductCreate, ProductUpdate, ProductOut, ProductListOut, ProductImageCreate, ProductImageOut,
-    CsvImportResult,
+    CsvImportResult, ImageSortItem,
 )
 from app.plugins.products import service
 from app.shared.pagination import Page, paginate
@@ -83,6 +83,14 @@ async def update_product(product_id: str, data: ProductUpdate, db: AsyncSession 
              status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin())])
 async def add_image(product_id: str, data: ProductImageCreate, db: AsyncSession = Depends(get_db)):
     return await service.add_image(product_id, data, db)
+
+
+@router.patch("/{product_id}/images", response_model=list[ProductImageOut],
+              dependencies=[Depends(require_admin())])
+async def reorder_images(
+    product_id: str, items: list[ImageSortItem], db: AsyncSession = Depends(get_db)
+):
+    return await service.reorder_images(product_id, items, db)
 
 
 @router.delete("/{product_id}/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT,

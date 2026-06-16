@@ -1,7 +1,8 @@
 import enum
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from sqlalchemy import String, Integer, Numeric, Text, Enum as SAEnum, ForeignKey
+from sqlalchemy import String, Integer, Numeric, Text, Enum as SAEnum, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.base_model import BaseModel
 
@@ -46,6 +47,8 @@ class Order(BaseModel):
     shipping_address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     stripe_payment_intent_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    tracking_number: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    shipped_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     items: Mapped[list["OrderItem"]] = relationship(
         "OrderItem", back_populates="order", cascade="all, delete-orphan", lazy="selectin"

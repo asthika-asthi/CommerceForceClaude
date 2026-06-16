@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from fastapi import HTTPException, status
 from app.plugins.orders.models import Order, OrderItem, OrderStatus, PaymentMethod, PaymentStatus
-from app.plugins.orders.schemas import UpdateStatusRequest
+from app.plugins.orders.schemas import UpdateStatusRequest, FulfilRequest
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +110,51 @@ async def update_status(order_id: str, data: UpdateStatusRequest, db: AsyncSessi
 
     order.status = data.status
     await db.flush()
+    return order
+
+
+async def fulfil_order(order_id: str, data: FulfilRequest, db: AsyncSession) -> Order:
+    order = await get_order(order_id, db)
+    if order.status == OrderStatus.cancelled:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot fulfil a cancelled order")
+
+    order.status = OrderStatus.shipped
+    order.shipped_at = datetime.now(timezone.utc)
+    if data.tracking_number:
+        order.tracking_number = data.tracking_number
+    await db.flush()
+
+    # Email the customer their tracking info
+    recipient = order.guest_email
+    if not recipient and order.user_id:
+        try:
+            from app.plugins.auth.models import User
+            user_result = await db.execute(select(User).where(User.id == order.user_id))
+            user_obj = user_result.scalar_one_or_none()
+            if user_obj:
+                recipient = user_obj.email
+        except Exception:
+            pass
+
+    if recipient:
+        try:
+            from app.shared.email import send_email
+            tracking_line = (
+                f"\nTracking number: {order.tracking_number}\n"
+                if order.tracking_number
+                else "\nTracking information will be provided separately.\n"
+            )
+            await send_email(
+                recipient,
+                f"Your order has been shipped — {order.order_number}",
+                f"Good news! Your order {order.order_number} has been dispatched.{tracking_line}\n"
+                f"Total: £{order.total:.2f}\n\n"
+                f"Thank you for shopping with us!",
+                db,
+            )
+        except Exception as exc:
+            logger.warning("Shipping notification failed for order %s: %s", order.id, exc)
+
     return order
 
 

@@ -6,7 +6,7 @@ import { api } from "@/lib/api"
 import type { Order, OrderStatus } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Truck } from "lucide-react"
 
 const ORDER_STATUSES: OrderStatus[] = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]
 
@@ -22,11 +22,20 @@ function OrderDetail({ id }: { id: string }) {
     queryKey: ["order", id],
     queryFn: () => api.get(`/api/orders/${id}`),
   })
-  const [status, setStatus] = useState<OrderStatus | "">("")
+  const [trackingInput, setTrackingInput] = useState("")
 
   const updateStatus = useMutation({
     mutationFn: (newStatus: OrderStatus) =>
       api.put(`/api/orders/${id}/status`, { status: newStatus }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order", id] })
+      qc.invalidateQueries({ queryKey: ["orders"] })
+    },
+  })
+
+  const fulfil = useMutation({
+    mutationFn: () =>
+      api.patch(`/api/orders/${id}/fulfil`, { tracking_number: trackingInput || undefined }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["order", id] })
       qc.invalidateQueries({ queryKey: ["orders"] })
@@ -38,6 +47,8 @@ function OrderDetail({ id }: { id: string }) {
   }
   if (!order) return <p className="text-slate-500">Order not found.</p>
 
+  const canFulfil = !["shipped", "delivered", "cancelled"].includes(order.status)
+
   return (
     <div className="max-w-3xl">
       <div className="flex items-center gap-3 mb-6">
@@ -47,6 +58,52 @@ function OrderDetail({ id }: { id: string }) {
         <h2 className="text-xl font-semibold text-slate-900">{order.order_number}</h2>
         <StatusBadge value={order.status} />
         <StatusBadge value={order.payment_status} />
+      </div>
+
+      {/* Fulfillment panel */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 mb-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Truck size={15} className="text-slate-500" />
+          <h3 className="text-sm font-semibold text-slate-700">Fulfilment</h3>
+        </div>
+
+        {order.tracking_number ? (
+          <div className="text-sm space-y-1">
+            <p className="text-slate-500">
+              Shipped {order.shipped_at
+                ? new Date(order.shipped_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+                : ""}
+            </p>
+            <p>
+              <span className="text-slate-500 mr-1">Tracking:</span>
+              <span className="font-mono font-medium text-slate-800">{order.tracking_number}</span>
+            </p>
+          </div>
+        ) : order.status === "shipped" ? (
+          <p className="text-sm text-slate-500">Shipped — no tracking number recorded.</p>
+        ) : canFulfil ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Tracking number (optional)"
+              value={trackingInput}
+              onChange={(e) => setTrackingInput(e.target.value)}
+              className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={() => fulfil.mutate()}
+              disabled={fulfil.isPending}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 transition-colors whitespace-nowrap"
+            >
+              {fulfil.isPending ? "Marking…" : "Mark as Shipped"}
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400">Order cannot be fulfilled in its current status.</p>
+        )}
+        {fulfil.isError && (
+          <p className="text-xs text-red-600 mt-2">{(fulfil.error as Error).message}</p>
+        )}
       </div>
 
       {/* Update status */}
@@ -77,17 +134,17 @@ function OrderDetail({ id }: { id: string }) {
           <dl className="space-y-1.5 text-sm">
             <Row label="Email" value={order.guest_email ?? (order.user_id ? `User ${order.user_id.slice(0, 8)}…` : "—")} />
             <Row label="Payment" value={order.payment_method} />
-            <Row label="Date" value={new Date(order.created_at).toLocaleString()} />
+            <Row label="Date" value={new Date(order.created_at).toLocaleString("en-GB")} />
           </dl>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Totals</h3>
           <dl className="space-y-1.5 text-sm">
-            <Row label="Subtotal" value={`$${order.subtotal}`} />
+            <Row label="Subtotal" value={`£${order.subtotal}`} />
             {parseFloat(order.discount_amount) > 0 && (
-              <Row label="Discount" value={`-$${order.discount_amount}`} />
+              <Row label="Discount" value={`-£${order.discount_amount}`} />
             )}
-            <Row label="Total" value={`$${order.total}`} />
+            <Row label="Total" value={`£${order.total}`} />
           </dl>
         </div>
       </div>
@@ -113,8 +170,8 @@ function OrderDetail({ id }: { id: string }) {
                 <td className="px-4 py-2.5 text-slate-800">{item.product_name}</td>
                 <td className="px-4 py-2.5 font-mono text-xs text-slate-500">{item.product_sku ?? "—"}</td>
                 <td className="px-4 py-2.5 text-right text-slate-700">{item.quantity}</td>
-                <td className="px-4 py-2.5 text-right text-slate-700">${item.unit_price}</td>
-                <td className="px-4 py-2.5 text-right font-medium text-slate-900">${item.subtotal}</td>
+                <td className="px-4 py-2.5 text-right text-slate-700">£{item.unit_price}</td>
+                <td className="px-4 py-2.5 text-right font-medium text-slate-900">£{item.subtotal}</td>
               </tr>
             ))}
           </tbody>

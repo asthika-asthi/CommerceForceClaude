@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List
 from pydantic import BaseModel
@@ -29,6 +30,8 @@ class OrderOut(BaseModel):
     total: Decimal
     shipping_address: Optional[str] = None
     notes: Optional[str] = None
+    tracking_number: Optional[str] = None
+    shipped_at: Optional[datetime] = None
     items: List[OrderItemOut] = []
     model_config = {"from_attributes": True}
 
@@ -46,3 +49,7 @@ class OrderListOut(BaseModel):
 
 class UpdateStatusRequest(BaseModel):
     status: OrderStatus
+
+
+class FulfilRequest(BaseModel):
+    tracking_number: Optional[str] = None

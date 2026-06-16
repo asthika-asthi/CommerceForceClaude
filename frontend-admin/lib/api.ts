@@ -53,6 +53,19 @@ async function request<T>(
   return res.json() as Promise<T>
 }
 
+async function uploadRequest<T>(path: string, body: FormData): Promise<T> {
+  const token = getToken()
+  const headers: Record<string, string> = {}
+  if (token) headers["Authorization"] = `Bearer ${token}`
+  // Do NOT set Content-Type — browser sets it with the correct multipart boundary
+  const res = await fetch(`${BASE}${path}`, { method: "POST", body, headers, credentials: "include" })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    throw new Error(err.detail ?? "Upload failed")
+  }
+  return res.json() as Promise<T>
+}
+
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>
@@ -62,4 +75,5 @@ export const api = {
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PATCH", body: body !== undefined ? JSON.stringify(body) : undefined }),
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  upload: <T>(path: string, body: FormData) => uploadRequest<T>(path, body),
 }

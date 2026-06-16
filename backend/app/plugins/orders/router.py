@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin
-from app.plugins.orders.schemas import OrderOut, OrderListOut, UpdateStatusRequest
+from app.plugins.orders.schemas import OrderOut, OrderListOut, UpdateStatusRequest, FulfilRequest
 from app.plugins.orders import service
 from app.shared.pagination import Page, paginate
 
@@ -45,6 +45,14 @@ async def update_status(
     order_id: str, data: UpdateStatusRequest, db: AsyncSession = Depends(get_db)
 ):
     return await service.update_status(order_id, data, db)
+
+
+@router.patch("/{order_id}/fulfil", response_model=OrderOut,
+              dependencies=[Depends(require_admin())])
+async def fulfil_order(
+    order_id: str, data: FulfilRequest, db: AsyncSession = Depends(get_db)
+):
+    return await service.fulfil_order(order_id, data, db)
 
 
 @router.post("/{order_id}/cancel", response_model=OrderOut)

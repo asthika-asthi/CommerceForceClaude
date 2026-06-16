@@ -104,6 +104,8 @@ export interface Order {
   total: string
   shipping_address?: string
   notes?: string
+  tracking_number?: string
+  shipped_at?: string
   items: OrderItem[]
   created_at: string
 }
