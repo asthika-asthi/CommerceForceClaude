@@ -13,12 +13,19 @@ import { Testimonials } from "@/components/landing/testimonials"
 import { Newsletter } from "@/components/landing/newsletter"
 
 export default async function HomePage() {
-  const [productsRes, categories] = await Promise.all([
-    serverFetch<PaginatedResponse<Product>>("/api/products?page_size=8"),
+  const [featuredRes, categories] = await Promise.all([
+    serverFetch<PaginatedResponse<Product>>("/api/products?is_featured=true&page_size=8"),
     serverFetch<Category[]>("/api/categories").catch(() => [] as Category[]),
   ])
 
-  const products = productsRes?.items ?? []
+  let products = featuredRes?.items ?? []
+
+  // Fall back to any active products if none are marked as featured
+  if (products.length === 0) {
+    const fallbackRes = await serverFetch<PaginatedResponse<Product>>("/api/products?page_size=8")
+    products = fallbackRes?.items ?? []
+  }
+
   const activeCategories = (categories ?? []).filter(c => c.is_active)
 
   const section1Products = products.slice(0, 4)

@@ -11,15 +11,18 @@ export async function CategoriesNav() {
     // render without dynamic categories
   }
 
+  const linkCls = "text-[#CBD8EE] text-[13px] font-medium px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all whitespace-nowrap"
+
   return (
     <nav className="bg-brand-dark border-b-[3px] border-brand">
       <div className="max-w-[1280px] mx-auto px-10 flex items-center">
+        <Link href="/" className={linkCls}>Home</Link>
         {categories.length > 0 ? (
           categories.map(cat => (
             <Link
               key={cat.id}
               href={`/products?category=${cat.slug}`}
-              className="text-[#CBD8EE] text-[13px] font-medium px-[18px] py-[14px] flex items-center gap-1.5 border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all whitespace-nowrap"
+              className={`${linkCls} flex items-center gap-1.5`}
             >
               {cat.name}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -29,30 +32,21 @@ export async function CategoriesNav() {
           ))
         ) : (
           <>
-            <Link href="/products?category=tarpaulins" className="text-[#CBD8EE] text-[13px] font-medium px-[18px] py-[14px] flex items-center gap-1.5 border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all">
-              Tarpaulins
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
-            </Link>
-            <Link href="/products?category=dust-sheets" className="text-[#CBD8EE] text-[13px] font-medium px-[18px] py-[14px] flex items-center gap-1.5 border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all">
-              Dust Sheets
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
-            </Link>
-            <Link href="/products?category=sacks-bags" className="text-[#CBD8EE] text-[13px] font-medium px-[18px] py-[14px] flex items-center gap-1.5 border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all">
-              Sacks &amp; Bags
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
-            </Link>
-            <Link href="/products?category=paint-brushes" className="text-[#CBD8EE] text-[13px] font-medium px-[18px] py-[14px] flex items-center gap-1.5 border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all">
-              Paint Brushes &amp; Rollers
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
-            </Link>
+            {[
+              { href: "/products?category=tarpaulins", label: "Tarpaulins" },
+              { href: "/products?category=dust-sheets", label: "Dust Sheets" },
+              { href: "/products?category=sacks-bags", label: "Sacks & Bags" },
+              { href: "/products?category=paint-brushes", label: "Paint Brushes & Rollers" },
+            ].map(({ href, label }) => (
+              <Link key={href} href={href} className={`${linkCls} flex items-center gap-1.5`}>
+                {label}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+              </Link>
+            ))}
           </>
         )}
-        <Link href="/bespoke" className="text-[#CBD8EE] text-[13px] font-medium px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all whitespace-nowrap">
-          Bespoke Orders
-        </Link>
-        <Link href="/trade" className="text-[#CBD8EE] text-[13px] font-medium px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all whitespace-nowrap">
-          Trade Accounts
-        </Link>
+        <Link href="/bespoke" className={linkCls}>Bespoke Orders</Link>
+        <Link href="/trade" className={linkCls}>Trade Accounts</Link>
         <div className="flex-1" />
         <Link href="/products?sale=true" className="text-[#D4A017] text-[13px] font-semibold px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-[#f0c040] hover:border-[#f0c040] hover:bg-white/5 transition-all whitespace-nowrap">
           🏷️ Special Offers

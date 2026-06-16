@@ -1,6 +1,7 @@
 import { serverFetch } from "@/lib/api"
 import type { Product } from "@/lib/types"
 import { notFound } from "next/navigation"
+import Link from "next/link"
 import { AddToCartButton } from "./add-to-cart-button"
 
 interface Props {
@@ -9,14 +10,14 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params
-  const product = await serverFetch<Product>(`/api/products/by-slug/${slug}`)
+  const product = await serverFetch<Product>(`/api/products/by-slug/£{slug}`)
   if (!product) return {}
   return { title: product.name, description: product.description }
 }
 
 export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params
-  const product = await serverFetch<Product>(`/api/products/by-slug/${slug}`)
+  const product = await serverFetch<Product>(`/api/products/by-slug/£{slug}`)
   if (!product) notFound()
 
   const price = parseFloat(product.price)
@@ -25,6 +26,9 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
+      <Link href="/products" className="inline-flex items-center gap-1.5 text-[13px] text-[#5C5C5C] hover:text-brand-dark mb-6 transition-colors">
+        ← Back to products
+      </Link>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Images */}
         <div>
@@ -55,8 +59,8 @@ export default async function ProductDetailPage({ params }: Props) {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-3">{product.name}</h1>
           <div className="flex items-baseline gap-3 mb-4">
-            <span className="text-2xl font-bold text-slate-900">${displayPrice.toFixed(2)}</span>
-            {salePrice && <span className="text-lg text-slate-400 line-through">${price.toFixed(2)}</span>}
+            <span className="text-2xl font-bold text-slate-900">£{displayPrice.toFixed(2)}</span>
+            {salePrice && <span className="text-lg text-slate-400 line-through">£{price.toFixed(2)}</span>}
           </div>
 
           {product.stock_quantity > 0 ? (

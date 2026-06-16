@@ -1,21 +1,9 @@
 import Link from "next/link"
 import type { Product } from "@/lib/types"
 
-const HERO_ICONS: Record<string, string> = {
-  tarpaulin: "🛡️",
-  "dust-sheet": "🧹",
-  sack: "🪣",
-  brush: "🖌️",
-}
-
-const HERO_ICON_BG: Record<string, string> = {
-  tarpaulin: "#E8F4FD",
-  "dust-sheet": "#FFF8E1",
-  sack: "#F3E5F5",
-  brush: "#E8F5E9",
-}
-
 const PRODUCT_TAGS = ["Best seller", "Trade fave", "In stock", "New range"]
+const PRODUCT_ICONS = ["🛡️", "🧹", "🪣", "🖌️"]
+const PRODUCT_ICON_BGS = ["#E8F4FD", "#FFF8E1", "#F3E5F5", "#E8F5E9"]
 
 interface Props {
   bestSellers?: Product[]
@@ -24,23 +12,14 @@ interface Props {
 export function Hero({ bestSellers = [] }: Props) {
   const svgBg = `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C%2Fsvg%3E")`
 
-  const placeholderProducts = [
-    { name: "Extra Strong PVC Tarpaulin", meta: "Multiple sizes · Blue & Green", icon: "🛡️", iconBg: "#E8F4FD", tag: "Best seller" },
-    { name: "Calico Cotton Dust Sheet 12×9ft", meta: "100% cotton · 10 per bale", icon: "🟡", iconBg: "#FFF8E1", tag: "Trade fave" },
-    { name: "Heavy Duty Rubble Sacks", meta: "Bulk packs · Various sizes", icon: "🪣", iconBg: "#F3E5F5", tag: "In stock" },
-    { name: "Paint Brush & Roller Sets", meta: "Emulsion, gloss, mixed packs", icon: "🖌️", iconBg: "#E8F5E9", tag: "New range" },
-  ]
-
-  const displayProducts = bestSellers.length > 0
-    ? bestSellers.slice(0, 4).map((p, i) => ({
-        name: p.name,
-        meta: p.description?.slice(0, 40) ?? "",
-        icon: placeholderProducts[i % 4].icon,
-        iconBg: placeholderProducts[i % 4].iconBg,
-        tag: PRODUCT_TAGS[i % 4],
-        slug: p.slug,
-      }))
-    : placeholderProducts.map(p => ({ ...p, slug: undefined }))
+  const displayProducts = bestSellers.slice(0, 4).map((p, i) => ({
+    name: p.name,
+    meta: p.description?.slice(0, 45) ?? "",
+    icon: PRODUCT_ICONS[i % 4],
+    iconBg: PRODUCT_ICON_BGS[i % 4],
+    tag: PRODUCT_TAGS[i % 4],
+    slug: p.slug,
+  }))
 
   return (
     <div
@@ -97,18 +76,32 @@ export function Hero({ bestSellers = [] }: Props) {
             🔥 Best selling products
           </div>
 
-          {displayProducts.map((p, i) => (
-            <div key={i} className="flex items-center gap-3 py-2.5 border-b border-[#F0EEEA] last:border-none hover:bg-[#FDF0F2] rounded-md pl-1 cursor-pointer transition-colors">
-              <div className="w-11 h-11 rounded-lg flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: p.iconBg }}>
-                {p.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] font-semibold text-brand-dark leading-tight">{p.name}</div>
-                <div className="text-[12px] text-[#5C5C5C] truncate">{p.meta}</div>
-              </div>
-              <span className="text-[11px] font-semibold text-brand bg-[#FDF0F2] px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">{p.tag}</span>
+          {displayProducts.length > 0 ? (
+            displayProducts.map((p, i) => (
+              <Link
+                key={i}
+                href={p.slug ? `/products/${p.slug}` : "/products"}
+                className="flex items-center gap-3 py-2.5 border-b border-[#F0EEEA] last:border-none hover:bg-[#FDF0F2] rounded-md pl-1 transition-colors"
+              >
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: p.iconBg }}>
+                  {p.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[14px] font-semibold text-brand-dark leading-tight">{p.name}</div>
+                  {p.meta && <div className="text-[12px] text-[#5C5C5C] truncate">{p.meta}</div>}
+                </div>
+                <span className="text-[11px] font-semibold text-brand bg-[#FDF0F2] px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">{p.tag}</span>
+              </Link>
+            ))
+          ) : (
+            <div className="py-6 text-center">
+              <div className="text-4xl mb-3">🛡️</div>
+              <p className="text-[14px] text-[#5C5C5C] mb-4">Tarpaulins, dust sheets, sacks, bags &amp; more</p>
+              <Link href="/products" className="inline-block bg-brand text-white text-[13px] font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-hover transition-colors">
+                Browse full range →
+              </Link>
             </div>
-          ))}
+          )}
 
           <div className="mt-4 pt-3.5 border-t border-[#E0DED8] flex justify-between items-center">
             <span className="text-[12px] text-[#5C5C5C]">Login to see trade prices</span>

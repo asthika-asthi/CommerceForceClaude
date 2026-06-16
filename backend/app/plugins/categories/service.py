@@ -62,9 +62,15 @@ async def get_category(category_id: str, db: AsyncSession) -> Category:
 
 
 async def list_root_categories(db: AsyncSession) -> list[Category]:
+    from app.plugins.products.models import Product  # lazy to avoid circular import at module load
+    has_products = (
+        select(Product.id)
+        .where(Product.category_id == Category.id, Product.is_active == True)
+        .exists()
+    )
     result = await db.execute(
         select(Category)
-        .where(Category.parent_id.is_(None), Category.is_active == True)
+        .where(Category.parent_id.is_(None), Category.is_active == True, has_products)
         .options(_children_opt())
         .order_by(Category.sort_order, Category.name)
     )

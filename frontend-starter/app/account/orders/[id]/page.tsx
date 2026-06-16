@@ -26,7 +26,7 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return }
-    api.get<Order>(`/api/orders/${id}`)
+    api.get<Order>(`/api/orders/£{id}`)
       .then(setOrder)
       .catch(() => setOrder(null))
       .finally(() => setLoading(false))
@@ -45,7 +45,7 @@ export default function OrderDetailPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Order {order.order_number}</h1>
-        <span className={`text-sm px-3 py-1 rounded-full font-medium ${colorClass}`}>{order.status}</span>
+        <span className={`text-sm px-3 py-1 rounded-full font-medium £{colorClass}`}>{order.status}</span>
       </div>
 
       <div className="bg-white border border-slate-100 rounded-2xl divide-y divide-slate-50 mb-6">
@@ -55,7 +55,7 @@ export default function OrderDetailPage() {
               <p className="text-sm font-medium text-slate-900">{item.product_name}</p>
               <p className="text-xs text-slate-400 mt-0.5">Qty: {item.quantity}</p>
             </div>
-            <p className="text-sm font-semibold text-slate-900">${(parseFloat(item.unit_price) * item.quantity).toFixed(2)}</p>
+            <p className="text-sm font-semibold text-slate-900">£{(parseFloat(item.unit_price) * item.quantity).toFixed(2)}</p>
           </div>
         ))}
       </div>
@@ -64,12 +64,12 @@ export default function OrderDetailPage() {
         {parseFloat(order.discount_amount) > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-slate-500">Discount</span>
-            <span className="text-green-600">−${parseFloat(order.discount_amount).toFixed(2)}</span>
+            <span className="text-green-600">−£{parseFloat(order.discount_amount).toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between font-semibold text-slate-900 pt-2 border-t border-slate-100">
           <span>Total</span>
-          <span>${parseFloat(order.total).toFixed(2)}</span>
+          <span>£{parseFloat(order.total).toFixed(2)}</span>
         </div>
       </div>
 
