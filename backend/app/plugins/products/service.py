@@ -105,6 +105,8 @@ async def list_products(
     sort_dir: str = "asc",
     page: int = 1,
     page_size: int = 20,
+    min_price: Optional[Decimal] = None,
+    max_price: Optional[Decimal] = None,
 ) -> tuple[list[Product], int]:
     query = select(Product)
     if active_only:
@@ -118,6 +120,14 @@ async def list_products(
         query = query.where(Product.stock_quantity > 0)
     if featured_only:
         query = query.where(Product.is_featured == True)
+    if min_price is not None:
+        query = query.where(
+            func.coalesce(Product.sale_price, Product.price) >= min_price
+        )
+    if max_price is not None:
+        query = query.where(
+            func.coalesce(Product.sale_price, Product.price) <= max_price
+        )
 
     count_result = await db.execute(select(func.count()).select_from(query.subquery()))
     total = count_result.scalar_one()

@@ -8,6 +8,18 @@ import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Pencil, Trash2, Upload, X } from "lucide-react"
 
+function downloadCsv(path: string, filename: string) {
+  const token = localStorage.getItem("cf_access_token")
+  fetch(`http://localhost:8000${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url; a.download = filename; a.click()
+      URL.revokeObjectURL(url)
+    })
+}
+
 interface ProductsResponse { items: Product[]; total: number }
 interface CsvImportError { row: number; error: string }
 interface CsvResult { created: number; errors: CsvImportError[] }
@@ -70,6 +82,12 @@ export default function ProductsPage() {
             className="hidden"
             onChange={handleCsvFile}
           />
+          <button
+            onClick={() => downloadCsv("/api/products/export/csv", "products.csv")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            Export CSV
+          </button>
           <button
             onClick={() => fileRef.current?.click()}
             disabled={csvUploading}

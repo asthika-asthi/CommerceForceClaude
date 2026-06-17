@@ -1,10 +1,15 @@
+import csv
+import io
 from fastapi import APIRouter, Depends, Response, Request, status
 from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.core.dependencies import get_current_user, require_admin
+from app.plugins.auth.models import User, UserRole
 from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest, ForgotPasswordRequest, ResetPasswordRequest
 from app.plugins.auth import service
 
@@ -128,3 +133,35 @@ async def patch_user(
 ):
     user = await service.patch_user(user_id, data.model_dump(exclude_none=True), db)
     return UserOut.model_validate(user)
+
+
+@router.get("/customers/export/csv", dependencies=[Depends(require_admin())])
+async def export_customers_csv(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(User).where(User.role == UserRole.customer).order_by(User.email)
+    )
+    users = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=[
+        "first_name", "last_name", "email", "company_name",
+        "phone", "trade_status", "is_active", "created_at",
+    ])
+    writer.writeheader()
+    for u in users:
+        writer.writerow({
+            "first_name": u.first_name,
+            "last_name": u.last_name,
+            "email": u.email,
+            "company_name": u.company_name or "",
+            "phone": u.phone or "",
+            "trade_status": u.trade_status or "",
+            "is_active": u.is_active,
+            "created_at": u.created_at.isoformat(),
+        })
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="customers.csv"'},
+    )

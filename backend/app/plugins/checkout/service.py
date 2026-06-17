@@ -136,6 +136,15 @@ async def checkout(
         except ImportError:
             raise HTTPException(status_code=400, detail="Loyalty program is not enabled on this platform")
 
+    # Auto discount rules (only when no explicit coupon code)
+    if not data.coupon_code:
+        try:
+            from app.plugins.discount_rules import service as rules_service
+            auto_discount = await rules_service.evaluate_rules(subtotal, db)
+            discount_amount += auto_discount
+        except ImportError:
+            pass
+
     # Cap discount at subtotal
     discount_amount = min(discount_amount, subtotal)
 

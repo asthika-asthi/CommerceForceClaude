@@ -1,10 +1,12 @@
+import { Suspense } from "react"
 import { serverFetch } from "@/lib/api"
 import type { Category, PaginatedResponse, Product } from "@/lib/types"
 import { ProductCard } from "@/components/shop/product-card"
 import { FilterBar } from "@/components/shop/filter-bar"
+import { PriceRangeFilter } from "@/components/shop/price-range-filter"
 
 interface Props {
-  searchParams: Promise<{ category?: string; q?: string; page?: string; sort?: string; in_stock?: string }>
+  searchParams: Promise<{ category?: string; q?: string; page?: string; sort?: string; in_stock?: string; min_price?: string; max_price?: string }>
 }
 
 export const metadata = { title: "Shop" }
@@ -25,6 +27,8 @@ export default async function ProductsPage({ searchParams }: Props) {
       qs.set("sort_dir", params.sort.slice(lastUnderscore + 1))
     }
   }
+  if (params.min_price) qs.set("min_price", params.min_price)
+  if (params.max_price) qs.set("max_price", params.max_price)
 
   const [productsRes, categoriesRes] = await Promise.all([
     serverFetch<PaginatedResponse<Product>>(`/api/products?${qs}`),
@@ -42,6 +46,8 @@ export default async function ProductsPage({ searchParams }: Props) {
       q: params.q,
       sort: params.sort,
       in_stock: params.in_stock,
+      min_price: params.min_price,
+      max_price: params.max_price,
     }
     Object.assign(p, overrides)
     const filtered: Record<string, string> = {}
@@ -74,6 +80,12 @@ export default async function ProductsPage({ searchParams }: Props) {
               </li>
             ))}
           </ul>
+          <Suspense>
+            <PriceRangeFilter
+              currentMin={params.min_price}
+              currentMax={params.max_price}
+            />
+          </Suspense>
         </aside>
 
         {/* Main */}

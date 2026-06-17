@@ -4,32 +4,59 @@ import { MessageCircle, X, Send } from "lucide-react"
 import { api } from "@/lib/api"
 import type { ChatMessage } from "@/lib/types"
 
+function getSessionKey(): string {
+  const stored = localStorage.getItem("cf_chat_session")
+  if (stored) return stored
+  const key = crypto.randomUUID()
+  localStorage.setItem("cf_chat_session", key)
+  return key
+}
+
 export function ChatWidget() {
   const [open, setOpen] = useState(false)
-  const [history, setHistory] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [history])
+  }, [messages])
+
+  // Load history from DB when widget first opens
+  useEffect(() => {
+    if (!open || historyLoaded) return
+    const sessionKey = getSessionKey()
+    api.get<{ session_key: string; messages: ChatMessage[] }>(`/api/ai_chat/history/${sessionKey}`)
+      .then((data) => {
+        if (data.messages && data.messages.length > 0) {
+          setMessages(data.messages)
+        }
+      })
+      .catch(() => {
+        // Fall back to empty history — not a fatal error
+      })
+      .finally(() => {
+        setHistoryLoaded(true)
+      })
+  }, [open, historyLoaded])
 
   async function send() {
     const message = input.trim()
     if (!message || loading) return
     setInput("")
     const userMsg: ChatMessage = { role: "user", content: message }
-    setHistory((h) => [...h, userMsg])
+    setMessages((m) => [...m, userMsg])
     setLoading(true)
     try {
-      const res = await api.post<{ reply: string }>("/api/ai_chat/chat", {
+      const res = await api.post<{ reply: string; session_key: string }>("/api/ai_chat/chat", {
         message,
-        history: history.slice(-10),
+        session_key: getSessionKey(),
       })
-      setHistory((h) => [...h, { role: "assistant", content: res.reply }])
+      setMessages((m) => [...m, { role: "assistant", content: res.reply }])
     } catch (e) {
-      setHistory((h) => [...h, {
+      setMessages((m) => [...m, {
         role: "assistant",
         content: e instanceof Error ? e.message : "Sorry, I couldn't process your request.",
       }])
@@ -60,12 +87,12 @@ export function ChatWidget() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            {history.length === 0 && (
+            {messages.length === 0 && (
               <p className="text-xs text-slate-400 text-center pt-4">
                 👋 Hi! How can I help you today?
               </p>
             )}
-            {history.map((msg, i) => (
+            {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${

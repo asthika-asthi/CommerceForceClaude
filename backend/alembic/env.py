@@ -24,6 +24,7 @@ from app.plugins.newsletter.models import NewsletterSubscriber  # noqa: F401
 from app.plugins.branding.models import BrandingConfig  # noqa: F401
 from app.plugins.landing_page.models import LandingSection  # noqa: F401
 from app.plugins.contact.models import Enquiry  # noqa: F401
+from app.plugins.ai_chat.models import ChatSession, ChatMessage  # noqa: F401
 from app.shared.email import EmailLog  # noqa: F401
 
 config = context.config

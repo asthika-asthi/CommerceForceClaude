@@ -1,8 +1,14 @@
+import csv
+import io
+from decimal import Decimal
 from typing import Optional
 from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.core.database import get_db
 from app.core.dependencies import require_admin
+from app.plugins.products.models import Product
 from app.plugins.products.schemas import (
     ProductCreate, ProductUpdate, ProductOut, ProductListOut, ProductImageCreate, ProductImageOut,
     CsvImportResult, ImageSortItem,
@@ -11,6 +17,36 @@ from app.plugins.products import service
 from app.shared.pagination import Page, paginate
 
 router = APIRouter()
+
+
+@router.get("/export/csv", dependencies=[Depends(require_admin())])
+async def export_products_csv(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Product).order_by(Product.created_at.desc()))
+    products = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=[
+        "name", "sku", "price", "sale_price", "stock_quantity",
+        "is_active", "category_id", "created_at",
+    ])
+    writer.writeheader()
+    for p in products:
+        writer.writerow({
+            "name": p.name,
+            "sku": p.sku or "",
+            "price": p.price,
+            "sale_price": p.sale_price or "",
+            "stock_quantity": p.stock_quantity,
+            "is_active": p.is_active,
+            "category_id": p.category_id or "",
+            "created_at": p.created_at.isoformat(),
+        })
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="products.csv"'},
+    )
 
 
 @router.get("", response_model=Page[ProductListOut])
@@ -23,6 +59,8 @@ async def list_products(
     sort_dir: str = Query("asc", pattern="^(asc|desc)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    min_price: Optional[Decimal] = Query(None, ge=0),
+    max_price: Optional[Decimal] = Query(None, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
     items, total = await service.list_products(
@@ -30,6 +68,7 @@ async def list_products(
         in_stock_only=in_stock_only, featured_only=featured_only,
         sort_by=sort_by, sort_dir=sort_dir,
         page=page, page_size=page_size,
+        min_price=min_price, max_price=max_price,
     )
     list_items = []
     for p in items:

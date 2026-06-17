@@ -6,6 +6,18 @@ import type { PaginatedOrders } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 
+function downloadCsv(path: string, filename: string) {
+  const token = localStorage.getItem("cf_access_token")
+  fetch(`http://localhost:8000${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url; a.download = filename; a.click()
+      URL.revokeObjectURL(url)
+    })
+}
+
 export default function OrdersPage() {
   const { data, isLoading } = useQuery<PaginatedOrders>({
     queryKey: ["orders"],
@@ -15,7 +27,18 @@ export default function OrdersPage() {
 
   return (
     <div>
-      <PageHeader title="Orders" description={data ? `${data.total} total orders` : undefined} />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Orders</h1>
+          {data && <p className="text-sm text-slate-500 mt-0.5">{data.total} total orders</p>}
+        </div>
+        <button
+          onClick={() => downloadCsv("/api/orders/export/csv", "orders.csv")}
+          className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors"
+        >
+          Export CSV
+        </button>
+      </div>
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
       ) : (

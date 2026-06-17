@@ -1,12 +1,51 @@
+import csv
+import io
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin
+from app.plugins.orders.models import Order
 from app.plugins.orders.schemas import OrderOut, OrderListOut, UpdateStatusRequest, FulfilRequest
 from app.plugins.orders import service
 from app.shared.pagination import Page, paginate
 
 router = APIRouter()
+
+
+@router.get("/export/csv", dependencies=[Depends(require_admin())])
+async def export_orders_csv(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Order).order_by(Order.created_at.desc()))
+    orders = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=[
+        "order_number", "status", "payment_method", "payment_status",
+        "subtotal", "discount_amount", "total", "guest_email",
+        "shipping_address", "tracking_number", "created_at",
+    ])
+    writer.writeheader()
+    for o in orders:
+        writer.writerow({
+            "order_number": o.order_number,
+            "status": o.status,
+            "payment_method": o.payment_method,
+            "payment_status": o.payment_status,
+            "subtotal": o.subtotal,
+            "discount_amount": o.discount_amount,
+            "total": o.total,
+            "guest_email": o.guest_email or "",
+            "shipping_address": (o.shipping_address or "").replace("\n", " "),
+            "tracking_number": o.tracking_number or "",
+            "created_at": o.created_at.isoformat(),
+        })
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="orders.csv"'},
+    )
 
 
 @router.get("", response_model=Page[OrderListOut])

@@ -5,6 +5,18 @@ import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import type { User } from "@/lib/types"
 
+function downloadCsv(path: string, filename: string) {
+  const token = localStorage.getItem("cf_access_token")
+  fetch(`http://localhost:8000${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url; a.download = filename; a.click()
+      URL.revokeObjectURL(url)
+    })
+}
+
 const TRADE_STATUS_STYLES: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700",
   approved: "bg-green-100 text-green-700",
@@ -40,7 +52,18 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Users" description={`${users.length} accounts`} />
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Users</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{users.length} accounts</p>
+        </div>
+        <button
+          onClick={() => downloadCsv("/api/auth/customers/export/csv", "customers.csv")}
+          className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors"
+        >
+          Export CSV
+        </button>
+      </div>
 
       {/* Trade applications section */}
       {tradeApplicants.length > 0 && (

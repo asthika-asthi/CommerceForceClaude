@@ -135,6 +135,19 @@ export interface Coupon {
   show_on_homepage: boolean
 }
 
+// ── Discount Rules ────────────────────────────────────────────────────────────
+export interface DiscountRule {
+  id: string
+  name: string
+  description?: string
+  discount_type: "percentage" | "fixed"
+  discount_value: string
+  min_order_value?: string
+  is_active: boolean
+  priority: number
+  created_at?: string
+}
+
 // ── Loyalty ───────────────────────────────────────────────────────────────────
 export interface LoyaltyConfig {
   points_per_dollar: string

@@ -270,47 +270,70 @@ async def test_landing_page_public_list(client: AsyncClient, db):
 
 # ── AI CHAT ───────────────────────────────────────────────────────────────────
 
-def _make_mock_anthropic(reply_text: str):
-    mock_response = MagicMock()
-    mock_response.content = [MagicMock(text=reply_text)]
-
-    mock_messages = MagicMock()
-    mock_messages.create = AsyncMock(return_value=mock_response)
-
-    mock_client = MagicMock()
-    mock_client.messages = mock_messages
-
-    mock_anthropic = MagicMock()
-    mock_anthropic.AsyncAnthropic.return_value = mock_client
-    return mock_anthropic
+def _make_mock_httpx_response(reply_text: str, status_code: int = 200):
+    """Return a mock httpx.Response for OpenRouter chat completions."""
+    mock_resp = MagicMock()
+    mock_resp.status_code = status_code
+    mock_resp.json.return_value = {
+        "choices": [{"message": {"content": reply_text}}]
+    }
+    mock_resp.text = reply_text
+    return mock_resp
 
 
 async def test_ai_chat_basic_response(client: AsyncClient, db):
-    mock_anthropic = _make_mock_anthropic("Hello! How can I help you today?")
-    with patch("app.plugins.ai_chat.service._anthropic", mock_anthropic):
+    mock_resp = _make_mock_httpx_response("Hello! How can I help you today?")
+    with patch("app.plugins.ai_chat.service.httpx.AsyncClient") as mock_client_cls:
+        mock_http = AsyncMock()
+        mock_http.post = AsyncMock(return_value=mock_resp)
+        mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_http)
+        mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
         r = await client.post(
             "/api/ai_chat/chat",
-            json={"message": "Hello", "history": []},
+            json={"message": "Hello", "session_key": "test-session-basic"},
         )
     assert r.status_code == 200
     assert r.json()["reply"] == "Hello! How can I help you today?"
+    assert r.json()["session_key"] == "test-session-basic"
 
 
-async def test_ai_chat_with_history(client: AsyncClient, db):
-    mock_anthropic = _make_mock_anthropic("We have electronics, clothing, and home goods.")
-    with patch("app.plugins.ai_chat.service._anthropic", mock_anthropic):
-        r = await client.post(
+async def test_ai_chat_history_persisted_and_loaded(client: AsyncClient, db):
+    """Send two messages in the same session; history endpoint returns both turns."""
+    session_key = "test-session-history"
+    mock_resp1 = _make_mock_httpx_response("We have electronics, clothing, and home goods.")
+    mock_resp2 = _make_mock_httpx_response("Our electronics start at £9.99.")
+
+    with patch("app.plugins.ai_chat.service.httpx.AsyncClient") as mock_client_cls:
+        mock_http = AsyncMock()
+        mock_http.post = AsyncMock(side_effect=[mock_resp1, mock_resp2])
+        mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_http)
+        mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        r1 = await client.post(
             "/api/ai_chat/chat",
-            json={
-                "message": "What categories do you have?",
-                "history": [
-                    {"role": "user", "content": "Hi"},
-                    {"role": "assistant", "content": "Hello! How can I help?"},
-                ],
-            },
+            json={"message": "What categories do you have?", "session_key": session_key},
         )
+        assert r1.status_code == 200
+
+        r2 = await client.post(
+            "/api/ai_chat/chat",
+            json={"message": "What are the prices?", "session_key": session_key},
+        )
+        assert r2.status_code == 200
+
+    hist = await client.get(f"/api/ai_chat/history/{session_key}")
+    assert hist.status_code == 200
+    msgs = hist.json()["messages"]
+    # 2 user + 2 assistant = 4 messages
+    assert len(msgs) == 4
+    assert msgs[0]["role"] == "user"
+    assert msgs[1]["role"] == "assistant"
+
+
+async def test_ai_chat_history_empty_for_unknown_session(client: AsyncClient, db):
+    r = await client.get("/api/ai_chat/history/nonexistent-session-xyz")
     assert r.status_code == 200
-    assert "electronics" in r.json()["reply"]
+    assert r.json()["messages"] == []
 
 
 async def test_ai_chat_uses_branding_context(client: AsyncClient, db):
@@ -321,45 +344,33 @@ async def test_ai_chat_uses_branding_context(client: AsyncClient, db):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
 
-    captured_system = {}
+    captured_payload = {}
 
-    async def mock_create(**kwargs):
-        captured_system["prompt"] = kwargs.get("system", "")
-        mock_response = MagicMock()
-        mock_response.content = [MagicMock(text="Welcome to GadgetWorld!")]
-        return mock_response
+    async def mock_post(url, **kwargs):
+        captured_payload.update(kwargs.get("json", {}))
+        return _make_mock_httpx_response("Welcome to GadgetWorld!")
 
-    mock_messages = MagicMock()
-    mock_messages.create = mock_create
-    mock_client = MagicMock()
-    mock_client.messages = mock_messages
-    mock_anthropic = MagicMock()
-    mock_anthropic.AsyncAnthropic.return_value = mock_client
-
-    with patch("app.plugins.ai_chat.service._anthropic", mock_anthropic):
+    with patch("app.plugins.ai_chat.service.httpx.AsyncClient") as mock_client_cls:
+        mock_http = AsyncMock()
+        mock_http.post = mock_post
+        mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_http)
+        mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
         r = await client.post(
             "/api/ai_chat/chat",
-            json={"message": "What store is this?", "history": []},
+            json={"message": "What store is this?", "session_key": "test-session-branding"},
         )
     assert r.status_code == 200
-    assert "GadgetWorld" in captured_system["prompt"]
+    system_msg = captured_payload["messages"][0]["content"]
+    assert "GadgetWorld" in system_msg
 
 
 async def test_ai_chat_no_api_key_returns_503(client: AsyncClient, db):
     with patch("app.plugins.ai_chat.router.get_settings") as mock_settings:
-        mock_settings.return_value.ANTHROPIC_API_KEY = ""
+        mock_settings.return_value.OPENROUTER_API_KEY = ""
+        mock_settings.return_value.OPENROUTER_MODEL = "anthropic/claude-haiku-4-5-20251001"
         r = await client.post(
             "/api/ai_chat/chat",
-            json={"message": "Hello", "history": []},
-        )
-    assert r.status_code == 503
-
-
-async def test_ai_chat_no_anthropic_package_returns_503(client: AsyncClient, db):
-    with patch("app.plugins.ai_chat.service._anthropic", None):
-        r = await client.post(
-            "/api/ai_chat/chat",
-            json={"message": "Hello", "history": []},
+            json={"message": "Hello", "session_key": "test-session-nokey"},
         )
     assert r.status_code == 503
 
