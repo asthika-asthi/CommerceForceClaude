@@ -26,7 +26,7 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return }
-    api.get<Order>(`/api/orders/£{id}`)
+    api.get<Order>(`/api/orders/${id}`)
       .then(setOrder)
       .catch(() => setOrder(null))
       .finally(() => setLoading(false))
@@ -45,7 +45,7 @@ export default function OrderDetailPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Order {order.order_number}</h1>
-        <span className={`text-sm px-3 py-1 rounded-full font-medium £{colorClass}`}>{order.status}</span>
+        <span className={`text-sm px-3 py-1 rounded-full font-medium ${colorClass}`}>{order.status}</span>
       </div>
 
       <div className="bg-white border border-slate-100 rounded-2xl divide-y divide-slate-50 mb-6">

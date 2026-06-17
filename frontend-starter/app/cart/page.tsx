@@ -62,7 +62,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-slate-900 text-sm">{item.product_name}</p>
-                    <p className="text-slate-500 text-xs mt-0.5">${parseFloat(item.unit_price).toFixed(2)} each</p>
+                    <p className="text-slate-500 text-xs mt-0.5">&#163;{parseFloat(item.unit_price).toFixed(2)} each</p>
                     <div className="flex items-center gap-2 mt-3">
                       <button
                         onClick={() => handleUpdate(item.product_id, item.quantity - 1)}
@@ -89,7 +89,7 @@ export default function CartPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-slate-900">${parseFloat(item.line_total).toFixed(2)}</p>
+                    <p className="font-semibold text-slate-900">&#163;{parseFloat(item.line_total).toFixed(2)}</p>
                   </div>
                 </div>
               )
@@ -100,7 +100,7 @@ export default function CartPage() {
             <h2 className="font-semibold text-slate-900 mb-4">Order summary</h2>
             <div className="flex justify-between text-sm text-slate-600 mb-2">
               <span>Subtotal ({cart?.item_count ?? 0} items)</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>&#163;{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm text-slate-400 mb-4">
               <span>Shipping</span>
@@ -108,7 +108,7 @@ export default function CartPage() {
             </div>
             <div className="border-t border-slate-100 pt-4 flex justify-between font-semibold text-slate-900 mb-6">
               <span>Total</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>&#163;{subtotal.toFixed(2)}</span>
             </div>
             <Link href="/checkout"
               className="block w-full text-center bg-brand hover:bg-brand-hover text-white font-semibold py-3 rounded-xl transition-colors">

@@ -19,14 +19,16 @@ if (Test-Path $pidsFile) {
     }
     Remove-Item $pidsFile -Force
 } else {
-    Write-Host "  No PID file found — falling back to port scan..." -ForegroundColor Yellow
+    Write-Host "  No PID file found -- falling back to port scan..." -ForegroundColor Yellow
     foreach ($port in 8000, 3000, 3001) {
-        $lines = netstat -ano | Select-String "[:$port\s].*LISTENING"
+        $lines = netstat -ano | Select-String ":$port\s"
         foreach ($line in $lines) {
-            $procId = ($line.Line.Trim() -split '\s+')[-1]
-            if ($procId -match '^\d+$' -and [int]$procId -gt 0) {
-                taskkill /PID $procId /T /F 2>&1 | Out-Null
-                Write-Host "  Killed PID $procId (port $port)" -ForegroundColor Green
+            if ($line.Line -match 'LISTENING') {
+                $procId = ($line.Line.Trim() -split '\s+')[-1]
+                if ($procId -match '^\d+$' -and [int]$procId -gt 0) {
+                    taskkill /PID $procId /T /F 2>&1 | Out-Null
+                    Write-Host "  Killed PID $procId (port $port)" -ForegroundColor Green
+                }
             }
         }
     }

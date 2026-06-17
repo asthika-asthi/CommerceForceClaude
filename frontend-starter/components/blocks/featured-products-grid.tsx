@@ -80,10 +80,10 @@ function ProductGridCard({ product }: { product: Product }) {
         <div className="mt-auto pt-3 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-brand-dark text-base">
-              ${(salePrice ?? price).toFixed(2)}
+              &#163;{(salePrice ?? price).toFixed(2)}
             </span>
             {salePrice && (
-              <span className="text-xs text-muted line-through">${price.toFixed(2)}</span>
+              <span className="text-xs text-muted line-through">&#163;{price.toFixed(2)}</span>
             )}
           </div>
 

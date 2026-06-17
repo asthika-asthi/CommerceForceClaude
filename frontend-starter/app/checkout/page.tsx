@@ -153,7 +153,13 @@ function CheckoutContent() {
         if (!cardElement) throw new Error("Card details not entered.")
 
         const { error: stripeError } = await stripe.confirmCardPayment(res.client_secret, {
-          payment_method: { card: cardElement },
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: form.name,
+              address: { postal_code: form.zip, country: form.country },
+            },
+          },
         })
         if (stripeError) {
           throw new Error(stripeError.message ?? "Card payment failed.")
@@ -327,6 +333,7 @@ function CheckoutContent() {
                 <label className="block text-sm text-slate-600 mb-2">Card details</label>
                 <CardElement
                   options={{
+                    hidePostalCode: true,
                     style: {
                       base: {
                         fontSize: "14px",
