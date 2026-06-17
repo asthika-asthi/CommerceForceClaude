@@ -41,6 +41,7 @@ async def setup_test_db():
     from app.plugins.branding.models import BrandingConfig  # noqa
     from app.plugins.landing_page.models import LandingSection  # noqa
     from app.plugins.contact.models import Enquiry  # noqa
+    from app.plugins.discount_rules.models import DiscountRule  # noqa
     from app.shared.email import EmailLog  # noqa
 
     async with test_engine.begin() as conn:

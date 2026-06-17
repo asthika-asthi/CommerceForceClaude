@@ -46,7 +46,9 @@ async def test_create_category_requires_admin(client: AsyncClient):
 
 async def test_list_categories_public(client: AsyncClient, db):
     token = await make_admin(client, db)
-    await client.post("/api/categories", json={"name": "Clothing"}, headers={"Authorization": f"Bearer {token}"})
+    cat = await client.post("/api/categories", json={"name": "Clothing"}, headers={"Authorization": f"Bearer {token}"})
+    # list_root_categories filters out empty categories (no active products), so add one
+    await client.post("/api/products", json={"name": "A Shirt", "price": "9.99", "stock_quantity": 5, "category_id": cat.json()["id"]}, headers={"Authorization": f"Bearer {token}"})
     r = await client.get("/api/categories")
     assert r.status_code == 200
     assert len(r.json()) >= 1
