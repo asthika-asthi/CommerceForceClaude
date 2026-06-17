@@ -7,7 +7,8 @@ import type { User } from "@/lib/types"
 
 function downloadCsv(path: string, filename: string) {
   const token = localStorage.getItem("cf_access_token")
-  fetch(`http://localhost:8000${path}`, { headers: { Authorization: `Bearer ${token}` } })
+  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+  fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${token}` } })
     .then(r => r.blob())
     .then(blob => {
       const url = URL.createObjectURL(blob)

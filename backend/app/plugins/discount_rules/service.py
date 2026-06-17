@@ -55,5 +55,6 @@ async def evaluate_rules(subtotal: Decimal, db: AsyncSession) -> Decimal:
         return Decimal("0")
     rule = rules[0]
     if rule.discount_type == "percentage":
-        return (subtotal * rule.discount_value / Decimal("100")).quantize(Decimal("0.01"))
+        raw = subtotal * rule.discount_value / Decimal("100")
+        return min(raw, subtotal).quantize(Decimal("0.01"))
     return min(rule.discount_value, subtotal)

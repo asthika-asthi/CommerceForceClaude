@@ -243,6 +243,8 @@ async def checkout(
 
 async def handle_stripe_webhook(payload: bytes, sig_header: str, db: AsyncSession) -> None:
     import stripe as stripe_lib
+    if not settings.STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=503, detail="Webhook not configured")
     try:
         event = stripe_lib.Webhook.construct_event(
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET

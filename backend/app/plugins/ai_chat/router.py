@@ -28,5 +28,17 @@ async def chat(
 
 
 @router.get("/history/{session_key}", response_model=HistoryResponse)
-async def get_history(session_key: str, db: AsyncSession = Depends(get_db)):
+async def get_history(
+    session_key: str,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user_optional),
+):
+    from sqlalchemy import select as sa_select
+    from app.plugins.ai_chat.models import ChatSession
+    result = await db.execute(sa_select(ChatSession).where(ChatSession.session_key == session_key))
+    session = result.scalar_one_or_none()
+    if session and session.user_id:
+        if not current_user or str(current_user.id) != session.user_id:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=403, detail="Access denied")
     return await service.get_history(session_key, db)

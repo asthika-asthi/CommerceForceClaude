@@ -14,6 +14,14 @@ from app.shared.pagination import Page, paginate
 router = APIRouter()
 
 
+def _csv_safe(value: str) -> str:
+    """Prevent CSV formula injection by prefixing dangerous leading characters."""
+    s = str(value) if value is not None else ""
+    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + s
+    return s
+
+
 @router.get("/export/csv", dependencies=[Depends(require_admin())])
 async def export_orders_csv(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Order).order_by(Order.created_at.desc()))
@@ -28,16 +36,16 @@ async def export_orders_csv(db: AsyncSession = Depends(get_db)):
     writer.writeheader()
     for o in orders:
         writer.writerow({
-            "order_number": o.order_number,
+            "order_number": _csv_safe(o.order_number),
             "status": o.status,
             "payment_method": o.payment_method,
             "payment_status": o.payment_status,
             "subtotal": o.subtotal,
             "discount_amount": o.discount_amount,
             "total": o.total,
-            "guest_email": o.guest_email or "",
-            "shipping_address": (o.shipping_address or "").replace("\n", " "),
-            "tracking_number": o.tracking_number or "",
+            "guest_email": _csv_safe(o.guest_email or ""),
+            "shipping_address": _csv_safe((o.shipping_address or "").replace("\n", " ")),
+            "tracking_number": _csv_safe(o.tracking_number or ""),
             "created_at": o.created_at.isoformat(),
         })
     output.seek(0)

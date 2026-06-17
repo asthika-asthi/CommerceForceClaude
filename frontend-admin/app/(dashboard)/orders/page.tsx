@@ -8,7 +8,8 @@ import { StatusBadge } from "@/components/status-badge"
 
 function downloadCsv(path: string, filename: string) {
   const token = localStorage.getItem("cf_access_token")
-  fetch(`http://localhost:8000${path}`, { headers: { Authorization: `Bearer ${token}` } })
+  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+  fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${token}` } })
     .then(r => r.blob())
     .then(blob => {
       const url = URL.createObjectURL(blob)
@@ -65,7 +66,7 @@ export default function OrdersPage() {
                   <td className="px-4 py-3 text-slate-600">
                     {o.guest_email ?? (o.user_id ? `User ${o.user_id.slice(0, 8)}` : "—")}
                   </td>
-                  <td className="px-4 py-3 font-medium text-slate-900">${o.total}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">£{parseFloat(o.total).toFixed(2)}</td>
                   <td className="px-4 py-3"><StatusBadge value={o.status} /></td>
                   <td className="px-4 py-3"><StatusBadge value={o.payment_status} /></td>
                   <td className="px-4 py-3 text-slate-500 text-xs">

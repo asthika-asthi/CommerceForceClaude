@@ -19,6 +19,14 @@ from app.shared.pagination import Page, paginate
 router = APIRouter()
 
 
+def _csv_safe(value: str) -> str:
+    """Prevent CSV formula injection by prefixing dangerous leading characters."""
+    s = str(value) if value is not None else ""
+    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + s
+    return s
+
+
 @router.get("/export/csv", dependencies=[Depends(require_admin())])
 async def export_products_csv(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Product).order_by(Product.created_at.desc()))
@@ -32,8 +40,8 @@ async def export_products_csv(db: AsyncSession = Depends(get_db)):
     writer.writeheader()
     for p in products:
         writer.writerow({
-            "name": p.name,
-            "sku": p.sku or "",
+            "name": _csv_safe(p.name),
+            "sku": _csv_safe(p.sku or ""),
             "price": p.price,
             "sale_price": p.sale_price or "",
             "stock_quantity": p.stock_quantity,

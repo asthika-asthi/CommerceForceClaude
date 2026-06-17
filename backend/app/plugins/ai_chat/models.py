@@ -7,7 +7,7 @@ from app.core.base_model import BaseModel
 class ChatSession(BaseModel):
     __tablename__ = "chat_sessions"
 
-    session_key: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    session_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     user_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )

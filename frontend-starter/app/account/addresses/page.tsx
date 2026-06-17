@@ -69,13 +69,21 @@ export default function AddressesPage() {
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this address?")) return
-    await api.del(`/api/addresses/${id}`)
-    setAddresses((prev) => prev.filter((a) => a.id !== id))
+    try {
+      await api.del(`/api/addresses/${id}`)
+      setAddresses((prev) => prev.filter((a) => a.id !== id))
+    } catch {
+      setError("Failed to delete address. Please try again.")
+    }
   }
 
   async function handleSetDefault(id: string) {
-    const updated = await api.post<Address>(`/api/addresses/${id}/set-default`, {})
-    setAddresses((prev) => prev.map((a) => ({ ...a, is_default: a.id === id })))
+    try {
+      await api.post<Address>(`/api/addresses/${id}/set-default`, {})
+      setAddresses((prev) => prev.map((a) => ({ ...a, is_default: a.id === id })))
+    } catch {
+      setError("Failed to update default address. Please try again.")
+    }
   }
 
   function f(key: string) {

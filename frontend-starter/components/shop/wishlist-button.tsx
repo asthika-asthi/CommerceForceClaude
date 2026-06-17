@@ -26,6 +26,7 @@ export function WishlistButton({ productId, className = "", size = 16 }: Wishlis
 
   async function toggle() {
     if (loading) return
+    const prev = inWishlist
     setLoading(true)
     try {
       if (inWishlist) {
@@ -36,7 +37,7 @@ export function WishlistButton({ productId, className = "", size = 16 }: Wishlis
         setInWishlist(true)
       }
     } catch {
-      // silent
+      setInWishlist(prev)
     } finally {
       setLoading(false)
     }

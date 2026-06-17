@@ -55,9 +55,17 @@ async def _get_or_create_session(
     )
     session = result.scalar_one_or_none()
     if session is None:
-        session = ChatSession(session_key=session_key, user_id=user_id)
-        db.add(session)
-        await db.flush()
+        try:
+            session = ChatSession(session_key=session_key, user_id=user_id)
+            db.add(session)
+            await db.flush()
+        except Exception:
+            # Race condition: another request created the session concurrently; re-query
+            await db.rollback()
+            result = await db.execute(
+                select(ChatSession).where(ChatSession.session_key == session_key)
+            )
+            session = result.scalar_one()
     elif user_id and session.user_id is None:
         # Link an anonymous session to a user when they log in
         session.user_id = user_id

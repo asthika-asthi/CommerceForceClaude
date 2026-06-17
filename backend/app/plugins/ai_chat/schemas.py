@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ChatMessage(BaseModel):
@@ -10,6 +10,13 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=4000)
     session_key: str = Field(..., min_length=1, max_length=255)
+
+    @field_validator("message")
+    @classmethod
+    def message_not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Message cannot be blank or whitespace only")
+        return v
     # Kept for backward compatibility with existing clients; ignored when session_key is provided
     history: Optional[List[ChatMessage]] = None
 

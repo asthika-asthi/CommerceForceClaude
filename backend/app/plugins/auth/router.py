@@ -135,6 +135,14 @@ async def patch_user(
     return UserOut.model_validate(user)
 
 
+def _csv_safe(value: str) -> str:
+    """Prevent CSV formula injection by prefixing dangerous leading characters."""
+    s = str(value) if value is not None else ""
+    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + s
+    return s
+
+
 @router.get("/customers/export/csv", dependencies=[Depends(require_admin())])
 async def export_customers_csv(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
@@ -150,11 +158,11 @@ async def export_customers_csv(db: AsyncSession = Depends(get_db)):
     writer.writeheader()
     for u in users:
         writer.writerow({
-            "first_name": u.first_name,
-            "last_name": u.last_name,
-            "email": u.email,
-            "company_name": u.company_name or "",
-            "phone": u.phone or "",
+            "first_name": _csv_safe(u.first_name),
+            "last_name": _csv_safe(u.last_name),
+            "email": _csv_safe(u.email),
+            "company_name": _csv_safe(u.company_name or ""),
+            "phone": _csv_safe(u.phone or ""),
             "trade_status": u.trade_status or "",
             "is_active": u.is_active,
             "created_at": u.created_at.isoformat(),
