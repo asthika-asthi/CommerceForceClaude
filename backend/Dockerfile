@@ -2,15 +2,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev gcc && rm -rf /var/lib/apt/lists/*
-
 COPY pyproject.toml .
 RUN pip install --no-cache-dir -e .
-# Install psycopg2 for Alembic sync migrations
-RUN pip install --no-cache-dir psycopg2-binary
 
 COPY . .
+RUN mkdir -p /app/data /app/uploads
 
 EXPOSE 8000
 

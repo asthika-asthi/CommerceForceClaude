@@ -2,37 +2,36 @@ services:
   backend:
     build: ./backend
     env_file: ./backend/.env
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:////app/data/commerceforce.db
+      CORS_ORIGINS: "http://${SERVER_IP}:3000,http://${SERVER_IP}:3001,http://localhost:3000,http://localhost:3001"
+      STOREFRONT_URL: "http://${SERVER_IP}:3000"
     ports:
       - "8000:8000"
+    volumes:
+      - cf_data:/app/data
+      - cf_uploads:/app/uploads
+
+  frontend-starter:
+    build:
+      context: ./frontend-starter
+      args:
+        NEXT_PUBLIC_API_URL: "http://${SERVER_IP}:8000"
+    ports:
+      - "3000:3000"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    volumes:
-      - ./backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - backend
 
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: commerceforce
-      POSTGRES_USER: cf_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+  frontend-admin:
+    build:
+      context: ./frontend-admin
+      args:
+        NEXT_PUBLIC_API_URL: "http://${SERVER_IP}:8000"
     ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cf_user -d commerceforce"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
+      - "3001:3001"
+    depends_on:
+      - backend
 
 volumes:
-  postgres_data:
+  cf_data:
+  cf_uploads:
