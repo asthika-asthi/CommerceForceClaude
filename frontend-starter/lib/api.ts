@@ -55,7 +55,7 @@ export const api = {
 // Server-side fetch (no auth, for SSR/static)
 export async function serverFetch<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${BASE}${path}`, { next: { revalidate: 60 } })
+    const res = await fetch(`${BASE}${path}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(3000) })
     if (!res.ok) return null
     return res.json()
   } catch {
