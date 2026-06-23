@@ -116,12 +116,35 @@ docker compose ps
 ```
 All three services should show status `running`.
 
-### Step 8 — Tell the client
-Send the client their email address and ask them to:
-1. Go to `http://YOUR.SERVER.IP:3001`
-2. Click **Forgot Password**
-3. Enter their email address
-4. Check their email and set their own password
+### Step 8 — Get the admin login link
+After seeding, the admin account has a temporary password from `.env`. The client sets their own password via the Forgot Password flow. But email delivery may fail on some VPS providers because they block outbound SMTP.
+
+**Always get the reset link from the logs as a fallback:**
+```bash
+docker compose logs backend | grep "PASSWORD RESET"
+```
+This prints the reset link even when email fails. Send this link directly to the client.
+
+**Tell the client:**
+1. Go to the link from the logs above
+2. Set their own password
+3. Then log in at `http://YOUR.SERVER.IP:3001` with their email and new password
+
+**If email is working**, the client can also use Forgot Password directly from the login page.
+
+---
+
+### Troubleshooting email (SMTP not working)
+
+Run this to see the exact error:
+```bash
+docker compose logs backend | grep "Email"
+```
+
+**Common causes:**
+- VPS blocks outbound port 587 (very common) — contact your VPS provider or use port 465
+- Gmail App Password required — generate at: Google Account → Security → 2-Step Verification → App Passwords
+  - Use the 16-character app password, not your normal Gmail password
 
 ---
 

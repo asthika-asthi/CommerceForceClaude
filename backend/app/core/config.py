@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # Storefront URL — used for email links (verify email, password reset)
     STOREFRONT_URL: str = "http://localhost:3000"
 
+    # Admin panel URL — used for admin password reset links
+    ADMIN_URL: str = "http://localhost:3001"
+
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000"
 

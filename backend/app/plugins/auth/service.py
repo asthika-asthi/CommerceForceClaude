@@ -219,7 +219,8 @@ async def request_password_reset(email: str, db: AsyncSession) -> None:
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=PASSWORD_RESET_EXPIRE_MINUTES)
     db.add(PasswordResetToken(user_id=user.id, token_hash=token_hash, expires_at=expires_at))
 
-    reset_url = f"{settings.STOREFRONT_URL}/reset-password?token={raw_token}"
+    base_url = settings.ADMIN_URL if user.role in (UserRole.admin, UserRole.superadmin) else settings.STOREFRONT_URL
+    reset_url = f"{base_url}/reset-password?token={raw_token}"
     logger.info("Password reset link for %s: %s", email, reset_url)
     print(f"\n[PASSWORD RESET] {email} -> {reset_url}\n", flush=True)
 
