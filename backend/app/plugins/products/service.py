@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 from app.plugins.products.models import Product, ProductImage
 from app.plugins.products.schemas import ProductCreate, ProductUpdate, ProductImageCreate, ImageSortItem
 from app.shared.slug import slugify, generate_sku
+from app.plugins.categories.models import Category
 
 
 async def _get_existing_slugs(db: AsyncSession) -> set[str]:
@@ -234,6 +235,24 @@ async def restore_stock(product_id: str, quantity: int, db: AsyncSession) -> Non
     await db.flush()
 
 
+async def _resolve_category(value: str, db: AsyncSession) -> Optional[str]:
+    """Accept either a category UUID or a category name. Returns UUID or None."""
+    value = value.strip()
+    if not value:
+        return None
+    # Try by name first (case-insensitive) — more user-friendly
+    result = await db.execute(
+        select(Category).where(func.lower(Category.name) == value.lower())
+    )
+    cat = result.scalar_one_or_none()
+    if cat:
+        return str(cat.id)
+    # Fall back: treat as UUID
+    result2 = await db.execute(select(Category).where(Category.id == value))
+    cat2 = result2.scalar_one_or_none()
+    return str(cat2.id) if cat2 else None
+
+
 async def import_from_csv(
     content: str,
     db: AsyncSession,
@@ -281,13 +300,16 @@ async def import_from_csv(
             errors.append({"row": i, "error": f"invalid stock_quantity: {stock_raw!r}"})
             continue
 
+        category_raw = row.get("category") or row.get("category_id") or ""
+        category_id = await _resolve_category(category_raw, db)
+
         true_values = {"true", "1", "yes"}
         data = ProductCreate(
             name=name,
             price=price,
             description=(row.get("description") or None),
             stock_quantity=stock_quantity,
-            category_id=(row.get("category_id") or None),
+            category_id=category_id,
             sale_price=sale_price,
             is_on_sale=(row.get("is_on_sale") or "").lower() in true_values,
             is_featured=(row.get("is_featured") or "").lower() in true_values,
