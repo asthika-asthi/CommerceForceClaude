@@ -10,40 +10,29 @@ from app.plugins.auth.service import get_password_hash
 from sqlalchemy import select
 
 
-# ---------------------------------------------------------------------------
-# Admin user
-# ---------------------------------------------------------------------------
-
-async def seed_admin(db) -> None:
-    result = await db.execute(select(User).where(User.email == "admin@commerceforce.dev"))
-    if result.scalar_one_or_none():
-        print("  Admin already exists — skipping.")
-        return
-    admin = User(
-        email="admin@commerceforce.dev",
-        hashed_password=get_password_hash("Admin1234!"),
-        first_name="Admin",
-        last_name="User",
-        role=UserRole.admin,
-        is_active=True,
-    )
-    db.add(admin)
-    await db.commit()
-    print("  Created admin: admin@commerceforce.dev / Admin1234!")
+def _require_env(key: str) -> str:
+    val = os.getenv(key, "").strip()
+    if not val:
+        print(f"ERROR: {key} is not set in the environment. Aborting.")
+        sys.exit(1)
+    return val
 
 
 # ---------------------------------------------------------------------------
-# Superadmin user
+# Superadmin user (agency — same across all client deployments)
 # ---------------------------------------------------------------------------
 
 async def seed_superadmin(db) -> None:
-    result = await db.execute(select(User).where(User.email == "superadmin@commerceforce.dev"))
+    email = _require_env("SUPERADMIN_EMAIL")
+    password = _require_env("SUPERADMIN_PASSWORD")
+
+    result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none():
-        print("  Superadmin already exists — skipping.")
+        print(f"  Superadmin already exists ({email}) — skipping.")
         return
     superadmin = User(
-        email="superadmin@commerceforce.dev",
-        hashed_password=get_password_hash("SuperAdmin1234!"),
+        email=email,
+        hashed_password=get_password_hash(password),
         first_name="Super",
         last_name="Admin",
         role=UserRole.superadmin,
@@ -51,38 +40,65 @@ async def seed_superadmin(db) -> None:
     )
     db.add(superadmin)
     await db.commit()
-    print("  Created superadmin: superadmin@commerceforce.dev / SuperAdmin1234!")
+    print(f"  Created superadmin: {email}")
 
 
 # ---------------------------------------------------------------------------
-# Branding
+# Admin user (per-client — client resets password via Forgot Password)
+# ---------------------------------------------------------------------------
+
+async def seed_admin(db) -> None:
+    email = _require_env("ADMIN_EMAIL")
+    password = _require_env("ADMIN_TEMP_PASSWORD")
+
+    result = await db.execute(select(User).where(User.email == email))
+    if result.scalar_one_or_none():
+        print(f"  Admin already exists ({email}) — skipping.")
+        return
+    admin = User(
+        email=email,
+        hashed_password=get_password_hash(password),
+        first_name="Admin",
+        last_name="User",
+        role=UserRole.admin,
+        is_active=True,
+    )
+    db.add(admin)
+    await db.commit()
+    print(f"  Created admin: {email} (client should reset password via Forgot Password)")
+
+
+# ---------------------------------------------------------------------------
+# Branding (per-client)
 # ---------------------------------------------------------------------------
 
 async def seed_branding(db) -> None:
+    store_name = _require_env("STORE_NAME")
+    tagline = os.getenv("STORE_TAGLINE", "").strip()
+    contact_email = os.getenv("CONTACT_EMAIL", "").strip()
+
     from app.plugins.branding.service import get_config, update_config
     from app.plugins.branding.schemas import BrandingConfigUpdate
 
     config = await get_config(db)
     if config.store_name != "My Store":
-        print("  Branding already customised — skipping.")
+        print(f"  Branding already customised ({config.store_name}) — skipping.")
         return
 
     await update_config(
         BrandingConfigUpdate(
-            store_name="CommerceForce Demo",
-            tagline="Quality products, delivered fast",
-            primary_color="#2563EB",
-            secondary_color="#1E40AF",
-            contact_email="support@commerceforce.dev",
+            store_name=store_name,
+            tagline=tagline or None,
+            contact_email=contact_email or None,
         ),
         db,
     )
     await db.commit()
-    print("  Branding configured: CommerceForce Demo")
+    print(f"  Branding configured: {store_name}")
 
 
 # ---------------------------------------------------------------------------
-# Categories
+# Demo data — categories and products (--demo flag only)
 # ---------------------------------------------------------------------------
 
 _CATEGORIES = [
@@ -94,7 +110,6 @@ _CATEGORIES = [
 
 
 async def seed_categories(db) -> dict[str, str]:
-    """Return mapping of category name -> id, creating any that are missing."""
     from app.plugins.categories.service import create_category, list_root_categories
     from app.plugins.categories.schemas import CategoryCreate
 
@@ -119,14 +134,9 @@ async def seed_categories(db) -> dict[str, str]:
     return existing_map
 
 
-# ---------------------------------------------------------------------------
-# Products
-# ---------------------------------------------------------------------------
-
 def _products(cat: dict[str, str]) -> list[dict]:
     from decimal import Decimal
     return [
-        # Electronics
         dict(name="Wireless Noise-Cancelling Headphones", category_id=cat["Electronics"],
              price=Decimal("79.99"), stock_quantity=50, is_featured=True,
              description="Premium over-ear headphones with active noise cancellation and 30-hour battery life.",
@@ -143,8 +153,6 @@ def _products(cat: dict[str, str]) -> list[dict]:
              price=Decimal("44.99"), stock_quantity=80,
              description="Aluminium folding stand with 6 height levels. Compatible with 10\"–17\" laptops.",
              tags="laptop,stand,desk"),
-
-        # Clothing
         dict(name="Classic Cotton T-Shirt", category_id=cat["Clothing"],
              price=Decimal("19.99"), stock_quantity=200,
              description="100% organic cotton, pre-shrunk, available in 8 colours.",
@@ -157,11 +165,9 @@ def _products(cat: dict[str, str]) -> list[dict]:
              price=Decimal("59.99"), sale_price=Decimal("44.99"), is_on_sale=True, stock_quantity=60,
              description="Mid-weight brushed fleece with kangaroo pocket and YKK zip.",
              tags="hoodie,fleece,outerwear"),
-
-        # Home & Garden
         dict(name="Ceramic Plant Pot Set (3 pcs)", category_id=cat["Home & Garden"],
              price=Decimal("24.99"), stock_quantity=80,
-             description="Matte white ceramic pots in three graduated sizes (10 cm, 15 cm, 20 cm) with drainage holes.",
+             description="Matte white ceramic pots in three graduated sizes with drainage holes.",
              tags="plants,pots,ceramic,garden"),
         dict(name="LED Architect Desk Lamp", category_id=cat["Home & Garden"],
              price=Decimal("39.99"), stock_quantity=60,
@@ -171,15 +177,13 @@ def _products(cat: dict[str, str]) -> list[dict]:
              price=Decimal("22.99"), stock_quantity=120,
              description="Set of 3 FSC-certified bamboo boards in small, medium, and large.",
              tags="kitchen,bamboo,cutting-board"),
-
-        # Sports & Outdoors
         dict(name="Eco Yoga Mat 6 mm", category_id=cat["Sports & Outdoors"],
              price=Decimal("29.99"), stock_quantity=90, is_featured=True,
              description="Natural rubber non-slip mat with alignment lines. Includes carry strap.",
              tags="yoga,mat,fitness,eco"),
         dict(name="Insulated Stainless Water Bottle 1 L", category_id=cat["Sports & Outdoors"],
              price=Decimal("24.99"), stock_quantity=150,
-             description="Double-wall vacuum insulation keeps drinks cold 24 h / hot 12 h. Leak-proof lid.",
+             description="Double-wall vacuum insulation keeps drinks cold 24 h / hot 12 h.",
              tags="bottle,hydration,insulated"),
         dict(name="Resistance Bands Set (5 levels)", category_id=cat["Sports & Outdoors"],
              price=Decimal("22.99"), stock_quantity=110,
@@ -210,25 +214,31 @@ async def seed_products(cat: dict[str, str], db) -> None:
 # Entry point
 # ---------------------------------------------------------------------------
 
-async def seed() -> None:
+async def seed(demo: bool = False) -> None:
     print("Seeding database…")
-    async with AsyncSessionLocal() as db:
-        await seed_admin(db)
 
     async with AsyncSessionLocal() as db:
         await seed_superadmin(db)
 
     async with AsyncSessionLocal() as db:
+        await seed_admin(db)
+
+    async with AsyncSessionLocal() as db:
         await seed_branding(db)
 
-    async with AsyncSessionLocal() as db:
-        cat_ids = await seed_categories(db)
+    if demo:
+        print("  [demo mode] Seeding categories and products…")
+        async with AsyncSessionLocal() as db:
+            cat_ids = await seed_categories(db)
 
-    async with AsyncSessionLocal() as db:
-        await seed_products(cat_ids, db)
+        async with AsyncSessionLocal() as db:
+            await seed_products(cat_ids, db)
+    else:
+        print("  Skipping demo products (run with --demo to include them).")
 
     print("Done.")
 
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    run_demo = "--demo" in sys.argv
+    asyncio.run(seed(demo=run_demo))

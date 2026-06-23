@@ -7,7 +7,7 @@ import type { PluginMenu } from "@/lib/types"
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Ticket, Star,
   Mail, FileText, CreditCard, Warehouse, Palette, Layout,
-  MessageCircle, BarChart2, LogOut, Megaphone,
+  MessageCircle, BarChart2, LogOut, Megaphone, Settings,
 } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { useRouter } from "next/navigation"
@@ -104,12 +104,15 @@ export function Sidebar() {
           {user?.first_name} {user?.last_name}
           <span className="ml-1 text-slate-500">({user?.role})</span>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-        >
-          <LogOut size={14} /> Sign out
-        </button>
+        <div className="flex items-center justify-between">
+          <NavItem href="/settings" label="Settings" icon={<Settings size={14} />} />
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors px-3 py-2"
+          >
+            <LogOut size={14} /> Sign out
+          </button>
+        </div>
       </div>
     </aside>
   )
