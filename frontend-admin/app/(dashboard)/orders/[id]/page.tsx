@@ -23,6 +23,7 @@ function OrderDetail({ id }: { id: string }) {
     queryFn: () => api.get(`/api/orders/${id}`),
   })
   const [trackingInput, setTrackingInput] = useState("")
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
 
   const updateStatus = useMutation({
     mutationFn: (newStatus: OrderStatus) =>
@@ -30,8 +31,17 @@ function OrderDetail({ id }: { id: string }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["order", id] })
       qc.invalidateQueries({ queryKey: ["orders"] })
+      setCancelConfirmOpen(false)
     },
   })
+
+  function handleStatusClick(s: OrderStatus) {
+    if (s === "cancelled" && order?.payment_method === "stripe" && order?.payment_status === "paid") {
+      setCancelConfirmOpen(true)
+    } else {
+      updateStatus.mutate(s)
+    }
+  }
 
   const fulfil = useMutation({
     mutationFn: () =>
@@ -113,17 +123,38 @@ function OrderDetail({ id }: { id: string }) {
           {ORDER_STATUSES.map((s) => (
             <button
               key={s}
-              onClick={() => updateStatus.mutate(s)}
+              onClick={() => handleStatusClick(s)}
               disabled={order.status === s || updateStatus.isPending}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 order.status === s
                   ? "bg-blue-600 text-white"
+                  : s === "cancelled"
+                  ? "bg-slate-100 text-red-600 hover:bg-red-50"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               } disabled:opacity-50`}
             >
               {s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
+        </div>
+        {cancelConfirmOpen && (
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+            <p className="font-medium text-amber-800 mb-1">Issue Stripe refund?</p>
+            <p className="text-amber-700 mb-3">
+              This order was paid via Stripe (£{order.total}). Cancelling will automatically issue a full refund to the customer&apos;s card. This cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => updateStatus.mutate("cancelled")} disabled={updateStatus.isPending}
+                className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 disabled:opacity-50">
+                {updateStatus.isPending ? "Processing…" : "Yes, cancel and refund"}
+              </button>
+              <button onClick={() => setCancelConfirmOpen(false)}
+                className="px-3 py-1.5 bg-white border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">
+                Keep order
+              </button>
+            </div>
+          </div>
+        )}
         </div>
       </div>
 

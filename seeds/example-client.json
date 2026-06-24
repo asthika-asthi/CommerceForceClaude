@@ -1,0 +1,41 @@
+{
+  "_comment": "Example per-client seed file. Copy to seeds/<client-slug>.json and fill in.",
+
+  "branding": {
+    "store_name": "Acme Store",
+    "tagline": "Quality you can trust",
+    "contact_email": "hello@acme.com",
+    "contact_phone": "+44 1234 567890",
+    "primary_color": "#1d4ed8",
+    "secondary_color": "#ffffff",
+    "stripe_publishable_key": "pk_live_REPLACE_ME"
+  },
+
+  "categories": [
+    {"name": "Category A", "description": "Your first category"},
+    {"name": "Category B", "description": "Your second category"}
+  ],
+
+  "products": [
+    {
+      "name": "Product One",
+      "category": "Category A",
+      "description": "Full product description here.",
+      "price": "29.99",
+      "stock_quantity": 50,
+      "is_featured": true,
+      "is_active": true,
+      "tags": "tag1,tag2"
+    },
+    {
+      "name": "Product Two",
+      "category": "Category B",
+      "description": "Another product description.",
+      "price": "14.99",
+      "stock_quantity": 100,
+      "is_featured": false,
+      "is_active": true,
+      "tags": "tag3"
+    }
+  ]
+}

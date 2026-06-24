@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import os
+import json
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -8,6 +9,24 @@ from app.core.database import AsyncSessionLocal
 from app.plugins.auth.models import User, UserRole
 from app.plugins.auth.service import get_password_hash
 from sqlalchemy import select
+
+_SEED_DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "seed-data.json")
+
+
+def _load_seed_data() -> dict | None:
+    if not os.path.exists(_SEED_DATA_PATH):
+        return None
+    try:
+        with open(_SEED_DATA_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        # Treat the template as absent if still has placeholder values
+        cats = data.get("categories", [])
+        if cats and cats[0].get("name") == "Example Category":
+            return None
+        return data
+    except Exception as e:
+        print(f"  Warning: could not load seed-data.json: {e}")
+        return None
 
 
 def _require_env(key: str) -> str:
@@ -72,7 +91,7 @@ async def seed_admin(db) -> None:
 # Branding (per-client)
 # ---------------------------------------------------------------------------
 
-async def seed_branding(db) -> None:
+async def seed_branding(db, seed_data: dict | None = None) -> None:
     store_name = _require_env("STORE_NAME")
     tagline = os.getenv("STORE_TAGLINE", "").strip()
     contact_email = os.getenv("CONTACT_EMAIL", "").strip()
@@ -85,16 +104,20 @@ async def seed_branding(db) -> None:
         print(f"  Branding already customised ({config.store_name}) — skipping.")
         return
 
-    await update_config(
-        BrandingConfigUpdate(
-            store_name=store_name,
-            tagline=tagline or None,
-            contact_email=contact_email or None,
-        ),
-        db,
-    )
+    # Build update from env vars, then overlay any non-empty values from seed-data.json
+    update_fields: dict = {
+        "store_name": store_name,
+        "tagline": tagline or None,
+        "contact_email": contact_email or None,
+    }
+    if seed_data:
+        for key, val in seed_data.get("branding", {}).items():
+            if val and key != "_comment":
+                update_fields[key] = val
+
+    await update_config(BrandingConfigUpdate(**update_fields), db)
     await db.commit()
-    print(f"  Branding configured: {store_name}")
+    print(f"  Branding configured: {update_fields['store_name']}")
 
 
 # ---------------------------------------------------------------------------
@@ -109,22 +132,23 @@ _CATEGORIES = [
 ]
 
 
-async def seed_categories(db) -> dict[str, str]:
+async def seed_categories(db, source: list[dict] | None = None) -> dict[str, str]:
     from app.plugins.categories.service import create_category, list_root_categories
     from app.plugins.categories.schemas import CategoryCreate
+
+    category_list = source if source is not None else _CATEGORIES
 
     existing = await list_root_categories(db)
     existing_map: dict[str, str] = {c.name: str(c.id) for c in existing}
 
-    missing = [d for d in _CATEGORIES if d["name"] not in existing_map]
+    missing = [d for d in category_list if d["name"] not in existing_map]
     if not missing:
         print(f"  Categories already exist ({len(existing)}) — skipping.")
         return existing_map
 
-    for data in missing:
-        sort_order = next(i for i, d in enumerate(_CATEGORIES) if d["name"] == data["name"])
+    for i, data in enumerate(missing):
         cat = await create_category(
-            CategoryCreate(name=data["name"], description=data["description"], sort_order=sort_order),
+            CategoryCreate(name=data["name"], description=data.get("description", ""), sort_order=i),
             db,
         )
         existing_map[data["name"]] = str(cat.id)
@@ -192,17 +216,29 @@ def _products(cat: dict[str, str]) -> list[dict]:
     ]
 
 
-async def seed_products(cat: dict[str, str], db) -> None:
+async def seed_products(cat: dict[str, str], db, source: list[dict] | None = None) -> None:
     from app.plugins.products.service import create_product, list_products
     from app.plugins.products.schemas import ProductCreate
+    from decimal import Decimal
 
     _, total = await list_products(db, active_only=False, page_size=1)
     if total > 0:
         print(f"  Products already exist ({total}) — skipping.")
         return
 
+    product_list = source if source is not None else _products(cat)
+
     count = 0
-    for p in _products(cat):
+    for p in product_list:
+        p = dict(p)
+        # JSON products reference category by name; resolve to ID
+        if "category" in p:
+            cat_name = p.pop("category")
+            p["category_id"] = cat.get(cat_name)
+        if "price" in p:
+            p["price"] = Decimal(str(p["price"]))
+        if "sale_price" in p and p["sale_price"] is not None:
+            p["sale_price"] = Decimal(str(p["sale_price"]))
         await create_product(ProductCreate(**p), db)
         count += 1
 
@@ -217,6 +253,11 @@ async def seed_products(cat: dict[str, str], db) -> None:
 async def seed(demo: bool = False) -> None:
     print("Seeding database…")
 
+    seed_data = _load_seed_data()
+    if seed_data:
+        print(f"  Loaded seed-data.json ({len(seed_data.get('categories', []))} categories, "
+              f"{len(seed_data.get('products', []))} products)")
+
     async with AsyncSessionLocal() as db:
         await seed_superadmin(db)
 
@@ -224,17 +265,26 @@ async def seed(demo: bool = False) -> None:
         await seed_admin(db)
 
     async with AsyncSessionLocal() as db:
-        await seed_branding(db)
+        await seed_branding(db, seed_data)
 
-    if demo:
+    # Seed catalogue: prefer seed-data.json; fall back to demo flag
+    if seed_data and (seed_data.get("categories") or seed_data.get("products")):
+        async with AsyncSessionLocal() as db:
+            cat_ids = await seed_categories(db, source=seed_data.get("categories"))
+
+        async with AsyncSessionLocal() as db:
+            await seed_products(cat_ids, db, source=seed_data.get("products"))
+
+    elif demo:
         print("  [demo mode] Seeding categories and products…")
         async with AsyncSessionLocal() as db:
             cat_ids = await seed_categories(db)
 
         async with AsyncSessionLocal() as db:
             await seed_products(cat_ids, db)
+
     else:
-        print("  Skipping demo products (run with --demo to include them).")
+        print("  Skipping catalogue (provide seed-data.json or run with --demo).")
 
     print("Done.")
 

@@ -1,5 +1,5 @@
 ﻿"use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import {
@@ -13,10 +13,6 @@ import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import Link from "next/link"
 import type { Address } from "@/lib/types"
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""
-)
 
 type PaymentMethodKey = "cash" | "credit_limit" | "stripe"
 
@@ -41,14 +37,27 @@ const PAYMENT_METHODS: { value: PaymentMethodKey; label: string; description: st
 ]
 
 export default function CheckoutPage() {
+  const [stripeKey, setStripeKey] = useState("")
+
+  useEffect(() => {
+    api.get<{ stripe_publishable_key?: string }>("/api/branding")
+      .then(b => setStripeKey(b?.stripe_publishable_key ?? ""))
+      .catch(() => {})
+  }, [])
+
+  const stripePromise = useMemo(
+    () => stripeKey ? loadStripe(stripeKey) : null,
+    [stripeKey]
+  )
+
   return (
     <Elements stripe={stripePromise}>
-      <CheckoutContent />
+      <CheckoutContent stripeEnabled={!!stripeKey} />
     </Elements>
   )
 }
 
-function CheckoutContent() {
+function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
   const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const { cart, fetch, clear } = useCartStore()
@@ -61,11 +70,24 @@ function CheckoutContent() {
   const [error, setError] = useState("")
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+  const [shippingCost, setShippingCost] = useState<number>(0)
+  const shippingDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const stripe = useStripe()
   const elements = useElements()
 
   useEffect(() => { fetch() }, [fetch])
+
+  useEffect(() => {
+    if (!form.country) return
+    if (shippingDebounce.current) clearTimeout(shippingDebounce.current)
+    shippingDebounce.current = setTimeout(() => {
+      api.get<{ flat_rate: number }>(`/api/shipping/rate?country=${encodeURIComponent(form.country)}`)
+        .then((r) => setShippingCost(Number(r.flat_rate) ?? 0))
+        .catch(() => setShippingCost(0))
+    }, 400)
+    return () => { if (shippingDebounce.current) clearTimeout(shippingDebounce.current) }
+  }, [form.country])
 
   useEffect(() => {
     if (!user) return
@@ -132,6 +154,7 @@ function CheckoutContent() {
         .filter(Boolean)
       const payload: Record<string, unknown> = {
         shipping_address: addressParts.join("\n"),
+        delivery_country: form.country || undefined,
         use_cart: true,
         payment_method: form.payment_method,
       }
@@ -184,9 +207,11 @@ function CheckoutContent() {
     )
   }
 
-  const availablePaymentMethods = user
-    ? PAYMENT_METHODS
-    : PAYMENT_METHODS.filter((m) => m.value !== "credit_limit")
+  const availablePaymentMethods = PAYMENT_METHODS.filter((m) => {
+    if (m.value === "credit_limit" && !user) return false
+    if (m.value === "stripe" && !stripeEnabled) return false
+    return true
+  })
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -384,9 +409,19 @@ function CheckoutContent() {
                 </div>
               ))}
             </div>
-            <div className="border-t border-slate-100 pt-4 flex justify-between font-semibold text-slate-900 mb-6">
-              <span>Total</span>
-              <span>&#163;{subtotal.toFixed(2)}</span>
+            <div className="border-t border-slate-100 pt-3 space-y-2 mb-6">
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>Subtotal</span>
+                <span>&#163;{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>Shipping</span>
+                <span>{shippingCost > 0 ? `&#163;${shippingCost.toFixed(2)}` : "Free"}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-slate-900 pt-2 border-t border-slate-100">
+                <span>Total</span>
+                <span>&#163;{(subtotal + shippingCost).toFixed(2)}</span>
+              </div>
             </div>
             {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-4">{error}</div>}
             <button type="submit" disabled={loading || (form.payment_method === "stripe" && !stripe)}

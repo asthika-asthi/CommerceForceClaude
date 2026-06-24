@@ -54,12 +54,13 @@ async def create_order(
     notes: Optional[str] = None,
     discount_amount: Decimal = Decimal("0"),
     tax_amount: Decimal = Decimal("0"),
+    shipping_cost: Decimal = Decimal("0"),
 ) -> Order:
     if not items:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Order must have at least one item")
 
     subtotal = sum(Decimal(str(i["unit_price"])) * i["quantity"] for i in items)
-    total = subtotal - discount_amount + tax_amount
+    total = subtotal - discount_amount + tax_amount + shipping_cost
 
     order = Order(
         order_number=_generate_order_number(),
@@ -71,6 +72,7 @@ async def create_order(
         subtotal=subtotal,
         discount_amount=discount_amount,
         tax_amount=tax_amount,
+        shipping_cost=shipping_cost,
         total=total,
         shipping_address=shipping_address,
         notes=notes,
@@ -110,7 +112,35 @@ async def update_status(order_id: str, data: UpdateStatusRequest, db: AsyncSessi
 
     order.status = data.status
     await db.flush()
+
+    # Fire-and-forget Stripe refund when a paid Stripe order is cancelled
+    if data.status == OrderStatus.cancelled and prev_status != OrderStatus.cancelled:
+        if (
+            order.payment_method == PaymentMethod.stripe
+            and order.stripe_payment_intent_id
+            and order.payment_status == PaymentStatus.paid
+        ):
+            await _issue_stripe_refund(order)
+
     return order
+
+
+async def _issue_stripe_refund(order: Order) -> None:
+    try:
+        import asyncio
+        import stripe as stripe_lib
+        from app.core.config import settings
+        stripe_lib.api_key = settings.STRIPE_SECRET_KEY
+        await asyncio.to_thread(
+            stripe_lib.Refund.create,
+            payment_intent=order.stripe_payment_intent_id,
+        )
+        logger.info("Stripe refund issued for order %s (pi=%s)", order.order_number, order.stripe_payment_intent_id)
+    except Exception as exc:
+        logger.warning(
+            "Stripe refund FAILED for order %s — manual refund required. Error: %s",
+            order.order_number, exc,
+        )
 
 
 async def fulfil_order(order_id: str, data: FulfilRequest, db: AsyncSession) -> Order:

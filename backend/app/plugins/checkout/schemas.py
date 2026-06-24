@@ -12,6 +12,7 @@ class CheckoutItem(BaseModel):
 class CheckoutRequest(BaseModel):
     payment_method: PaymentMethod = PaymentMethod.cash
     shipping_address: Optional[str] = None
+    delivery_country: Optional[str] = None  # ISO 3166-1 alpha-2, e.g. "GB"
     notes: Optional[str] = None
     guest_email: Optional[EmailStr] = None
     use_cart: bool = True
@@ -31,6 +32,7 @@ class CheckoutSummary(BaseModel):
     order_number: str
     subtotal: Decimal
     discount_amount: Decimal
+    shipping_cost: Decimal = Decimal("0")
     total: Decimal
     payment_method: PaymentMethod
     payment_status: str

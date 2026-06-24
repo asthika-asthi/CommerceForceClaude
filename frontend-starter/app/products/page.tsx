@@ -9,7 +9,23 @@ interface Props {
   searchParams: Promise<{ category?: string; q?: string; page?: string; sort?: string; in_stock?: string; min_price?: string; max_price?: string }>
 }
 
-export const metadata = { title: "Shop" }
+export async function generateMetadata({ searchParams }: Props) {
+  const params = await searchParams
+  const base = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? ""
+  if (params.category) {
+    const categories = await serverFetch<Category[]>("/api/categories").catch(() => null)
+    const cat = categories?.find((c) => c.id === params.category)
+    const title = cat ? `${cat.name} Products` : "Shop"
+    return {
+      title,
+      openGraph: { title, url: `${base}/products?category=${params.category}`, type: "website" },
+    }
+  }
+  return {
+    title: "Shop",
+    openGraph: { title: "Shop", url: `${base}/products`, type: "website" },
+  }
+}
 
 export default async function ProductsPage({ searchParams }: Props) {
   const params = await searchParams

@@ -8,6 +8,7 @@ import { Topbar } from "@/components/layout/topbar"
 import { CategoriesNav } from "@/components/layout/categories-nav"
 import { ChatWidget } from "@/components/chat-widget"
 import { BottomNav } from "@/components/layout/bottom-nav"
+import { CookieConsent } from "@/components/cookie-consent"
 import { serverFetch } from "@/lib/api"
 import type { BrandingConfig, Category } from "@/lib/types"
 
@@ -50,6 +51,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Footer branding={branding} categories={activeCategories} />
           <ChatWidget />
           <BottomNav />
+          <CookieConsent />
         </Providers>
       </body>
     </html>

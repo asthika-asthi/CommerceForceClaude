@@ -7,7 +7,7 @@ import type { PluginMenu } from "@/lib/types"
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Ticket, Star,
   Mail, FileText, CreditCard, Warehouse, Palette, Layout,
-  MessageCircle, BarChart2, LogOut, Megaphone, Settings,
+  MessageCircle, BarChart2, LogOut, Megaphone, Settings, Truck,
 } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { useRouter } from "next/navigation"
@@ -28,6 +28,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   "message-circle": <MessageCircle size={16} />,
   "bar-chart": <BarChart2 size={16} />,
   "megaphone": <Megaphone size={16} />,
+  "truck": <Truck size={16} />,
 }
 
 function NavItem({ href, label, icon }: { href: string; label: string; icon?: React.ReactNode }) {

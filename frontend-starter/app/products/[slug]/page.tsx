@@ -14,7 +14,22 @@ export async function generateMetadata({ params }: Props) {
   const { slug } = await params
   const product = await serverFetch<Product>(`/api/products/by-slug/${slug}`)
   if (!product) return {}
-  return { title: product.name, description: product.description }
+  const base = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? ""
+  const images = product.images?.length > 0
+    ? [{ url: product.images[0].url, alt: product.images[0].alt_text ?? product.name }]
+    : []
+  return {
+    title: product.name,
+    description: product.description,
+    openGraph: {
+      title: product.name,
+      description: product.description,
+      url: `${base}/products/${slug}`,
+      type: "website",
+      images,
+    },
+    twitter: { card: images.length > 0 ? "summary_large_image" : "summary", title: product.name, description: product.description, images: images.map(i => i.url) },
+  }
 }
 
 export default async function ProductDetailPage({ params }: Props) {

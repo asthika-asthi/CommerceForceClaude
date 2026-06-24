@@ -138,6 +138,8 @@ fi
 ROOT_ENV="${PROJECT_ROOT}/.env"
 cat > "$ROOT_ENV" <<EOF
 SERVER_IP=${SERVER_IP}
+DOMAIN=${DOMAIN}
+STOREFRONT_URL=https://${DOMAIN}
 EOF
 echo -e "${GREEN}✓${RESET} Written: ${ROOT_ENV}"
 

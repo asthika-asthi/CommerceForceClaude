@@ -16,6 +16,7 @@ class BrandingConfigOut(BaseModel):
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
     social_links: Optional[dict] = None
+    stripe_publishable_key: Optional[str] = None
     model_config = {"from_attributes": True}
 
     @field_validator("social_links", mode="before")
@@ -41,6 +42,7 @@ class BrandingConfigUpdate(BaseModel):
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
     social_links: Optional[dict] = None
+    stripe_publishable_key: Optional[str] = None
 
     @field_serializer("social_links")
     def serialize_social_links(self, v: Optional[dict]) -> Optional[str]:

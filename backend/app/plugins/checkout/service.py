@@ -148,6 +148,15 @@ async def checkout(
     # Cap discount at subtotal
     discount_amount = min(discount_amount, subtotal)
 
+    # Resolve shipping cost (optional shipping plugin)
+    shipping_cost = Decimal("0")
+    if data.delivery_country:
+        try:
+            from app.plugins.shipping import service as shipping_service
+            _zone_name, shipping_cost = await shipping_service.get_rate(data.delivery_country, db)
+        except ImportError:
+            pass
+
     order = await order_service.create_order(
         items=items,
         payment_method=data.payment_method,
@@ -157,6 +166,7 @@ async def checkout(
         shipping_address=data.shipping_address,
         notes=data.notes,
         discount_amount=discount_amount,
+        shipping_cost=shipping_cost,
     )
 
     # Deduct stock for each item

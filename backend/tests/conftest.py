@@ -1,7 +1,7 @@
 import os
 
 # Set env vars BEFORE any app module is imported — config uses @lru_cache
-os.environ["ENABLED_PLUGINS"] = "auth,categories,products,cart,orders,checkout,rfq,credit,inventory,coupons,loyalty,newsletter,branding,landing_page,ai_chat,contact"
+os.environ["ENABLED_PLUGINS"] = "auth,categories,products,cart,orders,checkout,rfq,credit,inventory,coupons,loyalty,newsletter,branding,landing_page,ai_chat,contact,shipping"
 os.environ["ANTHROPIC_API_KEY"] = "test-key"
 os.environ["ENVIRONMENT"] = "development"  # keep refresh cookies non-secure for HTTP test client
 
@@ -43,6 +43,7 @@ async def setup_test_db():
     from app.plugins.landing_page.models import LandingSection  # noqa
     from app.plugins.contact.models import Enquiry  # noqa
     from app.plugins.discount_rules.models import DiscountRule  # noqa
+    from app.plugins.shipping.models import ShippingZone  # noqa
     from app.shared.email import EmailLog  # noqa
 
     async with test_engine.begin() as conn:
@@ -59,6 +60,13 @@ async def clean_tables():
     async with test_engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):
             await conn.execute(table.delete())
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    from app.core.limiter import limiter
+    yield
+    limiter._storage.reset()
 
 
 @pytest.fixture

@@ -18,8 +18,9 @@ services:
     build:
       context: ./frontend-starter
       args:
-        # In production this is set to the HTTPS domain by generate-env.sh
+        # In production these are set to the HTTPS domain by generate-env.sh
         NEXT_PUBLIC_API_URL: "http://${SERVER_IP}:8000"
+        NEXT_PUBLIC_STOREFRONT_URL: "http://${SERVER_IP}:3000"
     # Port 3000 is accessed via nginx in production; exposed here for dev/fallback only
     ports:
       - "3000:3000"

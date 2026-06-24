@@ -18,3 +18,4 @@ class BrandingConfig(BaseModel):
     contact_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     social_links: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string
+    stripe_publishable_key: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)

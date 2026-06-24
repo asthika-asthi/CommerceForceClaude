@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.limiter import limiter
 from app.core.security import create_access_token
 from app.core.dependencies import get_current_user, require_admin
 from app.plugins.auth.models import User, UserRole
@@ -31,7 +32,8 @@ def _set_refresh_cookie(response: Response, token: str, max_age_days: int) -> No
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def register(data: RegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
+@limiter.limit("3/minute")
+async def register(request: Request, data: RegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
     user = await service.create_user(data, db)
     access_token = create_access_token(user.id, user.role.value)
     refresh_raw = await service.issue_refresh_token(user.id, db)
@@ -49,7 +51,8 @@ async def register_trade(data: TradeRegisterRequest, response: Response, db: Asy
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(data: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def login(request: Request, data: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
     user = await service.authenticate(data.email, data.password, db)
     access_token = create_access_token(user.id, user.role.value)
     refresh_raw = await service.issue_refresh_token(user.id, db)

@@ -1,0 +1,36 @@
+{
+  "_comment": "Per-client seed data. Copy this file to the client's deployment and fill in the values. Delete keys you don't need — seed.py will fall back to env vars and demo data for anything missing.",
+
+  "branding": {
+    "store_name": "",
+    "tagline": "",
+    "contact_email": "",
+    "contact_phone": "",
+    "logo_url": "",
+    "favicon_url": "",
+    "primary_color": "",
+    "secondary_color": "",
+    "font_family": "",
+    "stripe_publishable_key": ""
+  },
+
+  "categories": [
+    {
+      "name": "Example Category",
+      "description": "Replace with your category names and descriptions"
+    }
+  ],
+
+  "products": [
+    {
+      "name": "Example Product",
+      "category": "Example Category",
+      "description": "Replace with your product descriptions",
+      "price": "9.99",
+      "stock_quantity": 10,
+      "is_featured": false,
+      "is_active": true,
+      "tags": "example,product"
+    }
+  ]
+}
