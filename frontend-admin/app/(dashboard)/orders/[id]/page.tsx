@@ -155,7 +155,6 @@ function OrderDetail({ id }: { id: string }) {
             </div>
           </div>
         )}
-        </div>
       </div>
 
       {/* Order details */}
