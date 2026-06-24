@@ -4,9 +4,13 @@ import { useRouter } from "next/navigation"
 import { useState, useRef } from "react"
 import { useAuthStore } from "@/store/auth"
 import { useCartStore } from "@/store/cart"
+import { usePlugin } from "@/lib/plugins-context"
 import type { BrandingConfig } from "@/lib/types"
 
-interface Props { branding: BrandingConfig | null }
+interface Props {
+  branding: BrandingConfig | null
+  enabledPlugins: string[]
+}
 
 function getInitials(name: string) {
   return name.replace(/[^A-Za-z\s]/g, "").split(/\s+/).filter(Boolean).map(w => w[0]).join("").toUpperCase().slice(0, 2) || "ST"
@@ -17,15 +21,16 @@ export function Navbar({ branding }: Props) {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const cart = useCartStore((s) => s.cart)
+  const cartEnabled = usePlugin("cart")
   const itemCount = cart?.item_count ?? 0
   const [query, setQuery] = useState("")
   const [menuOpen, setMenuOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  const storeName = branding?.store_name ?? "Tri Star UK Ltd"
-  const tagline = branding?.tagline ?? "Est. 1995 · Stevenage, Hertfordshire"
+  const storeName = branding?.store_name ?? ""
+  const tagline = branding?.tagline ?? ""
   const logoUrl = branding?.logo_url
-  const initials = getInitials(storeName)
+  const initials = storeName ? getInitials(storeName) : "ST"
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -50,10 +55,12 @@ export function Navbar({ branding }: Props) {
               {initials}
             </div>
           )}
-          <div className="leading-tight">
-            <div className="text-[18px] font-bold text-brand-dark">{storeName}</div>
-            {tagline && <div className="text-[10px] text-[#5C5C5C] tracking-[0.5px] uppercase">{tagline}</div>}
-          </div>
+          {storeName && (
+            <div className="leading-tight">
+              <div className="text-[18px] font-bold text-brand-dark">{storeName}</div>
+              {tagline && <div className="text-[10px] text-[#5C5C5C] tracking-[0.5px] uppercase">{tagline}</div>}
+            </div>
+          )}
         </Link>
 
         {/* Search */}
@@ -63,7 +70,7 @@ export function Navbar({ branding }: Props) {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search tarpaulins, dust sheets, brushes, sacks…"
+            placeholder="Search products…"
             className="w-full border-[1.5px] border-[#E0DED8] rounded-lg px-4 py-[10px] pr-11 text-sm text-fg bg-bg focus:border-brand-dark focus:bg-white outline-none transition-colors placeholder:text-[#9a9a9a]"
           />
           <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5C5C5C] text-lg bg-transparent border-none cursor-pointer">
@@ -88,15 +95,17 @@ export function Navbar({ branding }: Props) {
             </Link>
           )}
 
-          <Link href="/cart" className="relative flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg hover:bg-bg transition-colors">
-            <span className="text-[22px] text-brand-dark">🛒</span>
-            <span className="text-[10px] text-[#5C5C5C]">Cart</span>
-            {itemCount > 0 && (
-              <span className="absolute top-0.5 right-1.5 bg-brand text-white text-[9px] font-bold w-[15px] h-[15px] rounded-full flex items-center justify-center leading-none">
-                {itemCount > 9 ? "9+" : itemCount}
-              </span>
-            )}
-          </Link>
+          {cartEnabled && (
+            <Link href="/cart" className="relative flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg hover:bg-bg transition-colors">
+              <span className="text-[22px] text-brand-dark">🛒</span>
+              <span className="text-[10px] text-[#5C5C5C]">Cart</span>
+              {itemCount > 0 && (
+                <span className="absolute top-0.5 right-1.5 bg-brand text-white text-[9px] font-bold w-[15px] h-[15px] rounded-full flex items-center justify-center leading-none">
+                  {itemCount > 9 ? "9+" : itemCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           <a href="/contact" className="hidden md:block bg-brand hover:bg-brand-hover text-white text-sm font-semibold px-5 py-[10px] rounded-lg transition-colors whitespace-nowrap">
             Get a Quote
@@ -113,6 +122,9 @@ export function Navbar({ branding }: Props) {
       {menuOpen && (
         <div className="md:hidden border-t border-[#E0DED8] bg-white px-6 py-4 space-y-3">
           <Link href="/products" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-fg py-1">All Products</Link>
+          {cartEnabled && (
+            <Link href="/cart" onClick={() => setMenuOpen(false)} className="block text-sm text-fg py-1">Cart</Link>
+          )}
           {user ? (
             <>
               <Link href="/account" onClick={() => setMenuOpen(false)} className="block text-sm text-fg py-1">My Account</Link>

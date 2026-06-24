@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react"
 import { MessageCircle, X, Send } from "lucide-react"
 import { api } from "@/lib/api"
+import { usePlugin } from "@/lib/plugins-context"
 import type { ChatMessage } from "@/lib/types"
 
 function getSessionKey(): string {
@@ -13,6 +14,7 @@ function getSessionKey(): string {
 }
 
 export function ChatWidget() {
+  const aiChatEnabled = usePlugin("ai_chat")
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
@@ -26,7 +28,7 @@ export function ChatWidget() {
 
   // Load history from DB when widget first opens
   useEffect(() => {
-    if (!open || historyLoaded) return
+    if (!aiChatEnabled || !open || historyLoaded) return
     const sessionKey = getSessionKey()
     api.get<{ session_key: string; messages: ChatMessage[] }>(`/api/ai_chat/history/${sessionKey}`)
       .then((data) => {
@@ -34,13 +36,14 @@ export function ChatWidget() {
           setMessages(data.messages)
         }
       })
-      .catch(() => {
-        // Fall back to empty history — not a fatal error
-      })
+      .catch(() => {})
       .finally(() => {
         setHistoryLoaded(true)
       })
-  }, [open, historyLoaded])
+  }, [open, historyLoaded, aiChatEnabled])
+
+  // All hooks above — safe to conditionally return now
+  if (!aiChatEnabled) return null
 
   async function send() {
     const message = input.trim()

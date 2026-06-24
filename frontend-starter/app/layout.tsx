@@ -26,12 +26,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [branding, categories] = await Promise.all([
+  const [branding, categories, health] = await Promise.all([
     serverFetch<BrandingConfig>("/api/branding"),
     serverFetch<Category[]>("/api/categories").catch(() => [] as Category[]),
+    serverFetch<{ plugins: string[] }>("/api/health").catch(() => null),
   ])
 
   const activeCategories = (categories ?? []).filter(c => c.is_active)
+  const enabledPlugins: string[] = health?.plugins ?? []
 
   return (
     <html lang="en" className={`${poppins.variable} h-full`}>
@@ -40,9 +42,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {branding?.custom_css && <style>{branding.custom_css}</style>}
       </head>
       <body className="min-h-full flex flex-col antialiased">
-        <Providers>
+        <Providers enabledPlugins={enabledPlugins}>
           <Topbar branding={branding} />
-          <Navbar branding={branding} />
+          <Navbar branding={branding} enabledPlugins={enabledPlugins} />
           <CategoriesNav />
           <main className="flex-1">{children}</main>
           <Footer branding={branding} categories={activeCategories} />

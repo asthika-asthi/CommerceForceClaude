@@ -1,10 +1,14 @@
 "use client"
 import { useState } from "react"
 import { api } from "@/lib/api"
+import { usePlugin } from "@/lib/plugins-context"
 
 export function Newsletter() {
+  const newsletterEnabled = usePlugin("newsletter")
   const [email, setEmail] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle")
+
+  if (!newsletterEnabled) return null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

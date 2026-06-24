@@ -1,7 +1,8 @@
-﻿"use client"
+"use client"
 import { useState, useEffect } from "react"
 import { Heart } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
+import { usePlugin } from "@/lib/plugins-context"
 import { api } from "@/lib/api"
 
 interface WishlistButtonProps {
@@ -12,17 +13,18 @@ interface WishlistButtonProps {
 
 export function WishlistButton({ productId, className = "", size = 16 }: WishlistButtonProps) {
   const user = useAuthStore((s) => s.user)
+  const wishlistEnabled = usePlugin("wishlist")
   const [inWishlist, setInWishlist] = useState(false)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !wishlistEnabled) return
     api.get<string[]>("/api/wishlist/ids")
       .then((ids) => setInWishlist(ids.includes(productId)))
       .catch(() => {})
-  }, [user, productId])
+  }, [user, productId, wishlistEnabled])
 
-  if (!user) return null
+  if (!user || !wishlistEnabled) return null
 
   async function toggle() {
     if (loading) return
