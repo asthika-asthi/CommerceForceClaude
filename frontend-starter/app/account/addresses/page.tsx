@@ -22,7 +22,7 @@ export default function AddressesPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return }
-    api.get<Address[]>("/api/addresses").then(setAddresses).finally(() => setLoading(false))
+    api.get<Address[]>("/api/addresses").then(setAddresses).catch(() => setAddresses([])).finally(() => setLoading(false))
   }, [user, router])
 
   function startAdd() {

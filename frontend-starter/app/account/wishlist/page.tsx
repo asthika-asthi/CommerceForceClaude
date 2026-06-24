@@ -34,14 +34,20 @@ export default function WishlistPage() {
         })
       )
       setItems(withProducts)
+    } catch {
+      setItems([])
     } finally {
       setLoading(false)
     }
   }
 
   async function remove(productId: string) {
-    await api.del(`/api/wishlist/${productId}`)
-    setItems((prev) => prev.filter((i) => i.product_id !== productId))
+    try {
+      await api.del(`/api/wishlist/${productId}`)
+      setItems((prev) => prev.filter((i) => i.product_id !== productId))
+    } catch {
+      // silently ignore — item stays visible if delete fails
+    }
   }
 
   async function moveToCart(productId: string) {
