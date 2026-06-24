@@ -65,7 +65,7 @@ export default async function HomePage() {
       <SplitCards />
       <StatsBand />
       <HowToOrder />
-      <RangeTable />
+      <RangeTable products={products} />
       <Testimonials />
       <Newsletter />
     </div>

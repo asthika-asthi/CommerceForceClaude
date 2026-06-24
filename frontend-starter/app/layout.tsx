@@ -9,7 +9,7 @@ import { CategoriesNav } from "@/components/layout/categories-nav"
 import { ChatWidget } from "@/components/chat-widget"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { serverFetch } from "@/lib/api"
-import type { BrandingConfig } from "@/lib/types"
+import type { BrandingConfig, Category } from "@/lib/types"
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -26,7 +26,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const branding = await serverFetch<BrandingConfig>("/api/branding")
+  const [branding, categories] = await Promise.all([
+    serverFetch<BrandingConfig>("/api/branding"),
+    serverFetch<Category[]>("/api/categories").catch(() => [] as Category[]),
+  ])
+
+  const activeCategories = (categories ?? []).filter(c => c.is_active)
 
   return (
     <html lang="en" className={`${poppins.variable} h-full`}>
@@ -40,7 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Navbar branding={branding} />
           <CategoriesNav />
           <main className="flex-1">{children}</main>
-          <Footer branding={branding} />
+          <Footer branding={branding} categories={activeCategories} />
           <ChatWidget />
           <BottomNav />
         </Providers>
