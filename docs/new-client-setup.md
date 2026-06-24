@@ -275,58 +275,79 @@ Plugins control which features are visible to the client in the admin panel and 
 
 ---
 
-## Section 7 — Categories
+## Section 7 — Categories and products (CSV import)
 
-Categories must exist before products can be assigned to them.
-
-1. In the admin panel, click **Categories**
-2. Type the category name (e.g. `Tarpaulins`) and click **Create Category**
-3. Repeat for all categories
-4. Subcategories: create the parent first, then create the child and select the parent in the **Parent Category** dropdown
-
-Write down your category names exactly as typed — you will use them in the CSV import.
+You have two options depending on how much data you have:
 
 ---
 
-## Section 8 — Product catalog (CSV import)
+### Option A — Small catalog: create categories manually, import products
 
-### 8.1 Prepare the CSV file
+**Step 7a — Create categories in the admin panel**
+1. In the admin panel, click **Categories**
+2. Type the category name (e.g. `Tarpaulins`) and click **Create Category**
+3. For subcategories, select the parent in the **Parent Category** dropdown
+4. Repeat for all categories
 
-Create a file called `products.csv` on your computer. The columns are:
+**Step 7b — Import products**
+See the products CSV format below. The `category` column will match by name — spelling must match exactly (case is ignored).
+
+---
+
+### Option B — Large catalog: import everything from CSV (recommended)
+
+You do not need to create categories first. The product CSV import **auto-creates any category that doesn't exist yet**. This means one CSV file can set up your entire catalogue.
+
+**Step 7a — Import categories (optional but recommended for large hierarchies)**
+
+Create `categories.csv` with this format:
+```
+name,description,parent,sort_order,is_active,image_url
+Tarpaulins,Heavy duty waterproof covers,,0,true,
+Ground Sheets,Protective ground covers,,1,true,
+Heavy Duty,Industrial grade tarpaulins,Tarpaulins,0,true,
+Standard,Everyday tarpaulins,Tarpaulins,1,true,
+```
+
+- `parent` is the **name** of the parent category (leave blank for top-level)
+- Parents must appear **before** their children in the file
+- `is_active`: `true` or `false`
+- All columns except `name` are optional
+
+In the admin panel → **Categories** → **Import CSV** → select your file. The banner shows how many were created/updated.
+
+**Step 7b — Import products**
+
+Create `products.csv`:
 
 | Column | Required | Format | Notes |
 |--------|----------|--------|-------|
 | `name` | Yes | Text | Product name |
-| `price` | Yes | Number | No currency symbol (e.g. `29.99`) |
-| `description` | No | Text | Plain text or HTML |
-| `stock_quantity` | No | Whole number | Defaults to 0 if blank |
-| `category` | No | Text | Must match a category name exactly (case-insensitive) |
-| `sale_price` | No | Number | Only fill if product is on sale |
+| `price` | Yes | Number | No currency symbol (`29.99` not `£29.99`) |
+| `description` | No | Text | Plain text |
+| `stock_quantity` | No | Whole number | Defaults to 0 |
+| `category` | No | Text | Category name — auto-created if it doesn't exist |
+| `sale_price` | No | Number | Only if on sale |
 | `is_on_sale` | No | `true` or `false` | |
-| `is_featured` | No | `true` or `false` | Featured products appear highlighted |
-| `weight` | No | Number (kg) | Used for shipping calculations |
-| `tags` | No | Text | Comma-separated keywords |
+| `is_featured` | No | `true` or `false` | Featured products are highlighted |
+| `weight` | No | Number (kg) | |
+| `tags` | No | Text | Space or comma-separated keywords |
 
 Example:
 ```
 name,price,description,stock_quantity,category,sale_price,is_on_sale,is_featured,weight,tags
 Heavy Duty Tarpaulin 4x6m,29.99,Waterproof 280gsm blue tarpaulin,50,Tarpaulins,,false,true,1.5,tarpaulin waterproof
 Ground Sheet 3x3m,14.99,Lightweight ground cover,100,Ground Sheets,,false,false,0.8,groundsheet
-Premium Tarpaulin 6x8m,59.99,Heavy duty 350gsm,30,Tarpaulins,49.99,true,true,2.8,tarpaulin premium
+Premium Tarpaulin 6x8m,59.99,Heavy duty 350gsm,30,Heavy Duty,49.99,true,true,2.8,tarpaulin premium
 ```
 
-**Gotcha — category spelling:** The category column is matched against what you created in Section 7. If the spelling doesn't match, the product imports without a category (no error is shown for this).
+In the admin panel → **Products** → **Import CSV** → select your file.
 
 **Gotcha — price format:** Use a decimal point, not a comma. `29.99` is correct. `29,99` will fail.
 
-### 8.2 Run the import
+**Gotcha — re-importing:** Products are not de-duplicated on name — importing the same file twice creates duplicates. Only import a file once. To fix mistakes, delete the products and re-import.
 
-1. In the admin panel, click **Products**
-2. Click **Import CSV** (top right)
-3. Select your `products.csv` file
-4. A banner confirms how many products were created and lists any rows that failed
-
-Rows that fail are skipped — the rest still import. Fix the failed rows and re-import; it will add only the missing ones.
+**Gotcha — categories ARE de-duplicated:** Re-importing a categories CSV is safe — existing categories are updated, not duplicated.
 
 ---
 
@@ -430,5 +451,7 @@ docker compose down -v
 | "No such table" errors in logs | Migrations not run | `docker compose exec backend alembic upgrade head` |
 | `No module named 'aiosqlite'` | Old Docker image | `docker compose up --build -d` |
 | Forgot Password: no email arrives | VPS blocks SMTP port 587 | Get link from logs: `docker compose logs backend \| grep "PASSWORD RESET"` |
-| CSV import: products created but no category | Category name typo in CSV | Check spelling matches exactly what's in the Categories page |
+| CSV import: products created but no category | Category name typo in CSV | Products CSV auto-creates categories now — check the category was created |
 | CSV import: "invalid price" error | Price uses comma instead of period | Change `29,99` to `29.99` in the CSV |
+| Category CSV: "parent not found" error | Parent row appears after child in the file | Move parent rows above child rows in the CSV |
+| Products duplicated after re-import | Products CSV was imported twice | Products are not de-duplicated — delete and re-import |
