@@ -10,6 +10,7 @@ from app.plugins.products.models import Product, ProductImage
 from app.plugins.products.schemas import ProductCreate, ProductUpdate, ProductImageCreate, ImageSortItem
 from app.shared.slug import slugify, generate_sku
 from app.plugins.categories.models import Category
+from app.plugins.categories.schemas import CategoryCreate as CategoryCreateSchema
 
 
 async def _get_existing_slugs(db: AsyncSession) -> set[str]:
@@ -236,21 +237,26 @@ async def restore_stock(product_id: str, quantity: int, db: AsyncSession) -> Non
 
 
 async def _resolve_category(value: str, db: AsyncSession) -> Optional[str]:
-    """Accept either a category UUID or a category name. Returns UUID or None."""
+    """Accept a category name or UUID. Auto-creates the category if it doesn't exist."""
     value = value.strip()
     if not value:
         return None
-    # Try by name first (case-insensitive) — more user-friendly
+    # Try by name first (case-insensitive)
     result = await db.execute(
         select(Category).where(func.lower(Category.name) == value.lower())
     )
     cat = result.scalar_one_or_none()
     if cat:
         return str(cat.id)
-    # Fall back: treat as UUID
+    # Try as UUID
     result2 = await db.execute(select(Category).where(Category.id == value))
     cat2 = result2.scalar_one_or_none()
-    return str(cat2.id) if cat2 else None
+    if cat2:
+        return str(cat2.id)
+    # Auto-create: treat the value as a category name
+    from app.plugins.categories.service import create_category as _create_cat
+    new_cat = await _create_cat(CategoryCreateSchema(name=value), db)
+    return str(new_cat.id)
 
 
 async def import_from_csv(

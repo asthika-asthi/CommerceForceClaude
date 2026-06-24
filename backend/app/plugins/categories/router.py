@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, status
+import csv
+import io
+from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import require_admin
@@ -6,6 +10,38 @@ from app.plugins.categories.schemas import CategoryCreate, CategoryUpdate, Categ
 from app.plugins.categories import service
 
 router = APIRouter()
+
+
+class CsvImportError(BaseModel):
+    row: int
+    error: str
+
+
+class CsvImportResult(BaseModel):
+    created: int
+    updated: int
+    errors: list[CsvImportError]
+
+
+@router.get("/export/csv", dependencies=[Depends(require_admin())])
+async def export_categories_csv(db: AsyncSession = Depends(get_db)):
+    content = await service.export_to_csv(db)
+    return StreamingResponse(
+        iter([content]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="categories.csv"'},
+    )
+
+
+@router.post("/import/csv", response_model=CsvImportResult,
+             dependencies=[Depends(require_admin())])
+async def import_categories_csv(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    content = (await file.read()).decode("utf-8")
+    result = await service.import_from_csv(content, db)
+    return result
 
 
 @router.get("", response_model=list[CategoryOut])

@@ -17,34 +17,18 @@ export async function CategoriesNav() {
     <nav className="bg-brand-dark border-b-[3px] border-brand">
       <div className="max-w-[1280px] mx-auto px-10 flex items-center">
         <Link href="/" className={linkCls}>Home</Link>
-        {categories.length > 0 ? (
-          categories.map(cat => (
-            <Link
-              key={cat.id}
-              href={`/products?category=${cat.slug}`}
-              className={`${linkCls} flex items-center gap-1.5`}
-            >
-              {cat.name}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 9l6 6 6-6"/>
-              </svg>
-            </Link>
-          ))
-        ) : (
-          <>
-            {[
-              { href: "/products?category=tarpaulins", label: "Tarpaulins" },
-              { href: "/products?category=dust-sheets", label: "Dust Sheets" },
-              { href: "/products?category=sacks-bags", label: "Sacks & Bags" },
-              { href: "/products?category=paint-brushes", label: "Paint Brushes & Rollers" },
-            ].map(({ href, label }) => (
-              <Link key={href} href={href} className={`${linkCls} flex items-center gap-1.5`}>
-                {label}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
-              </Link>
-            ))}
-          </>
-        )}
+        {categories.map(cat => (
+          <Link
+            key={cat.id}
+            href={`/products?category=${cat.slug}`}
+            className={`${linkCls} flex items-center gap-1.5`}
+          >
+            {cat.name}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </Link>
+        ))}
         <Link href="/bespoke" className={linkCls}>Bespoke Orders</Link>
         <Link href="/trade" className={linkCls}>Trade Accounts</Link>
         <div className="flex-1" />

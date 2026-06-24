@@ -1,14 +1,33 @@
 "use client"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type { Category } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
-import { Trash2, Pencil, X } from "lucide-react"
+import { Trash2, Pencil, X, Upload } from "lucide-react"
+
+function downloadCsv(path: string, filename: string) {
+  const token = localStorage.getItem("cf_access_token")
+  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+  fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url; a.download = filename; a.click()
+      URL.revokeObjectURL(url)
+    })
+}
+
+interface CsvImportError { row: number; error: string }
+interface CsvResult { created: number; updated: number; errors: CsvImportError[] }
 
 export default function CategoriesPage() {
   const qc = useQueryClient()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [csvResult, setCsvResult] = useState<CsvResult | null>(null)
+  const [csvUploading, setCsvUploading] = useState(false)
   const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: () => api.get("/api/categories"),
@@ -17,6 +36,25 @@ export default function CategoriesPage() {
   const [editTarget, setEditTarget] = useState<Category | null>(null)
   const [editForm, setEditForm] = useState({ name: "", description: "", is_active: true })
   const [error, setError] = useState("")
+
+  async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCsvUploading(true)
+    setCsvResult(null)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const result = await api.upload<CsvResult>("/api/categories/import/csv", formData)
+      setCsvResult(result)
+      qc.invalidateQueries({ queryKey: ["categories"] })
+    } catch (err) {
+      setCsvResult({ created: 0, updated: 0, errors: [{ row: 0, error: err instanceof Error ? err.message : "Upload failed" }] })
+    } finally {
+      setCsvUploading(false)
+      if (fileRef.current) fileRef.current.value = ""
+    }
+  }
 
   const create = useMutation({
     mutationFn: (d: typeof createForm) =>
@@ -64,6 +102,55 @@ export default function CategoriesPage() {
   const flat = flattenCategories(categories)
 
   return (
+    <div>
+      {/* CSV toolbar */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-slate-900">Categories</h1>
+        <div className="flex gap-2">
+          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleCsvFile} />
+          <button
+            onClick={() => downloadCsv("/api/categories/export/csv", "categories.csv")}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={csvUploading}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+          >
+            <Upload size={14} />
+            {csvUploading ? "Importing…" : "Import CSV"}
+          </button>
+        </div>
+      </div>
+
+      {/* CSV result banner */}
+      {csvResult && (
+        <div className={`mb-4 rounded-xl border px-4 py-3 flex items-start gap-3 ${
+          csvResult.errors.length === 0
+            ? "bg-green-50 border-green-200 text-green-800"
+            : "bg-yellow-50 border-yellow-200 text-yellow-800"
+        }`}>
+          <div className="flex-1 text-sm">
+            <p className="font-semibold mb-1">
+              Import complete — {csvResult.created} created, {csvResult.updated} updated
+              {csvResult.errors.length > 0 && `, ${csvResult.errors.length} row${csvResult.errors.length !== 1 ? "s" : ""} skipped`}
+            </p>
+            {csvResult.errors.length > 0 && (
+              <ul className="space-y-0.5 text-xs mt-1">
+                {csvResult.errors.map((e, i) => (
+                  <li key={i} className="font-mono">{e.row > 0 ? `Row ${e.row}: ` : ""}{e.error}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <button onClick={() => setCsvResult(null)} className="flex-shrink-0 mt-0.5 opacity-60 hover:opacity-100">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
     <div className="grid grid-cols-2 gap-6">
       {/* List */}
       <div>
@@ -196,6 +283,7 @@ export default function CategoriesPage() {
           </>
         )}
       </div>
+    </div>
     </div>
   )
 }
