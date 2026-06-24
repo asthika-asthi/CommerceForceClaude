@@ -300,25 +300,28 @@ You do not need to create categories first. The product CSV import **auto-create
 
 **Step 7a — Import categories (optional but recommended for large hierarchies)**
 
-Create `categories.csv` with this format:
-```
-name,description,parent,sort_order,is_active,image_url
-Tarpaulins,Heavy duty waterproof covers,,0,true,
-Ground Sheets,Protective ground covers,,1,true,
-Heavy Duty,Industrial grade tarpaulins,Tarpaulins,0,true,
-Standard,Everyday tarpaulins,Tarpaulins,1,true,
-```
+Copy `docs/templates/categories_template.csv` from the project, rename it to `categories.csv`, and fill in the client's categories. Replace the example rows with real data — keep the header row exactly as-is.
 
-- `parent` is the **name** of the parent category (leave blank for top-level)
-- Parents must appear **before** their children in the file
-- `is_active`: `true` or `false`
-- All columns except `name` are optional
+Column reference:
+
+| Column | Required | Notes |
+|--------|----------|-------|
+| `name` | Yes | Category name |
+| `description` | No | Short description |
+| `parent` | No | **Exact name** of parent category — blank for top-level |
+| `sort_order` | No | Lower numbers appear first (0, 1, 2...) |
+| `is_active` | No | `true` or `false` — defaults to true |
+| `image_url` | No | Public URL to a category image |
+
+Rules:
+- Parent rows must appear **above** their child rows in the file
+- Re-importing is safe — existing categories are updated, not duplicated
 
 In the admin panel → **Categories** → **Import CSV** → select your file. The banner shows how many were created/updated.
 
 **Step 7b — Import products**
 
-Create `products.csv`:
+Copy `docs/templates/products_template.csv` from the project, rename it to `products.csv`, and fill in the client's products.
 
 | Column | Required | Format | Notes |
 |--------|----------|--------|-------|
@@ -329,17 +332,9 @@ Create `products.csv`:
 | `category` | No | Text | Category name — auto-created if it doesn't exist |
 | `sale_price` | No | Number | Only if on sale |
 | `is_on_sale` | No | `true` or `false` | |
-| `is_featured` | No | `true` or `false` | Featured products are highlighted |
+| `is_featured` | No | `true` or `false` | Featured products shown on homepage |
 | `weight` | No | Number (kg) | |
-| `tags` | No | Text | Space or comma-separated keywords |
-
-Example:
-```
-name,price,description,stock_quantity,category,sale_price,is_on_sale,is_featured,weight,tags
-Heavy Duty Tarpaulin 4x6m,29.99,Waterproof 280gsm blue tarpaulin,50,Tarpaulins,,false,true,1.5,tarpaulin waterproof
-Ground Sheet 3x3m,14.99,Lightweight ground cover,100,Ground Sheets,,false,false,0.8,groundsheet
-Premium Tarpaulin 6x8m,59.99,Heavy duty 350gsm,30,Heavy Duty,49.99,true,true,2.8,tarpaulin premium
-```
+| `tags` | No | Space-separated keywords | Used in search |
 
 In the admin panel → **Products** → **Import CSV** → select your file.
 

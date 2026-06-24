@@ -1,0 +1,6 @@
+name,price,description,stock_quantity,category,sale_price,is_on_sale,is_featured,weight,tags
+Product Name 1,29.99,Full product description here,50,Category A,,false,true,1.5,keyword1 keyword2
+Product Name 2,49.99,Full product description here,30,Category A,39.99,true,false,2.0,keyword1 keyword3
+Product Name 3,14.99,Full product description here,100,Sub-category A1,,false,false,0.5,keyword2
+Product Name 4,99.99,Full product description here,10,Category B,,false,true,3.5,keyword4
+Product Name 5,19.99,Full product description here,75,Category C,,false,false,0.8,keyword1 keyword5

@@ -1,0 +1,7 @@
+name,description,parent,sort_order,is_active,image_url
+Category A,Top-level category description,,0,true,
+Category B,Another top-level category,,1,true,
+Category C,Third top-level category,,2,true,
+Sub-category A1,Child of Category A,Category A,0,true,
+Sub-category A2,Another child of Category A,Category A,1,true,
+Sub-category B1,Child of Category B,Category B,0,true,
