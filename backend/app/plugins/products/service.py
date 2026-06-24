@@ -265,6 +265,7 @@ async def import_from_csv(
 ) -> dict:
     reader = csv.DictReader(io.StringIO(content))
     created = 0
+    updated = 0
     errors = []
 
     for i, row in enumerate(reader, start=2):
@@ -310,23 +311,92 @@ async def import_from_csv(
         category_id = await _resolve_category(category_raw, db)
 
         true_values = {"true", "1", "yes"}
-        data = ProductCreate(
-            name=name,
-            price=price,
-            description=(row.get("description") or None),
-            stock_quantity=stock_quantity,
-            category_id=category_id,
-            sale_price=sale_price,
-            is_on_sale=(row.get("is_on_sale") or "").lower() in true_values,
-            is_featured=(row.get("is_featured") or "").lower() in true_values,
-            weight=weight,
-            tags=(row.get("tags") or None),
+
+        # Deduplication: check for existing product with same name (case-insensitive)
+        existing_result = await db.execute(
+            select(Product).where(func.lower(Product.name) == name.lower())
         )
+        existing = existing_result.scalar_one_or_none()
 
-        try:
-            await create_product(data, db)
-            created += 1
-        except Exception as exc:
-            errors.append({"row": i, "error": str(exc)})
+        if existing:
+            existing.price = price
+            if sale_price is not None:
+                existing.sale_price = sale_price
+                existing.is_on_sale = (row.get("is_on_sale") or "").lower() in true_values
+            if category_id:
+                existing.category_id = category_id
+            if row.get("description"):
+                existing.description = row["description"]
+            if stock_raw != "0" or row.get("stock_quantity"):
+                existing.stock_quantity = stock_quantity
+            if weight is not None:
+                existing.weight = weight
+            if row.get("tags"):
+                existing.tags = row["tags"]
+            await db.flush()
+            updated += 1
+        else:
+            data = ProductCreate(
+                name=name,
+                price=price,
+                description=(row.get("description") or None),
+                stock_quantity=stock_quantity,
+                category_id=category_id,
+                sale_price=sale_price,
+                is_on_sale=(row.get("is_on_sale") or "").lower() in true_values,
+                is_featured=(row.get("is_featured") or "").lower() in true_values,
+                weight=weight,
+                tags=(row.get("tags") or None),
+            )
+            try:
+                await create_product(data, db)
+                created += 1
+            except Exception as exc:
+                errors.append({"row": i, "error": str(exc)})
 
-    return {"created": created, "errors": errors}
+    return {"created": created, "updated": updated, "errors": errors}
+
+
+async def find_duplicate_groups(db: AsyncSession) -> list[dict]:
+    result = await db.execute(select(Product).order_by(Product.created_at.asc()))
+    all_products = result.scalars().all()
+
+    groups: dict[str, list[Product]] = {}
+    for p in all_products:
+        key = p.name.lower()
+        groups.setdefault(key, []).append(p)
+
+    return [
+        {
+            "name": prods[0].name,
+            "products": [
+                {
+                    "id": str(p.id),
+                    "name": p.name,
+                    "price": p.price,
+                    "stock_quantity": p.stock_quantity,
+                    "category_id": str(p.category_id) if p.category_id else None,
+                    "created_at": p.created_at.isoformat() if p.created_at else None,
+                }
+                for p in prods
+            ],
+        }
+        for prods in groups.values()
+        if len(prods) > 1
+    ]
+
+
+async def delete_duplicates(keep_ids: list[str], db: AsyncSession) -> int:
+    groups = await find_duplicate_groups(db)
+    keep_set = set(keep_ids)
+    deleted = 0
+    for group in groups:
+        for entry in group["products"]:
+            if entry["id"] not in keep_set:
+                result = await db.execute(select(Product).where(Product.id == entry["id"]))
+                product = result.scalar_one_or_none()
+                if product:
+                    await db.delete(product)
+                    deleted += 1
+    await db.flush()
+    return deleted

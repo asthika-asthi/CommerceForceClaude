@@ -6,7 +6,10 @@ import { api } from "@/lib/api"
 import type { Product } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
-import { Pencil, Trash2, Upload, X } from "lucide-react"
+import { Pencil, Trash2, Upload, X, Copy } from "lucide-react"
+
+interface DuplicateEntry { id: string; name: string; price: string; stock_quantity: number; category_id: string | null; created_at: string | null }
+interface DuplicateGroup { name: string; products: DuplicateEntry[] }
 
 function downloadCsv(path: string, filename: string) {
   const token = localStorage.getItem("cf_access_token")
@@ -23,13 +26,22 @@ function downloadCsv(path: string, filename: string) {
 
 interface ProductsResponse { items: Product[]; total: number }
 interface CsvImportError { row: number; error: string }
-interface CsvResult { created: number; errors: CsvImportError[] }
+interface CsvResult { created: number; updated?: number; errors: CsvImportError[] }
 
 export default function ProductsPage() {
   const qc = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
   const [csvResult, setCsvResult] = useState<CsvResult | null>(null)
   const [csvUploading, setCsvUploading] = useState(false)
+
+  // Duplicate finder state
+  const [dupPanelOpen, setDupPanelOpen] = useState(false)
+  const [dupGroups, setDupGroups] = useState<DuplicateGroup[] | null>(null)
+  const [dupLoading, setDupLoading] = useState(false)
+  // keepIds: one per group — the product ID to keep. Default: newest (last in list)
+  const [keepIds, setKeepIds] = useState<Record<string, string>>({})
+  const [dupDeleting, setDupDeleting] = useState(false)
+  const [dupResult, setDupResult] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery<ProductsResponse>({
     queryKey: ["products"],
@@ -45,6 +57,46 @@ export default function ProductsPage() {
   function handleDelete(product: Product) {
     if (!confirm(`Delete "${product.name}"?`)) return
     deleteMutation.mutate(product.id)
+  }
+
+  async function handleFindDuplicates() {
+    setDupPanelOpen(true)
+    setDupLoading(true)
+    setDupGroups(null)
+    setDupResult(null)
+    try {
+      const groups = await api.get<DuplicateGroup[]>("/api/products/duplicates")
+      setDupGroups(groups)
+      // Default selection: keep the newest (last) in each group
+      const defaults: Record<string, string> = {}
+      for (const g of groups) {
+        defaults[g.name.toLowerCase()] = g.products[g.products.length - 1].id
+      }
+      setKeepIds(defaults)
+    } catch {
+      setDupGroups([])
+    } finally {
+      setDupLoading(false)
+    }
+  }
+
+  async function handleDeleteDuplicates() {
+    if (!dupGroups || dupGroups.length === 0) return
+    const toDelete = dupGroups.flatMap(g =>
+      g.products.filter(p => p.id !== keepIds[g.name.toLowerCase()]).map(p => p.name)
+    )
+    if (!confirm(`This will permanently delete ${toDelete.length} product(s):\n\n${toDelete.join("\n")}\n\nContinue?`)) return
+    setDupDeleting(true)
+    try {
+      const result = await api.del<{ deleted: number }>("/api/products/duplicates", { keep_ids: Object.values(keepIds) })
+      setDupResult(`Deleted ${result.deleted} duplicate product${result.deleted !== 1 ? "s" : ""}.`)
+      setDupGroups([])
+      qc.invalidateQueries({ queryKey: ["products"] })
+    } catch {
+      setDupResult("Delete failed — please try again.")
+    } finally {
+      setDupDeleting(false)
+    }
   }
 
   async function handleCsvFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -97,6 +149,13 @@ export default function ProductsPage() {
             <Upload size={14} />
             {csvUploading ? "Importing…" : "Import CSV"}
           </button>
+          <button
+            onClick={handleFindDuplicates}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-orange-200 text-orange-700 hover:bg-orange-50 transition-colors"
+          >
+            <Copy size={14} />
+            Find duplicates
+          </button>
           <Link
             href="/products/new"
             className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
@@ -115,7 +174,8 @@ export default function ProductsPage() {
         }`}>
           <div className="flex-1 text-sm">
             <p className="font-semibold mb-1">
-              Import complete — {csvResult.created} product{csvResult.created !== 1 ? "s" : ""} created
+              Import complete — {csvResult.created} created
+              {(csvResult.updated ?? 0) > 0 && `, ${csvResult.updated} updated`}
               {csvResult.errors.length > 0 && `, ${csvResult.errors.length} row${csvResult.errors.length !== 1 ? "s" : ""} skipped`}
             </p>
             {csvResult.errors.length > 0 && (
@@ -131,6 +191,92 @@ export default function ProductsPage() {
           <button onClick={() => setCsvResult(null)} className="flex-shrink-0 mt-0.5 opacity-60 hover:opacity-100">
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {/* Duplicate finder panel */}
+      {dupPanelOpen && (
+        <div className="mb-6 bg-orange-50 border border-orange-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-orange-900 text-sm">Find &amp; remove duplicate products</h2>
+            <button onClick={() => setDupPanelOpen(false)} className="text-orange-400 hover:text-orange-700">
+              <X size={14} />
+            </button>
+          </div>
+
+          {dupLoading && (
+            <div className="flex items-center gap-2 text-sm text-orange-700">
+              <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+              Scanning…
+            </div>
+          )}
+
+          {dupResult && (
+            <p className="text-sm text-orange-900 font-medium">{dupResult}</p>
+          )}
+
+          {dupGroups !== null && !dupLoading && dupGroups.length === 0 && !dupResult && (
+            <p className="text-sm text-orange-700">No duplicate product names found.</p>
+          )}
+
+          {dupGroups && dupGroups.length > 0 && (
+            <>
+              <p className="text-xs text-orange-700 mb-4">
+                {dupGroups.length} duplicate group{dupGroups.length !== 1 ? "s" : ""} found.
+                Select which version to <strong>keep</strong> per group — the others will be deleted.
+              </p>
+              <div className="space-y-4">
+                {dupGroups.map((group) => (
+                  <div key={group.name} className="bg-white rounded-lg border border-orange-200 overflow-hidden">
+                    <div className="px-4 py-2.5 bg-orange-100 border-b border-orange-200">
+                      <span className="text-xs font-semibold text-orange-800 uppercase tracking-wide">{group.name}</span>
+                    </div>
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-orange-100">
+                          <th className="px-3 py-2 text-left font-medium text-slate-500 w-8">Keep</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-500">Name</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-500">Price</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-500">Stock</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-500">Created</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-orange-50">
+                        {group.products.map((p) => (
+                          <tr key={p.id} className={keepIds[group.name.toLowerCase()] === p.id ? "bg-green-50" : ""}>
+                            <td className="px-3 py-2">
+                              <input
+                                type="radio"
+                                name={`keep-${group.name}`}
+                                checked={keepIds[group.name.toLowerCase()] === p.id}
+                                onChange={() => setKeepIds(prev => ({ ...prev, [group.name.toLowerCase()]: p.id }))}
+                                className="accent-green-600"
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-slate-700 font-medium">{p.name}</td>
+                            <td className="px-3 py-2 text-slate-600">£{parseFloat(p.price).toFixed(2)}</td>
+                            <td className="px-3 py-2 text-slate-600">{p.stock_quantity}</td>
+                            <td className="px-3 py-2 text-slate-500">
+                              {p.created_at ? new Date(p.created_at).toLocaleDateString() : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={handleDeleteDuplicates}
+                  disabled={dupDeleting}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition-colors"
+                >
+                  {dupDeleting ? "Deleting…" : "Delete selected duplicates"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 

@@ -11,7 +11,7 @@ from app.core.dependencies import require_admin
 from app.plugins.products.models import Product
 from app.plugins.products.schemas import (
     ProductCreate, ProductUpdate, ProductOut, ProductListOut, ProductImageCreate, ProductImageOut,
-    CsvImportResult, ImageSortItem,
+    CsvImportResult, ImageSortItem, DuplicateGroup, DeleteDuplicatesRequest, DeleteDuplicatesResult,
 )
 from app.plugins.products import service
 from app.shared.pagination import Page, paginate
@@ -102,6 +102,22 @@ async def import_products_csv(
     content = (await file.read()).decode("utf-8")
     result = await service.import_from_csv(content, db)
     return result
+
+
+@router.get("/duplicates", response_model=list[DuplicateGroup],
+            dependencies=[Depends(require_admin())])
+async def find_duplicate_products(db: AsyncSession = Depends(get_db)):
+    return await service.find_duplicate_groups(db)
+
+
+@router.delete("/duplicates", response_model=DeleteDuplicatesResult,
+               dependencies=[Depends(require_admin())])
+async def delete_duplicate_products(
+    data: DeleteDuplicatesRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    deleted = await service.delete_duplicates(data.keep_ids, db)
+    return {"deleted": deleted}
 
 
 @router.get("/{product_id}", response_model=ProductOut)

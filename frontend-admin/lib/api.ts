@@ -74,6 +74,7 @@ export const api = {
     request<T>(path, { method: "PUT", body: body !== undefined ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PATCH", body: body !== undefined ? JSON.stringify(body) : undefined }),
-  del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  del: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: "DELETE", body: body !== undefined ? JSON.stringify(body) : undefined }),
   upload: <T>(path: string, body: FormData) => uploadRequest<T>(path, body),
 }

@@ -5,9 +5,9 @@ services:
       - ./backend/.env
     environment:
       DATABASE_URL: sqlite+aiosqlite:////app/data/commerceforce.db
-      CORS_ORIGINS: "http://${SERVER_IP}:3000,http://${SERVER_IP}:3001,http://localhost:3000,http://localhost:3001"
-      STOREFRONT_URL: "http://${SERVER_IP}:3000"
-      ADMIN_URL: "http://${SERVER_IP}:3001"
+      # CORS and URL values are set in backend/.env by generate-env.sh
+    # In production, ports are NOT exposed directly — nginx handles external traffic.
+    # Remove the port mapping below once nginx is set up and verified.
     ports:
       - "8000:8000"
     volumes:
@@ -18,7 +18,9 @@ services:
     build:
       context: ./frontend-starter
       args:
+        # In production this is set to the HTTPS domain by generate-env.sh
         NEXT_PUBLIC_API_URL: "http://${SERVER_IP}:8000"
+    # Port 3000 is accessed via nginx in production; exposed here for dev/fallback only
     ports:
       - "3000:3000"
     depends_on:
@@ -34,6 +36,40 @@ services:
     depends_on:
       - backend
 
+  # ── nginx: SSL termination + reverse proxy ─────────────────────────────────
+  # Uncomment this service once DNS is pointing to the VPS and you have run certbot.
+  # See docs/new-client-setup.md Section 12 for step-by-step instructions.
+  #
+  # nginx:
+  #   image: nginx:1.27-alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   environment:
+  #     DOMAIN: "${DOMAIN}"
+  #   volumes:
+  #     - ./nginx/default.conf:/etc/nginx/templates/default.conf.template:ro
+  #     - ./nginx/entrypoint.sh:/docker-entrypoint.d/40-envsubst-on-templates.sh:ro
+  #     - cf_letsencrypt:/etc/letsencrypt:ro
+  #     - cf_certbot_www:/var/www/certbot:ro
+  #   depends_on:
+  #     - backend
+  #     - frontend-starter
+  #     - frontend-admin
+  #   restart: unless-stopped
+  #
+  # certbot:
+  #   image: certbot/certbot
+  #   volumes:
+  #     - cf_letsencrypt:/etc/letsencrypt
+  #     - cf_certbot_www:/var/www/certbot
+  #   # Run manually to issue/renew: docker compose run --rm certbot renew
+  #   entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; done"
+
 volumes:
   cf_data:
   cf_uploads:
+  cf_backups:
+  # Uncomment when nginx service is enabled:
+  # cf_letsencrypt:
+  # cf_certbot_www:

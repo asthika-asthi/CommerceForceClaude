@@ -447,3 +447,130 @@ async def test_csv_import_empty_file(client: AsyncClient, db):
     body = r.json()
     assert body["created"] == 0
     assert body["errors"] == []
+
+
+# ── CSV DEDUPLICATION ─────────────────────────────────────────────────────────
+
+async def _import_csv(client: AsyncClient, admin_token: str, csv_content: str):
+    return await client.post(
+        "/api/products/import/csv",
+        files={"file": ("products.csv", csv_content.encode(), "text/csv")},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+
+async def test_product_reimport_updates_not_duplicates(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    csv = "name,price\nWidget A,9.99\n"
+    await _import_csv(client, admin_token, csv)
+    r = await _import_csv(client, admin_token, csv)
+    assert r.json()["updated"] == 1
+    assert r.json()["created"] == 0
+    products = (await client.get("/api/products")).json()["items"]
+    assert [p["name"] for p in products].count("Widget A") == 1
+
+
+async def test_product_reimport_updates_price(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    await _import_csv(client, admin_token, "name,price\nWidget A,9.99\n")
+    await _import_csv(client, admin_token, "name,price\nWidget A,14.99\n")
+    products = (await client.get("/api/products")).json()["items"]
+    widget = next(p for p in products if p["name"] == "Widget A")
+    assert float(widget["price"]) == 14.99
+
+
+async def test_product_reimport_case_insensitive(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    await _import_csv(client, admin_token, "name,price\nWidget A,9.99\n")
+    r = await _import_csv(client, admin_token, "name,price\nwidget a,9.99\n")
+    assert r.json()["updated"] == 1
+    products = (await client.get("/api/products")).json()["items"]
+    assert len([p for p in products if "widget" in p["name"].lower()]) == 1
+
+
+async def test_product_reimport_updates_price(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    await _import_csv(client, admin_token, "name,price\nWidget A,9.99\n")
+    await _import_csv(client, admin_token, "name,price\nWidget A,14.99\n")
+    products = (await client.get("/api/products")).json()["items"]
+    widget = next(p for p in products if p["name"] == "Widget A")
+    assert float(widget["price"]) == 14.99
+
+
+async def test_product_reimport_case_insensitive(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    await _import_csv(client, admin_token, "name,price\nWidget A,9.99\n")
+    r = await _import_csv(client, admin_token, "name,price\nwidget a,9.99\n")
+    # lowercase match → update, not create
+    assert r.json()["updated"] == 1
+    products = (await client.get("/api/products")).json()["items"]
+    assert len([p for p in products if "widget" in p["name"].lower()]) == 1
+
+
+# ── DUPLICATE FINDER ──────────────────────────────────────────────────────────
+
+async def test_find_duplicates_returns_groups(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    await _import_csv(client, admin_token, "name,price\nWidget A,9.99\n")
+    # Create second product with same name via API (bypasses dedup — tests the cleanup tool)
+    await client.post("/api/products", json={"name": "Widget A", "price": "12.99", "stock_quantity": 5},
+                      headers={"Authorization": f"Bearer {admin_token}"})
+    await client.post("/api/products", json={"name": "Unique Item", "price": "5.00", "stock_quantity": 3},
+                      headers={"Authorization": f"Bearer {admin_token}"})
+
+    r = await client.get("/api/products/duplicates", headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 200
+    groups = r.json()
+    assert len(groups) == 1
+    assert groups[0]["name"].lower() == "widget a"
+    assert len(groups[0]["products"]) == 2
+
+
+async def test_find_duplicates_empty_when_no_duplicates(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    await client.post("/api/products", json={"name": "Unique A", "price": "1.00"},
+                      headers={"Authorization": f"Bearer {admin_token}"})
+    r = await client.get("/api/products/duplicates", headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+async def test_find_duplicates_requires_admin(client: AsyncClient, db):
+    await make_admin(client, db)
+    cust_token = (await client.post(REGISTER_URL, json=CUSTOMER_DATA)).json()["access_token"]
+    r = await client.get("/api/products/duplicates", headers={"Authorization": f"Bearer {cust_token}"})
+    assert r.status_code == 403
+
+
+async def test_delete_duplicates_keeps_selected(client: AsyncClient, db):
+    import json as json_lib
+    admin_token = await make_admin(client, db)
+    await _import_csv(client, admin_token, "name,price\nWidget A,9.99\n")
+    r2 = await client.post("/api/products", json={"name": "Widget A", "price": "12.99", "stock_quantity": 5},
+                           headers={"Authorization": f"Bearer {admin_token}"})
+    keep_id = r2.json()["id"]
+
+    resp = await client.request(
+        "DELETE", "/api/products/duplicates",
+        content=json_lib.dumps({"keep_ids": [keep_id]}),
+        headers={"Authorization": f"Bearer {admin_token}", "Content-Type": "application/json"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["deleted"] == 1
+
+    remaining = (await client.get("/api/products")).json()["items"]
+    ids = [p["id"] for p in remaining]
+    assert keep_id in ids
+    assert len([p for p in remaining if p["name"].lower() == "widget a"]) == 1
+
+
+async def test_delete_duplicates_requires_admin(client: AsyncClient, db):
+    import json as json_lib
+    await make_admin(client, db)
+    cust_token = (await client.post(REGISTER_URL, json=CUSTOMER_DATA)).json()["access_token"]
+    r = await client.request(
+        "DELETE", "/api/products/duplicates",
+        content=json_lib.dumps({"keep_ids": []}),
+        headers={"Authorization": f"Bearer {cust_token}", "Content-Type": "application/json"},
+    )
+    assert r.status_code == 403

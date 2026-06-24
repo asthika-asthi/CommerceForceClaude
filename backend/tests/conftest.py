@@ -3,6 +3,7 @@ import os
 # Set env vars BEFORE any app module is imported — config uses @lru_cache
 os.environ["ENABLED_PLUGINS"] = "auth,categories,products,cart,orders,checkout,rfq,credit,inventory,coupons,loyalty,newsletter,branding,landing_page,ai_chat,contact"
 os.environ["ANTHROPIC_API_KEY"] = "test-key"
+os.environ["ENVIRONMENT"] = "development"  # keep refresh cookies non-secure for HTTP test client
 
 import pytest  # noqa: E402
 from httpx import AsyncClient, ASGITransport  # noqa: E402

@@ -238,6 +238,12 @@ async def checkout(
         except Exception as exc:
             logger.warning("Order confirmation email failed for order %s: %s", order.id, exc)
 
+    # Notify admin of new order (fire-and-forget — never blocks order completion)
+    try:
+        await _send_admin_order_notification(order, items, db)
+    except Exception as exc:
+        logger.warning("Admin order notification failed for order %s: %s", order.id, exc)
+
     return order, client_secret
 
 
@@ -292,6 +298,15 @@ async def handle_stripe_webhook(payload: bytes, sig_header: str, db: AsyncSessio
                     except Exception as exc:
                         logger.warning("Post-payment email failed for order %s: %s", order_id, exc)
 
+                try:
+                    item_rows_admin = [
+                        {"product_name": i.product_name, "quantity": i.quantity, "unit_price": i.unit_price}
+                        for i in order.items
+                    ]
+                    await _send_admin_order_notification(order, item_rows_admin, db)
+                except Exception as exc:
+                    logger.warning("Admin notification failed for Stripe order %s: %s", order_id, exc)
+
 
 async def _send_order_confirmation_email(
     to: str, order: Order, items: list[dict], db: AsyncSession
@@ -326,3 +341,34 @@ async def _send_order_confirmation_email(
     print(f"\n[ORDER CONFIRMATION] {to} — {order.order_number} — £{order.total:.2f}\n", flush=True)
 
     await send_email(to, f"Order confirmed — {order.order_number}", body, db)
+
+
+async def _send_admin_order_notification(
+    order: Order, items: list[dict], db: AsyncSession
+) -> None:
+    try:
+        from app.plugins.branding.models import BrandingConfig
+        from sqlalchemy import select as sa_select
+        result = await db.execute(sa_select(BrandingConfig).limit(1))
+        branding = result.scalar_one_or_none()
+        admin_email = branding.contact_email if branding else None
+    except Exception:
+        admin_email = None
+
+    if not admin_email:
+        return
+
+    items_text = "\n".join(
+        f"  {i['product_name']} x{i['quantity']}  £{float(i['unit_price']) * i['quantity']:.2f}"
+        for i in items
+    )
+    customer = order.guest_email or f"User {order.user_id}"
+    body = (
+        f"New order received!\n\n"
+        f"Order:    {order.order_number}\n"
+        f"Customer: {customer}\n"
+        f"Total:    £{order.total:.2f}\n\n"
+        f"Items:\n{items_text}\n\n"
+        f"View order: {settings.ADMIN_URL}/orders/{order.id}\n"
+    )
+    await send_email(admin_email, f"New order — {order.order_number} — £{order.total:.2f}", body, db)

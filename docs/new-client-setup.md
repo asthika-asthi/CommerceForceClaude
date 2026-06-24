@@ -59,87 +59,36 @@ git clone https://github.com/asthika-asthi/CommerceForceClaude.git
 cd CommerceForceClaude
 ```
 
-### 2.2 Create the root `.env` file
-This file sits next to `docker-compose.yml`. It sets the server IP so all services know how to talk to each other.
+### 2.2 Generate both `.env` files automatically
+
+Instead of creating the files manually, run the env generator script. It prompts you for each value, auto-generates the `SECRET_KEY`, and writes both files:
 
 ```bash
-nano .env
+bash scripts/generate-env.sh
 ```
-Paste:
+
+Answer the prompts (press Enter to accept the default shown in brackets). The script writes:
+- `.env` — root file (just `SERVER_IP`, used by Docker Compose)
+- `backend/.env` — all secrets and per-client config
+
+> **If you don't have bash** (e.g. Windows without Git Bash), use the manual method below instead.
+
+**Gotcha — SMTP_PASSWORD:** This must be a Gmail App Password (16 characters), not your regular Gmail password. Generate one at: Google Account → Security → 2-Step Verification → App Passwords. Even then, some VPS providers block outbound port 587. See Section 4 for the fallback.
+
+<details>
+<summary>Manual method (without bash)</summary>
+
+Create `.env` next to `docker-compose.yml`:
 ```
 SERVER_IP=YOUR.SERVER.IP.HERE
 ```
-Replace `YOUR.SERVER.IP.HERE` with the actual IP (e.g. `187.77.101.178`). Save with `Ctrl+X`, `Y`, `Enter`.
 
-**Gotcha:** If you skip this file, Docker Compose will fail with `SERVER_IP variable is not set`.
-
-### 2.3 Create `backend/.env`
-This file holds all secrets and per-client configuration. **Never commit this file to git.**
-
-```bash
-nano backend/.env
-```
-
-Paste the full template below and fill in every value:
-
-```
-# ── Security ────────────────────────────────────────────────────────────
-SECRET_KEY=<run: openssl rand -hex 32>
-ENVIRONMENT=production
-
-# ── Database ─────────────────────────────────────────────────────────────
-DATABASE_URL=sqlite+aiosqlite:///./commerceforce.db
-
-# ── Plugins (see Section 7 for what each one does) ───────────────────────
-ENABLED_PLUGINS=auth,categories,products,cart,orders,checkout,coupons,loyalty,newsletter,branding,landing_page,ai_chat,rfq,credit,inventory,contact,addresses,wishlist,reviews,discount_rules
-
-# ── Tokens ───────────────────────────────────────────────────────────────
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# ── Redis (not used in current SQLite mode — leave as-is) ────────────────
-REDIS_URL=redis://localhost:6379/0
-
-# ── CORS (do not change — overridden by docker-compose.yml) ──────────────
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001
-
-# ── Email / SMTP ─────────────────────────────────────────────────────────
-# See Section 4 gotcha on email before filling this in
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your@gmail.com
-SMTP_PASSWORD=xxxx-xxxx-xxxx-xxxx
-SMTP_FROM=your@gmail.com
-SMTP_TLS=true
-
-# ── AI Chat (optional) ───────────────────────────────────────────────────
-OPENROUTER_API_KEY=your-key-here
-OPENROUTER_MODEL=anthropic/claude-haiku-4.5
-
-# ── Payments (optional) ──────────────────────────────────────────────────
-STRIPE_SECRET_KEY=your-stripe-secret-key
-STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
-
-# ── Agency account (same for every client deployment) ────────────────────
-SUPERADMIN_EMAIL=you@youragency.com
-SUPERADMIN_PASSWORD=YourSecureAgencyPassword123!
-
-# ── Client identity (change for every new client) ────────────────────────
-ADMIN_EMAIL=owner@clientdomain.com
-ADMIN_TEMP_PASSWORD=ChangeMe123!
-STORE_NAME=Client Store Name
-STORE_TAGLINE=Client tagline here
-CONTACT_EMAIL=info@clientdomain.com
-```
-
-Save with `Ctrl+X`, `Y`, `Enter`.
-
-**Gotcha — SECRET_KEY:** Generate a unique key for each deployment. Run this and paste the output:
+Create `backend/.env` — copy the template from `scripts/generate-env.sh` and fill in all values. Generate `SECRET_KEY` with:
 ```bash
 openssl rand -hex 32
 ```
 
-**Gotcha — SMTP_PASSWORD:** This must be a Gmail App Password (16 characters), not your regular Gmail password. Generate one at: Google Account → Security → 2-Step Verification → App Passwords. Even then, some VPS providers block outbound port 587. See Section 4 for the fallback.
+</details>
 
 ---
 
@@ -449,4 +398,164 @@ docker compose down -v
 | CSV import: products created but no category | Category name typo in CSV | Products CSV auto-creates categories now — check the category was created |
 | CSV import: "invalid price" error | Price uses comma instead of period | Change `29,99` to `29.99` in the CSV |
 | Category CSV: "parent not found" error | Parent row appears after child in the file | Move parent rows above child rows in the CSV |
-| Products duplicated after re-import | Products CSV was imported twice | Products are not de-duplicated — delete and re-import |
+| Products duplicated after re-import | Products CSV was imported twice | Re-importing a CSV now updates existing products instead of duplicating. If duplicates already exist, use **Admin → Products → Find duplicates** to clean them up. |
+
+---
+
+## Section 11 — Backups and recovery
+
+### 11.1 Daily automated backup
+
+Add a cron job on the VPS to run the backup script at 02:00 UTC every day:
+
+```bash
+crontab -e
+```
+
+Add this line:
+```
+0 2 * * * cd /opt/commerceforce/CommerceForceClaude && bash scripts/backup.sh >> /var/log/commerceforce-backup.log 2>&1
+```
+
+The script:
+- Uses SQLite's safe online backup API — runs against the live database without locking
+- Saves to `backups/YYYY-MM-DD.db` in the project directory
+- Automatically prunes backups older than 30 days
+
+### 11.2 On-demand backup
+
+Run at any time:
+```bash
+cd /opt/commerceforce/CommerceForceClaude
+bash scripts/backup.sh
+```
+
+### 11.3 Verify a backup
+
+```bash
+sqlite3 backups/YYYY-MM-DD.db "SELECT COUNT(*) FROM users;"
+```
+Should return a number. If it prints an error, the backup is corrupt — check logs and re-run.
+
+### 11.4 Restore from backup
+
+```bash
+# 1. Stop the backend
+docker compose stop backend
+
+# 2. Copy the backup over the live database
+CONTAINER=$(docker compose ps -q backend)
+docker cp backups/YYYY-MM-DD.db ${CONTAINER}:/app/data/commerceforce.db
+
+# 3. Restart
+docker compose start backend
+
+# 4. Verify the site is working
+curl http://YOUR_SERVER_IP:8000/api/health
+```
+
+**Important:** Stop the backend BEFORE replacing the database file. Replacing while the server is running can corrupt the database.
+
+---
+
+## Section 12 — HTTPS + nginx + custom domain
+
+### Prerequisites before this section
+
+- DNS is already configured: `yourdomain.com` and `admin.yourdomain.com` both point to your VPS IP
+- Port 80 and 443 are open in your firewall: `ufw allow 80 && ufw allow 443`
+- The site is already running on HTTP (Section 3 complete)
+
+### 12.1 Add DOMAIN to root .env
+
+Edit `.env` (next to `docker-compose.yml`) and add your domain:
+
+```
+SERVER_IP=YOUR.SERVER.IP.HERE
+DOMAIN=yourdomain.com
+```
+
+Or re-run the env generator and supply the domain when prompted:
+```bash
+bash scripts/generate-env.sh
+```
+
+### 12.2 Issue the SSL certificate with certbot
+
+Run certbot in standalone mode (before enabling the nginx service). This temporarily binds to port 80:
+
+```bash
+docker run --rm -it \
+  -v cf_letsencrypt:/etc/letsencrypt \
+  -v cf_certbot_www:/var/www/certbot \
+  -p 80:80 \
+  certbot/certbot certonly --standalone \
+  -d yourdomain.com -d admin.yourdomain.com \
+  --email info@yourdomain.com --agree-tos --no-eff-email
+```
+
+This writes the certificates to the Docker volume `cf_letsencrypt`. You should see:
+```
+Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/yourdomain.com/fullchain.pem
+```
+
+### 12.3 Enable the nginx service in docker-compose.yml
+
+Open `docker-compose.yml` and uncomment the `nginx:` and `certbot:` service blocks (lines starting with `#`), and uncomment the two volumes at the bottom (`cf_letsencrypt`, `cf_certbot_www`).
+
+Then rebuild and restart:
+```bash
+docker compose up --build -d
+```
+
+### 12.4 Verify HTTPS is working
+
+```bash
+# Should return 301 redirect to https://
+curl -I http://yourdomain.com
+
+# Should return 200
+curl -I https://yourdomain.com
+
+# Check SSL certificate details
+curl -vI https://yourdomain.com 2>&1 | grep "SSL certificate"
+```
+
+Open your browser and visit `https://yourdomain.com` — padlock should show.
+
+### 12.5 Set up automatic certificate renewal
+
+Certbot certificates expire after 90 days. Add a weekly renewal cron:
+
+```bash
+crontab -e
+```
+
+Add:
+```
+0 3 * * 1 docker compose -f /opt/commerceforce/CommerceForceClaude/docker-compose.yml run --rm certbot renew --quiet >> /var/log/certbot-renew.log 2>&1
+```
+
+Test renewal:
+```bash
+docker compose run --rm certbot renew --dry-run
+```
+Should print: `Congratulations, all simulated renewals succeeded.`
+
+### 12.6 Update backend/.env for HTTPS URLs
+
+The env generator already wrote HTTPS URLs when you provided a domain. If you're adding the domain to an existing deployment, update `backend/.env`:
+
+```
+CORS_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com
+STOREFRONT_URL=https://yourdomain.com
+ADMIN_URL=https://admin.yourdomain.com
+```
+
+Then restart the backend:
+```bash
+docker compose restart backend
+```
+
+**Gotcha — port exposure after enabling nginx:** Once nginx is set up and verified, remove the direct port mappings (`- "3000:3000"`, `- "3001:3001"`, `- "8000:8000"`) from `docker-compose.yml` and restart. This prevents bypassing nginx via the raw ports.

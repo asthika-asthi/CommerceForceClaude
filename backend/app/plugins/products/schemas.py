@@ -108,4 +108,28 @@ class CsvImportError(BaseModel):
 
 class CsvImportResult(BaseModel):
     created: int
+    updated: int = 0
     errors: list[CsvImportError]
+
+
+class DuplicateProductEntry(BaseModel):
+    id: str
+    name: str
+    price: Decimal
+    stock_quantity: int
+    category_id: Optional[str] = None
+    created_at: Optional[str] = None
+    model_config = {"from_attributes": True}
+
+
+class DuplicateGroup(BaseModel):
+    name: str
+    products: list[DuplicateProductEntry]
+
+
+class DeleteDuplicatesRequest(BaseModel):
+    keep_ids: list[str]
+
+
+class DeleteDuplicatesResult(BaseModel):
+    deleted: int
