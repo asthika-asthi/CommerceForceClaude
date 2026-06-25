@@ -30,7 +30,7 @@ TestSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, exp
 async def setup_test_db():
     from app.plugins.auth.models import User, RefreshToken  # noqa
     from app.plugins.categories.models import Category  # noqa
-    from app.plugins.products.models import Product, ProductImage  # noqa
+    from app.plugins.products.models import Product, ProductImage, ProductOptionType, ProductOptionValue, ProductVariant, ProductVariantOption  # noqa
     from app.plugins.cart.models import Cart, CartItem  # noqa
     from app.plugins.orders.models import Order, OrderItem  # noqa
     from app.plugins.rfq.models import RFQ, RFQItem  # noqa

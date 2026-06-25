@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import Optional
-from sqlalchemy import String, Boolean, Integer, Numeric, Text, ForeignKey
+from sqlalchemy import String, Boolean, Integer, Numeric, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.base_model import BaseModel
 
@@ -51,3 +51,61 @@ class ProductImage(BaseModel):
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     product: Mapped["Product"] = relationship("Product", back_populates="images")
+
+
+class ProductOptionType(BaseModel):
+    __tablename__ = "product_option_types"
+
+    product_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    values: Mapped[list["ProductOptionValue"]] = relationship(
+        "ProductOptionValue", back_populates="option_type",
+        cascade="all, delete-orphan", order_by="ProductOptionValue.sort_order", lazy="selectin"
+    )
+
+
+class ProductOptionValue(BaseModel):
+    __tablename__ = "product_option_values"
+
+    option_type_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("product_option_types.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    label: Mapped[str] = mapped_column(String(100), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    option_type: Mapped["ProductOptionType"] = relationship("ProductOptionType", back_populates="values")
+
+
+class ProductVariant(BaseModel):
+    __tablename__ = "product_variants"
+
+    product_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    sku: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    option_links: Mapped[list["ProductVariantOption"]] = relationship(
+        "ProductVariantOption", back_populates="variant",
+        cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class ProductVariantOption(BaseModel):
+    __tablename__ = "product_variant_options"
+    __table_args__ = (UniqueConstraint("variant_id", "option_value_id", name="uq_variant_option"),)
+
+    variant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("product_variants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    option_value_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("product_option_values.id", ondelete="CASCADE"), nullable=False
+    )
+
+    variant: Mapped["ProductVariant"] = relationship("ProductVariant", back_populates="option_links")
+    option_value: Mapped["ProductOptionValue"] = relationship("ProductOptionValue", lazy="selectin")
