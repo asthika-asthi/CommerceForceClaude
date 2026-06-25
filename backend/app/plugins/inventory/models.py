@@ -20,13 +20,13 @@ class Warehouse(BaseModel):
 
 class WarehouseStock(BaseModel):
     __tablename__ = "warehouse_stock"
-    __table_args__ = (UniqueConstraint("warehouse_id", "product_id", name="uq_warehouse_product"),)
+    __table_args__ = (UniqueConstraint("warehouse_id", "variant_id", name="uq_warehouse_variant"),)
 
     warehouse_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("warehouses.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    product_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True
+    variant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("product_variants.id", ondelete="CASCADE"), nullable=False, index=True
     )
     quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     reserved_quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

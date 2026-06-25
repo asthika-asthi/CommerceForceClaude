@@ -28,20 +28,21 @@ class WarehouseOut(BaseModel):
 
 
 class StockSetRequest(BaseModel):
-    product_id: str
+    variant_id: str
     quantity: int = Field(..., ge=0)
     low_stock_threshold: int = Field(10, ge=0)
 
 
 class StockAdjustRequest(BaseModel):
-    product_id: str
+    variant_id: str
     delta: int
 
 
 class WarehouseStockOut(BaseModel):
     id: str
     warehouse_id: str
-    product_id: str
+    variant_id: str
+    variant_label: str = ""
     quantity: int
     reserved_quantity: int
     available_quantity: int
@@ -50,7 +51,7 @@ class WarehouseStockOut(BaseModel):
 
 
 class ProductStockSummary(BaseModel):
-    product_id: str
+    variant_id: str
     total_quantity: int
     total_available: int
     warehouses: List[WarehouseStockOut]

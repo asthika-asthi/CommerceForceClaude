@@ -68,7 +68,7 @@ async def set_stock(warehouse_id: str, data: StockSetRequest, db: AsyncSession) 
     result = await db.execute(
         select(WarehouseStock).where(
             WarehouseStock.warehouse_id == warehouse_id,
-            WarehouseStock.product_id == data.product_id,
+            WarehouseStock.variant_id == data.variant_id,
         ).with_for_update()
     )
     stock = result.scalar_one_or_none()
@@ -78,7 +78,7 @@ async def set_stock(warehouse_id: str, data: StockSetRequest, db: AsyncSession) 
     else:
         stock = WarehouseStock(
             warehouse_id=warehouse_id,
-            product_id=data.product_id,
+            variant_id=data.variant_id,
             quantity=data.quantity,
             low_stock_threshold=data.low_stock_threshold,
         )
@@ -92,14 +92,14 @@ async def adjust_stock(warehouse_id: str, data: StockAdjustRequest, db: AsyncSes
     result = await db.execute(
         select(WarehouseStock).where(
             WarehouseStock.warehouse_id == warehouse_id,
-            WarehouseStock.product_id == data.product_id,
+            WarehouseStock.variant_id == data.variant_id,
         ).with_for_update()
     )
     stock = result.scalar_one_or_none()
     if not stock:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No stock record for this product in this warehouse",
+            detail="No stock record for this variant in this warehouse",
         )
     new_qty = stock.quantity + data.delta
     if new_qty < 0:
@@ -112,9 +112,9 @@ async def adjust_stock(warehouse_id: str, data: StockAdjustRequest, db: AsyncSes
     return stock
 
 
-async def get_product_stock(product_id: str, db: AsyncSession) -> list[WarehouseStock]:
+async def get_variant_stock(variant_id: str, db: AsyncSession) -> list[WarehouseStock]:
     result = await db.execute(
-        select(WarehouseStock).where(WarehouseStock.product_id == product_id)
+        select(WarehouseStock).where(WarehouseStock.variant_id == variant_id)
     )
     return list(result.scalars().all())
 
@@ -124,3 +124,38 @@ async def get_warehouse_stock(warehouse_id: str, db: AsyncSession) -> list[Wareh
         select(WarehouseStock).where(WarehouseStock.warehouse_id == warehouse_id)
     )
     return list(result.scalars().all())
+
+
+async def deduct_stock_for_variant(variant_id: str, quantity: int, db: AsyncSession) -> None:
+    """Deduct stock from warehouses for a variant. Raises 409 if insufficient."""
+    from sqlalchemy import select as sa_select
+    result = await db.execute(
+        sa_select(WarehouseStock).where(WarehouseStock.variant_id == variant_id)
+    )
+    stocks = list(result.scalars().all())
+    if not stocks:
+        raise HTTPException(status_code=409, detail=f"No warehouse stock record for variant {variant_id}")
+
+    remaining = quantity
+    for stock in stocks:
+        available = stock.quantity - stock.reserved_quantity
+        deduct = min(remaining, available)
+        if deduct > 0:
+            stock.quantity -= deduct
+            remaining -= deduct
+        if remaining == 0:
+            break
+
+    if remaining > 0:
+        raise HTTPException(status_code=409, detail="Insufficient stock across all warehouses")
+    await db.flush()
+
+
+async def get_variant_stock_total(variant_id: str, db: AsyncSession) -> int:
+    """Return total available quantity across all warehouses for a variant."""
+    from sqlalchemy import func
+    result = await db.execute(
+        select(func.sum(WarehouseStock.quantity - WarehouseStock.reserved_quantity))
+        .where(WarehouseStock.variant_id == variant_id)
+    )
+    return result.scalar() or 0

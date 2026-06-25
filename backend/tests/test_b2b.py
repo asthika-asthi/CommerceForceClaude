@@ -338,6 +338,7 @@ async def test_list_warehouses(client: AsyncClient, db):
 async def test_set_warehouse_stock(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     product_id = await _create_product(client, admin_token, name="Stock Item")
+    variant_id = await _get_default_variant_id(client, product_id, admin_token)
     wh_r = await client.post(
         "/api/inventory/warehouses",
         json={"name": "Storage WH", "code": "STORE"},
@@ -347,7 +348,7 @@ async def test_set_warehouse_stock(client: AsyncClient, db):
 
     r = await client.post(
         f"/api/inventory/warehouses/{wh_id}/stock",
-        json={"product_id": product_id, "quantity": 150, "low_stock_threshold": 20},
+        json={"variant_id": variant_id, "quantity": 150, "low_stock_threshold": 20},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 200
@@ -358,6 +359,7 @@ async def test_set_warehouse_stock(client: AsyncClient, db):
 async def test_adjust_warehouse_stock(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     product_id = await _create_product(client, admin_token, name="Adjust Item")
+    variant_id = await _get_default_variant_id(client, product_id, admin_token)
     wh_r = await client.post(
         "/api/inventory/warehouses",
         json={"name": "Adjust WH", "code": "ADJ"},
@@ -366,21 +368,22 @@ async def test_adjust_warehouse_stock(client: AsyncClient, db):
     wh_id = wh_r.json()["id"]
     await client.post(
         f"/api/inventory/warehouses/{wh_id}/stock",
-        json={"product_id": product_id, "quantity": 100},
+        json={"variant_id": variant_id, "quantity": 100},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     r = await client.post(
         f"/api/inventory/warehouses/{wh_id}/stock/adjust",
-        json={"product_id": product_id, "delta": -30},
+        json={"variant_id": variant_id, "delta": -30},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 200
     assert r.json()["quantity"] == 70
 
 
-async def test_get_product_stock_summary(client: AsyncClient, db):
+async def test_get_variant_stock_summary(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     product_id = await _create_product(client, admin_token, name="Multi-WH Item")
+    variant_id = await _get_default_variant_id(client, product_id, admin_token)
 
     for code, qty in [("WH-A", 50), ("WH-B", 30)]:
         wh_r = await client.post(
@@ -390,11 +393,11 @@ async def test_get_product_stock_summary(client: AsyncClient, db):
         )
         await client.post(
             f"/api/inventory/warehouses/{wh_r.json()['id']}/stock",
-            json={"product_id": product_id, "quantity": qty},
+            json={"variant_id": variant_id, "quantity": qty},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
 
-    r = await client.get(f"/api/inventory/products/{product_id}/stock")
+    r = await client.get(f"/api/inventory/variants/{variant_id}/stock")
     assert r.status_code == 200
     body = r.json()
     assert body["total_quantity"] == 80

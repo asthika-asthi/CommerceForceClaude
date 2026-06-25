@@ -49,13 +49,13 @@ async def adjust_stock(warehouse_id: str, data: StockAdjustRequest, db: AsyncSes
     return await service.adjust_stock(warehouse_id, data, db)
 
 
-@router.get("/products/{product_id}/stock", response_model=ProductStockSummary)
-async def product_stock(product_id: str, db: AsyncSession = Depends(get_db)):
-    items = await service.get_product_stock(product_id, db)
+@router.get("/variants/{variant_id}/stock", response_model=ProductStockSummary)
+async def variant_stock(variant_id: str, db: AsyncSession = Depends(get_db)):
+    items = await service.get_variant_stock(variant_id, db)
     total_qty = sum(s.quantity for s in items)
     total_avail = sum(s.available_quantity for s in items)
     return ProductStockSummary(
-        product_id=product_id,
+        variant_id=variant_id,
         total_quantity=total_qty,
         total_available=total_avail,
         warehouses=items,
