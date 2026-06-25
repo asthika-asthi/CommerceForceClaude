@@ -65,10 +65,24 @@ Everything from Sprint 4 onwards is committed but untested. Test all of these in
 
 | ID | Feature | Notes |
 |----|---------|-------|
-| O | Product variants (size/colour/SKU) | Requires new `product_variants` table + changes to cart, checkout, orders, admin product editor. Do not start without a dedicated design session. |
+| O | Product variants (size/colour/SKU) | Design complete — see `docs/superpowers/specs/2026-06-25-product-variants-design.md`. Ready to implement. |
 | P | 2FA for admin | TOTP flow, QR setup, backup codes. Separate sprint. |
-| Q | Storefront component library | New visual block components (glowing buttons, glassmorphism, parallax) must be React components registered in `block-registry.ts` before config can reference them. |
+| Q | Storefront component library | New visual block components (glowing buttons, glassmorphism, parallax) must be React components registered in `block-registry.ts` before config can reference them. Includes polished variant picker UI (swatches, visual size grid). |
 | R | Per-client git branch script | `scripts/new-client.sh` to automate `git checkout -b client-name` + seed template copy |
+
+---
+
+## Not built — Product variants v2 (deferred from spec)
+
+These items were explicitly out of scope for Product variants v1. Build after v1 is tested.
+
+| Feature | Notes |
+|---------|-------|
+| Per-variant pricing | Allow XL or premium finishes to cost more than base price. Requires adding `price_override` to `product_variants` and updating cart/checkout price resolution. |
+| Polished storefront variant picker | Colour swatches, visual size grid, strikethrough for out-of-stock. Blocked on component library (Q). |
+| Variant images | Show colour-specific images when a colour variant is selected. Requires linking `ProductImage` to a variant. |
+| Bulk variant import via CSV | Admin uploads a CSV with all variant SKUs and option values. Separate sprint. |
+| Warehouse-to-warehouse stock transfers at variant level | Inventory v2. |
 
 ---
 
