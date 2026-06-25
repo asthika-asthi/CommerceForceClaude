@@ -54,18 +54,10 @@ Everything from Sprint 4 onwards is committed but untested. Test all of these in
 | CSV export — orders | Download orders CSV from admin panel |
 | CSV export — products | Download products CSV |
 | CSV export — newsletter | `GET /api/newsletter/subscribers/export/csv` (admin only) |
-
----
-
-## Not built — Priority 3 (small, build next session)
-
-| ID | Feature | Files to create/edit |
-|----|---------|---------------------|
-| I | Reviews — admin/author can UPDATE a review | `reviews/service.py`, `reviews/router.py` — add `PATCH /reviews/{review_id}` |
-| J | Newsletter — admin DELETE and UPDATE subscriber | `newsletter/service.py`, `newsletter/router.py` — add `DELETE` and `PATCH /subscribers/{id}` + admin UI page update |
-| K | Discount rules — GET single rule | `discount_rules/router.py` — add `GET /discount-rules/{rule_id}` |
-| L | Loyalty — admin view all customer balances | `loyalty/service.py`, `loyalty/router.py` — add `GET /loyalty/accounts` (admin only) + admin UI page |
-| M | Plugin dependency validation at startup | `backend/app/core/plugin_registry.py` — raise clear error if a plugin's dependency is disabled |
+| Reviews — author UPDATE | `PATCH /api/reviews/{id}` — author edits their own review; re-queues for approval |
+| Newsletter — admin DELETE/UPDATE | Admin deletes or corrects a subscriber record |
+| Discount rule — GET single | `GET /api/discount-rules/{rule_id}` |
+| Loyalty — admin accounts view | `GET /api/loyalty/accounts` — admin sees all customer loyalty balances |
 
 ---
 
