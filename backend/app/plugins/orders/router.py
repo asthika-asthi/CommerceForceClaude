@@ -1,12 +1,13 @@
 import csv
 import io
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin
-from app.plugins.orders.models import Order
+from app.plugins.orders.models import Order, OrderItem
 from app.plugins.orders.schemas import OrderOut, OrderListOut, UpdateStatusRequest, FulfilRequest
 from app.plugins.orders import service
 from app.shared.pagination import Page, paginate
@@ -54,6 +55,44 @@ async def export_orders_csv(db: AsyncSession = Depends(get_db)):
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="orders.csv"'},
     )
+
+
+@router.get("/analytics", dependencies=[Depends(require_admin())])
+async def get_analytics(db: AsyncSession = Depends(get_db)):
+    since = datetime.utcnow() - timedelta(days=29)
+
+    daily_rows = await db.execute(
+        select(
+            func.date(Order.created_at).label("date"),
+            func.sum(Order.total).label("revenue"),
+            func.count(Order.id).label("count"),
+        )
+        .where(Order.payment_status == "paid")
+        .where(Order.created_at >= since)
+        .group_by(func.date(Order.created_at))
+        .order_by(func.date(Order.created_at))
+    )
+    daily_revenue = [
+        {"date": r.date, "revenue": float(r.revenue or 0), "count": r.count}
+        for r in daily_rows
+    ]
+
+    top_rows = await db.execute(
+        select(
+            OrderItem.product_name,
+            func.sum(OrderItem.subtotal).label("revenue"),
+            func.sum(OrderItem.quantity).label("units"),
+        )
+        .group_by(OrderItem.product_name)
+        .order_by(func.sum(OrderItem.subtotal).desc())
+        .limit(10)
+    )
+    top_products = [
+        {"name": r.product_name, "revenue": float(r.revenue or 0), "units": r.units}
+        for r in top_rows
+    ]
+
+    return {"daily_revenue": daily_revenue, "top_products": top_products}
 
 
 @router.get("", response_model=Page[OrderListOut])

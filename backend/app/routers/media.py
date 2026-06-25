@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Request, HTTPException, Depends
 from app.core.dependencies import require_admin
@@ -11,6 +12,33 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+
+
+@router.get("/files", dependencies=[Depends(require_admin())])
+async def list_files(request: Request):
+    base_url = str(request.base_url).rstrip("/")
+    files = []
+    for f in sorted(UPLOAD_DIR.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
+        if f.is_file():
+            stat = f.stat()
+            files.append({
+                "filename": f.name,
+                "url": f"{base_url}/uploads/{f.name}",
+                "size": stat.st_size,
+                "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            })
+    return files
+
+
+@router.delete("/files/{filename}", dependencies=[Depends(require_admin())])
+async def delete_file(filename: str):
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    filepath = UPLOAD_DIR / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    filepath.unlink()
+    return {"deleted": filename}
 
 
 @router.post("/upload", dependencies=[Depends(require_admin())])
