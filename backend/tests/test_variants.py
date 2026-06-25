@@ -1,11 +1,32 @@
 import pytest
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
-async def _admin_token(client: AsyncClient) -> str:
-    r = await client.post("/api/auth/login", json={"email": "admin@commerceforce.dev", "password": "Admin1234!"})
+_ADMIN_EMAIL = "admin@commerceforce.dev"
+_ADMIN_PASSWORD = "Admin1234!"
+
+
+async def _admin_token(client: AsyncClient, db: AsyncSession) -> str:
+    """Register admin user, promote to admin role, return access token."""
+    await client.post(
+        "/api/auth/register",
+        json={
+            "email": _ADMIN_EMAIL,
+            "password": _ADMIN_PASSWORD,
+            "first_name": "Admin",
+            "last_name": "User",
+        },
+    )
+    from sqlalchemy import update
+    from app.plugins.auth.models import User, UserRole
+    await db.execute(
+        update(User).where(User.email == _ADMIN_EMAIL).values(role=UserRole.admin)
+    )
+    await db.flush()
+    r = await client.post("/api/auth/login", json={"email": _ADMIN_EMAIL, "password": _ADMIN_PASSWORD})
     return r.json()["access_token"]
 
 
@@ -22,8 +43,8 @@ async def _make_product(client: AsyncClient, token: str) -> dict:
 # ── option type CRUD ──────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_create_option_type(client: AsyncClient):
-    token = await _admin_token(client)
+async def test_create_option_type(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
     product = await _make_product(client, token)
 
     r = await client.post(
@@ -38,8 +59,8 @@ async def test_create_option_type(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_add_option_value(client: AsyncClient):
-    token = await _admin_token(client)
+async def test_add_option_value(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
     product = await _make_product(client, token)
 
     opt_r = await client.post(
@@ -61,8 +82,8 @@ async def test_add_option_value(client: AsyncClient):
 # ── variant generation ────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_generate_variants_single_axis(client: AsyncClient):
-    token = await _admin_token(client)
+async def test_generate_variants_single_axis(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
     product = await _make_product(client, token)
 
     opt_r = await client.post(
@@ -90,8 +111,8 @@ async def test_generate_variants_single_axis(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_generate_variants_two_axes(client: AsyncClient):
-    token = await _admin_token(client)
+async def test_generate_variants_two_axes(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
     product = await _make_product(client, token)
 
     for axis_name, values in [("Size", ["S", "M"]), ("Colour", ["Red", "Blue"])]:
@@ -118,8 +139,8 @@ async def test_generate_variants_two_axes(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_default_variant_exists_on_new_product(client: AsyncClient):
-    token = await _admin_token(client)
+async def test_default_variant_exists_on_new_product(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
     product = await _make_product(client, token)
 
     r = await client.get(f"/api/products/{product['id']}/variants")
@@ -130,8 +151,8 @@ async def test_default_variant_exists_on_new_product(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_update_variant_sku(client: AsyncClient):
-    token = await _admin_token(client)
+async def test_update_variant_sku(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
     product = await _make_product(client, token)
 
     variants_r = await client.get(f"/api/products/{product['id']}/variants")
@@ -147,8 +168,8 @@ async def test_update_variant_sku(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_delete_option_type_deactivates_variants(client: AsyncClient):
-    token = await _admin_token(client)
+async def test_delete_option_type_deactivates_variants(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
     product = await _make_product(client, token)
 
     opt_r = await client.post(
@@ -181,8 +202,8 @@ async def test_delete_option_type_deactivates_variants(client: AsyncClient):
 # ── product detail includes variants ─────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_product_detail_includes_variants(client: AsyncClient):
-    token = await _admin_token(client)
+async def test_product_detail_includes_variants(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
     product = await _make_product(client, token)
 
     r = await client.get(f"/api/products/{product['id']}")

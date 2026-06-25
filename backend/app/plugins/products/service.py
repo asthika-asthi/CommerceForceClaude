@@ -70,6 +70,10 @@ async def create_product(data: ProductCreate, db: AsyncSession) -> Product:
 
     await db.flush()
     product_id = product.id
+
+    from app.plugins.products import variant_service
+    await variant_service.get_or_create_default_variant(product_id, db)
+
     db.expire(product)
     return await _load(product_id, db)
 

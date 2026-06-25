@@ -14,6 +14,9 @@ from app.plugins.products.schemas import (
     CsvImportResult, ImageSortItem, DuplicateGroup, DeleteDuplicatesRequest, DeleteDuplicatesResult,
 )
 from app.plugins.products import service
+from app.plugins.products import variant_router
+from app.plugins.products import variant_service
+from app.plugins.products.schemas import OptionTypeOut
 from app.shared.pagination import Page, paginate
 
 router = APIRouter()
@@ -120,14 +123,26 @@ async def delete_duplicate_products(
     return {"deleted": deleted}
 
 
-@router.get("/{product_id}", response_model=ProductOut)
+@router.get("/{product_id}", response_model=dict)
 async def get_product(product_id: str, db: AsyncSession = Depends(get_db)):
-    return await service.get_product(product_id, db)
+    product = await service.get_product(product_id, db)
+    option_types = await variant_service.list_option_types(product.id, db)
+    variants = await variant_service.list_variants(product.id, db)
+    product_dict = ProductOut.model_validate(product).model_dump()
+    product_dict["option_types"] = [OptionTypeOut.model_validate(ot).model_dump() for ot in option_types]
+    product_dict["variants"] = [variant_service.build_variant_out(v) for v in variants]
+    return product_dict
 
 
-@router.get("/by-slug/{slug}", response_model=ProductOut)
+@router.get("/by-slug/{slug}", response_model=dict)
 async def get_product_by_slug(slug: str, db: AsyncSession = Depends(get_db)):
-    return await service.get_product_by_slug(slug, db)
+    product = await service.get_product_by_slug(slug, db)
+    option_types = await variant_service.list_option_types(product.id, db)
+    variants = await variant_service.list_variants(product.id, db)
+    product_dict = ProductOut.model_validate(product).model_dump()
+    product_dict["option_types"] = [OptionTypeOut.model_validate(ot).model_dump() for ot in option_types]
+    product_dict["variants"] = [variant_service.build_variant_out(v) for v in variants]
+    return product_dict
 
 
 @router.post("", response_model=ProductOut, status_code=status.HTTP_201_CREATED,
@@ -172,3 +187,6 @@ async def delete_product(product_id: str, db: AsyncSession = Depends(get_db)):
               dependencies=[Depends(require_admin())])
 async def deactivate_product(product_id: str, db: AsyncSession = Depends(get_db)):
     return await service.update_product(product_id, type("U", (), {"model_dump": lambda s, **k: {"is_active": False}})(), db)
+
+
+router.include_router(variant_router.router)
