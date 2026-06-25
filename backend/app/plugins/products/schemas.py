@@ -73,6 +73,8 @@ class ProductOut(BaseModel):
     tags: Optional[str] = None
     images: List[ProductImageOut] = []
     primary_image: Optional[str] = None
+    option_types: List[OptionTypeOut] = []
+    variants: List[ProductVariantOut] = []
     model_config = {"from_attributes": True}
 
     @model_validator(mode="after")
@@ -133,3 +135,49 @@ class DeleteDuplicatesRequest(BaseModel):
 
 class DeleteDuplicatesResult(BaseModel):
     deleted: int
+
+
+class OptionValueOut(BaseModel):
+    id: str
+    label: str
+    sort_order: int
+    model_config = {"from_attributes": True}
+
+
+class OptionTypeOut(BaseModel):
+    id: str
+    name: str
+    sort_order: int
+    values: list[OptionValueOut] = []
+    model_config = {"from_attributes": True}
+
+
+class OptionTypeCreate(BaseModel):
+    name: str
+    sort_order: int = 0
+
+
+class OptionValueCreate(BaseModel):
+    label: str
+    sort_order: int = 0
+
+
+class VariantOptionLink(BaseModel):
+    option_type_name: str
+    option_value_label: str
+
+
+class ProductVariantOut(BaseModel):
+    id: str
+    product_id: str
+    sku: str
+    is_default: bool
+    is_active: bool
+    option_values: list[VariantOptionLink] = []
+    label: str = ""
+    model_config = {"from_attributes": True}
+
+
+class VariantUpdate(BaseModel):
+    sku: Optional[str] = None
+    is_active: Optional[bool] = None
