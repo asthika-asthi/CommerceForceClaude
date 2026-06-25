@@ -10,6 +10,15 @@ async def list_rules(db: AsyncSession) -> list[DiscountRule]:
     return result.scalars().all()
 
 
+async def get_rule(rule_id: str, db: AsyncSession) -> DiscountRule:
+    result = await db.execute(select(DiscountRule).where(DiscountRule.id == rule_id))
+    rule = result.scalar_one_or_none()
+    if not rule:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Rule not found")
+    return rule
+
+
 async def create_rule(data: DiscountRuleCreate, db: AsyncSession) -> DiscountRule:
     rule = DiscountRule(**data.model_dump())
     db.add(rule)

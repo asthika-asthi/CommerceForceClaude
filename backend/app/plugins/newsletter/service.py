@@ -48,6 +48,30 @@ async def list_subscribers(db: AsyncSession, active_only: bool = True) -> list[N
     return list(result.scalars().all())
 
 
+async def get_subscriber(subscriber_id: str, db: AsyncSession) -> NewsletterSubscriber:
+    result = await db.execute(
+        select(NewsletterSubscriber).where(NewsletterSubscriber.id == subscriber_id)
+    )
+    subscriber = result.scalar_one_or_none()
+    if not subscriber:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subscriber not found")
+    return subscriber
+
+
+async def update_subscriber(subscriber_id: str, data: dict, db: AsyncSession) -> NewsletterSubscriber:
+    subscriber = await get_subscriber(subscriber_id, db)
+    for field, value in data.items():
+        setattr(subscriber, field, value)
+    await db.flush()
+    return subscriber
+
+
+async def delete_subscriber(subscriber_id: str, db: AsyncSession) -> None:
+    subscriber = await get_subscriber(subscriber_id, db)
+    await db.delete(subscriber)
+    await db.flush()
+
+
 async def subscriber_count(db: AsyncSession) -> int:
     result = await db.execute(
         select(NewsletterSubscriber).where(NewsletterSubscriber.is_active == True)

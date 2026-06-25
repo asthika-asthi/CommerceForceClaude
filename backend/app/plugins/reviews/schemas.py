@@ -24,6 +24,12 @@ class ReviewOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ReviewUpdate(BaseModel):
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    title: Optional[str] = None
+    body: Optional[str] = None
+
+
 class ReviewSummary(BaseModel):
     average_rating: float
     total_reviews: int

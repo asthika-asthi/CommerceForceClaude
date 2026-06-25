@@ -95,6 +95,22 @@ async def create_review(user_id: str, data: ReviewCreate, db: AsyncSession) -> R
     return review
 
 
+async def update_review(review_id: str, user_id: str, data, db: AsyncSession) -> Review:
+    result = await db.execute(select(Review).where(Review.id == review_id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    if review.user_id != user_id:
+        raise HTTPException(status_code=403, detail="You can only edit your own reviews")
+    updates = data.model_dump(exclude_unset=True)
+    for field, value in updates.items():
+        setattr(review, field, value)
+    if updates:
+        review.is_approved = False
+    await db.flush()
+    return review
+
+
 async def approve_review(review_id: str, db: AsyncSession) -> Review:
     result = await db.execute(select(Review).where(Review.id == review_id))
     review = result.scalar_one_or_none()

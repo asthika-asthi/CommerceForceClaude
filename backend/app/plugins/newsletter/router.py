@@ -1,9 +1,12 @@
+import csv
+import io
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import require_admin
 from app.plugins.newsletter.schemas import (
-    SubscribeRequest, UnsubscribeRequest, SubscriberOut, SubscribeResponse,
+    SubscribeRequest, UnsubscribeRequest, SubscriberOut, SubscribeResponse, SubscriberUpdate,
 )
 from app.plugins.newsletter import service
 
@@ -31,6 +34,39 @@ async def list_subscribers(
     db: AsyncSession = Depends(get_db),
 ):
     return await service.list_subscribers(db, active_only=active_only)
+
+
+@router.patch("/subscribers/{subscriber_id}", response_model=SubscriberOut, dependencies=[Depends(require_admin())])
+async def update_subscriber(
+    subscriber_id: str,
+    data: SubscriberUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    return await service.update_subscriber(subscriber_id, data.model_dump(exclude_unset=True), db)
+
+
+@router.delete("/subscribers/{subscriber_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin())])
+async def delete_subscriber(subscriber_id: str, db: AsyncSession = Depends(get_db)):
+    await service.delete_subscriber(subscriber_id, db)
+
+
+@router.get("/subscribers/export/csv", dependencies=[Depends(require_admin())])
+async def export_subscribers_csv(
+    active_only: bool = True,
+    db: AsyncSession = Depends(get_db),
+):
+    subscribers = await service.list_subscribers(db, active_only=active_only)
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["email", "first_name", "is_active"])
+    writer.writeheader()
+    for s in subscribers:
+        writer.writerow({"email": s.email, "first_name": s.first_name or "", "is_active": s.is_active})
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="subscribers.csv"'},
+    )
 
 
 @router.get("/stats")

@@ -13,6 +13,11 @@ async def list_rules(db: AsyncSession = Depends(get_db)):
     return await service.list_rules(db)
 
 
+@router.get("/{rule_id}", response_model=DiscountRuleOut, dependencies=[Depends(require_admin())])
+async def get_rule(rule_id: str, db: AsyncSession = Depends(get_db)):
+    return await service.get_rule(rule_id, db)
+
+
 @router.post("", response_model=DiscountRuleOut, status_code=201, dependencies=[Depends(require_admin())])
 async def create_rule(data: DiscountRuleCreate, db: AsyncSession = Depends(get_db)):
     return await service.create_rule(data, db)

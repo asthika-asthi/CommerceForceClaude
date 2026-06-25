@@ -38,6 +38,11 @@ async def my_transactions(
     return await service.list_transactions(current_user.id, db)
 
 
+@router.get("/accounts", response_model=list[LoyaltyAccountOut], dependencies=[Depends(require_admin())])
+async def list_all_accounts(db: AsyncSession = Depends(get_db)):
+    return await service.list_all_accounts(db)
+
+
 @router.post("/adjust", response_model=LoyaltyAccountOut, dependencies=[Depends(require_admin())])
 async def manual_adjust(data: ManualAdjustRequest, db: AsyncSession = Depends(get_db)):
     return await service.manual_adjust(data, db)

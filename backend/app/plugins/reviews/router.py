@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_current_user_optional, require_admin
 from app.plugins.reviews import service
-from app.plugins.reviews.schemas import ReviewCreate, ReviewOut, ReviewSummary
+from app.plugins.reviews.schemas import ReviewCreate, ReviewOut, ReviewSummary, ReviewUpdate
 
 router = APIRouter()
 
@@ -37,6 +37,16 @@ async def create_review(
     db: AsyncSession = Depends(get_db),
 ):
     return await service.create_review(current_user.id, data, db)
+
+
+@router.patch("/{review_id}", response_model=ReviewOut)
+async def update_review(
+    review_id: str,
+    data: ReviewUpdate,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await service.update_review(review_id, current_user.id, data, db)
 
 
 @router.patch("/{review_id}/approve", response_model=ReviewOut)

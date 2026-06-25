@@ -19,6 +19,11 @@ class SubscriberOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class SubscriberUpdate(BaseModel):
+    first_name: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
 class SubscribeResponse(BaseModel):
     message: str
     unsubscribe_token: str

@@ -56,6 +56,13 @@ async def get_account(user_id: str, db: AsyncSession) -> LoyaltyAccount:
     return account
 
 
+async def list_all_accounts(db: AsyncSession) -> list[LoyaltyAccount]:
+    result = await db.execute(
+        select(LoyaltyAccount).order_by(LoyaltyAccount.points_balance.desc())
+    )
+    return list(result.scalars().all())
+
+
 async def list_transactions(user_id: str, db: AsyncSession) -> list[LoyaltyTransaction]:
     result = await db.execute(
         select(LoyaltyTransaction)
