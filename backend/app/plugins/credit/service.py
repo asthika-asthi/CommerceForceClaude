@@ -65,3 +65,9 @@ async def restore_credit(user_id: str, amount: Decimal, db: AsyncSession) -> Cre
     account.used_credit = max(Decimal("0"), account.used_credit - amount)
     await db.flush()
     return account
+
+
+async def delete_account(user_id: str, db: AsyncSession) -> None:
+    account = await _load(user_id, db)
+    await db.delete(account)
+    await db.flush()

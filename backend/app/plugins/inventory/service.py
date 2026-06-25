@@ -36,6 +36,17 @@ async def list_warehouses(db: AsyncSession) -> list[Warehouse]:
     return list(result.scalars().all())
 
 
+async def delete_warehouse(warehouse_id: str, db: AsyncSession) -> None:
+    wh = await _load_warehouse(warehouse_id, db)
+    if wh.is_default:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete the default warehouse. Reassign the default to another warehouse first.",
+        )
+    await db.delete(wh)
+    await db.flush()
+
+
 async def update_warehouse(warehouse_id: str, data: WarehouseUpdate, db: AsyncSession) -> Warehouse:
     wh = await _load_warehouse(warehouse_id, db)
     if data.is_default:

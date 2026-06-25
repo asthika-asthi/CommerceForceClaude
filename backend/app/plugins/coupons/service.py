@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update as sa_update
 from fastapi import HTTPException, status
 from app.plugins.coupons.models import Coupon, CouponUsage, DiscountType
 from app.plugins.coupons.schemas import CouponCreate, CouponUpdate
@@ -43,10 +43,21 @@ async def list_coupons(db: AsyncSession) -> list[Coupon]:
 
 async def update_coupon(coupon_id: str, data: CouponUpdate, db: AsyncSession) -> Coupon:
     coupon = await get_coupon(coupon_id, db)
-    for field, value in data.model_dump(exclude_unset=True).items():
+    updates = data.model_dump(exclude_unset=True)
+    if updates.get("show_on_homepage"):
+        await db.execute(
+            sa_update(Coupon).where(Coupon.id != coupon_id).values(show_on_homepage=False)
+        )
+    for field, value in updates.items():
         setattr(coupon, field, value)
     await db.flush()
     return coupon
+
+
+async def delete_coupon(coupon_id: str, db: AsyncSession) -> None:
+    coupon = await get_coupon(coupon_id, db)
+    await db.delete(coupon)
+    await db.flush()
 
 
 async def validate_coupon(code: str, subtotal: Decimal, db: AsyncSession) -> tuple[Coupon, Decimal]:

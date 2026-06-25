@@ -32,6 +32,11 @@ async def update_warehouse(
     return await service.update_warehouse(warehouse_id, data, db)
 
 
+@router.delete("/warehouses/{warehouse_id}", status_code=204, dependencies=[Depends(require_admin())])
+async def delete_warehouse(warehouse_id: str, db: AsyncSession = Depends(get_db)):
+    await service.delete_warehouse(warehouse_id, db)
+
+
 @router.post("/warehouses/{warehouse_id}/stock", response_model=WarehouseStockOut,
              dependencies=[Depends(require_admin())])
 async def set_stock(warehouse_id: str, data: StockSetRequest, db: AsyncSession = Depends(get_db)):

@@ -122,6 +122,20 @@ async def update_status(order_id: str, data: UpdateStatusRequest, db: AsyncSessi
         ):
             await _issue_stripe_refund(order)
 
+        # Restore credit and reverse loyalty when admin cancels
+        if order.payment_method == PaymentMethod.credit_limit and order.user_id:
+            try:
+                from app.plugins.credit import service as credit_service
+                await credit_service.restore_credit(order.user_id, order.total, db)
+            except (ImportError, HTTPException) as exc:
+                logger.warning("Credit restore failed for order %s: %s", order.id, exc)
+        if order.user_id:
+            try:
+                from app.plugins.loyalty import service as loyalty_service
+                await loyalty_service.reverse_order_points(order.user_id, order.id, db)
+            except ImportError:
+                pass
+
     return order
 
 

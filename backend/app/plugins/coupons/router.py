@@ -42,6 +42,11 @@ async def update_coupon(coupon_id: str, data: CouponUpdate, db: AsyncSession = D
     return await service.update_coupon(coupon_id, data, db)
 
 
+@router.delete("/{coupon_id}", status_code=204, dependencies=[Depends(require_admin())])
+async def delete_coupon(coupon_id: str, db: AsyncSession = Depends(get_db)):
+    await service.delete_coupon(coupon_id, db)
+
+
 @router.get("/validate", response_model=CouponValidateOut)
 async def validate_coupon(
     code: str = Query(...),

@@ -23,6 +23,12 @@ export default function InventoryPage() {
   const [createError, setCreateError] = useState("")
   const [stockError, setStockError] = useState("")
   const [pendingWhId, setPendingWhId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const deleteWH = useMutation({
+    mutationFn: (id: string) => api.del(`/api/inventory/warehouses/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["warehouses"] }); setDeleteTarget(null) },
+  })
 
   const createWH = useMutation({
     mutationFn: (d: typeof createForm) => api.post("/api/inventory/warehouses", d),
@@ -103,7 +109,15 @@ export default function InventoryPage() {
                     <span className="font-mono text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{wh.code}</span>
                     {wh.is_default && <span className="text-xs text-blue-600 font-medium">Default</span>}
                   </div>
-                  <StatusBadge value={wh.is_active ? "active" : "inactive"} />
+                  <div className="flex items-center gap-3">
+                    <StatusBadge value={wh.is_active ? "active" : "inactive"} />
+                    {!wh.is_default && (
+                      <button onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: wh.id, name: wh.name }) }}
+                        className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50">
+                        Delete
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {expanded[wh.id] && (
@@ -183,6 +197,22 @@ export default function InventoryPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="font-semibold text-slate-800 mb-2">Delete warehouse?</h3>
+            <p className="text-sm text-slate-600 mb-4">This will permanently delete <span className="font-semibold">{deleteTarget.name}</span> and all its stock records.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg text-slate-600">Cancel</button>
+              <button onClick={() => deleteWH.mutate(deleteTarget.id)} disabled={deleteWH.isPending}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg disabled:opacity-50">
+                {deleteWH.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

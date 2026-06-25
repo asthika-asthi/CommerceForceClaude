@@ -37,6 +37,21 @@ services:
     depends_on:
       - backend
 
+  backup:
+    image: alpine:3.19
+    restart: unless-stopped
+    volumes:
+      - cf_data:/data:ro
+      - cf_backups:/backups
+      - ./scripts/docker-backup.sh:/usr/local/bin/run-backup:ro
+    command: >
+      /bin/sh -c "apk add --no-cache sqlite &&
+        chmod +x /usr/local/bin/run-backup &&
+        echo '0 2 * * * /usr/local/bin/run-backup >> /proc/1/fd/1 2>&1' | crontab - &&
+        crond -f -l 8"
+    depends_on:
+      - backend
+
   # ── nginx: SSL termination + reverse proxy ─────────────────────────────────
   # Uncomment this service once DNS is pointing to the VPS and you have run certbot.
   # See docs/new-client-setup.md Section 12 for step-by-step instructions.

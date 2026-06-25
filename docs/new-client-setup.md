@@ -406,7 +406,13 @@ docker compose down -v
 
 ### 11.1 Daily automated backup
 
-Add a cron job on the VPS to run the backup script at 02:00 UTC every day:
+The backup runs automatically via the `backup` service in `docker-compose.yml`. It starts with the rest of the application — no manual setup required. The backup service:
+- Runs `scripts/docker-backup.sh` inside an Alpine container at 02:00 UTC every day
+- Uses SQLite's safe online backup API — safe to run against the live database without locking
+- Saves to the `cf_backups` Docker volume as `YYYY-MM-DD.db`
+- Automatically prunes backups older than 30 days
+
+**Optional VPS cron fallback** — if you want a redundant on-disk backup in addition to the Docker volume:
 
 ```bash
 crontab -e
@@ -414,13 +420,8 @@ crontab -e
 
 Add this line:
 ```
-0 2 * * * cd /opt/commerceforce/CommerceForceClaude && bash scripts/backup.sh >> /var/log/commerceforce-backup.log 2>&1
+0 3 * * * docker compose -f /opt/commerceforce/CommerceForceClaude/docker-compose.yml exec -T backup /usr/local/bin/run-backup >> /var/log/commerceforce-backup.log 2>&1
 ```
-
-The script:
-- Uses SQLite's safe online backup API — runs against the live database without locking
-- Saves to `backups/YYYY-MM-DD.db` in the project directory
-- Automatically prunes backups older than 30 days
 
 ### 11.2 On-demand backup
 

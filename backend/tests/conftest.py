@@ -56,6 +56,9 @@ async def setup_test_db():
 
 @pytest.fixture(autouse=True)
 async def clean_tables():
+    async with test_engine.begin() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.execute(table.delete())
     yield
     async with test_engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):

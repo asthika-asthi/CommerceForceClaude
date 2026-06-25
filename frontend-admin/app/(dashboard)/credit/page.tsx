@@ -5,7 +5,7 @@ import { api } from "@/lib/api"
 import type { CreditAccount } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
-import { Pencil, X } from "lucide-react"
+import { Pencil, Trash2, X } from "lucide-react"
 
 export default function CreditPage() {
   const qc = useQueryClient()
@@ -19,6 +19,7 @@ export default function CreditPage() {
   const [editForm, setEditForm] = useState({ credit_limit: "", is_active: true, notes: "" })
   const [createError, setCreateError] = useState("")
   const [editError, setEditError] = useState("")
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const create = useMutation({
     mutationFn: (d: typeof createForm) =>
@@ -41,6 +42,11 @@ export default function CreditPage() {
       setEditError("")
     },
     onError: (e) => setEditError(e instanceof Error ? e.message : "Failed"),
+  })
+
+  const deleteAccount = useMutation({
+    mutationFn: (userId: string) => api.del(`/api/credit/accounts/${userId}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["credit-accounts"] }); setDeleteTarget(null) },
   })
 
   function startEdit(a: CreditAccount) {
@@ -68,7 +74,7 @@ export default function CreditPage() {
               className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Credit Limit ($) *</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Credit Limit (£) *</label>
             <input required type="number" min="0" step="0.01" value={createForm.credit_limit}
               onChange={(e) => setCreateForm((f) => ({ ...f, credit_limit: e.target.value }))}
               className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -109,16 +115,19 @@ export default function CreditPage() {
                 <React.Fragment key={a.id}>
                   <tr className={`hover:bg-slate-50 ${editId === a.user_id ? "bg-blue-50" : ""}`}>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-700">{a.user_id.slice(0, 12)}…</td>
-                    <td className="px-4 py-2.5 text-slate-800">${parseFloat(a.credit_limit).toFixed(2)}</td>
-                    <td className="px-4 py-2.5 text-slate-600">${parseFloat(a.used_credit).toFixed(2)}</td>
-                    <td className="px-4 py-2.5 font-medium text-green-700">${parseFloat(a.available_credit).toFixed(2)}</td>
+                    <td className="px-4 py-2.5 text-slate-800">£{parseFloat(a.credit_limit).toFixed(2)}</td>
+                    <td className="px-4 py-2.5 text-slate-600">£{parseFloat(a.used_credit).toFixed(2)}</td>
+                    <td className="px-4 py-2.5 font-medium text-green-700">£{parseFloat(a.available_credit).toFixed(2)}</td>
                     <td className="px-4 py-2.5"><StatusBadge value={a.is_active ? "active" : "inactive"} /></td>
                     <td className="px-4 py-2.5">
-                      {editId === a.user_id ? (
-                        <button onClick={() => { setEditId(null); setEditError("") }} disabled={update.isPending} className="p-1.5 rounded hover:bg-slate-100 text-slate-400 disabled:opacity-50"><X size={13} /></button>
-                      ) : (
-                        <button onClick={() => startEdit(a)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600"><Pencil size={13} /></button>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {editId === a.user_id ? (
+                          <button onClick={() => { setEditId(null); setEditError("") }} disabled={update.isPending} className="p-1.5 rounded hover:bg-slate-100 text-slate-400 disabled:opacity-50"><X size={13} /></button>
+                        ) : (
+                          <button onClick={() => startEdit(a)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600"><Pencil size={13} /></button>
+                        )}
+                        <button onClick={() => setDeleteTarget(a.user_id)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600"><Trash2 size={13} /></button>
+                      </div>
                     </td>
                   </tr>
                   {editId === a.user_id && (
@@ -127,7 +136,7 @@ export default function CreditPage() {
                         <form onSubmit={(e) => { e.preventDefault(); update.mutate({ userId: a.user_id, data: editForm }) }}
                           className="flex gap-4 items-end flex-wrap">
                           <div>
-                            <label className="block text-xs font-medium text-slate-600 mb-1">Credit Limit ($)</label>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Credit Limit (£)</label>
                             <input type="number" min="0" step="0.01" required value={editForm.credit_limit}
                               onChange={(e) => setEditForm((f) => ({ ...f, credit_limit: e.target.value }))}
                               className="w-32 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -156,6 +165,22 @@ export default function CreditPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="font-semibold text-slate-800 mb-2">Delete credit account?</h3>
+            <p className="text-sm text-slate-600 mb-4">This will permanently remove this account. Any outstanding credit will not be automatically reconciled.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg text-slate-600">Cancel</button>
+              <button onClick={() => deleteAccount.mutate(deleteTarget)} disabled={deleteAccount.isPending}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg disabled:opacity-50">
+                {deleteAccount.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

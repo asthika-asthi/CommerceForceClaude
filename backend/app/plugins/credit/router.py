@@ -35,3 +35,8 @@ async def update_account(
     db: AsyncSession = Depends(get_db),
 ):
     return await service.update_account(user_id, data, db)
+
+
+@router.delete("/accounts/{user_id}", status_code=204, dependencies=[Depends(require_admin())])
+async def delete_account(user_id: str, db: AsyncSession = Depends(get_db)):
+    await service.delete_account(user_id, db)

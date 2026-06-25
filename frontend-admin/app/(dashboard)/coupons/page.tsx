@@ -18,6 +18,7 @@ export default function CouponsPage() {
   })
   const [error, setError] = useState("")
   const [showForm, setShowForm] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; code: string } | null>(null)
 
   const create = useMutation({
     mutationFn: (d: typeof form) =>
@@ -46,6 +47,11 @@ export default function CouponsPage() {
     mutationFn: ({ id, value }: { id: string; value: boolean }) =>
       api.put(`/api/coupons/${id}`, { show_on_homepage: value }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["coupons"] }),
+  })
+
+  const deleteCoupon = useMutation({
+    mutationFn: (id: string) => api.del(`/api/coupons/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["coupons"] }); setDeleteTarget(null) },
   })
 
   return (
@@ -120,7 +126,7 @@ export default function CouponsPage() {
                   <td className="px-4 py-2.5 text-slate-700">{c.name}</td>
                   <td className="px-4 py-2.5 text-slate-500 capitalize">{c.discount_type}</td>
                   <td className="px-4 py-2.5 text-slate-700">
-                    {c.discount_type === "percentage" ? `${c.discount_value}%` : `$${c.discount_value}`}
+                    {c.discount_type === "percentage" ? `${c.discount_value}%` : `£${c.discount_value}`}
                   </td>
                   <td className="px-4 py-2.5 text-slate-500">
                     {c.used_count}{c.max_uses ? `/${c.max_uses}` : ""}
@@ -142,16 +148,34 @@ export default function CouponsPage() {
                       {c.show_on_homepage && <span className="text-xs text-blue-600 font-medium">On</span>}
                     </div>
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2.5 flex items-center gap-2">
                     {c.is_active && (
                       <button onClick={() => deactivate.mutate({ id: c.id })}
-                        className="text-xs text-red-500 hover:text-red-700">Deactivate</button>
+                        className="text-xs text-orange-500 hover:text-orange-700">Deactivate</button>
                     )}
+                    <button onClick={() => setDeleteTarget({ id: c.id, code: c.code })}
+                      className="text-xs text-red-500 hover:text-red-700">Delete</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="font-semibold text-slate-800 mb-2">Delete coupon?</h3>
+            <p className="text-sm text-slate-600 mb-4">This will permanently delete coupon <span className="font-mono font-bold">{deleteTarget.code}</span>. This cannot be undone.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg text-slate-600">Cancel</button>
+              <button onClick={() => deleteCoupon.mutate(deleteTarget.id)} disabled={deleteCoupon.isPending}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg disabled:opacity-50">
+                {deleteCoupon.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
