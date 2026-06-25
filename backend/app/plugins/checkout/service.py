@@ -7,7 +7,7 @@ from sqlalchemy import select
 from fastapi import HTTPException, status
 from app.core.config import settings
 from app.plugins.cart.models import Cart
-from app.plugins.products.models import Product
+from app.plugins.products.models import Product, ProductVariant
 from app.plugins.products import service as product_service
 from app.plugins.orders import service as order_service
 from app.plugins.orders.models import Order, OrderStatus, PaymentMethod, PaymentStatus
@@ -45,12 +45,22 @@ async def _resolve_cart_items(
 async def _items_from_cart(cart: Cart, db: AsyncSession) -> list[dict]:
     items = []
     for cart_item in cart.items:
-        result = await db.execute(select(Product).where(Product.id == cart_item.product_id))
+        # Load variant first, then product via variant
+        variant_result = await db.execute(
+            select(ProductVariant).where(ProductVariant.id == cart_item.variant_id)
+        )
+        variant = variant_result.scalar_one_or_none()
+        if not variant or not variant.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Variant '{cart_item.variant_id}' is no longer available"
+            )
+        result = await db.execute(select(Product).where(Product.id == variant.product_id))
         product = result.scalar_one_or_none()
         if not product or not product.is_active:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product '{cart_item.product_id}' is no longer available"
+                detail=f"Product '{variant.product_id}' is no longer available"
             )
         if product.stock_quantity < cart_item.quantity:
             raise HTTPException(

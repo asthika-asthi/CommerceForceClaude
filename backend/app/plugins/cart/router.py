@@ -38,33 +38,33 @@ async def add_item(
     db: AsyncSession = Depends(get_db),
 ):
     if current_user:
-        return await service.add_item(data.product_id, data.quantity, db, user_id=current_user.id)
+        return await service.add_item(data.variant_id, data.quantity, db, user_id=current_user.id)
     session_id = _get_session_id(request, response)
-    return await service.add_item(data.product_id, data.quantity, db, session_id=session_id)
+    return await service.add_item(data.variant_id, data.quantity, db, session_id=session_id)
 
 
-@router.put("/items/{product_id}", response_model=CartOut)
+@router.put("/items/{variant_id}", response_model=CartOut)
 async def update_item(
-    product_id: str, data: UpdateItemRequest, request: Request, response: Response,
+    variant_id: str, data: UpdateItemRequest, request: Request, response: Response,
     current_user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
     if current_user:
-        return await service.update_item(product_id, data.quantity, db, user_id=current_user.id)
+        return await service.update_item(variant_id, data.quantity, db, user_id=current_user.id)
     session_id = _get_session_id(request, response)
-    return await service.update_item(product_id, data.quantity, db, session_id=session_id)
+    return await service.update_item(variant_id, data.quantity, db, session_id=session_id)
 
 
-@router.delete("/items/{product_id}", response_model=CartOut)
+@router.delete("/items/{variant_id}", response_model=CartOut)
 async def remove_item(
-    product_id: str, request: Request, response: Response,
+    variant_id: str, request: Request, response: Response,
     current_user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
     if current_user:
-        return await service.remove_item(product_id, db, user_id=current_user.id)
+        return await service.remove_item(variant_id, db, user_id=current_user.id)
     session_id = _get_session_id(request, response)
-    return await service.remove_item(product_id, db, session_id=session_id)
+    return await service.remove_item(variant_id, db, session_id=session_id)
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)

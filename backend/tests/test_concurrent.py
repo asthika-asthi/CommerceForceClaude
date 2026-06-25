@@ -89,12 +89,24 @@ async def _create_product(
     return r.json()["id"]
 
 
+async def _get_default_variant_id(client: AsyncClient, product_id: str, admin_token: str) -> str:
+    """Return the default variant_id for a product."""
+    r = await client.get(
+        f"/api/products/{product_id}/variants",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200, r.text
+    variants = r.json()
+    default = next((v for v in variants if v["is_default"]), variants[0])
+    return default["id"]
+
+
 async def _add_to_cart(
-    client: AsyncClient, token: str, product_id: str, qty: int = 1
+    client: AsyncClient, token: str, variant_id: str, qty: int = 1
 ) -> None:
     r = await client.post(
         "/api/cart/items",
-        json={"product_id": product_id, "quantity": qty},
+        json={"variant_id": variant_id, "quantity": qty},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200, r.text
@@ -124,14 +136,15 @@ async def test_concurrent_checkout_no_oversell(concurrent_client: AsyncClient):
     product_id = await _create_product(
         concurrent_client, admin_token, name="Oversell Widget", stock=1
     )
+    variant_id = await _get_default_variant_id(concurrent_client, product_id, admin_token)
 
     # Register two separate customers so they have independent carts.
     cust1_token = await _register_and_token(concurrent_client, "cc_cust1@example.com")
     cust2_token = await _register_and_token(concurrent_client, "cc_cust2@example.com")
 
     # Each customer adds the item to their own cart (sequential — no contention yet).
-    await _add_to_cart(concurrent_client, cust1_token, product_id, qty=1)
-    await _add_to_cart(concurrent_client, cust2_token, product_id, qty=1)
+    await _add_to_cart(concurrent_client, cust1_token, variant_id, qty=1)
+    await _add_to_cart(concurrent_client, cust2_token, variant_id, qty=1)
 
     # Fire both checkouts concurrently.
     r1, r2 = await asyncio.gather(
@@ -187,12 +200,13 @@ async def test_concurrent_coupon_usage_not_exceeded(concurrent_client: AsyncClie
     product_id = await _create_product(
         concurrent_client, admin_token, name="Coupon Widget", stock=10
     )
+    variant_id = await _get_default_variant_id(concurrent_client, product_id, admin_token)
 
     # Register two customers and populate their carts before concurrent checkout.
     cust1_token = await _register_and_token(concurrent_client, "cc_coup1@example.com")
     cust2_token = await _register_and_token(concurrent_client, "cc_coup2@example.com")
-    await _add_to_cart(concurrent_client, cust1_token, product_id, qty=1)
-    await _add_to_cart(concurrent_client, cust2_token, product_id, qty=1)
+    await _add_to_cart(concurrent_client, cust1_token, variant_id, qty=1)
+    await _add_to_cart(concurrent_client, cust2_token, variant_id, qty=1)
 
     # Fire both checkouts concurrently, each applying the same coupon.
     r1, r2 = await asyncio.gather(
@@ -363,9 +377,11 @@ async def test_concurrent_credit_independent_limits(concurrent_client: AsyncClie
     prod1_id = await _create_product(
         concurrent_client, admin_token, name="Credit Widget A", price="75.00", stock=10
     )
+    prod1_variant_id = await _get_default_variant_id(concurrent_client, prod1_id, admin_token)
     prod2_id = await _create_product(
         concurrent_client, admin_token, name="Credit Widget B", price="75.00", stock=10
     )
+    prod2_variant_id = await _get_default_variant_id(concurrent_client, prod2_id, admin_token)
 
     # Two separate customers, each with their own $100 credit limit.
     cust1_token = await _register_and_token(concurrent_client, "cc_credit1@example.com")
@@ -392,8 +408,8 @@ async def test_concurrent_credit_independent_limits(concurrent_client: AsyncClie
     )
 
     # Each customer adds their own product to their own cart.
-    await _add_to_cart(concurrent_client, cust1_token, prod1_id, qty=1)
-    await _add_to_cart(concurrent_client, cust2_token, prod2_id, qty=1)
+    await _add_to_cart(concurrent_client, cust1_token, prod1_variant_id, qty=1)
+    await _add_to_cart(concurrent_client, cust2_token, prod2_variant_id, qty=1)
 
     # Fire both credit checkouts concurrently.
     rc1, rc2 = await asyncio.gather(
@@ -460,16 +476,18 @@ async def test_concurrent_credit_no_double_spend(concurrent_client: AsyncClient)
     prod1_id = await _create_product(
         concurrent_client, admin_token, name="OverLimit Widget A", price="75.00", stock=10
     )
+    prod1_variant_id = await _get_default_variant_id(concurrent_client, prod1_id, admin_token)
     prod2_id = await _create_product(
         concurrent_client, admin_token, name="OverLimit Widget B", price="75.00", stock=10
     )
+    prod2_variant_id = await _get_default_variant_id(concurrent_client, prod2_id, admin_token)
 
     # We need two separate cart states for the same user, which is impossible
     # with a single user account (one cart per user).  Instead, add BOTH items
     # to the same cart and fire ONE checkout — total is $150 > $100 limit.
     # Then verify it's blocked.  This is the meaningful single-user credit test.
-    await _add_to_cart(concurrent_client, cust_token, prod1_id, qty=1)
-    await _add_to_cart(concurrent_client, cust_token, prod2_id, qty=1)
+    await _add_to_cart(concurrent_client, cust_token, prod1_variant_id, qty=1)
+    await _add_to_cart(concurrent_client, cust_token, prod2_variant_id, qty=1)
 
     # A single checkout for $150 against a $100 limit must fail.
     r = await concurrent_client.post(

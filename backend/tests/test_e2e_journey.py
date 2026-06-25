@@ -48,9 +48,19 @@ async def _create_product(client, admin_token, name="Journey Widget", price="50.
     return r.json()
 
 
-async def _add_to_cart(client, token, product_id, quantity=1):
+async def _get_default_variant_id(client, product_id: str, admin_token: str) -> str:
+    """Return the default variant_id for a product."""
+    r = await client.get(f"/api/products/{product_id}/variants",
+                         headers={"Authorization": f"Bearer {admin_token}"})
+    assert r.status_code == 200, r.text
+    variants = r.json()
+    default = next((v for v in variants if v["is_default"]), variants[0])
+    return default["id"]
+
+
+async def _add_to_cart(client, token, variant_id, quantity=1):
     r = await client.post("/api/cart/items", json={
-        "product_id": product_id, "quantity": quantity,
+        "variant_id": variant_id, "quantity": quantity,
     }, headers={"Authorization": f"Bearer {token}"})
     assert r.status_code in (200, 201), r.text
     return r.json()
@@ -71,7 +81,9 @@ async def test_b2c_full_journey(client: AsyncClient, db):
     admin_h = {"Authorization": f"Bearer {admin_token}"}
 
     product_a = await _create_product(client, admin_token, name="Wireless Headphones", price="79.99", stock=10)
+    product_a_variant_id = await _get_default_variant_id(client, product_a["id"], admin_token)
     product_b = await _create_product(client, admin_token, name="USB-C Hub", price="34.99", stock=15)
+    product_b_variant_id = await _get_default_variant_id(client, product_b["id"], admin_token)
 
     coupon_r = await client.post("/api/coupons", json={
         "code": "WELCOME20",
@@ -110,10 +122,10 @@ async def test_b2c_full_journey(client: AsyncClient, db):
     assert validate_r.json()["valid"] is True
 
     # — Cart: add two products —
-    cart_after_a = await _add_to_cart(client, cust_token, product_a["id"], quantity=1)
+    cart_after_a = await _add_to_cart(client, cust_token, product_a_variant_id, quantity=1)
     assert cart_after_a["item_count"] == 1
 
-    cart_after_b = await _add_to_cart(client, cust_token, product_b["id"], quantity=2)
+    cart_after_b = await _add_to_cart(client, cust_token, product_b_variant_id, quantity=2)
     assert cart_after_b["item_count"] == 3
 
     # — Cart: view —
@@ -186,12 +198,13 @@ async def test_loyalty_journey(client: AsyncClient, db):
     assert cfg_r.status_code == 200, cfg_r.text
 
     product = await _create_product(client, admin_token, name="Loyalty Item", price="40.00", stock=20)
+    product_variant_id = await _get_default_variant_id(client, product["id"], admin_token)
 
     cust_token = await _register_customer(client, email="loyalty_cust@example.com")
     cust_h = {"Authorization": f"Bearer {cust_token}"}
 
     # — First order: earns points —
-    await _add_to_cart(client, cust_token, product["id"], quantity=1)
+    await _add_to_cart(client, cust_token, product_variant_id, quantity=1)
     checkout_r = await client.post("/api/checkout", json={"payment_method": "cash"}, headers=cust_h)
     assert checkout_r.status_code == 201, checkout_r.text
 
@@ -202,7 +215,7 @@ async def test_loyalty_journey(client: AsyncClient, db):
     assert earned > 0, f"Expected points after $40 order, got {earned}"
 
     # — Second order: redeem points —
-    await _add_to_cart(client, cust_token, product["id"], quantity=1)
+    await _add_to_cart(client, cust_token, product_variant_id, quantity=1)
     redeem_r = await client.post("/api/checkout", json={
         "payment_method": "cash",
         "redeem_points": earned,
@@ -346,13 +359,14 @@ async def test_guest_checkout_journey(client: AsyncClient, db):
 
     admin_token = await _make_admin(client, db, email="guest_admin@example.com")
     product = await _create_product(client, admin_token, name="Guest Product", price="25.00", stock=10)
+    product_variant_id = await _get_default_variant_id(client, product["id"], admin_token)
 
     # — Guest browses (no token) —
     products_r = await client.get("/api/products")
     assert products_r.status_code == 200
 
     # — Guest adds to cart —
-    cart_r = await client.post("/api/cart/items", json={"product_id": product["id"], "quantity": 1})
+    cart_r = await client.post("/api/cart/items", json={"variant_id": product_variant_id, "quantity": 1})
     assert cart_r.status_code in (200, 201), cart_r.text
     assert cart_r.json()["item_count"] == 1
 

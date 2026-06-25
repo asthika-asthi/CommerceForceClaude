@@ -27,7 +27,12 @@ async def make_product_and_cart(client: AsyncClient, admin_token: str, cust_toke
                                                      "category_id": cat.json()["id"]},
                              headers={"Authorization": f"Bearer {admin_token}"})
     product_id = prod.json()["id"]
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 1},
+    # Get default variant for this product
+    variants_r = await client.get(f"/api/products/{product_id}/variants",
+                                   headers={"Authorization": f"Bearer {admin_token}"})
+    variants = variants_r.json()
+    variant_id = next((v["id"] for v in variants if v["is_default"]), variants[0]["id"])
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 1},
                       headers={"Authorization": f"Bearer {cust_token}"})
     return product_id
 

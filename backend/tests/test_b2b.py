@@ -35,6 +35,18 @@ async def _create_product(client, admin_token, name="B2B Widget", price="100.00"
     return r.json()["id"]
 
 
+async def _get_default_variant_id(client, product_id: str, admin_token: str) -> str:
+    """Return the default variant_id for a product."""
+    r = await client.get(
+        f"/api/products/{product_id}/variants",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200, r.text
+    variants = r.json()
+    default = next((v for v in variants if v["is_default"]), variants[0])
+    return default["id"]
+
+
 # ── RFQ ────────────────────────────────────────────────────────────────────────
 
 async def test_create_rfq(client: AsyncClient, db):
@@ -206,9 +218,10 @@ async def test_checkout_with_credit(client: AsyncClient, db):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     product_id = await _create_product(client, admin_token, price="100.00", stock=10)
+    variant_id = await _get_default_variant_id(client, product_id, admin_token)
     await client.post(
         "/api/cart/items",
-        json={"product_id": product_id, "quantity": 2},
+        json={"variant_id": variant_id, "quantity": 2},
         headers={"Authorization": f"Bearer {cust_token}"},
     )
     r = await client.post(
@@ -232,9 +245,10 @@ async def test_credit_balance_deducted_after_checkout(client: AsyncClient, db):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     product_id = await _create_product(client, admin_token, price="200.00", stock=10)
+    variant_id = await _get_default_variant_id(client, product_id, admin_token)
     await client.post(
         "/api/cart/items",
-        json={"product_id": product_id, "quantity": 1},
+        json={"variant_id": variant_id, "quantity": 1},
         headers={"Authorization": f"Bearer {cust_token}"},
     )
     await client.post(
@@ -260,9 +274,10 @@ async def test_credit_insufficient_blocks_checkout(client: AsyncClient, db):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     product_id = await _create_product(client, admin_token, price="500.00", stock=10)
+    variant_id = await _get_default_variant_id(client, product_id, admin_token)
     await client.post(
         "/api/cart/items",
-        json={"product_id": product_id, "quantity": 1},
+        json={"variant_id": variant_id, "quantity": 1},
         headers={"Authorization": f"Bearer {cust_token}"},
     )
     r = await client.post(

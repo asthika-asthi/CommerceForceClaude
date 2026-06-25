@@ -108,23 +108,39 @@ async def test_product_sale_price(client: AsyncClient, db):
 # ── CART ───────────────────────────────────────────────────────────────────────
 
 async def _create_product(client, token, name="Widget", price="10.00", stock=50) -> str:
+    """Create a product and return its product_id (for stock/product lookups)."""
     r = await client.post("/api/products", json={"name": name, "price": price, "stock_quantity": stock}, headers={"Authorization": f"Bearer {token}"})
     return r.json()["id"]
+
+
+async def _get_default_variant_id(client, product_id: str, token: str) -> str:
+    """Return the default variant_id for a product (used for cart operations)."""
+    r = await client.get(f"/api/products/{product_id}/variants", headers={"Authorization": f"Bearer {token}"})
+    variants = r.json()
+    default = next((v for v in variants if v["is_default"]), variants[0])
+    return default["id"]
+
+
+async def _create_product_and_variant(client, token, name="Widget", price="10.00", stock=50):
+    """Create a product and return (product_id, variant_id)."""
+    product_id = await _create_product(client, token, name=name, price=price, stock=stock)
+    variant_id = await _get_default_variant_id(client, product_id, token)
+    return product_id, variant_id
 
 
 async def test_cart_add_item_authenticated(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
-    product_id = await _create_product(client, admin_token)
-    r = await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 2}, headers={"Authorization": f"Bearer {cust_token}"})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token)
+    r = await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 2}, headers={"Authorization": f"Bearer {cust_token}"})
     assert r.status_code == 200
     assert r.json()["item_count"] == 2
 
 
 async def test_cart_add_item_guest(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
-    product_id = await _create_product(client, admin_token, name="Guest Item")
-    r = await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 1})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token, name="Guest Item")
+    r = await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 1})
     assert r.status_code == 200
     assert r.json()["item_count"] == 1
 
@@ -132,9 +148,9 @@ async def test_cart_add_item_guest(client: AsyncClient, db):
 async def test_cart_update_quantity(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
-    product_id = await _create_product(client, admin_token)
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 1}, headers={"Authorization": f"Bearer {cust_token}"})
-    r = await client.put(f"/api/cart/items/{product_id}", json={"quantity": 5}, headers={"Authorization": f"Bearer {cust_token}"})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 1}, headers={"Authorization": f"Bearer {cust_token}"})
+    r = await client.put(f"/api/cart/items/{variant_id}", json={"quantity": 5}, headers={"Authorization": f"Bearer {cust_token}"})
     assert r.status_code == 200
     assert r.json()["item_count"] == 5
 
@@ -142,9 +158,9 @@ async def test_cart_update_quantity(client: AsyncClient, db):
 async def test_cart_remove_item(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
-    product_id = await _create_product(client, admin_token)
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 3}, headers={"Authorization": f"Bearer {cust_token}"})
-    r = await client.delete(f"/api/cart/items/{product_id}", headers={"Authorization": f"Bearer {cust_token}"})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 3}, headers={"Authorization": f"Bearer {cust_token}"})
+    r = await client.delete(f"/api/cart/items/{variant_id}", headers={"Authorization": f"Bearer {cust_token}"})
     assert r.status_code == 200
     assert r.json()["item_count"] == 0
 
@@ -154,8 +170,8 @@ async def test_cart_remove_item(client: AsyncClient, db):
 async def test_checkout_cash(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
-    product_id = await _create_product(client, admin_token, stock=20)
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 2}, headers={"Authorization": f"Bearer {cust_token}"})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token, stock=20)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 2}, headers={"Authorization": f"Bearer {cust_token}"})
     r = await client.post("/api/checkout", json={"payment_method": "cash"}, headers={"Authorization": f"Bearer {cust_token}"})
     assert r.status_code == 201
     body = r.json()
@@ -166,8 +182,8 @@ async def test_checkout_cash(client: AsyncClient, db):
 async def test_checkout_deducts_stock(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
-    product_id = await _create_product(client, admin_token, stock=10)
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 3}, headers={"Authorization": f"Bearer {cust_token}"})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token, stock=10)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 3}, headers={"Authorization": f"Bearer {cust_token}"})
     await client.post("/api/checkout", json={"payment_method": "cash"}, headers={"Authorization": f"Bearer {cust_token}"})
     r = await client.get(f"/api/products/{product_id}")
     assert r.json()["stock_quantity"] == 7
@@ -176,8 +192,8 @@ async def test_checkout_deducts_stock(client: AsyncClient, db):
 async def test_checkout_clears_cart(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
-    product_id = await _create_product(client, admin_token, stock=10)
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 1}, headers={"Authorization": f"Bearer {cust_token}"})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token, stock=10)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 1}, headers={"Authorization": f"Bearer {cust_token}"})
     await client.post("/api/checkout", json={"payment_method": "cash"}, headers={"Authorization": f"Bearer {cust_token}"})
     r = await client.get("/api/cart", headers={"Authorization": f"Bearer {cust_token}"})
     assert r.json()["item_count"] == 0
@@ -185,8 +201,8 @@ async def test_checkout_clears_cart(client: AsyncClient, db):
 
 async def test_checkout_guest_requires_email(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
-    product_id = await _create_product(client, admin_token, name="GuestProd", stock=5)
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 1})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token, name="GuestProd", stock=5)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 1})
     r = await client.post("/api/checkout", json={"payment_method": "cash"})
     assert r.status_code == 400
 
@@ -203,8 +219,8 @@ async def test_payment_methods_endpoint(client: AsyncClient):
 async def test_order_appears_after_checkout(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
-    product_id = await _create_product(client, admin_token, stock=10)
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 1}, headers={"Authorization": f"Bearer {cust_token}"})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token, stock=10)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 1}, headers={"Authorization": f"Bearer {cust_token}"})
     await client.post("/api/checkout", json={"payment_method": "cash"}, headers={"Authorization": f"Bearer {cust_token}"})
     r = await client.get("/api/orders", headers={"Authorization": f"Bearer {cust_token}"})
     assert r.status_code == 200
@@ -214,8 +230,8 @@ async def test_order_appears_after_checkout(client: AsyncClient, db):
 async def test_admin_update_order_status(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
-    product_id = await _create_product(client, admin_token, stock=10)
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 1}, headers={"Authorization": f"Bearer {cust_token}"})
+    product_id, variant_id = await _create_product_and_variant(client, admin_token, stock=10)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 1}, headers={"Authorization": f"Bearer {cust_token}"})
     checkout_r = await client.post("/api/checkout", json={"payment_method": "cash"}, headers={"Authorization": f"Bearer {cust_token}"})
     order_id = checkout_r.json()["order_id"]
     r = await client.put(f"/api/orders/{order_id}/status", json={"status": "confirmed"}, headers={"Authorization": f"Bearer {admin_token}"})
@@ -239,9 +255,10 @@ async def test_cancel_order_restores_stock(client: AsyncClient, db):
         "name": "Cancel Stock Test", "price": "10.00", "stock_quantity": 5,
     }, headers=admin_headers)
     product_id = prod.json()["id"]
+    variant_id = await _get_default_variant_id(client, product_id, admin_token)
 
     # Customer places order consuming 2 units
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 2}, headers=headers)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 2}, headers=headers)
     order_r = await client.post("/api/checkout", json={
         "shipping_address": "1 Test St", "use_cart": True, "payment_method": "cash",
     }, headers=headers)
@@ -277,9 +294,10 @@ async def test_cancel_order_reverses_loyalty_points(client: AsyncClient, db):
     }, headers=admin_headers)
     assert prod.status_code == 201, prod.text
     product_id = prod.json()["id"]
+    variant_id = await _get_default_variant_id(client, product_id, admin_token)
 
     # Customer adds product to cart and places an order via cash payment
-    await client.post("/api/cart/items", json={"product_id": product_id, "quantity": 1}, headers=headers)
+    await client.post("/api/cart/items", json={"variant_id": variant_id, "quantity": 1}, headers=headers)
     order_r = await client.post("/api/checkout", json={"payment_method": "cash"}, headers=headers)
     assert order_r.status_code == 201, order_r.text
     order_id = order_r.json()["order_id"]
@@ -322,15 +340,17 @@ async def test_cancel_order_no_negative_balance(client: AsyncClient, db):
     }, headers=admin_headers)
     assert prod_a.status_code == 201, prod_a.text
     product_a_id = prod_a.json()["id"]
+    variant_a_id = await _get_default_variant_id(client, product_a_id, admin_token)
 
     prod_b = await client.post("/api/products", json={
         "name": "Redeem Product", "price": "5.00", "stock_quantity": 10,
     }, headers=admin_headers)
     assert prod_b.status_code == 201, prod_b.text
     product_b_id = prod_b.json()["id"]
+    variant_b_id = await _get_default_variant_id(client, product_b_id, admin_token)
 
     # Step 1: Place order A — earns 20 points (default 1 pt per $1, $20 order)
-    await client.post("/api/cart/items", json={"product_id": product_a_id, "quantity": 1}, headers=headers)
+    await client.post("/api/cart/items", json={"variant_id": variant_a_id, "quantity": 1}, headers=headers)
     order_a_r = await client.post("/api/checkout", json={"payment_method": "cash"}, headers=headers)
     assert order_a_r.status_code == 201, order_a_r.text
     order_a_id = order_a_r.json()["order_id"]
@@ -342,7 +362,7 @@ async def test_cancel_order_no_negative_balance(client: AsyncClient, db):
     assert earned_points > 0, "Expected positive points balance after order A"
 
     # Step 2: Place order B, redeeming all earned points — balance drops to 0
-    await client.post("/api/cart/items", json={"product_id": product_b_id, "quantity": 1}, headers=headers)
+    await client.post("/api/cart/items", json={"variant_id": variant_b_id, "quantity": 1}, headers=headers)
     order_b_r = await client.post(
         "/api/checkout",
         json={"payment_method": "cash", "redeem_points": earned_points},

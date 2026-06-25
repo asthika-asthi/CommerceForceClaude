@@ -19,13 +19,13 @@ class Cart(BaseModel):
 
 class CartItem(BaseModel):
     __tablename__ = "cart_items"
-    __table_args__ = (UniqueConstraint("cart_id", "product_id", name="uq_cart_product"),)
+    __table_args__ = (UniqueConstraint("cart_id", "variant_id", name="uq_cart_variant"),)
 
     cart_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("carts.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    product_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("products.id", ondelete="CASCADE"), nullable=False
+    variant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("product_variants.id", ondelete="CASCADE"), nullable=False
     )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 

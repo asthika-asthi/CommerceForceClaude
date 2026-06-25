@@ -25,20 +25,35 @@ async def make_admin(client: AsyncClient, db) -> str:
     return r.json()["access_token"]
 
 
-async def _create_product(client, admin_token, name="Test Product", price="50.00", stock=100) -> str:
+async def _get_default_variant_id(client, product_id: str, admin_token: str) -> str:
+    """Return the default variant_id for a product."""
+    r = await client.get(
+        f"/api/products/{product_id}/variants",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200, r.text
+    variants = r.json()
+    default = next((v for v in variants if v["is_default"]), variants[0])
+    return default["id"]
+
+
+async def _create_product(client, admin_token, name="Test Product", price="50.00", stock=100):
+    """Create a product and return (product_id, variant_id)."""
     r = await client.post(
         "/api/products",
         json={"name": name, "price": price, "stock_quantity": stock},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 201, r.text
-    return r.json()["id"]
+    product_id = r.json()["id"]
+    variant_id = await _get_default_variant_id(client, product_id, admin_token)
+    return product_id, variant_id
 
 
-async def _add_to_cart(client, cust_token, product_id, quantity=1):
+async def _add_to_cart(client, cust_token, variant_id, quantity=1):
     r = await client.post(
         "/api/cart/items",
-        json={"product_id": product_id, "quantity": quantity},
+        json={"variant_id": variant_id, "quantity": quantity},
         headers={"Authorization": f"Bearer {cust_token}"},
     )
     assert r.status_code in (200, 201), r.text
@@ -155,8 +170,8 @@ async def test_checkout_with_percentage_coupon(client: AsyncClient, db):
         json={"code": "PCT10", "name": "10% Off", "discount_type": "percentage", "discount_value": "10.00"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    product_id = await _create_product(client, admin_token, price="100.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="100.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
 
     r = await client.post(
         "/api/checkout",
@@ -179,8 +194,8 @@ async def test_checkout_with_fixed_coupon(client: AsyncClient, db):
         json={"code": "FIX15", "name": "$15 Off", "discount_type": "fixed", "discount_value": "15.00"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    product_id = await _create_product(client, admin_token, price="80.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="80.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
 
     r = await client.post(
         "/api/checkout",
@@ -203,8 +218,8 @@ async def test_checkout_coupon_min_order_not_met(client: AsyncClient, db):
               "min_order_value": "200.00"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    product_id = await _create_product(client, admin_token, price="10.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="10.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
 
     r = await client.post(
         "/api/checkout",
@@ -223,8 +238,8 @@ async def test_checkout_coupon_max_uses_reached(client: AsyncClient, db):
         json={"code": "ONCE", "name": "One use", "discount_type": "fixed", "discount_value": "1.00", "max_uses": 1},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    product_id = await _create_product(client, admin_token, price="20.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="20.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
 
     # First use succeeds
     r1 = await client.post(
@@ -235,7 +250,7 @@ async def test_checkout_coupon_max_uses_reached(client: AsyncClient, db):
     assert r1.status_code == 201
 
     # Second use fails
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
     r2 = await client.post(
         "/api/checkout",
         json={"payment_method": "cash", "coupon_code": "ONCE"},
@@ -254,8 +269,8 @@ async def test_checkout_expired_coupon_rejected(client: AsyncClient, db):
               "expires_at": "2020-01-01T00:00:00Z"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    product_id = await _create_product(client, admin_token, price="20.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="20.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
 
     r = await client.post(
         "/api/checkout",
@@ -316,8 +331,8 @@ async def test_loyalty_points_earned_after_checkout(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
 
-    product_id = await _create_product(client, admin_token, price="100.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="100.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
 
     r = await client.post(
         "/api/checkout",
@@ -337,8 +352,8 @@ async def test_loyalty_transactions_list(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
 
-    product_id = await _create_product(client, admin_token, price="50.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="50.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
     await client.post(
         "/api/checkout",
         json={"payment_method": "cash"},
@@ -366,8 +381,8 @@ async def test_checkout_with_loyalty_redemption(client: AsyncClient, db):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
 
-    product_id = await _create_product(client, admin_token, price="50.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="50.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
 
     # 1000 points * 0.01 redemption_rate = $10 discount
     r = await client.post(
@@ -394,8 +409,8 @@ async def test_loyalty_points_deducted_after_redemption(client: AsyncClient, db)
         headers={"Authorization": f"Bearer {admin_token}"},
     )
 
-    product_id = await _create_product(client, admin_token, price="30.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="30.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
     await client.post(
         "/api/checkout",
         json={"payment_method": "cash", "redeem_points": 200},
@@ -414,8 +429,8 @@ async def test_loyalty_redeem_insufficient_points(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
     cust_token = await register_and_token(client, CUSTOMER_DATA)
 
-    product_id = await _create_product(client, admin_token, price="50.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="50.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
 
     # Customer has 0 points, try to redeem 500
     r = await client.post(
@@ -438,8 +453,8 @@ async def test_loyalty_redeem_below_minimum(client: AsyncClient, db):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
 
-    product_id = await _create_product(client, admin_token, price="50.00", stock=10)
-    await _add_to_cart(client, cust_token, product_id, quantity=1)
+    product_id, variant_id = await _create_product(client, admin_token, price="50.00", stock=10)
+    await _add_to_cart(client, cust_token, variant_id, quantity=1)
 
     # Min redemption is 100 by default; try 50
     r = await client.post(

@@ -6,7 +6,8 @@ from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from app.plugins.cart.models import Cart, CartItem
 from app.plugins.cart.schemas import CartOut, CartItemOut
-from app.plugins.products.models import Product, ProductImage
+from app.plugins.products.models import Product, ProductImage, ProductVariant, ProductVariantOption, ProductOptionValue
+from app.plugins.products import variant_service as vs
 
 
 async def _load_cart(cart_id: str, db: AsyncSession) -> Cart:
@@ -42,27 +43,52 @@ async def _get_or_create_cart(
     return cart
 
 
+async def _load_variant_with_options(variant_id: str, db: AsyncSession) -> Optional[ProductVariant]:
+    result = await db.execute(
+        select(ProductVariant).where(ProductVariant.id == variant_id)
+        .options(
+            selectinload(ProductVariant.option_links)
+            .selectinload(ProductVariantOption.option_value)
+            .selectinload(ProductOptionValue.option_type)
+        )
+    )
+    return result.scalar_one_or_none()
+
+
 async def _build_cart_out(cart: Cart, db: AsyncSession) -> CartOut:
     items_out = []
     subtotal = Decimal("0")
 
     for item in cart.items:
+        # Load variant with option links for label building
+        variant = await _load_variant_with_options(item.variant_id, db)
+        if not variant:
+            continue
+
+        # Load product via variant
         result = await db.execute(
-            select(Product).where(Product.id == item.product_id)
+            select(Product).where(Product.id == variant.product_id)
             .options(selectinload(Product.images))
         )
         product = result.scalar_one_or_none()
         if not product:
             continue
+
         primary = next((img.url for img in product.images if img.is_primary), None)
         if not primary and product.images:
             primary = product.images[0].url
+
         unit_price = product.effective_price
         line_total = unit_price * item.quantity
         subtotal += line_total
+
+        variant_label = vs.build_variant_out(variant)["label"]
+
         items_out.append(CartItemOut(
             id=item.id,
+            variant_id=item.variant_id,
             product_id=product.id,
+            variant_label=variant_label,
             product_name=product.name,
             product_sku=product.sku,
             product_slug=product.slug,
@@ -91,29 +117,42 @@ async def get_cart(
 
 
 async def add_item(
-    product_id: str,
+    variant_id: str,
     quantity: int,
     db: AsyncSession,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
 ) -> CartOut:
-    result = await db.execute(select(Product).where(Product.id == product_id, Product.is_active == True))
+    # Load variant
+    result = await db.execute(
+        select(ProductVariant).where(ProductVariant.id == variant_id)
+    )
+    variant = result.scalar_one_or_none()
+    if not variant or not variant.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
+
+    # Load product
+    result = await db.execute(
+        select(Product).where(Product.id == variant.product_id, Product.is_active == True)
+    )
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    # Stock check against product.stock_quantity (warehouse stock check added in Task 6)
     if product.stock_quantity < quantity:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient stock")
 
     cart = await _get_or_create_cart(db, user_id=user_id, session_id=session_id)
 
     result = await db.execute(
-        select(CartItem).where(CartItem.cart_id == cart.id, CartItem.product_id == product_id)
+        select(CartItem).where(CartItem.cart_id == cart.id, CartItem.variant_id == variant_id)
     )
     item = result.scalar_one_or_none()
     if item:
         item.quantity += quantity
     else:
-        item = CartItem(cart_id=cart.id, product_id=product_id, quantity=quantity)
+        item = CartItem(cart_id=cart.id, variant_id=variant_id, quantity=quantity)
         db.add(item)
     await db.flush()
     # Reload cart so items collection reflects the new item
@@ -124,7 +163,7 @@ async def add_item(
 
 
 async def update_item(
-    product_id: str,
+    variant_id: str,
     quantity: int,
     db: AsyncSession,
     user_id: Optional[str] = None,
@@ -132,21 +171,27 @@ async def update_item(
 ) -> CartOut:
     cart = await _get_or_create_cart(db, user_id=user_id, session_id=session_id)
     result = await db.execute(
-        select(CartItem).where(CartItem.cart_id == cart.id, CartItem.product_id == product_id)
+        select(CartItem).where(CartItem.cart_id == cart.id, CartItem.variant_id == variant_id)
     )
     item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not in cart")
     if quantity > 0:
-        result = await db.execute(
-            select(Product).where(Product.id == product_id, Product.is_active == True)
+        # Load variant to get product for stock check
+        v_result = await db.execute(
+            select(ProductVariant).where(ProductVariant.id == variant_id)
         )
-        product = result.scalar_one_or_none()
-        if product and product.stock_quantity < quantity:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Only {product.stock_quantity} units available",
+        variant = v_result.scalar_one_or_none()
+        if variant:
+            result2 = await db.execute(
+                select(Product).where(Product.id == variant.product_id, Product.is_active == True)
             )
+            product = result2.scalar_one_or_none()
+            if product and product.stock_quantity < quantity:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Only {product.stock_quantity} units available",
+                )
     if quantity <= 0:
         await db.delete(item)
     else:
@@ -159,12 +204,12 @@ async def update_item(
 
 
 async def remove_item(
-    product_id: str,
+    variant_id: str,
     db: AsyncSession,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
 ) -> CartOut:
-    return await update_item(product_id, 0, db, user_id=user_id, session_id=session_id)
+    return await update_item(variant_id, 0, db, user_id=user_id, session_id=session_id)
 
 
 async def clear_cart(
@@ -198,11 +243,11 @@ async def merge_guest_cart(user_id: str, session_id: str, db: AsyncSession) -> C
         return await _build_cart_out(await _load_cart(cart_id, db), db)
 
     for guest_item in guest_cart.items:
-        existing = next((i for i in user_cart.items if i.product_id == guest_item.product_id), None)
+        existing = next((i for i in user_cart.items if i.variant_id == guest_item.variant_id), None)
         if existing:
             existing.quantity += guest_item.quantity
         else:
-            new_item = CartItem(cart_id=user_cart.id, product_id=guest_item.product_id, quantity=guest_item.quantity)
+            new_item = CartItem(cart_id=user_cart.id, variant_id=guest_item.variant_id, quantity=guest_item.quantity)
             db.add(new_item)
 
     await db.delete(guest_cart)

@@ -5,7 +5,9 @@ from pydantic import BaseModel
 
 class CartItemOut(BaseModel):
     id: str
+    variant_id: str
     product_id: str
+    variant_label: str = ""
     product_name: str
     product_sku: str
     product_slug: str
@@ -26,7 +28,7 @@ class CartOut(BaseModel):
 
 
 class AddItemRequest(BaseModel):
-    product_id: str
+    variant_id: str
     quantity: int = 1
 
 
