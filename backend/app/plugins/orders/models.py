@@ -65,6 +65,10 @@ class OrderItem(BaseModel):
     product_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("products.id", ondelete="SET NULL"), nullable=True
     )
+    variant_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("product_variants.id", ondelete="SET NULL"), nullable=True
+    )
+    variant_label: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     product_name: Mapped[str] = mapped_column(String(500), nullable=False)
     product_sku: Mapped[str] = mapped_column(String(100), nullable=False)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)

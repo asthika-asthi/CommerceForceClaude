@@ -84,6 +84,8 @@ async def create_order(
         order_item = OrderItem(
             order_id=order.id,
             product_id=item_data.get("product_id"),
+            variant_id=item_data.get("variant_id"),
+            variant_label=item_data.get("variant_label"),
             product_name=item_data["product_name"],
             product_sku=item_data["product_sku"],
             unit_price=Decimal(str(item_data["unit_price"])),

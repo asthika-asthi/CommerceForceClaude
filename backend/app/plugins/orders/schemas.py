@@ -8,6 +8,8 @@ from app.plugins.orders.models import OrderStatus, PaymentMethod, PaymentStatus
 class OrderItemOut(BaseModel):
     id: str
     product_id: Optional[str] = None
+    variant_id: Optional[str] = None
+    variant_label: Optional[str] = None
     product_name: str
     product_sku: str
     unit_price: Decimal
