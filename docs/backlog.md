@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-06-25. This is the single source of truth for build status.
+Last updated: 2026-06-26. This is the single source of truth for build status.
 
 ---
 
@@ -12,10 +12,30 @@ Last updated: 2026-06-25. This is the single source of truth for build status.
 
 ---
 
-## Built + Tested (Sprints 1–3 only)
+## Built + Tested
 
+### Sprints 1–3
 All of Sprints 1–3 were tested before Sprint 4 work began.
 Core auth, products, categories, cart, checkout, orders (basic), branding, landing page, and storefront are verified working.
+
+### Product variants (Sprint 8 — 2026-06-26)
+Full variant system tested end-to-end via automated pytest suite (123 tests pass) and live API tests:
+- Create product → default variant auto-created with matching SKU
+- Add option types (Size, Colour) + values (S/M/L, Red/Blue) → generate 6 combinations
+- Re-generate is idempotent (previously was a bug, now fixed)
+- Variant SKU update, duplicate SKU rejected (409), active/inactive toggle
+- Warehouse stock set and queried per variant_id
+- Add variant to cart, update quantity, remove; cart displays variant_label
+- Simple product (no options) still uses default variant transparently
+- Delete option type → all variants deactivated (not deleted, preserves order history)
+- Admin frontend: Variants tab (option CRUD, generate button, SKU/active table)
+- Admin frontend: Inventory page uses variant picker
+- Storefront: variant picker dropdowns on product page; cart shows variant label
+- Migration script (`scripts/migrate_variants.py`) tested: creates new tables, adds columns, recreates warehouse_stock and cart_items with correct schema, creates default variants for all existing products
+
+**Two bugs found and fixed during testing:**
+- `generate_variants`: re-generate crashed (500) because matched existing variants lacked loaded relations — fixed by loading full chain in initial query
+- `migrate_variants.py`: used wrong engine import name, failed to import models before `create_all`, missing ALTER TABLE steps, and needed table recreation for NOT NULL constraint removal
 
 ---
 
@@ -58,7 +78,6 @@ Everything from Sprint 4 onwards is committed but untested. Test all of these in
 | Newsletter — admin DELETE/UPDATE | Admin deletes or corrects a subscriber record |
 | Discount rule — GET single | `GET /api/discount-rules/{rule_id}` |
 | Loyalty — admin accounts view | `GET /api/loyalty/accounts` — admin sees all customer loyalty balances |
-| Product variants | Create product, add "Size" option with S/M/L values, add "Colour" with Red/Blue, generate combinations → 6 variants appear. Set warehouse stock for one variant. Add that variant to cart, checkout → order created with variant_label. Check variant stock was decremented. Also test: simple product (no options) add to cart still works. |
 
 ---
 
