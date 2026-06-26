@@ -58,6 +58,7 @@ Everything from Sprint 4 onwards is committed but untested. Test all of these in
 | Newsletter — admin DELETE/UPDATE | Admin deletes or corrects a subscriber record |
 | Discount rule — GET single | `GET /api/discount-rules/{rule_id}` |
 | Loyalty — admin accounts view | `GET /api/loyalty/accounts` — admin sees all customer loyalty balances |
+| Product variants | Create product, add "Size" option with S/M/L values, add "Colour" with Red/Blue, generate combinations → 6 variants appear. Set warehouse stock for one variant. Add that variant to cart, checkout → order created with variant_label. Check variant stock was decremented. Also test: simple product (no options) add to cart still works. |
 
 ---
 
@@ -65,7 +66,6 @@ Everything from Sprint 4 onwards is committed but untested. Test all of these in
 
 | ID | Feature | Notes |
 |----|---------|-------|
-| O | Product variants (size/colour/SKU) | Design complete — see `docs/superpowers/specs/2026-06-25-product-variants-design.md`. Ready to implement. |
 | P | 2FA for admin | TOTP flow, QR setup, backup codes. Separate sprint. |
 | Q | Storefront component library | New visual block components (glowing buttons, glassmorphism, parallax) must be React components registered in `block-registry.ts` before config can reference them. Includes polished variant picker UI (swatches, visual size grid). |
 | R | Per-client git branch script | `scripts/new-client.sh` to automate `git checkout -b client-name` + seed template copy |
