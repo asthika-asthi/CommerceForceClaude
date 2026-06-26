@@ -6,9 +6,71 @@ import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { ChevronDown, ChevronRight } from "lucide-react"
 
-import type { Warehouse } from "@/lib/types"
+import type { Warehouse, Product, ProductVariantSummary } from "@/lib/types"
 
-const DEFAULT_SF = { product_id: "", quantity: "", threshold: "10", delta: "" }
+const DEFAULT_SF = { product_id: "", variant_id: "", quantity: "", threshold: "10", delta: "" }
+
+function VariantPicker({
+  whId,
+  productId,
+  variantId,
+  onProductChange,
+  onVariantChange,
+}: {
+  whId: string
+  productId: string
+  variantId: string
+  onProductChange: (whId: string, productId: string) => void
+  onVariantChange: (whId: string, variantId: string) => void
+}) {
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["products-list"],
+    queryFn: () => api.get("/api/products"),
+  })
+
+  const { data: variants = [] } = useQuery<ProductVariantSummary[]>({
+    queryKey: ["variants", productId],
+    queryFn: () => api.get(`/api/products/${productId}/variants`),
+    enabled: !!productId,
+  })
+
+  function variantLabel(v: ProductVariantSummary): string {
+    if (v.label) return `${v.label} (${v.sku})`
+    return v.sku
+  }
+
+  return (
+    <>
+      <div>
+        <label className="block text-xs text-slate-500 mb-1">Product</label>
+        <select
+          value={productId}
+          onChange={(e) => onProductChange(whId, e.target.value)}
+          className="w-48 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        >
+          <option value="">Select product…</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs text-slate-500 mb-1">Variant</label>
+        <select
+          value={variantId}
+          onChange={(e) => onVariantChange(whId, e.target.value)}
+          disabled={!productId}
+          className="w-48 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-50"
+        >
+          <option value="">Select variant…</option>
+          {variants.map((v) => (
+            <option key={v.id} value={v.id}>{variantLabel(v)}</option>
+          ))}
+        </select>
+      </div>
+    </>
+  )
+}
 
 export default function InventoryPage() {
   const qc = useQueryClient()
@@ -17,7 +79,7 @@ export default function InventoryPage() {
     queryFn: () => api.get("/api/inventory/warehouses"),
   })
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [stockForms, setStockForms] = useState<Record<string, { product_id: string; quantity: string; threshold: string; delta: string }>>({})
+  const [stockForms, setStockForms] = useState<Record<string, { product_id: string; variant_id: string; quantity: string; threshold: string; delta: string }>>({})
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [createForm, setCreateForm] = useState({ name: "", code: "", address: "", is_default: false })
   const [createError, setCreateError] = useState("")
@@ -37,7 +99,7 @@ export default function InventoryPage() {
   })
 
   const setStock = useMutation({
-    mutationFn: ({ whId, data }: { whId: string; data: { product_id: string; quantity: number; low_stock_threshold: number } }) => {
+    mutationFn: ({ whId, data }: { whId: string; data: { variant_id: string; quantity: number; low_stock_threshold: number } }) => {
       setPendingWhId(whId)
       return api.post(`/api/inventory/warehouses/${whId}/stock`, data)
     },
@@ -46,7 +108,7 @@ export default function InventoryPage() {
   })
 
   const adjustStock = useMutation({
-    mutationFn: ({ whId, data }: { whId: string; data: { product_id: string; delta: number } }) => {
+    mutationFn: ({ whId, data }: { whId: string; data: { variant_id: string; delta: number } }) => {
       setPendingWhId(whId)
       return api.post(`/api/inventory/warehouses/${whId}/stock/adjust`, data)
     },
@@ -60,6 +122,14 @@ export default function InventoryPage() {
 
   function setStockFormField(whId: string, field: string, value: string) {
     setStockForms((f) => ({ ...f, [whId]: { ...(f[whId] ?? DEFAULT_SF), [field]: value } }))
+  }
+
+  function handleProductChange(whId: string, productId: string) {
+    setStockForms((f) => ({ ...f, [whId]: { ...(f[whId] ?? DEFAULT_SF), product_id: productId, variant_id: "" } }))
+  }
+
+  function handleVariantChange(whId: string, variantId: string) {
+    setStockFormField(whId, "variant_id", variantId)
   }
 
   return (
@@ -126,7 +196,7 @@ export default function InventoryPage() {
                       <table className="w-full text-sm border-t border-slate-100">
                         <thead className="bg-slate-50">
                           <tr>
-                            {["Product ID", "Qty", "Reserved", "Available", "Low Stock"].map((h) => (
+                            {["Variant", "Qty", "Reserved", "Available", "Low Stock"].map((h) => (
                               <th key={h} className="text-left px-4 py-2 text-xs font-medium text-slate-500">{h}</th>
                             ))}
                           </tr>
@@ -134,7 +204,9 @@ export default function InventoryPage() {
                         <tbody className="divide-y divide-slate-50">
                           {wh.stock_items.map((s) => (
                             <tr key={s.id}>
-                              <td className="px-4 py-2 font-mono text-xs text-slate-600">{s.product_id.slice(0, 12)}…</td>
+                              <td className="px-4 py-2 font-mono text-xs text-slate-600">
+                                {s.variant_label ? s.variant_label : s.variant_id.slice(0, 12) + "…"}
+                              </td>
                               <td className="px-4 py-2 text-slate-700">{s.quantity}</td>
                               <td className="px-4 py-2 text-slate-500">{s.reserved_quantity}</td>
                               <td className={`px-4 py-2 font-medium ${s.available_quantity < (s.low_stock_threshold ?? 10) ? "text-red-600" : "text-green-700"}`}>
@@ -155,12 +227,13 @@ export default function InventoryPage() {
                     <div className="border-t border-slate-100 bg-slate-50 px-5 py-4 space-y-3">
                       <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Manage Stock</p>
                       <div className="flex gap-3 flex-wrap items-end">
-                        <div>
-                          <label className="block text-xs text-slate-500 mb-1">Product ID</label>
-                          <input value={sf.product_id} onChange={(e) => setStockFormField(wh.id, "product_id", e.target.value)}
-                            placeholder="UUID"
-                            className="w-52 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-                        </div>
+                        <VariantPicker
+                          whId={wh.id}
+                          productId={sf.product_id}
+                          variantId={sf.variant_id}
+                          onProductChange={handleProductChange}
+                          onVariantChange={handleVariantChange}
+                        />
                         <div>
                           <label className="block text-xs text-slate-500 mb-1">Set Qty</label>
                           <input type="number" min="0" value={sf.quantity} onChange={(e) => setStockFormField(wh.id, "quantity", e.target.value)}
@@ -172,8 +245,8 @@ export default function InventoryPage() {
                             className="w-16 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
                         </div>
                         <button
-                          onClick={() => setStock.mutate({ whId: wh.id, data: { product_id: sf.product_id, quantity: parseInt(sf.quantity, 10), low_stock_threshold: parseInt(sf.threshold || "10", 10) } })}
-                          disabled={!sf.product_id || !sf.quantity || !sf.threshold || pendingWhId === wh.id}
+                          onClick={() => setStock.mutate({ whId: wh.id, data: { variant_id: sf.variant_id, quantity: parseInt(sf.quantity, 10), low_stock_threshold: parseInt(sf.threshold || "10", 10) } })}
+                          disabled={!sf.variant_id || !sf.quantity || !sf.threshold || pendingWhId === wh.id}
                           className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs disabled:opacity-50">
                           Set Stock
                         </button>
@@ -184,8 +257,8 @@ export default function InventoryPage() {
                             className="w-24 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
                         </div>
                         <button
-                          onClick={() => adjustStock.mutate({ whId: wh.id, data: { product_id: sf.product_id, delta: parseInt(sf.delta, 10) } })}
-                          disabled={!sf.product_id || !sf.delta || pendingWhId === wh.id}
+                          onClick={() => adjustStock.mutate({ whId: wh.id, data: { variant_id: sf.variant_id, delta: parseInt(sf.delta, 10) } })}
+                          disabled={!sf.variant_id || !sf.delta || pendingWhId === wh.id}
                           className="bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs disabled:opacity-50">
                           Adjust
                         </button>

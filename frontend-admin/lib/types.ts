@@ -219,11 +219,21 @@ export interface CreditAccount {
 export interface WarehouseStock {
   id: string
   warehouse_id: string
-  product_id: string
+  variant_id: string
+  variant_label: string
   quantity: number
   reserved_quantity: number
   available_quantity: number
-  low_stock_threshold?: number
+  low_stock_threshold: number
+}
+
+export interface ProductVariantSummary {
+  id: string
+  product_id: string
+  sku: string
+  is_default: boolean
+  is_active: boolean
+  label: string
 }
 
 export interface Warehouse {
