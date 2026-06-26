@@ -143,7 +143,11 @@ async def generate_variants(product_id: str, db: AsyncSession) -> list[ProductVa
 
     existing_result = await db.execute(
         select(ProductVariant).where(ProductVariant.product_id == product_id)
-        .options(selectinload(ProductVariant.option_links))
+        .options(
+            selectinload(ProductVariant.option_links)
+            .selectinload(ProductVariantOption.option_value)
+            .selectinload(ProductOptionValue.option_type)
+        )
     )
     existing_variants = list(existing_result.scalars().all())
 
