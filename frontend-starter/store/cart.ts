@@ -7,9 +7,9 @@ interface CartState {
   cart: Cart | null
   isLoading: boolean
   fetch: () => Promise<void>
-  addItem: (product_id: string, quantity?: number) => Promise<boolean>
-  updateItem: (item_id: string, quantity: number) => Promise<boolean>
-  removeItem: (item_id: string) => Promise<boolean>
+  addItem: (variant_id: string, quantity?: number) => Promise<boolean>
+  updateItem: (variant_id: string, quantity: number) => Promise<boolean>
+  removeItem: (variant_id: string) => Promise<boolean>
   clear: () => void
 }
 
@@ -29,9 +29,9 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  addItem: async (product_id, quantity = 1) => {
+  addItem: async (variant_id, quantity = 1) => {
     try {
-      await api.post("/api/cart/items", { product_id, quantity })
+      await api.post("/api/cart/items", { variant_id, quantity })
       await get().fetch()
       return true
     } catch {
@@ -39,9 +39,9 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  updateItem: async (item_id, quantity) => {
+  updateItem: async (variant_id, quantity) => {
     try {
-      await api.put(`/api/cart/items/${item_id}`, { quantity })
+      await api.put(`/api/cart/items/${variant_id}`, { quantity })
       await get().fetch()
       return true
     } catch {
@@ -49,9 +49,9 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  removeItem: async (item_id) => {
+  removeItem: async (variant_id) => {
     try {
-      await api.del(`/api/cart/items/${item_id}`)
+      await api.del(`/api/cart/items/${variant_id}`)
       await get().fetch()
       return true
     } catch {

@@ -61,6 +61,34 @@ export interface ProductImage {
   sort_order: number
 }
 
+export interface VariantOptionValue {
+  option_type_name: string
+  option_value_label: string
+}
+
+export interface ProductVariant {
+  id: string
+  product_id: string
+  sku: string
+  is_default: boolean
+  is_active: boolean
+  option_values: VariantOptionValue[]
+  label: string
+}
+
+export interface ProductOptionTypeValue {
+  id: string
+  label: string
+  sort_order: number
+}
+
+export interface ProductOptionType {
+  id: string
+  name: string
+  sort_order: number
+  values: ProductOptionTypeValue[]
+}
+
 export interface Product {
   id: string
   name: string
@@ -73,6 +101,8 @@ export interface Product {
   is_active: boolean
   category_id?: string
   images: ProductImage[]
+  option_types?: ProductOptionType[]
+  variants?: ProductVariant[]
 }
 
 export interface ProductsResponse {
@@ -96,6 +126,8 @@ export interface PaginatedResponse<T> {
 export interface CartItem {
   id: string
   product_id: string
+  variant_id: string
+  variant_label?: string
   product_name: string
   product_sku: string
   product_slug: string

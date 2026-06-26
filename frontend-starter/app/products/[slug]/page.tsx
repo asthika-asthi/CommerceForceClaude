@@ -108,7 +108,13 @@ export default async function ProductDetailPage({ params }: Props) {
             </div>
           )}
 
-          <AddToCartButton productId={product.id} inStock={product.stock_quantity > 0} />
+          <AddToCartButton
+            productId={product.id}
+            inStock={product.stock_quantity > 0}
+            defaultVariantId={product.variants?.find(v => v.is_default)?.id ?? ""}
+            optionTypes={product.option_types ?? []}
+            variants={product.variants ?? []}
+          />
         </div>
       </div>
 

@@ -10,23 +10,23 @@ export default function CartPage() {
 
   useEffect(() => { fetch() }, [fetch])
 
-  async function handleUpdate(productId: string, quantity: number) {
-    if (busyItems.has(productId)) return
-    setBusyItems((s) => new Set(s).add(productId))
+  async function handleUpdate(variantId: string, quantity: number) {
+    if (busyItems.has(variantId)) return
+    setBusyItems((s) => new Set(s).add(variantId))
     try {
-      await updateItem(productId, quantity)
+      await updateItem(variantId, quantity)
     } finally {
-      setBusyItems((s) => { const n = new Set(s); n.delete(productId); return n })
+      setBusyItems((s) => { const n = new Set(s); n.delete(variantId); return n })
     }
   }
 
-  async function handleRemove(productId: string) {
-    if (busyItems.has(productId)) return
-    setBusyItems((s) => new Set(s).add(productId))
+  async function handleRemove(variantId: string) {
+    if (busyItems.has(variantId)) return
+    setBusyItems((s) => new Set(s).add(variantId))
     try {
-      await removeItem(productId)
+      await removeItem(variantId)
     } finally {
-      setBusyItems((s) => { const n = new Set(s); n.delete(productId); return n })
+      setBusyItems((s) => { const n = new Set(s); n.delete(variantId); return n })
     }
   }
 
@@ -50,7 +50,7 @@ export default function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-3">
             {items.map((item) => {
-              const busy = busyItems.has(item.product_id)
+              const busy = busyItems.has(item.variant_id)
               return (
                 <div key={item.id} className={`flex gap-4 bg-white border border-slate-100 rounded-xl p-4 transition-opacity ${busy ? "opacity-60" : ""}`}>
                   <div className="w-20 h-20 bg-slate-50 rounded-lg overflow-hidden flex-shrink-0">
@@ -62,10 +62,13 @@ export default function CartPage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-slate-900 text-sm">{item.product_name}</p>
+                    {item.variant_label && (
+                      <p className="text-sm text-muted">{item.variant_label}</p>
+                    )}
                     <p className="text-slate-500 text-xs mt-0.5">&#163;{parseFloat(item.unit_price).toFixed(2)} each</p>
                     <div className="flex items-center gap-2 mt-3">
                       <button
-                        onClick={() => handleUpdate(item.product_id, item.quantity - 1)}
+                        onClick={() => handleUpdate(item.variant_id, item.quantity - 1)}
                         disabled={busy || item.quantity <= 1}
                         className="w-7 h-7 border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-50 disabled:opacity-40"
                       >
@@ -73,14 +76,14 @@ export default function CartPage() {
                       </button>
                       <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                       <button
-                        onClick={() => handleUpdate(item.product_id, item.quantity + 1)}
+                        onClick={() => handleUpdate(item.variant_id, item.quantity + 1)}
                         disabled={busy || item.quantity >= item.stock_quantity}
                         className="w-7 h-7 border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-50 disabled:opacity-40"
                       >
                         <Plus size={12} />
                       </button>
                       <button
-                        onClick={() => handleRemove(item.product_id)}
+                        onClick={() => handleRemove(item.variant_id)}
                         disabled={busy}
                         className="ml-auto text-slate-300 hover:text-red-500 transition-colors disabled:opacity-40"
                       >
