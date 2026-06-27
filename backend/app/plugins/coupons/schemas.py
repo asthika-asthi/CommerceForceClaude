@@ -13,6 +13,8 @@ class CouponCreate(BaseModel):
     min_order_value: Optional[Decimal] = Field(None, ge=0)
     max_uses: Optional[int] = Field(None, ge=1)
     expires_at: Optional[datetime] = None
+    show_on_homepage: bool = False
+    is_active: bool = True
 
 
 class CouponUpdate(BaseModel):
@@ -23,6 +25,7 @@ class CouponUpdate(BaseModel):
     max_uses: Optional[int] = Field(None, ge=1)
     is_active: Optional[bool] = None
     expires_at: Optional[datetime] = None
+    show_on_homepage: Optional[bool] = None
 
 
 class CouponOut(BaseModel):

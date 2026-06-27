@@ -13,6 +13,8 @@ async def create_coupon(data: CouponCreate, db: AsyncSession) -> Coupon:
     existing = await db.execute(select(Coupon).where(Coupon.code == code))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Coupon code '{code}' already exists")
+    if data.show_on_homepage:
+        await db.execute(sa_update(Coupon).values(show_on_homepage=False))
     coupon = Coupon(
         code=code,
         name=data.name,
@@ -22,6 +24,8 @@ async def create_coupon(data: CouponCreate, db: AsyncSession) -> Coupon:
         min_order_value=data.min_order_value,
         max_uses=data.max_uses,
         expires_at=data.expires_at,
+        show_on_homepage=data.show_on_homepage,
+        is_active=data.is_active,
     )
     db.add(coupon)
     await db.flush()

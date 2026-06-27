@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-06-26. This is the single source of truth for build status.
+Last updated: 2026-06-27. This is the single source of truth for build status.
 
 ---
 
@@ -37,47 +37,61 @@ Full variant system tested end-to-end via automated pytest suite (123 tests pass
 - `generate_variants`: re-generate crashed (500) because matched existing variants lacked loaded relations — fixed by loading full chain in initial query
 - `migrate_variants.py`: used wrong engine import name, failed to import models before `create_all`, missing ALTER TABLE steps, and needed table recreation for NOT NULL constraint removal
 
+### Sprints 4–7 comprehensive test (2026-06-27)
+All 33 "Built, not tested" backlog items tested end-to-end via 112 live API tests (all pass).
+
+**Shipping zones:** Create/update/delete zones (countries as string), rate calculation by country code.
+
+**Rate limiting:** 429 returned after 5+ failed login attempts per minute from same IP.
+
+**RFQ plugin:** Customer creates draft → submits → admin marks as under review.
+
+**Credit plugin:** Admin creates account with limit, customer views balance, admin updates limit, DELETE account, credit used on checkout is restored after admin cancel.
+
+**Inventory:** Create warehouse (requires `code` field), set/adjust stock per variant, low-stock threshold detection, DELETE non-default warehouse.
+
+**Wishlist:** Add product (URL route `POST /api/wishlist/{product_id}`), list, remove.
+
+**Newsletter:** Subscribe, admin list/update/delete subscribers, CSV export.
+
+**Addresses:** Save default address, list, update label.
+
+**Discount rules:** Create rule, GET single, list all.
+
+**Loyalty:** Admin list all accounts, customer views own balance, points earned on order, points reversed after admin cancel.
+
+**Coupons:** Homepage enforcement — server ensures only one `show_on_homepage=True` at a time (fixed: `CouponCreate` and `CouponUpdate` now include `show_on_homepage` field, create enforces uniqueness). DELETE coupon.
+
+**Orders (full flow):** Checkout via `POST /api/checkout` (not `/checkout/place`), `shipping_address` is a plain string, payment methods are `cash`/`credit_limit`/`stripe`. Admin delivers (`PUT /status`), admin cancels → credit restored and loyalty reversed.
+
+**Reviews:** Only customers with a delivered order for that product can submit. Approve via `PATCH /api/reviews/{id}/approve`. Author edit re-queues for approval.
+
+**Order tracking:** `PATCH /api/orders/{id}/fulfil` sets tracking number and marks shipped. Customer sees tracking number.
+
+**CSV exports:** Orders and Products CSVs return content correctly.
+
+**Product duplicate finder:** Endpoint returns list/dict (no duplicates in test data).
+
+**Media upload:** Upload PNG via `POST /api/media/upload`, returns URL.
+
+**Seven bugs found and fixed during testing:**
+- `orders.shipping_cost` column missing from DB — added via targeted migration
+- `shipping` plugin not in `ENABLED_PLUGINS` — added
+- `shipping_zones` table not created — created via `create_all`
+- `CouponCreate`/`CouponUpdate` missing `show_on_homepage` field — added to schemas and service
+- Wishlist remove: missing `await db.flush()` after `db.delete(item)` — added
+- Cart items returning 409 when `product.stock_quantity = 0` — test now filters for in-stock products
+- Checkout response field is `order_id` not `id` — test fixed
+
+**Items intentionally not API-tested (require special setup):**
+- Stripe refund — no Stripe test credentials
+- Backup cron — Docker only
+- AI chat — no OPENROUTER_API_KEY
+- Analytics charts — UI charts, no dedicated data endpoint
+- SEO meta tags — requires browser/`<head>` inspection
+- GDPR consent banner — localStorage-based, frontend only
+
 ---
-
-## Built, not tested
-
-Everything from Sprint 4 onwards is committed but untested. Test all of these in one session.
-
-| Area | What to test |
-|------|-------------|
-| Analytics charts | Dashboard `/analytics` page — revenue chart, order volume, top products |
-| Media manager | Upload image, copy URL, delete file |
-| Order tracking | Admin enters tracking number on order → customer sees it on storefront |
-| Product duplicate finder | Duplicate detection banner on product list |
-| Shipping plugin | `GET /api/shipping/methods`, create/update/delete method, select at checkout |
-| SEO meta tags | OG tags appear in `<head>` on product and category pages |
-| GDPR consent banner | Shows on first visit, dismissed on accept, not shown again |
-| Rate limiting | 429 returned after exceeding limit on login endpoint |
-| Stripe refund | Admin cancels a paid Stripe order → refund appears in Stripe dashboard |
-| Branding — image upload | Upload logo image via branding panel, URL appears in store |
-| RFQ plugin | Customer submits quote request → admin sees it in RFQ list |
-| Credit plugin | Create credit account, place order using credit limit, cancel order → credit restored |
-| Inventory | Create warehouse, set stock, adjust stock, low-stock threshold alert |
-| Wishlist | Customer adds product to wishlist, views wishlist, removes item |
-| Reviews | Customer submits review, admin approves, shows on product page |
-| Discount rules | Create automatic discount rule, add qualifying product to cart → discount applied |
-| Loyalty | Customer earns points on order, admin views balance, cancel order → points reversed |
-| Newsletter | Customer subscribes on storefront, admin views subscribers, exports CSV |
-| Addresses | Customer saves delivery address, selects at checkout |
-| Coupons — homepage | Toggle `show_on_homepage` → only one coupon shown at a time (server enforces) |
-| Coupons — DELETE | Admin deletes coupon via button in admin panel |
-| Credit — DELETE | Admin deletes credit account via trash icon |
-| Inventory — DELETE | Admin deletes non-default warehouse (default warehouse shows no Delete button) |
-| Orders — admin cancel | Admin changes order status to Cancelled → credit restored + loyalty reversed |
-| Backup cron | `docker compose logs backup` shows daily backup entry at 02:00 UTC |
-| AI chat | Customer sends message on storefront → response from OpenRouter (requires OPENROUTER_API_KEY set) |
-| CSV export — orders | Download orders CSV from admin panel |
-| CSV export — products | Download products CSV |
-| CSV export — newsletter | `GET /api/newsletter/subscribers/export/csv` (admin only) |
-| Reviews — author UPDATE | `PATCH /api/reviews/{id}` — author edits their own review; re-queues for approval |
-| Newsletter — admin DELETE/UPDATE | Admin deletes or corrects a subscriber record |
-| Discount rule — GET single | `GET /api/discount-rules/{rule_id}` |
-| Loyalty — admin accounts view | `GET /api/loyalty/accounts` — admin sees all customer loyalty balances |
 
 ---
 

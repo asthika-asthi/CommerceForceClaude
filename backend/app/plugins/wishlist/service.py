@@ -34,3 +34,4 @@ async def remove_from_wishlist(user_id: str, product_id: str, db: AsyncSession) 
     item = result.scalar_one_or_none()
     if item:
         await db.delete(item)
+        await db.flush()
