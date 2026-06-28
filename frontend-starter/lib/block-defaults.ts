@@ -114,4 +114,12 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
       },
     ],
   },
+  'glassmorphism-hero': {
+    backgroundImage: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1920&auto=format&fit=crop',
+    title: 'Built for your business',
+    subtitle: 'Premium quality, delivered fast.',
+    ctaText: 'Shop Now',
+    ctaUrl: '/products',
+    overlayOpacity: 0.4,
+  },
 }

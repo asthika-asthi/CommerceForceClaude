@@ -21,6 +21,7 @@ import { DualCtaBanner } from '@/components/blocks/content/dual-cta-banner'
 import { StatsBand } from '@/components/blocks/content/stats-band'
 import { HowToOrder } from '@/components/blocks/content/how-to-order'
 import { ProductRangeTable } from '@/components/blocks/commerce/product-range-table'
+import { GlassmorphismHero } from '@/components/blocks/visual/glassmorphism-hero'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,4 +52,5 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'stats-band': { component: StatsBand },
   'how-to-order': { component: HowToOrder },
   'product-range-table': { component: ProductRangeTable },
+  'glassmorphism-hero': { component: GlassmorphismHero },
 }
