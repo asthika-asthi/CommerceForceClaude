@@ -1,7 +1,7 @@
 """add price_adjustment to product_variants
 
 Revision ID: c8d9e0f1a2b3
-Revises: e3f4a5b6c7d8
+Revises: b2c3d4e5f6a7, e3f4a5b6c7d8
 Create Date: 2026-06-29
 """
 from alembic import op
