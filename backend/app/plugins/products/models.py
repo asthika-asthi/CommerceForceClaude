@@ -89,6 +89,7 @@ class ProductVariant(BaseModel):
     sku: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    price_adjustment: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
 
     option_links: Mapped[list["ProductVariantOption"]] = relationship(
         "ProductVariantOption", back_populates="variant",
