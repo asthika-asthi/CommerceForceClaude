@@ -167,4 +167,13 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
     ctaUrl: '/about',
     imagePosition: 'left',
   },
+  'animated-counter': {
+    title: 'By the numbers',
+    stats: [
+      { value: 30, label: 'Years in business', suffix: '+' },
+      { value: 2000, label: 'Happy customers', suffix: '+' },
+      { value: 500, label: 'Products in range', suffix: '+' },
+      { value: 99, label: 'Satisfaction rate', suffix: '%' },
+    ],
+  },
 }
