@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import '../themes/default/globals.css';
-@import '../components/blocks/glowing-shadow.css';
+@import '../components/blocks/visual/glowing-shadow.css';
 
 @theme inline {
   --color-brand: var(--brand);

@@ -1,4 +1,5 @@
 'use client'
+import './glowing-shadow.css'
 import type { ReactNode } from "react"
 
 export interface GlowingShadowProps {
