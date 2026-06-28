@@ -131,4 +131,14 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
     overlayOpacity: 0.5,
     minHeight: '400px',
   },
+  'marquee-ticker': {
+    items: [
+      'Free delivery over £150',
+      'UK-stocked products',
+      '30-day returns',
+      'Rated 4.9 ★ by 2,000+ customers',
+      'Trade accounts welcome',
+    ],
+    speed: 40,
+  },
 }
