@@ -28,6 +28,7 @@ import { GradientTextSection } from '@/components/blocks/visual/gradient-text-se
 import { ImageMosaic } from '@/components/blocks/visual/image-mosaic'
 import { SplitImageText } from '@/components/blocks/content/split-image-text'
 import { AnimatedCounter } from '@/components/blocks/content/animated-counter'
+import { BentoGrid } from '@/components/blocks/content/bento-grid'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,4 +66,5 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'image-mosaic': { component: ImageMosaic },
   'split-image-text': { component: SplitImageText },
   'animated-counter': { component: AnimatedCounter },
+  'bento-grid': { component: BentoGrid },
 }

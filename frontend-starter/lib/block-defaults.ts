@@ -176,4 +176,26 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
       { value: 99, label: 'Satisfaction rate', suffix: '%' },
     ],
   },
+  'bento-grid': {
+    title: 'Why choose us',
+    cards: [
+      {
+        size: 'large',
+        title: 'Trade prices, direct to you',
+        body: 'We import directly and pass the savings on. No middlemen, no markups — just quality products at the price you deserve.',
+        linkUrl: '/products',
+        linkText: 'Browse our range',
+      },
+      {
+        size: 'small',
+        title: 'Fast dispatch',
+        body: 'Orders placed before 2pm ship the same day.',
+      },
+      {
+        size: 'small',
+        title: '30-day returns',
+        body: 'Not happy? Return it, no questions asked.',
+      },
+    ],
+  },
 }
