@@ -34,7 +34,7 @@ export function GlassmorphismHero({
         {ctaText && ctaUrl && (
           <a
             href={ctaUrl}
-            className="inline-block px-8 py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-white/90 transition-colors"
+            className="inline-block px-8 py-3 rounded-xl bg-white text-fg font-semibold hover:bg-white/90 transition-colors"
           >
             {ctaText}
           </a>

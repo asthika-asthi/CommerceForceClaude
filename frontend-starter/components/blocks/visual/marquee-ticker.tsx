@@ -25,12 +25,6 @@ export function MarqueeTicker({
         color: textColor ?? '#ffffff',
       }}
     >
-      <style>{`
-        @keyframes cf-marquee {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-      `}</style>
       <div
         className="inline-flex items-center"
         style={{ animation: `cf-marquee ${duration} linear infinite` }}

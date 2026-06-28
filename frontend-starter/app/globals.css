@@ -40,3 +40,8 @@ body {
   0%, 100% { transform: scale(1); }
   50%       { transform: scale(0.75); }
 }
+
+@keyframes cf-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}

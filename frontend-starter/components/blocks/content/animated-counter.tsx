@@ -41,6 +41,7 @@ function Counter({ value, prefix = '', suffix = '' }: Pick<Stat, 'value' | 'pref
 }
 
 export function AnimatedCounter({ stats, title }: AnimatedCounterProps) {
+  if (!stats || stats.length === 0) return null
   const display = stats.slice(0, 4)
   return (
     <section className="py-16 px-4 bg-bg">

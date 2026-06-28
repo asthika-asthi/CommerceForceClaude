@@ -10,6 +10,7 @@ interface ImageMosaicProps {
 }
 
 export function ImageMosaic({ images, title }: ImageMosaicProps) {
+  if (!images || images.length === 0) return null
   const display = images.slice(0, 6)
 
   return (
