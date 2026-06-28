@@ -22,6 +22,7 @@ import { StatsBand } from '@/components/blocks/content/stats-band'
 import { HowToOrder } from '@/components/blocks/content/how-to-order'
 import { ProductRangeTable } from '@/components/blocks/commerce/product-range-table'
 import { GlassmorphismHero } from '@/components/blocks/visual/glassmorphism-hero'
+import { ParallaxBanner } from '@/components/blocks/visual/parallax-banner'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,4 +54,5 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'how-to-order': { component: HowToOrder },
   'product-range-table': { component: ProductRangeTable },
   'glassmorphism-hero': { component: GlassmorphismHero },
+  'parallax-banner': { component: ParallaxBanner },
 }

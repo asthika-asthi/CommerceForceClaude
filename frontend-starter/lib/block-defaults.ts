@@ -122,4 +122,13 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
     ctaUrl: '/products',
     overlayOpacity: 0.4,
   },
+  'parallax-banner': {
+    backgroundImage: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1920&auto=format&fit=crop',
+    title: 'Quality you can count on',
+    subtitle: 'Trusted by businesses across the UK.',
+    ctaText: 'Get a quote',
+    ctaUrl: '/contact',
+    overlayOpacity: 0.5,
+    minHeight: '400px',
+  },
 }
