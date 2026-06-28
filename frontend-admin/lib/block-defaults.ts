@@ -141,4 +141,10 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
     ],
     speed: 40,
   },
+  'gradient-text-section': {
+    title: 'Where quality meets value',
+    subtitle: 'Trusted by trade professionals across the UK since 1995.',
+    ctaText: 'Explore our range',
+    ctaUrl: '/products',
+  },
 }

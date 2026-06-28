@@ -24,6 +24,7 @@ import { ProductRangeTable } from '@/components/blocks/commerce/product-range-ta
 import { GlassmorphismHero } from '@/components/blocks/visual/glassmorphism-hero'
 import { ParallaxBanner } from '@/components/blocks/visual/parallax-banner'
 import { MarqueeTicker } from '@/components/blocks/visual/marquee-ticker'
+import { GradientTextSection } from '@/components/blocks/visual/gradient-text-section'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,4 +58,5 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'glassmorphism-hero': { component: GlassmorphismHero },
   'parallax-banner': { component: ParallaxBanner },
   'marquee-ticker': { component: MarqueeTicker },
+  'gradient-text-section': { component: GradientTextSection },
 }
