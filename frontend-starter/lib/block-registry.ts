@@ -25,6 +25,7 @@ import { GlassmorphismHero } from '@/components/blocks/visual/glassmorphism-hero
 import { ParallaxBanner } from '@/components/blocks/visual/parallax-banner'
 import { MarqueeTicker } from '@/components/blocks/visual/marquee-ticker'
 import { GradientTextSection } from '@/components/blocks/visual/gradient-text-section'
+import { ImageMosaic } from '@/components/blocks/visual/image-mosaic'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,4 +60,5 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'parallax-banner': { component: ParallaxBanner },
   'marquee-ticker': { component: MarqueeTicker },
   'gradient-text-section': { component: GradientTextSection },
+  'image-mosaic': { component: ImageMosaic },
 }

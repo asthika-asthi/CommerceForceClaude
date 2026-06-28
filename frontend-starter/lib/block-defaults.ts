@@ -147,4 +147,15 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
     ctaText: 'Explore our range',
     ctaUrl: '/products',
   },
+  'image-mosaic': {
+    title: 'Our products in action',
+    images: [
+      { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop', alt: 'Product 1' },
+      { src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop', alt: 'Product 2' },
+      { src: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop', alt: 'Product 3' },
+      { src: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop', alt: 'Product 4' },
+      { src: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800&auto=format&fit=crop', alt: 'Product 5' },
+      { src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop', alt: 'Product 6' },
+    ],
+  },
 }
