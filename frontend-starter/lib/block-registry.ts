@@ -26,6 +26,7 @@ import { ParallaxBanner } from '@/components/blocks/visual/parallax-banner'
 import { MarqueeTicker } from '@/components/blocks/visual/marquee-ticker'
 import { GradientTextSection } from '@/components/blocks/visual/gradient-text-section'
 import { ImageMosaic } from '@/components/blocks/visual/image-mosaic'
+import { SplitImageText } from '@/components/blocks/content/split-image-text'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,4 +62,5 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'marquee-ticker': { component: MarqueeTicker },
   'gradient-text-section': { component: GradientTextSection },
   'image-mosaic': { component: ImageMosaic },
+  'split-image-text': { component: SplitImageText },
 }

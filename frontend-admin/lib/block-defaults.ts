@@ -158,4 +158,13 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
       { src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop', alt: 'Product 6' },
     ],
   },
+  'split-image-text': {
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop',
+    imageAlt: 'Our products',
+    title: 'Trusted by trade professionals',
+    body: 'For over 30 years we have supplied quality products to businesses across the UK. Our team is on hand to help you find exactly what you need.',
+    ctaText: 'Learn more',
+    ctaUrl: '/about',
+    imagePosition: 'left',
+  },
 }
