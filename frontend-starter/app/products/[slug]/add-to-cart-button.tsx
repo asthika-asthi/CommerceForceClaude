@@ -47,6 +47,9 @@ export function AddToCartButton({
 
   const hasOptions = optionTypes.length > 0
   const isVariantRequired = hasOptions && !selectedVariantId
+  const selectedVariantInactive =
+    !!selectedVariantId &&
+    variants.find(v => v.id === selectedVariantId)?.is_active === false
 
   async function handleAdd() {
     const variantId = selectedVariantId ?? defaultVariantId
@@ -80,16 +83,17 @@ export function AddToCartButton({
         </div>
         <button
           onClick={handleAdd}
-          disabled={status !== "idle" || isVariantRequired}
+          disabled={status !== "idle" || isVariantRequired || selectedVariantInactive}
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors disabled:cursor-not-allowed ${
             status === "added" ? "bg-green-600 text-white"
             : status === "error" ? "bg-red-500 text-white"
-            : isVariantRequired ? "bg-slate-100 text-slate-400"
+            : (isVariantRequired || selectedVariantInactive) ? "bg-slate-100 text-slate-400"
             : "bg-brand hover:bg-brand-hover text-white"
           }`}
         >
           {status === "added" ? <><Check size={18} /> Added!</>
            : status === "error" ? <><X size={18} /> Failed — try again</>
+           : selectedVariantInactive ? <>Out of stock</>
            : isVariantRequired ? <>Select options above</>
            : <><ShoppingCart size={18} /> Add to cart</>}
         </button>
