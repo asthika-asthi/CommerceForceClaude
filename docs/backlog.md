@@ -91,7 +91,30 @@ All 33 "Built, not tested" backlog items tested end-to-end via 112 live API test
 - SEO meta tags — requires browser/`<head>` inspection
 - GDPR consent banner — localStorage-based, frontend only
 
----
+### Component library sprint (2026-06-28)
+
+Blocks directory reorganised into four categories (layout / visual / commerce / content). 8 new block components added. Variant picker refactored from `<select>` dropdowns to pill buttons.
+
+**Directory reorganisation:**
+- All 22 existing blocks moved into `components/blocks/layout/`, `visual/`, `commerce/`, `content/` subdirectories.
+- Registry keys unchanged — no config JSON changes needed.
+
+**8 new blocks registered in block-registry.ts and block-defaults.ts (storefront + admin):**
+- `glassmorphism-hero` — full-bleed image with frosted-glass card overlay
+- `parallax-banner` — fixed-background parallax banner with CTA
+- `marquee-ticker` — continuously scrolling trust signals strip
+- `gradient-text-section` — impact statement with CSS gradient heading text
+- `image-mosaic` — staggered image grid (up to 6 images, alternating tall/short)
+- `split-image-text` — two-column image + text layout, image side configurable
+- `animated-counter` — stats row that counts up on scroll into view (uses framer-motion)
+- `bento-grid` — asymmetric card grid with one large feature card + smaller cards
+
+**Variant picker refactor:**
+- `app/products/[slug]/variant-picker.tsx` — replaced `<select>` dropdowns with pill buttons; out-of-stock values shown as greyed strikethrough pills (still clickable); `aria-pressed` + `role="group"` for accessibility.
+- `app/products/[slug]/add-to-cart-button.tsx` — button shows "Out of stock" and disables when selected combination maps to an inactive variant; picker stays mounted so selections are preserved.
+- Known limitation: OOS pill detection is per-value (does value appear in any active variant?) not per-combination (does the selected combination have an active variant?). The button correctly shows "Out of stock" for impossible combos, but the pill itself may appear active. Per-combination narrowing is a future UX enhancement.
+
+**Admin block-defaults sync:** 3 previously missing entries (`promotions-banner`, `announcement-bar`, `coupon-spotlight`) added to `frontend-admin/lib/block-defaults.ts`.
 
 ---
 
@@ -100,7 +123,6 @@ All 33 "Built, not tested" backlog items tested end-to-end via 112 live API test
 | ID | Feature | Notes |
 |----|---------|-------|
 | P | 2FA for admin | TOTP flow, QR setup, backup codes. Separate sprint. |
-| Q | Storefront component library | New visual block components (glowing buttons, glassmorphism, parallax) must be React components registered in `block-registry.ts` before config can reference them. Includes polished variant picker UI (swatches, visual size grid). |
 | R | Per-client git branch script | `scripts/new-client.sh` to automate `git checkout -b client-name` + seed template copy |
 
 ---
@@ -112,7 +134,7 @@ These items were explicitly out of scope for Product variants v1. Build after v1
 | Feature | Notes |
 |---------|-------|
 | Per-variant pricing | Allow XL or premium finishes to cost more than base price. Requires adding `price_override` to `product_variants` and updating cart/checkout price resolution. |
-| Polished storefront variant picker | Colour swatches, visual size grid, strikethrough for out-of-stock. Blocked on component library (Q). |
+| Variant picker — per-combination OOS narrowing | Pills currently show OOS based on whether the value exists in any active variant. Narrowing to only active variants that match other current selections would reduce dead-end combinations. Low priority UX improvement. |
 | Variant images | Show colour-specific images when a colour variant is selected. Requires linking `ProductImage` to a variant. |
 | Bulk variant import via CSV | Admin uploads a CSV with all variant SKUs and option values. Separate sprint. |
 | Warehouse-to-warehouse stock transfers at variant level | Inventory v2. |
