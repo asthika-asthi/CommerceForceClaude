@@ -33,7 +33,11 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
   const [selections, setSelections] = useState<Record<string, string>>({})
 
   // Pre-compute which option values appear in at least one ACTIVE variant.
-  // A value absent from this set is shown as out-of-stock (greyed, strikethrough).
+  // This is a per-value check (not per-combination): a value is shown as available
+  // if it exists in any active variant, regardless of what is selected in other groups.
+  // Known limitation: selecting Size M then seeing Colour Red appear available is correct
+  // per this logic, even if M+Red is inactive. The button shows "Out of stock" in that case.
+  // Per-combination narrowing would be a UX improvement but is out of scope for this sprint.
   const availableValues = useMemo(() => {
     const map = new Map<string, Set<string>>()
     for (const ot of optionTypes) {
@@ -97,7 +101,7 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
                           ? 'bg-brand-dark text-white border-brand-dark'
                           : isAvailable
                             ? 'bg-bg text-fg border-border hover:border-brand-dark hover:text-brand-dark'
-                            : 'bg-slate-100 text-muted border-border line-through opacity-60 cursor-pointer',
+                            : 'bg-card-bg text-muted border-border line-through opacity-60 cursor-pointer',
                       ].join(' ')}
                     >
                       {val.label}
