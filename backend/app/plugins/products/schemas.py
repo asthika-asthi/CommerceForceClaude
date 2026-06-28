@@ -175,9 +175,11 @@ class ProductVariantOut(BaseModel):
     is_active: bool
     option_values: list[VariantOptionLink] = []
     label: str = ""
+    price_adjustment: Optional[Decimal] = None
     model_config = {"from_attributes": True}
 
 
 class VariantUpdate(BaseModel):
     sku: Optional[str] = None
     is_active: Optional[bool] = None
+    price_adjustment: Optional[Decimal] = None
