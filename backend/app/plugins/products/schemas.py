@@ -191,3 +191,19 @@ class VariantUpdate(BaseModel):
     sku: Optional[str] = None
     is_active: Optional[bool] = None
     price_adjustment: Optional[Decimal] = None
+
+
+class VariantCsvImportError(BaseModel):
+    row: int
+    field: str       # column name that caused the error, e.g. "product_sku", "stock_MAIN"
+    message: str
+
+
+class VariantCsvImportResult(BaseModel):
+    rows_processed: int
+    variants_created: int
+    variants_updated: int
+    stock_records_set: int
+    stock_records_incremented: int
+    warnings: list[str]
+    errors: list[VariantCsvImportError]
