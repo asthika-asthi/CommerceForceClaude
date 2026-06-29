@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-06-27. This is the single source of truth for build status.
+Last updated: 2026-06-29. This is the single source of truth for build status.
 
 ---
 
@@ -91,6 +91,62 @@ All 33 "Built, not tested" backlog items tested end-to-end via 112 live API test
 - SEO meta tags — requires browser/`<head>` inspection
 - GDPR consent banner — localStorage-based, frontend only
 
+### Full app verification + bug fixes (2026-06-29)
+
+Comprehensive live test of every plugin and every user-facing flow. All items below confirmed working end-to-end.
+
+**Storefront flows tested:**
+- Home page, product listing, product detail (with and without variants)
+- Category filter via top nav (by `category_id`) and sidebar
+- Add to cart → update quantity → remove; cart persists across page navigation
+- Guest checkout (cash, GB shipping applied correctly)
+- Coupon code validation (`GET /api/coupons/validate?code=X&subtotal=N`)
+- User registration → login → account page
+- Wishlist: add, list, remove
+- Password show/hide toggle on all password fields (login, register, reset, account, trade)
+- Trade account application form
+- Newsletter subscribe
+- Contact form submit
+- AI chat widget renders correctly; shows graceful error when no API key is set
+
+**Admin flows tested:**
+- Product CRUD (create, PUT update, delete); new product appears in storefront immediately
+- Category CRUD
+- Branding config GET and PUT
+- Order list, detail, status update (PUT)
+- Coupon CRUD and homepage featured coupon
+- Discount rules CRUD
+- Inventory warehouses and stock
+- Loyalty config and account list
+- Announcements CRUD (create, list, active public endpoint, delete)
+- Reviews admin list
+- RFQ submit and admin list
+- Credit admin account management
+- Addresses CRUD
+- Shipping zones (admin) and rate calculation (public)
+- User admin list
+
+**Per-variant pricing (2026-06-29) — promoted from "Built, not tested":**
+- Admin: set price adjustment on variant → saves → reloads correctly
+- Storefront product page: selecting a variant updates the displayed price live
+- Cart and checkout: adjusted price used in line totals and order total
+- Storefront product detail page loads with correct product name in SSR HTML
+
+**Bugs found and fixed (commits 9dad65d, ccab0c5):**
+- Top nav category links used `cat.slug` → now use `cat.id` (products were never filtered)
+- `EditProductPage` declared `async` in a `"use client"` file → fixed with `React.use(props.params)`
+- `ImageUpload` posted to relative `/api/media/upload` → now posts to absolute backend URL
+- CORS origins missing `localhost:3000` and `localhost:3001` → added to `.env`
+- `ENVIRONMENT=production` in dev `.env` → refresh cookie had `Secure` flag, blocking localhost auth
+- `announcements` plugin missing from `ENABLED_PLUGINS` and no DB table → migration added, plugin enabled
+- Auto discount rules with `discount_value < 0` were adding a surcharge to every order total → bad seed data deleted; `evaluate_rules()` now filters negative values and invalid types at the DB query
+- Loyalty admin page showed "Points per Dollar" / "$" labels on a GBP store → fixed to "Points per £1" / "£"
+- 4 duplicate "10% off over £50" discount rules left over from testing → deleted
+
+**Configuration items (not code bugs):**
+- AI chat returns 503 until `OPENROUTER_API_KEY` is set in `.env` — handled gracefully by chat widget
+- Stripe payment method returns 503 until `STRIPE_SECRET_KEY` is set — correct behaviour
+
 ### Component library sprint (2026-06-28)
 
 Blocks directory reorganised into four categories (layout / visual / commerce / content). 8 new block components added. Variant picker refactored from `<select>` dropdowns to pill buttons.
@@ -124,25 +180,6 @@ Blocks directory reorganised into four categories (layout / visual / commerce / 
 |----|---------|-------|
 | P | 2FA for admin | TOTP flow, QR setup, backup codes. Separate sprint. |
 | R | Per-client git branch script | `scripts/new-client.sh` to automate `git checkout -b client-name` + seed template copy |
-
----
-
-## Built, not tested — Product variants v2
-
-### Per-variant pricing (2026-06-29)
-
-`price_adjustment: Optional[Decimal]` column on `product_variants` (nullable — null = no adjustment). Effective price = `product.effective_price + (variant.price_adjustment or 0)`.
-
-- Admin variants table gains a 4th "Price adj. (£)" column (inline edit, save on blur)
-- Cart and checkout `_items_from_cart()` both use adjusted price; `_items_from_explicit()` unchanged
-- Storefront: price display updates live when variant is selected (`ProductDetailClient` client wrapper owns `selectedVariantId` state)
-- 4 new pytest tests (set/clear PATCH, cart with/without adjustment, checkout order item price) — all pass
-
-**Manual test checklist:**
-- Admin: set adjustment on a variant → save → reload → value persists
-- Storefront: select adjusted variant → price updates live
-- Storefront: add adjusted variant to cart → cart shows adjusted price
-- Checkout: order total and `unit_price` snapshot reflect adjusted price
 
 ---
 
