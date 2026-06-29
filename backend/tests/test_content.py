@@ -283,7 +283,10 @@ def _make_mock_httpx_response(reply_text: str, status_code: int = 200):
 
 async def test_ai_chat_basic_response(client: AsyncClient, db):
     mock_resp = _make_mock_httpx_response("Hello! How can I help you today?")
-    with patch("app.plugins.ai_chat.service.httpx.AsyncClient") as mock_client_cls:
+    with patch("app.plugins.ai_chat.router.get_settings") as mock_settings, \
+         patch("app.plugins.ai_chat.service.httpx.AsyncClient") as mock_client_cls:
+        mock_settings.return_value.OPENROUTER_API_KEY = "test-key"
+        mock_settings.return_value.OPENROUTER_MODEL = "anthropic/claude-haiku-4-5-20251001"
         mock_http = AsyncMock()
         mock_http.post = AsyncMock(return_value=mock_resp)
         mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_http)
@@ -303,7 +306,10 @@ async def test_ai_chat_history_persisted_and_loaded(client: AsyncClient, db):
     mock_resp1 = _make_mock_httpx_response("We have electronics, clothing, and home goods.")
     mock_resp2 = _make_mock_httpx_response("Our electronics start at £9.99.")
 
-    with patch("app.plugins.ai_chat.service.httpx.AsyncClient") as mock_client_cls:
+    with patch("app.plugins.ai_chat.router.get_settings") as mock_settings, \
+         patch("app.plugins.ai_chat.service.httpx.AsyncClient") as mock_client_cls:
+        mock_settings.return_value.OPENROUTER_API_KEY = "test-key"
+        mock_settings.return_value.OPENROUTER_MODEL = "anthropic/claude-haiku-4-5-20251001"
         mock_http = AsyncMock()
         mock_http.post = AsyncMock(side_effect=[mock_resp1, mock_resp2])
         mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_http)
@@ -350,7 +356,10 @@ async def test_ai_chat_uses_branding_context(client: AsyncClient, db):
         captured_payload.update(kwargs.get("json", {}))
         return _make_mock_httpx_response("Welcome to GadgetWorld!")
 
-    with patch("app.plugins.ai_chat.service.httpx.AsyncClient") as mock_client_cls:
+    with patch("app.plugins.ai_chat.router.get_settings") as mock_settings, \
+         patch("app.plugins.ai_chat.service.httpx.AsyncClient") as mock_client_cls:
+        mock_settings.return_value.OPENROUTER_API_KEY = "test-key"
+        mock_settings.return_value.OPENROUTER_MODEL = "anthropic/claude-haiku-4-5-20251001"
         mock_http = AsyncMock()
         mock_http.post = mock_post
         mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_http)
