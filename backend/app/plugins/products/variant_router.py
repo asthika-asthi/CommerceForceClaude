@@ -1,13 +1,41 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, File, Query, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import require_admin
 from app.plugins.products import variant_service as service
 from app.plugins.products.schemas import (
-    OptionTypeCreate, OptionTypeOut, OptionValueCreate, OptionValueOut, VariantUpdate,
+    OptionTypeCreate, OptionTypeOut, OptionValueCreate, OptionValueOut, VariantUpdate, VariantCsvImportResult,
 )
 
 router = APIRouter()
+
+
+@router.get("/variants/export/csv", dependencies=[Depends(require_admin())])
+async def export_variants_csv(db: AsyncSession = Depends(get_db)):
+    from app.plugins.products import variant_csv_service
+    content = await variant_csv_service.export_variants_to_csv(db)
+    return StreamingResponse(
+        iter([content]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="variants.csv"'},
+    )
+
+
+@router.post(
+    "/variants/import/csv",
+    response_model=VariantCsvImportResult,
+    dependencies=[Depends(require_admin())],
+)
+async def import_variants_csv(
+    file: UploadFile = File(...),
+    stock_mode: str = Query("set", pattern="^(set|add)$"),
+    db: AsyncSession = Depends(get_db),
+):
+    content = (await file.read()).decode("utf-8")
+    from app.plugins.products import variant_csv_service
+    result = await variant_csv_service.import_variants_from_csv(content, db, stock_mode)
+    return result
 
 
 @router.get("/{product_id}/options", response_model=list[OptionTypeOut])
