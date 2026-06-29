@@ -73,7 +73,7 @@ async def _items_from_cart(cart: Cart, db: AsyncSession) -> list[dict]:
             "product_id": product.id,
             "product_name": product.name,
             "product_sku": product.sku,
-            "unit_price": product.effective_price,
+            "unit_price": product.effective_price + (variant.price_adjustment or Decimal("0")),
             "quantity": cart_item.quantity,
             "variant_id": variant.id,
             "variant_label": variant_label,

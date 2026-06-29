@@ -78,7 +78,7 @@ async def _build_cart_out(cart: Cart, db: AsyncSession) -> CartOut:
         if not primary and product.images:
             primary = product.images[0].url
 
-        unit_price = product.effective_price
+        unit_price = product.effective_price + (variant.price_adjustment or Decimal("0"))
         line_total = unit_price * item.quantity
         subtotal += line_total
 

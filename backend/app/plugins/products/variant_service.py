@@ -262,4 +262,5 @@ def build_variant_out(variant: ProductVariant) -> dict:
         "is_active": variant.is_active,
         "option_values": option_values,
         "label": ", ".join(label_parts),
+        "price_adjustment": str(variant.price_adjustment) if variant.price_adjustment is not None else None,
     }
