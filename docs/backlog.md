@@ -168,7 +168,7 @@ Blocks directory reorganised into four categories (layout / visual / commerce / 
 **Variant picker refactor:**
 - `app/products/[slug]/variant-picker.tsx` — replaced `<select>` dropdowns with pill buttons; out-of-stock values shown as greyed strikethrough pills (still clickable); `aria-pressed` + `role="group"` for accessibility.
 - `app/products/[slug]/add-to-cart-button.tsx` — button shows "Out of stock" and disables when selected combination maps to an inactive variant; picker stays mounted so selections are preserved.
-- Known limitation: OOS pill detection is per-value (does value appear in any active variant?) not per-combination (does the selected combination have an active variant?). The button correctly shows "Out of stock" for impossible combos, but the pill itself may appear active. Per-combination narrowing is a future UX enhancement.
+- OOS pill detection is per-combination: selecting one option greys out values in other groups that would form an inactive combination. Per-combination narrowing shipped and tested 2026-06-29.
 
 **Admin block-defaults sync:** 3 previously missing entries (`promotions-banner`, `announcement-bar`, `coupon-spotlight`) added to `frontend-admin/lib/block-defaults.ts`.
 
@@ -187,7 +187,7 @@ Blocks directory reorganised into four categories (layout / visual / commerce / 
 
 | Feature | Notes |
 |---------|-------|
-| Variant picker — per-combination OOS narrowing | Pills currently show OOS based on whether the value exists in any active variant. Narrowing to only active variants that match other current selections would reduce dead-end combinations. Low priority UX improvement. |
+| ~~Variant picker — per-combination OOS narrowing~~ | **Done** — shipped 2026-06-29. Pills narrow based on current selections across all option groups. |
 | Variant images | Show colour-specific images when a colour variant is selected. Requires linking `ProductImage` to a variant. |
 | Bulk variant import via CSV | Admin uploads a CSV with all variant SKUs and option values. Separate sprint. |
 | Warehouse-to-warehouse stock transfers at variant level | Inventory v2. |
