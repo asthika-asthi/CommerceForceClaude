@@ -74,6 +74,7 @@ export interface ProductVariant {
   is_active: boolean
   option_values: VariantOptionValue[]
   label: string
+  price_adjustment?: string | null
 }
 
 export interface ProductOptionTypeValue {

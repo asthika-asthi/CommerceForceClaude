@@ -31,6 +31,8 @@ interface AddToCartButtonProps {
   defaultVariantId: string
   optionTypes?: OptionType[]
   variants?: Variant[]
+  selectedVariantId: string | null
+  onVariantSelect: (id: string | null) => void
 }
 
 export function AddToCartButton({
@@ -39,11 +41,12 @@ export function AddToCartButton({
   defaultVariantId,
   optionTypes = [],
   variants = [],
+  selectedVariantId,
+  onVariantSelect,
 }: AddToCartButtonProps) {
   const addItem = useCartStore((s) => s.addItem)
   const [qty, setQty] = useState(1)
   const [status, setStatus] = useState<"idle" | "added" | "error">("idle")
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
 
   const hasOptions = optionTypes.length > 0
   const isVariantRequired = hasOptions && !selectedVariantId
@@ -72,7 +75,7 @@ export function AddToCartButton({
         <VariantPicker
           optionTypes={optionTypes}
           variants={variants}
-          onSelect={setSelectedVariantId}
+          onSelect={onVariantSelect}
         />
       )}
       <div className="flex gap-3">
