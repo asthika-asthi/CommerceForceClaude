@@ -12,15 +12,6 @@ from app.plugins.inventory.models import Warehouse, WarehouseStock
 from app.plugins.products.schemas import VariantCsvImportError, VariantCsvImportResult
 
 
-def _csv_safe(s) -> str:
-    if s is None:
-        return ""
-    s = str(s)
-    if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
-        return "'" + s
-    return s
-
-
 async def _find_or_create_option_type(
     product_id: str,
     name: str,
