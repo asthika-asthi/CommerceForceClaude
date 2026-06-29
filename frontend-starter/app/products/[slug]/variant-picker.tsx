@@ -32,26 +32,37 @@ interface VariantPickerProps {
 export function VariantPicker({ optionTypes, variants, onSelect }: VariantPickerProps) {
   const [selections, setSelections] = useState<Record<string, string>>({})
 
-  // Pre-compute which option values appear in at least one ACTIVE variant.
-  // This is a per-value check (not per-combination): a value is shown as available
-  // if it exists in any active variant, regardless of what is selected in other groups.
-  // Known limitation: selecting Size M then seeing Colour Red appear available is correct
-  // per this logic, even if M+Red is inactive. The button shows "Out of stock" in that case.
-  // Per-combination narrowing would be a UX improvement but is out of scope for this sprint.
+  // Per-combination availability: a value is available if there exists at least one
+  // active variant that has this value AND matches every other currently selected value.
+  // When nothing is selected in other groups, no constraint is applied from those groups.
   const availableValues = useMemo(() => {
     const map = new Map<string, Set<string>>()
     for (const ot of optionTypes) {
-      map.set(ot.name, new Set())
-    }
-    for (const v of variants) {
-      if (v.is_active) {
-        for (const ov of v.option_values) {
-          map.get(ov.option_type_name)?.add(ov.option_value_label)
-        }
+      const available = new Set<string>()
+      for (const val of ot.values) {
+        const hasMatch = variants.some(v => {
+          if (!v.is_active) return false
+          // Must have this value for the current option type
+          const hasThisValue = v.option_values.some(
+            ov => ov.option_type_name === ot.name && ov.option_value_label === val.label
+          )
+          if (!hasThisValue) return false
+          // Must match every other currently selected option type
+          for (const [selectedType, selectedLabel] of Object.entries(selections)) {
+            if (selectedType === ot.name) continue
+            const matchesOther = v.option_values.some(
+              ov => ov.option_type_name === selectedType && ov.option_value_label === selectedLabel
+            )
+            if (!matchesOther) return false
+          }
+          return true
+        })
+        if (hasMatch) available.add(val.label)
       }
+      map.set(ot.name, available)
     }
     return map
-  }, [optionTypes, variants])
+  }, [optionTypes, variants, selections])
 
   useEffect(() => {
     const allSelected = optionTypes.every(ot => selections[ot.name])
