@@ -58,7 +58,9 @@ export interface ProductImage {
   id: string
   url: string
   alt_text?: string
+  is_primary?: boolean
   sort_order: number
+  variant_id?: string | null
 }
 
 export interface VariantOptionValue {

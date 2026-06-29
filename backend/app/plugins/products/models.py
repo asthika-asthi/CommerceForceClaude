@@ -49,6 +49,7 @@ class ProductImage(BaseModel):
     alt_text: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    variant_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
 
     product: Mapped["Product"] = relationship("Product", back_populates="images")
 

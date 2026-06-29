@@ -7,7 +7,7 @@ from sqlalchemy import select, or_, func, asc, desc
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from app.plugins.products.models import Product, ProductImage
-from app.plugins.products.schemas import ProductCreate, ProductUpdate, ProductImageCreate, ImageSortItem
+from app.plugins.products.schemas import ProductCreate, ProductUpdate, ProductImageCreate, ProductImageUpdate, ImageSortItem
 from app.shared.slug import slugify, generate_sku
 from app.plugins.categories.models import Category
 from app.plugins.categories.schemas import CategoryCreate as CategoryCreateSchema
@@ -174,6 +174,19 @@ async def add_image(product_id: str, data: ProductImageCreate, db: AsyncSession)
     await _load(product_id, db)
     img = ProductImage(product_id=product_id, **data.model_dump())
     db.add(img)
+    await db.flush()
+    return img
+
+
+async def update_image(product_id: str, image_id: str, data: ProductImageUpdate, db: AsyncSession) -> ProductImage:
+    result = await db.execute(
+        select(ProductImage).where(ProductImage.id == image_id, ProductImage.product_id == product_id)
+    )
+    img = result.scalar_one_or_none()
+    if not img:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(img, field, value)
     await db.flush()
     return img
 

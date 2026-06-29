@@ -11,7 +11,8 @@ from app.core.dependencies import require_admin
 from app.plugins.products.models import Product
 from app.plugins.products.schemas import (
     ProductCreate, ProductUpdate, ProductOut, ProductListOut, ProductImageCreate, ProductImageOut,
-    CsvImportResult, ImageSortItem, DuplicateGroup, DeleteDuplicatesRequest, DeleteDuplicatesResult,
+    ProductImageUpdate, CsvImportResult, ImageSortItem, DuplicateGroup, DeleteDuplicatesRequest,
+    DeleteDuplicatesResult,
 )
 from app.plugins.products import service
 from app.plugins.products import variant_router
@@ -161,6 +162,14 @@ async def update_product(product_id: str, data: ProductUpdate, db: AsyncSession 
              status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin())])
 async def add_image(product_id: str, data: ProductImageCreate, db: AsyncSession = Depends(get_db)):
     return await service.add_image(product_id, data, db)
+
+
+@router.patch("/{product_id}/images/{image_id}", response_model=ProductImageOut,
+              dependencies=[Depends(require_admin())])
+async def update_image(
+    product_id: str, image_id: str, data: ProductImageUpdate, db: AsyncSession = Depends(get_db)
+):
+    return await service.update_image(product_id, image_id, data, db)
 
 
 @router.patch("/{product_id}/images", response_model=list[ProductImageOut],

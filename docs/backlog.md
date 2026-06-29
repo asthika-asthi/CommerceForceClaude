@@ -188,7 +188,7 @@ Blocks directory reorganised into four categories (layout / visual / commerce / 
 | Feature | Notes |
 |---------|-------|
 | ~~Variant picker — per-combination OOS narrowing~~ | **Done** — shipped 2026-06-29. Pills narrow based on current selections across all option groups. |
-| Variant images | Show colour-specific images when a colour variant is selected. Requires linking `ProductImage` to a variant. |
+| ~~Variant images~~ | **Built, not tested** — `variant_id` on `ProductImage`; admin dropdown to assign images to variants; storefront auto-switches main image when variant selected. Migration: `e2f3a4b5c6d7`. |
 | Bulk variant import via CSV | Admin uploads a CSV with all variant SKUs and option values. Separate sprint. |
 | Warehouse-to-warehouse stock transfers at variant level | Inventory v2. |
 

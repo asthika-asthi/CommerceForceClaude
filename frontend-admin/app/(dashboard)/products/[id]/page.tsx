@@ -27,6 +27,7 @@ interface ProductVariant {
   label: string
   sku: string | null
   is_active: boolean
+  is_default: boolean
   price_adjustment: string | null
 }
 
@@ -66,6 +67,15 @@ function EditProduct({ id }: { id: string }) {
   // Locally managed image list (ordered)
   const [images, setImages] = useState<ProductImage[]>([])
   const [newImageUrl, setNewImageUrl] = useState("")
+
+  // Non-default variants — used for image-variant assignment dropdown
+  const [variantOptions, setVariantOptions] = useState<Array<{ id: string; label: string }>>([])
+
+  useEffect(() => {
+    api.get<ProductVariant[]>(`/api/products/${id}/variants`)
+      .then(data => setVariantOptions(data.filter(v => !v.is_default).map(v => ({ id: v.id, label: v.label }))))
+      .catch(() => {})
+  }, [id])
 
   useEffect(() => {
     if (product) {
@@ -134,6 +144,15 @@ function EditProduct({ id }: { id: string }) {
 
   function set(key: string, val: string | boolean) {
     setForm((f) => ({ ...f, [key]: val }))
+  }
+
+  async function handleAssignVariant(imageId: string, variantId: string | null) {
+    try {
+      const updated = await api.patch<ProductImage>(`/api/products/${id}/images/${imageId}`, { variant_id: variantId })
+      setImages(prev => prev.map(img => img.id === imageId ? { ...img, variant_id: updated.variant_id } : img))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update image variant")
+    }
   }
 
   // ── Variants state ────────────────────────────────────────────────────────
@@ -377,6 +396,19 @@ function EditProduct({ id }: { id: string }) {
                         <span className="text-[10px] font-semibold text-amber-600 flex items-center gap-0.5">
                           <Star size={9} fill="currentColor" /> Primary
                         </span>
+                      )}
+                      {variantOptions.length > 0 && (
+                        <select
+                          value={img.variant_id ?? ""}
+                          onChange={(e) => handleAssignVariant(img.id, e.target.value || null)}
+                          className="mt-1 text-[10px] border border-slate-200 rounded px-1 py-0.5 bg-white text-slate-600 max-w-[180px]"
+                          title="Link image to a variant"
+                        >
+                          <option value="">All variants</option>
+                          {variantOptions.map(v => (
+                            <option key={v.id} value={v.id}>{v.label}</option>
+                          ))}
+                        </select>
                       )}
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">

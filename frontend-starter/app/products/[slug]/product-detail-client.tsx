@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Product, ReviewSummary } from "@/lib/types"
 import { AddToCartButton } from "./add-to-cart-button"
+import { WishlistButton } from "@/components/shop/wishlist-button"
 
 interface Props {
   product: Product
@@ -26,6 +27,18 @@ function StarRow({ rating }: { rating: number }) {
 export function ProductDetailClient({ product, inStock, defaultVariantId, summary }: Props) {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
 
+  const images = product.images ?? []
+  const [displayedImageUrl, setDisplayedImageUrl] = useState<string | null>(images[0]?.url ?? null)
+
+  // Switch main image when a variant with tagged images is selected
+  useEffect(() => {
+    if (!selectedVariantId) return
+    const variantImages = images.filter(img => img.variant_id === selectedVariantId)
+    if (variantImages.length > 0) {
+      setDisplayedImageUrl(variantImages[0].url)
+    }
+  }, [selectedVariantId])
+
   const variants = product.variants ?? []
   const basePrice = parseFloat(product.price)
   const salePrice = product.sale_price ? parseFloat(product.sale_price) : null
@@ -34,45 +47,93 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
   const adjustment = selectedVariant?.price_adjustment ? parseFloat(selectedVariant.price_adjustment) : 0
   const displayPrice = effectiveBasePrice + adjustment
 
+  const displayedAlt = images.find(img => img.url === displayedImageUrl)?.alt_text ?? product.name
+
   return (
-    <>
-      <div className="flex items-baseline gap-3 mb-2">
-        <span className="text-2xl font-bold text-slate-900">&#163;{displayPrice.toFixed(2)}</span>
-        {salePrice && <span className="text-lg text-slate-400 line-through">&#163;{basePrice.toFixed(2)}</span>}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-8">
+      {/* Left: image gallery */}
+      <div>
+        {images.length > 0 ? (
+          <div className="space-y-3">
+            <div className="aspect-square bg-slate-50 rounded-2xl overflow-hidden">
+              <img
+                src={displayedImageUrl ?? images[0].url}
+                alt={displayedAlt}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {images.length > 1 && (
+              <div className="grid grid-cols-4 gap-2">
+                {images.slice(0, 4).map((img) => (
+                  <button
+                    key={img.id}
+                    type="button"
+                    onClick={() => setDisplayedImageUrl(img.url)}
+                    className={[
+                      "aspect-square bg-slate-50 rounded-xl overflow-hidden border-2 transition-colors",
+                      displayedImageUrl === img.url
+                        ? "border-brand-dark"
+                        : "border-transparent hover:border-slate-300",
+                    ].join(" ")}
+                  >
+                    <img src={img.url} alt={img.alt_text ?? ""} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="aspect-square bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 text-6xl">
+            &#128230;
+          </div>
+        )}
       </div>
 
-      {summary && summary.total_reviews > 0 && (
-        <div className="flex items-center gap-2 mb-4">
-          <StarRow rating={summary.average_rating} />
-          <span className="text-sm text-slate-500">
-            {summary.average_rating.toFixed(1)} ({summary.total_reviews} {summary.total_reviews === 1 ? "review" : "reviews"})
-          </span>
+      {/* Right: product info */}
+      <div>
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <h1 className="text-3xl font-bold text-slate-900">{product.name}</h1>
+          <WishlistButton productId={product.id} size={20} className="mt-1" />
         </div>
-      )}
 
-      {inStock ? (
-        <p className="text-sm text-green-600 font-medium mb-4">
-          In stock ({product.stock_quantity} available)
-        </p>
-      ) : (
-        <p className="text-sm text-red-500 font-medium mb-4">Out of stock</p>
-      )}
-
-      {product.description && (
-        <div className="prose prose-sm prose-slate mb-6">
-          <p>{product.description}</p>
+        <div className="flex items-baseline gap-3 mb-2">
+          <span className="text-2xl font-bold text-slate-900">&#163;{displayPrice.toFixed(2)}</span>
+          {salePrice && <span className="text-lg text-slate-400 line-through">&#163;{basePrice.toFixed(2)}</span>}
         </div>
-      )}
 
-      <AddToCartButton
-        productId={product.id}
-        inStock={inStock}
-        defaultVariantId={defaultVariantId}
-        optionTypes={product.option_types ?? []}
-        variants={variants}
-        selectedVariantId={selectedVariantId}
-        onVariantSelect={setSelectedVariantId}
-      />
-    </>
+        {summary && summary.total_reviews > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <StarRow rating={summary.average_rating} />
+            <span className="text-sm text-slate-500">
+              {summary.average_rating.toFixed(1)} ({summary.total_reviews} {summary.total_reviews === 1 ? "review" : "reviews"})
+            </span>
+          </div>
+        )}
+
+        {inStock ? (
+          <p className="text-sm text-green-600 font-medium mb-4">
+            In stock ({product.stock_quantity} available)
+          </p>
+        ) : (
+          <p className="text-sm text-red-500 font-medium mb-4">Out of stock</p>
+        )}
+
+        {product.description && (
+          <div className="prose prose-sm prose-slate mb-6">
+            <p>{product.description}</p>
+          </div>
+        )}
+
+        <AddToCartButton
+          productId={product.id}
+          inStock={inStock}
+          defaultVariantId={defaultVariantId}
+          optionTypes={product.option_types ?? []}
+          variants={variants}
+          selectedVariantId={selectedVariantId}
+          onVariantSelect={setSelectedVariantId}
+        />
+      </div>
+    </div>
   )
 }

@@ -9,6 +9,7 @@ class ProductImageOut(BaseModel):
     alt_text: Optional[str] = None
     is_primary: bool
     sort_order: int
+    variant_id: Optional[str] = None
     model_config = {"from_attributes": True}
 
 
@@ -17,6 +18,13 @@ class ProductImageCreate(BaseModel):
     alt_text: Optional[str] = None
     is_primary: bool = False
     sort_order: int = 0
+    variant_id: Optional[str] = None
+
+
+class ProductImageUpdate(BaseModel):
+    variant_id: Optional[str] = None
+    alt_text: Optional[str] = None
+    is_primary: Optional[bool] = None
 
 
 class ImageSortItem(BaseModel):

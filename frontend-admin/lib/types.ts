@@ -50,6 +50,7 @@ export interface ProductImage {
   alt_text?: string
   is_primary?: boolean
   sort_order: number
+  variant_id?: string | null
 }
 
 export interface Product {
