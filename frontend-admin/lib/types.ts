@@ -299,3 +299,20 @@ export interface LandingSection {
   is_active: boolean
   background_color?: string
 }
+
+// ── Bulk Variant CSV Import ────────────────────────────────────────────────────
+export interface VariantCsvImportError {
+  row: number
+  field: string
+  message: string
+}
+
+export interface VariantCsvImportResult {
+  rows_processed: number
+  variants_created: number
+  variants_updated: number
+  stock_records_set: number
+  stock_records_incremented: number
+  warnings: string[]
+  errors: VariantCsvImportError[]
+}
