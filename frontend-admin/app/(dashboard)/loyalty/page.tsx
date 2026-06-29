@@ -40,8 +40,8 @@ export default function LoyaltyPage() {
       {/* Current config display */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { label: "Points per $1", value: config.points_per_dollar },
-          { label: "Redemption Rate", value: `$${config.redemption_rate}/pt` },
+          { label: "Points per £1", value: config.points_per_dollar },
+          { label: "Redemption Rate", value: `£${config.redemption_rate}/pt` },
           { label: "Min Redemption", value: `${config.min_redemption} pts` },
         ].map(({ label, value }) => (
           <div key={label} className="bg-white rounded-xl border border-slate-200 p-4">
@@ -56,8 +56,8 @@ export default function LoyaltyPage() {
         className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-slate-700">Update Configuration</h3>
         {[
-          { key: "points_per_dollar", label: "Points per Dollar", placeholder: config.points_per_dollar },
-          { key: "redemption_rate", label: "Redemption Rate ($ per point)", placeholder: config.redemption_rate },
+          { key: "points_per_dollar", label: "Points per £1 spent", placeholder: config.points_per_dollar },
+          { key: "redemption_rate", label: "Redemption Rate (£ per point)", placeholder: config.redemption_rate },
           { key: "min_redemption", label: "Minimum Points to Redeem", placeholder: String(config.min_redemption) },
         ].map(({ key, label, placeholder }) => (
           <div key={key}>

@@ -53,6 +53,7 @@ async def evaluate_rules(subtotal: Decimal, db: AsyncSession) -> Decimal:
     result = await db.execute(
         select(DiscountRule)
         .where(DiscountRule.is_active == True)
+        .where(DiscountRule.discount_value > 0)
         .where(
             (DiscountRule.min_order_value == None) |
             (DiscountRule.min_order_value <= subtotal)
@@ -60,9 +61,10 @@ async def evaluate_rules(subtotal: Decimal, db: AsyncSession) -> Decimal:
         .order_by(DiscountRule.priority.desc())
     )
     rules = result.scalars().all()
-    if not rules:
+    valid_rules = [r for r in rules if r.discount_type in ("percentage", "fixed")]
+    if not valid_rules:
         return Decimal("0")
-    rule = rules[0]
+    rule = valid_rules[0]
     if rule.discount_type == "percentage":
         raw = subtotal * rule.discount_value / Decimal("100")
         return min(raw, subtotal).quantize(Decimal("0.01"))
