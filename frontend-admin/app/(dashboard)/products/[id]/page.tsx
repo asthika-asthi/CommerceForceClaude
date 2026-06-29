@@ -277,8 +277,8 @@ function EditProduct({ id }: { id: string }) {
     const current = variants.find((v) => v.id === variantId)
     if (!current) return
     if (raw === (current.price_adjustment ?? "")) return
-    const price_adjustment = raw === "" ? null : parseFloat(raw)
-    if (raw !== "" && isNaN(price_adjustment!)) return
+    if (raw !== "" && isNaN(parseFloat(raw))) return
+    const price_adjustment = raw === "" ? null : raw
     setVariantsError("")
     try {
       await api.patch(`/api/products/${id}/variants/${variantId}`, { price_adjustment })
