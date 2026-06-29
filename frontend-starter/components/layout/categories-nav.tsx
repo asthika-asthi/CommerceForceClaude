@@ -20,7 +20,7 @@ export async function CategoriesNav() {
         {categories.map(cat => (
           <Link
             key={cat.id}
-            href={`/products?category=${cat.slug}`}
+            href={`/products?category=${cat.id}`}
             className={`${linkCls} flex items-center gap-1.5`}
           >
             {cat.name}

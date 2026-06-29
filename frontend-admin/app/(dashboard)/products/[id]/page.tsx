@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, use } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
@@ -31,8 +31,8 @@ interface ProductVariant {
 }
 
 // ── Page entry (async server component wrapper) ───────────────────────────────
-export default async function EditProductPage(props: PageProps<"/products/[id]">) {
-  const { id } = await props.params
+export default function EditProductPage(props: PageProps<"/products/[id]">) {
+  const { id } = use(props.params)
   return <EditProduct id={id} />
 }
 

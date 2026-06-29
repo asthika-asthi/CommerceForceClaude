@@ -29,7 +29,8 @@ export function ImageUpload({ value, onUpload, label = "Upload Image" }: ImageUp
           ? localStorage.getItem("cf_access_token")
           : null
 
-      const res = await fetch("/api/media/upload", {
+      const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+      const res = await fetch(`${base}/api/media/upload`, {
         method: "POST",
         body: formData,
         credentials: "include",
