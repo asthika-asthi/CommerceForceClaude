@@ -189,7 +189,7 @@ Blocks directory reorganised into four categories (layout / visual / commerce / 
 |---------|-------|
 | ~~Variant picker — per-combination OOS narrowing~~ | **Done** — shipped 2026-06-29. Pills narrow based on current selections across all option groups. |
 | ~~Variant images~~ | **Built, not tested** — `variant_id` on `ProductImage`; admin dropdown to assign images to variants; storefront auto-switches main image when variant selected. Migration: `e2f3a4b5c6d7`. |
-| Bulk variant import via CSV | Admin uploads a CSV with all variant SKUs and option values. Separate sprint. |
+| ~~Bulk variant import via CSV~~ | **Built, not tested** — global CSV format, two stock modes (set/add), per-row error reporting, export round-trip. 46 automated tests pass. Admin UI at /bulk-variants. Needs manual browser smoke test. |
 | Warehouse-to-warehouse stock transfers at variant level | Inventory v2. |
 
 ---
