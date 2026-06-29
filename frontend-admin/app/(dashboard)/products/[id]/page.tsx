@@ -27,6 +27,7 @@ interface ProductVariant {
   label: string
   sku: string | null
   is_active: boolean
+  price_adjustment: string | null
 }
 
 // ── Page entry (async server component wrapper) ───────────────────────────────
@@ -153,6 +154,7 @@ function EditProduct({ id }: { id: string }) {
   const [generateLoading, setGenerateLoading] = useState(false)
   // Per-variant SKU editing state
   const [variantSkus, setVariantSkus] = useState<Record<string, string>>({})
+  const [variantAdjustments, setVariantAdjustments] = useState<Record<string, string>>({})
 
   const loadVariantData = useCallback(async () => {
     setVariantsLoading(true)
@@ -170,6 +172,11 @@ function EditProduct({ id }: { id: string }) {
         skuMap[v.id] = v.sku ?? ""
       }
       setVariantSkus(skuMap)
+      const adjMap: Record<string, string> = {}
+      for (const v of vars) {
+        adjMap[v.id] = v.price_adjustment ?? ""
+      }
+      setVariantAdjustments(adjMap)
     } catch (err) {
       setVariantsError(err instanceof Error ? err.message : "Failed to load variant data")
     } finally {
@@ -259,6 +266,26 @@ function EditProduct({ id }: { id: string }) {
       // Update local state to reflect saved value
       setVariants((prev) =>
         prev.map((v) => (v.id === variantId ? { ...v, sku: sku || null } : v)),
+      )
+    } catch (err) {
+      setVariantsError(err instanceof Error ? err.message : "Failed to update variant")
+    }
+  }
+
+  async function handleVariantAdjustmentBlur(variantId: string) {
+    const raw = variantAdjustments[variantId] ?? ""
+    const current = variants.find((v) => v.id === variantId)
+    if (!current) return
+    if (raw === (current.price_adjustment ?? "")) return
+    const price_adjustment = raw === "" ? null : parseFloat(raw)
+    if (raw !== "" && isNaN(price_adjustment!)) return
+    setVariantsError("")
+    try {
+      await api.patch(`/api/products/${id}/variants/${variantId}`, { price_adjustment })
+      setVariants((prev) =>
+        prev.map((v) =>
+          v.id === variantId ? { ...v, price_adjustment: raw || null } : v
+        )
       )
     } catch (err) {
       setVariantsError(err instanceof Error ? err.message : "Failed to update variant")
@@ -588,6 +615,7 @@ function EditProduct({ id }: { id: string }) {
                         <tr className="border-b border-slate-200">
                           <th className="text-left py-2 pr-4 font-medium text-slate-600">Variant</th>
                           <th className="text-left py-2 pr-4 font-medium text-slate-600">SKU</th>
+                          <th className="text-left py-2 pr-4 font-medium text-slate-600">Price adj. (£)</th>
                           <th className="text-left py-2 font-medium text-slate-600">Active</th>
                         </tr>
                       </thead>
@@ -604,6 +632,19 @@ function EditProduct({ id }: { id: string }) {
                                 onBlur={() => handleVariantSkuBlur(variant.id)}
                                 placeholder="SKU"
                                 className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-40"
+                              />
+                            </td>
+                            <td className="py-2 pr-4">
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={variantAdjustments[variant.id] ?? ""}
+                                onChange={(e) =>
+                                  setVariantAdjustments((prev) => ({ ...prev, [variant.id]: e.target.value }))
+                                }
+                                onBlur={() => handleVariantAdjustmentBlur(variant.id)}
+                                placeholder="0.00"
+                                className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-28"
                               />
                             </td>
                             <td className="py-2">
