@@ -276,7 +276,8 @@ function EditProduct({ id }: { id: string }) {
     const raw = variantAdjustments[variantId] ?? ""
     const current = variants.find((v) => v.id === variantId)
     if (!current) return
-    if (raw === (current.price_adjustment ?? "")) return
+    if (raw === "" && current.price_adjustment == null) return
+    if (raw !== "" && current.price_adjustment != null && parseFloat(raw) === parseFloat(current.price_adjustment)) return
     if (raw !== "" && isNaN(parseFloat(raw))) return
     const price_adjustment = raw === "" ? null : raw
     setVariantsError("")
