@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import io
 from decimal import Decimal, InvalidOperation
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,10 +83,25 @@ async def import_variants_from_csv(
     stock_mode: str,
 ) -> VariantCsvImportResult:
 
+    if stock_mode not in ("set", "add"):
+        return VariantCsvImportResult(
+            rows_processed=0,
+            variants_created=0,
+            variants_updated=0,
+            stock_records_set=0,
+            stock_records_incremented=0,
+            warnings=[],
+            errors=[VariantCsvImportError(
+                row=0,
+                field="stock_mode",
+                message=f"Invalid stock_mode '{stock_mode}' — must be 'set' or 'add'",
+            )],
+        )
+
     # Phase 0 — File-level guards (no DB calls)
 
     # Strip UTF-8 BOM
-    content = content.lstrip("﻿")
+    content = content.lstrip("\ufeff")
 
     reader = csv.DictReader(io.StringIO(content))
     fieldnames = list(reader.fieldnames or [])
@@ -140,6 +155,12 @@ async def import_variants_from_csv(
             )],
         )
 
+    warnings: list[str] = []
+    errors: list[VariantCsvImportError] = []
+
+    if "is_active" not in fieldnames:
+        warnings.append("Column 'is_active' not found — all variants defaulting to active")
+
     # Identify dynamic stock columns: col_name -> warehouse_code
     raw_stock_cols: dict[str, str] = {
         col: col[6:] for col in fieldnames if col.startswith("stock_")
@@ -151,9 +172,6 @@ async def import_variants_from_csv(
     warehouses_by_code: dict[str, Warehouse] = {
         wh.code: wh for wh in wh_result.scalars().all()
     }
-
-    warnings: list[str] = []
-    errors: list[VariantCsvImportError] = []
 
     # Validate stock columns; build valid_stock_cols: col_name -> warehouse_id
     valid_stock_cols: dict[str, str] = {}
@@ -188,7 +206,9 @@ async def import_variants_from_csv(
             else:
                 seen_variant_skus[v_sku] = row_num
 
-        if p_sku:
+        # Only fingerprint rows that have both skus; blank-sku rows will be
+        # caught individually in Phase 3 and must not pollute the fingerprint.
+        if p_sku and v_sku:
             opt_names = frozenset(
                 row.get(f"option{n}_name", "").strip()
                 for n in range(1, 4)
@@ -309,7 +329,10 @@ async def import_variants_from_csv(
         raw_active = row.get("is_active", "").strip()
         if not raw_active:
             is_active = True
-            warnings.append(f"Row {row_num}: is_active blank — defaulting to true")
+            # Only warn per-row if the column exists but was left blank; if the
+            # column is entirely absent the file-level warning already covers it.
+            if "is_active" in fieldnames:
+                warnings.append(f"Row {row_num}: is_active blank — defaulting to true")
         elif raw_active.lower() in {"true", "1", "yes"}:
             is_active = True
         elif raw_active.lower() in {"false", "0", "no"}:
@@ -545,8 +568,8 @@ async def export_variants_to_csv(db: AsyncSession) -> str:
         )
 
         row: dict = {
-            "product_sku": _csv_safe(product_sku),
-            "variant_sku": _csv_safe(variant.sku),
+            "product_sku": product_sku,
+            "variant_sku": variant.sku,
             "option1_name": "",
             "option1_value": "",
             "option2_name": "",
@@ -559,12 +582,13 @@ async def export_variants_to_csv(db: AsyncSession) -> str:
             "is_active": "true" if variant.is_active else "false",
         }
 
-        # Emit up to 3 option pairs
+        # Emit up to 3 option pairs; these are controlled identifier fields so
+        # _csv_safe is intentionally NOT applied (it would break re-import).
         for i, link in enumerate(sorted_links[:3]):
             n = i + 1
             if link.option_value and link.option_value.option_type:
-                row[f"option{n}_name"] = _csv_safe(link.option_value.option_type.name)
-                row[f"option{n}_value"] = _csv_safe(link.option_value.label)
+                row[f"option{n}_name"] = link.option_value.option_type.name
+                row[f"option{n}_value"] = link.option_value.label
 
         # Stock columns
         for wh in active_warehouses:
