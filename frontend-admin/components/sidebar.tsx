@@ -7,7 +7,7 @@ import type { PluginMenu } from "@/lib/types"
 import {
   LayoutDashboard, Package, Tag, ShoppingCart, Ticket, Star,
   Mail, FileText, CreditCard, Warehouse, Palette, Layout,
-  MessageCircle, BarChart2, LogOut, Megaphone, Settings, Truck, Image,
+  MessageCircle, BarChart2, LogOut, Megaphone, Settings, Truck, Image, FileUp,
 } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { useRouter } from "next/navigation"
@@ -79,6 +79,7 @@ export function Sidebar() {
         <NavItem href="/categories" label="Categories" icon={<Tag size={16} />} />
         <NavItem href="/orders" label="Orders" icon={<ShoppingCart size={16} />} />
         <NavItem href="/media" label="Media Library" icon={<Image size={16} />} />
+        <NavItem href="/bulk-variants" label="Bulk Variants" icon={<FileUp size={16} />} />
 
         {/* Dynamic plugin menu items */}
         {menu?.map((plugin) =>
