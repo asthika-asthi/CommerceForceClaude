@@ -3,6 +3,7 @@ import { Suspense, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { api } from "@/lib/api"
+import { PasswordInput } from "@/components/password-input"
 
 export default function ResetPasswordPage() {
   return (
@@ -85,8 +86,7 @@ function ResetPasswordForm() {
           )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">New password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={8}
               value={password}
@@ -97,8 +97,7 @@ function ResetPasswordForm() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Confirm password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={8}
               value={confirm}

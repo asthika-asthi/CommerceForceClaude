@@ -2,6 +2,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { api } from "@/lib/api"
+import { PasswordInput } from "@/components/password-input"
 
 const BUSINESS_TYPES = [
   { value: "", label: "Select business type" },
@@ -134,7 +135,7 @@ export default function TradePage() {
 
               <div>
                 <label className="block text-[13px] font-semibold text-slate-600 mb-1">Password *</label>
-                <input type="password" required minLength={8} value={form.password} onChange={set("password")}
+                <PasswordInput required minLength={8} value={form.password} onChange={set("password")}
                   placeholder="Min. 8 characters"
                   className={inputCls} />
               </div>

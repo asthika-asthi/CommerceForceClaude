@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
+import { PasswordInput } from "@/components/password-input"
 
 export default function SettingsPage() {
   const [form, setForm] = useState({ current_password: "", new_password: "", confirm_password: "" })
@@ -63,8 +64,7 @@ export default function SettingsPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Current password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               value={form.current_password}
               onChange={set("current_password")}
@@ -73,8 +73,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">New password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               value={form.new_password}
               onChange={set("new_password")}
@@ -83,8 +82,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Confirm new password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               value={form.confirm_password}
               onChange={set("confirm_password")}

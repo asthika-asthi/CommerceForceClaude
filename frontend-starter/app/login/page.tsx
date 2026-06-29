@@ -3,6 +3,7 @@ import { Suspense, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuthStore } from "@/store/auth"
+import { PasswordInput } from "@/components/password-input"
 
 export default function LoginPage() {
   return (
@@ -49,7 +50,7 @@ function LoginForm() {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+            <PasswordInput required value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
           </div>
           <button type="submit" disabled={loading}

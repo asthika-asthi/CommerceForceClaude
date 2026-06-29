@@ -3,6 +3,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/store/auth"
+import { PasswordInput } from "@/components/password-input"
 
 export default function LoginPage() {
   const login = useAuthStore((s) => s.login)
@@ -49,8 +50,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

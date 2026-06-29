@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import type { User } from "@/lib/types"
 import { ArrowLeft } from "lucide-react"
+import { PasswordInput } from "@/components/password-input"
 
 export default function AccountSettingsPage() {
   const user = useAuthStore((s) => s.user)
@@ -125,19 +126,19 @@ export default function AccountSettingsPage() {
       <form onSubmit={handlePasswordSubmit} className="bg-white border border-slate-100 rounded-2xl p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Current password</label>
-          <input type="password" required value={pwForm.current_password}
+          <PasswordInput required value={pwForm.current_password}
             onChange={(e) => setPwForm((f) => ({ ...f, current_password: e.target.value }))}
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">New password</label>
-          <input type="password" required minLength={8} value={pwForm.new_password}
+          <PasswordInput required minLength={8} value={pwForm.new_password}
             onChange={(e) => setPwForm((f) => ({ ...f, new_password: e.target.value }))}
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Confirm new password</label>
-          <input type="password" required minLength={8} value={pwForm.confirm_password}
+          <PasswordInput required minLength={8} value={pwForm.confirm_password}
             onChange={(e) => setPwForm((f) => ({ ...f, confirm_password: e.target.value }))}
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
         </div>
