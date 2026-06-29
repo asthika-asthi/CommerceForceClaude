@@ -127,13 +127,29 @@ Blocks directory reorganised into four categories (layout / visual / commerce / 
 
 ---
 
-## Not built — Product variants v2 (deferred from spec)
+## Built, not tested — Product variants v2
 
-These items were explicitly out of scope for Product variants v1. Build after v1 is tested.
+### Per-variant pricing (2026-06-29)
+
+`price_adjustment: Optional[Decimal]` column on `product_variants` (nullable — null = no adjustment). Effective price = `product.effective_price + (variant.price_adjustment or 0)`.
+
+- Admin variants table gains a 4th "Price adj. (£)" column (inline edit, save on blur)
+- Cart and checkout `_items_from_cart()` both use adjusted price; `_items_from_explicit()` unchanged
+- Storefront: price display updates live when variant is selected (`ProductDetailClient` client wrapper owns `selectedVariantId` state)
+- 4 new pytest tests (set/clear PATCH, cart with/without adjustment, checkout order item price) — all pass
+
+**Manual test checklist:**
+- Admin: set adjustment on a variant → save → reload → value persists
+- Storefront: select adjusted variant → price updates live
+- Storefront: add adjusted variant to cart → cart shows adjusted price
+- Checkout: order total and `unit_price` snapshot reflect adjusted price
+
+---
+
+## Not built — Product variants v2 (remaining items)
 
 | Feature | Notes |
 |---------|-------|
-| Per-variant pricing | Allow XL or premium finishes to cost more than base price. Requires adding `price_override` to `product_variants` and updating cart/checkout price resolution. |
 | Variant picker — per-combination OOS narrowing | Pills currently show OOS based on whether the value exists in any active variant. Narrowing to only active variants that match other current selections would reduce dead-end combinations. Low priority UX improvement. |
 | Variant images | Show colour-specific images when a colour variant is selected. Requires linking `ProductImage` to a variant. |
 | Bulk variant import via CSV | Admin uploads a CSV with all variant SKUs and option values. Separate sprint. |
