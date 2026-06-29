@@ -18,6 +18,7 @@ function downloadVariantsCsv() {
       a.click()
       URL.revokeObjectURL(url)
     })
+    .catch(console.error)
 }
 
 export default function BulkVariantsPage() {
@@ -47,8 +48,16 @@ export default function BulkVariantsPage() {
       )
       const data: VariantCsvImportResult = await res.json()
       setResult(data)
-    } catch {
-      // error clears via finally
+    } catch (err) {
+      setResult({
+        rows_processed: 0,
+        variants_created: 0,
+        variants_updated: 0,
+        stock_records_set: 0,
+        stock_records_incremented: 0,
+        warnings: [],
+        errors: [{ row: 0, field: "network", message: err instanceof Error ? err.message : "Upload failed — please try again" }],
+      })
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ""
@@ -148,8 +157,8 @@ export default function BulkVariantsPage() {
                 </button>
                 {warningsOpen && (
                   <ul className="px-4 py-3 space-y-1 text-xs text-amber-700 list-disc list-inside">
-                    {result.warnings.map((w, i) => (
-                      <li key={i}>{w}</li>
+                    {result.warnings.map((w) => (
+                      <li key={w}>{w}</li>
                     ))}
                   </ul>
                 )}
@@ -169,7 +178,7 @@ export default function BulkVariantsPage() {
                   </thead>
                   <tbody className="divide-y divide-red-100">
                     {result.errors.map((err, i) => (
-                      <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-red-50"}>
+                      <tr key={`${err.row}-${err.field}-${err.message}`} className={i % 2 === 0 ? "bg-white" : "bg-red-50"}>
                         <td className="px-3 py-2 text-slate-600 font-mono">{err.row}</td>
                         <td className="px-3 py-2 text-slate-600 font-mono">{err.field}</td>
                         <td className="px-3 py-2 text-slate-700">{err.message}</td>
