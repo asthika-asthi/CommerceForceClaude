@@ -28,7 +28,7 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
 
   const images = product.images ?? []
-  const [displayedImageUrl, setDisplayedImageUrl] = useState<string | null>(images[0]?.url ?? null)
+  const [displayedImageUrl, setDisplayedImageUrl] = useState<string | null>((images.find(img => img.is_primary) ?? images[0])?.url ?? null)
 
   // Switch main image when a variant with tagged images is selected
   useEffect(() => {
