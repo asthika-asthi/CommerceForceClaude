@@ -12,6 +12,7 @@ class Product(BaseModel):
     slug: Mapped[str] = mapped_column(String(500), unique=True, nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     sku: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    barcode: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
     category_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True
     )
