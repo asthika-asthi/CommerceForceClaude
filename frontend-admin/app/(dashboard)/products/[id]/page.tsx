@@ -58,7 +58,7 @@ function EditProduct({ id }: { id: string }) {
   const flatCategories = flattenCategories(categories)
 
   const [form, setForm] = useState({
-    name: "", description: "", sku: "",
+    name: "", description: "", sku: "", barcode: "",
     price: "", sale_price: "", stock_quantity: "0",
     category_id: "", is_active: true,
   })
@@ -83,6 +83,7 @@ function EditProduct({ id }: { id: string }) {
         name: product.name,
         description: product.description ?? "",
         sku: product.sku ?? "",
+        barcode: product.barcode ?? "",
         price: product.price,
         sale_price: product.sale_price ?? "",
         stock_quantity: String(product.stock_quantity),
@@ -101,6 +102,7 @@ function EditProduct({ id }: { id: string }) {
         stock_quantity: Number(data.stock_quantity),
         sale_price: data.sale_price || undefined,
         category_id: data.category_id || undefined,
+        barcode: data.barcode || undefined,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] })
@@ -468,9 +470,13 @@ function EditProduct({ id }: { id: string }) {
             </div>
           </Field>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <Field label="SKU">
               <input value={form.sku} onChange={(e) => set("sku", e.target.value)} className={input} />
+            </Field>
+            <Field label="Barcode">
+              <input value={form.barcode} onChange={(e) => set("barcode", e.target.value)}
+                className={input} placeholder="e.g. 5012345678900" />
             </Field>
             <Field label="Category">
               <select value={form.category_id} onChange={(e) => set("category_id", e.target.value)} className={input}>
