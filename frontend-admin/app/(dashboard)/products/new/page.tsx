@@ -6,15 +6,20 @@ import { api } from "@/lib/api"
 import type { Category } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { Star, Trash2 } from "lucide-react"
+
+type ProductImageCreate = { url: string; alt_text?: string; is_primary: boolean; sort_order: number }
 
 export default function NewProductPage() {
   const router = useRouter()
   const qc = useQueryClient()
   const [form, setForm] = useState({
-    name: "", description: "", sku: "",
+    name: "", description: "", sku: "", barcode: "",
     price: "", sale_price: "", stock_quantity: "0",
-    category_id: "", image_url: "", is_active: true,
+    category_id: "", is_active: true,
   })
+  const [images, setImages] = useState<ProductImageCreate[]>([])
+  const [newImageUrl, setNewImageUrl] = useState("")
   const [error, setError] = useState("")
 
   const { data: categories = [] } = useQuery<Category[]>({
@@ -31,6 +36,8 @@ export default function NewProductPage() {
         stock_quantity: Number(data.stock_quantity),
         sale_price: data.sale_price || undefined,
         category_id: data.category_id || undefined,
+        barcode: data.barcode || undefined,
+        images: images.map(img => img),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] })
@@ -41,6 +48,29 @@ export default function NewProductPage() {
 
   function set(key: string, val: string | boolean) {
     setForm((f) => ({ ...f, [key]: val }))
+  }
+
+  function addImage(url: string) {
+    if (!url.trim()) return
+    setImages((prev) => [
+      ...prev,
+      { url: url.trim(), is_primary: prev.length === 0, sort_order: prev.length },
+    ])
+    setNewImageUrl("")
+  }
+
+  function removeImage(index: number) {
+    setImages((prev) => {
+      const next = prev.filter((_, i) => i !== index).map((img, i) => ({ ...img, sort_order: i }))
+      if (next.length > 0 && !next.some(img => img.is_primary)) {
+        next[0] = { ...next[0], is_primary: true }
+      }
+      return next
+    })
+  }
+
+  function setPrimary(index: number) {
+    setImages((prev) => prev.map((img, i) => ({ ...img, is_primary: i === index })))
   }
 
   return (
@@ -58,15 +88,71 @@ export default function NewProductPage() {
           <textarea value={form.description} onChange={(e) => set("description", e.target.value)}
             className={`${input} h-24 resize-none`} placeholder="Optional description" />
         </Field>
-        <Field label="Image URL">
-          <input value={form.image_url} onChange={(e) => set("image_url", e.target.value)}
-            className={input} placeholder="https://example.com/image.jpg" />
-          <ImageUpload value={form.image_url} onUpload={(url) => set("image_url", url)} />
+        <Field label="Images">
+          {images.length > 0 && (
+            <div className="mb-3 space-y-2">
+              {images.map((img, i) => (
+                <div key={i} className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+                  <img src={img.url} alt="" className="w-10 h-10 object-cover rounded" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-slate-600 truncate">{img.url}</p>
+                    {img.is_primary && (
+                      <span className="text-[10px] font-semibold text-amber-600 flex items-center gap-0.5">
+                        <Star size={9} fill="currentColor" /> Primary
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setPrimary(i)}
+                      disabled={img.is_primary}
+                      className="p-1 rounded hover:bg-amber-50 disabled:text-amber-400 text-slate-300 hover:text-amber-500"
+                      title="Set as primary"
+                    >
+                      <Star size={14} fill={img.is_primary ? "currentColor" : "none"} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-500"
+                      title="Remove"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              value={newImageUrl}
+              onChange={(e) => setNewImageUrl(e.target.value)}
+              placeholder="Image URL or upload below"
+              className={`${input} flex-1`}
+            />
+            <button
+              type="button"
+              onClick={() => addImage(newImageUrl)}
+              disabled={!newImageUrl.trim()}
+              className="px-3 py-2 text-sm rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-40 whitespace-nowrap"
+            >
+              Add
+            </button>
+          </div>
+          <div className="mt-2">
+            <ImageUpload value="" onUpload={(url) => addImage(url)} />
+          </div>
         </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <Field label="SKU">
             <input value={form.sku} onChange={(e) => set("sku", e.target.value)}
               className={input} placeholder="SKU-001" />
+          </Field>
+          <Field label="Barcode">
+            <input value={form.barcode} onChange={(e) => set("barcode", e.target.value)}
+              className={input} placeholder="e.g. 5012345678900" />
           </Field>
           <Field label="Category">
             <select value={form.category_id} onChange={(e) => set("category_id", e.target.value)}
