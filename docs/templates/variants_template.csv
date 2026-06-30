@@ -1,0 +1,12 @@
+product_sku,variant_sku,option1_name,option1_value,option2_name,option2_value,option3_name,option3_value,price_adjustment,is_active,stock_MAIN
+TSHIRT,TSHIRT-S-WHT,Size,S,Colour,White,,,0.00,true,10
+TSHIRT,TSHIRT-M-WHT,Size,M,Colour,White,,,0.00,true,15
+TSHIRT,TSHIRT-L-WHT,Size,L,Colour,White,,,0.00,true,8
+TSHIRT,TSHIRT-S-BLK,Size,S,Colour,Black,,,0.00,true,12
+TSHIRT,TSHIRT-M-BLK,Size,M,Colour,Black,,,2.00,true,20
+HOODIE,HOODIE-S-GRY,Size,S,Colour,Grey,,,0.00,true,5
+HOODIE,HOODIE-M-GRY,Size,M,Colour,Grey,,,0.00,true,10
+HOODIE,HOODIE-L-GRY,Size,L,Colour,Grey,,,5.00,true,7
+SHORTS,SHORTS-S,Size,S,,,,,,true,15
+SHORTS,SHORTS-M,Size,M,,,,,-1.00,true,20
+SHORTS,SHORTS-L,Size,L,,,,,,true,10

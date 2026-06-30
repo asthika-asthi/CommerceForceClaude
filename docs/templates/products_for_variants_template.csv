@@ -1,0 +1,4 @@
+name,price,description,stock_quantity,category,is_featured
+Classic T-Shirt,19.99,100% cotton crew neck tee,0,Clothing,false
+Hoodie,39.99,Fleece pullover hoodie,0,Clothing,false
+Running Shorts,24.99,Lightweight running shorts,0,Clothing,false
