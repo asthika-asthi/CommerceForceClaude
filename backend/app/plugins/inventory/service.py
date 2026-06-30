@@ -128,9 +128,8 @@ async def get_warehouse_stock(warehouse_id: str, db: AsyncSession) -> list[Wareh
 
 async def deduct_stock_for_variant(variant_id: str, quantity: int, db: AsyncSession) -> None:
     """Deduct stock from warehouses for a variant. Raises 409 if insufficient."""
-    from sqlalchemy import select as sa_select
     result = await db.execute(
-        sa_select(WarehouseStock).where(WarehouseStock.variant_id == variant_id)
+        select(WarehouseStock).where(WarehouseStock.variant_id == variant_id)
     )
     stocks = list(result.scalars().all())
     if not stocks:
@@ -181,6 +180,8 @@ async def transfer_stock(data: StockTransferRequest, db: AsyncSession) -> tuple[
 
     source.quantity -= data.quantity
     await db.flush()
+
+    await _load_warehouse(data.to_warehouse_id, db)
 
     result = await db.execute(
         select(WarehouseStock).where(

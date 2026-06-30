@@ -61,7 +61,7 @@ class StockTransferRequest(BaseModel):
     from_warehouse_id: str
     to_warehouse_id: str
     variant_id: str
-    quantity: int
+    quantity: int = Field(..., gt=0)
 
 
 class StockTransferResult(BaseModel):
