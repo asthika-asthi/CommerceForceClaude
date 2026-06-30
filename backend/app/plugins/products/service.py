@@ -54,6 +54,7 @@ async def create_product(data: ProductCreate, db: AsyncSession) -> Product:
         is_featured=data.is_featured,
         weight=data.weight,
         tags=data.tags,
+        barcode=data.barcode,
     )
     db.add(product)
     await db.flush()
@@ -350,9 +351,13 @@ async def import_from_csv(
                 existing.weight = weight
             if row.get("tags"):
                 existing.tags = row["tags"]
+            barcode_raw = (row.get("barcode") or "").strip()
+            if barcode_raw:
+                existing.barcode = barcode_raw
             await db.flush()
             updated += 1
         else:
+            barcode_raw = (row.get("barcode") or "").strip()
             data = ProductCreate(
                 name=name,
                 price=price,
@@ -364,6 +369,7 @@ async def import_from_csv(
                 is_featured=(row.get("is_featured") or "").lower() in true_values,
                 weight=weight,
                 tags=(row.get("tags") or None),
+                barcode=(barcode_raw or None),
             )
             try:
                 await create_product(data, db)

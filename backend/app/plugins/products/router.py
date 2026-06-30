@@ -39,7 +39,7 @@ async def export_products_csv(db: AsyncSession = Depends(get_db)):
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=[
         "name", "sku", "price", "sale_price", "stock_quantity",
-        "is_active", "category_id", "created_at",
+        "is_active", "category_id", "barcode", "created_at",
     ])
     writer.writeheader()
     for p in products:
@@ -51,6 +51,7 @@ async def export_products_csv(db: AsyncSession = Depends(get_db)):
             "stock_quantity": p.stock_quantity,
             "is_active": p.is_active,
             "category_id": p.category_id or "",
+            "barcode": p.barcode or "",
             "created_at": p.created_at.isoformat(),
         })
     output.seek(0)
