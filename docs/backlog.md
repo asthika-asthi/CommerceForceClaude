@@ -226,7 +226,7 @@ HTTPS is not blocking development but IS required before any client goes live.
 - **Admin credentials in seed.py** — `admin@commerceforce.dev / Admin1234!` hardcoded; must be changed before any real deployment
 
 ### Frontend / Admin
-- **Image management** — no admin UI to browse or delete uploaded files; `/uploads/` accumulates indefinitely
+- **Image management** — Media Library now supports folder-based organisation, grouped display, and delete. Bulk copy: drop files into `uploads/folder/` on disk. ~~No admin UI to browse or delete~~ — resolved.
 - **WCAG contrast validation** — no automated check that brand colours meet WCAG AA; manual check required
 - **Font via next/font/google** — config `"brand.font"` injects a runtime Google Fonts link tag (works); for peak performance also update the `next/font/google` import in `layout.tsx` and rebuild
 
