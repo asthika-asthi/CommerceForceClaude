@@ -1,12 +1,12 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { ChevronDown, ChevronRight } from "lucide-react"
 
-import type { Warehouse, Product, ProductVariantSummary } from "@/lib/types"
+import type { Warehouse, Product, ProductVariantSummary, StockTransferResult } from "@/lib/types"
 
 const DEFAULT_SF = { product_id: "", variant_id: "", quantity: "", threshold: "10", delta: "" }
 
@@ -86,6 +86,51 @@ export default function InventoryPage() {
   const [stockError, setStockError] = useState("")
   const [pendingWhId, setPendingWhId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["products-list"],
+    queryFn: () => api.get("/api/products"),
+  })
+
+  const [xferFrom, setXferFrom] = useState("")
+  const [xferTo, setXferTo] = useState("")
+  const [xferProduct, setXferProduct] = useState("")
+  const [xferVariants, setXferVariants] = useState<ProductVariantSummary[]>([])
+  const [xferVariant, setXferVariant] = useState("")
+  const [xferQty, setXferQty] = useState(1)
+  const [xferLoading, setXferLoading] = useState(false)
+  const [xferMsg, setXferMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  useEffect(() => {
+    if (!xferProduct) {
+      setXferVariants([])
+      setXferVariant("")
+      return
+    }
+    api.get<ProductVariantSummary[]>(`/api/products/${xferProduct}/variants`)
+      .then((data) => { setXferVariants(data); setXferVariant("") })
+      .catch(() => { setXferVariants([]); setXferVariant("") })
+  }, [xferProduct])
+
+  async function handleTransfer() {
+    setXferLoading(true)
+    setXferMsg(null)
+    try {
+      const result: StockTransferResult = await api.post("/api/inventory/transfers", {
+        from_warehouse_id: xferFrom,
+        to_warehouse_id: xferTo,
+        variant_id: xferVariant,
+        quantity: xferQty,
+      })
+      setXferMsg({ ok: true, text: `Transfer complete. From: ${result.from_stock.quantity} units remaining. To: ${result.to_stock.quantity} units total.` })
+      qc.invalidateQueries({ queryKey: ["warehouses"] })
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Transfer failed"
+      setXferMsg({ ok: false, text: msg })
+    } finally {
+      setXferLoading(false)
+    }
+  }
 
   const deleteWH = useMutation({
     mutationFn: (id: string) => api.del(`/api/inventory/warehouses/${id}`),
@@ -272,6 +317,79 @@ export default function InventoryPage() {
           })}
         </div>
       )}
+
+      {/* Transfer Stock card */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 mt-6">
+        <h2 className="text-base font-semibold text-slate-900 mb-4">Transfer Stock</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          Move stock of a variant from one warehouse to another in a single atomic operation.
+        </p>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* From warehouse */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">From warehouse</label>
+            <select value={xferFrom} onChange={e => setXferFrom(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Select…</option>
+              {warehouses.map(w => <option key={w.id} value={w.id}>{w.name} ({w.code})</option>)}
+            </select>
+          </div>
+
+          {/* To warehouse */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">To warehouse</label>
+            <select value={xferTo} onChange={e => setXferTo(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Select…</option>
+              {warehouses.map(w => <option key={w.id} value={w.id}>{w.name} ({w.code})</option>)}
+            </select>
+          </div>
+
+          {/* Product dropdown */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Product</label>
+            <select value={xferProduct} onChange={e => { setXferProduct(e.target.value); setXferVariant("") }}
+              className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Select…</option>
+              {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+
+          {/* Variant dropdown */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Variant</label>
+            <select value={xferVariant} onChange={e => setXferVariant(e.target.value)}
+              disabled={!xferProduct}
+              className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+              <option value="">Select…</option>
+              {xferVariants.filter(v => !v.is_default).map(v => <option key={v.id} value={v.id}>{v.label} ({v.sku})</option>)}
+            </select>
+          </div>
+
+          {/* Quantity */}
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Quantity</label>
+            <input type="number" min={1} value={xferQty}
+              onChange={e => setXferQty(Number(e.target.value))}
+              className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </div>
+
+        <button
+          onClick={handleTransfer}
+          disabled={xferLoading || !xferFrom || !xferTo || !xferVariant || xferQty < 1}
+          className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+        >
+          {xferLoading ? "Transferring…" : "Transfer"}
+        </button>
+
+        {xferMsg && (
+          <div className={`mt-3 text-sm px-3 py-2 rounded-lg ${xferMsg.ok ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+            {xferMsg.text}
+          </div>
+        )}
+      </div>
 
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
