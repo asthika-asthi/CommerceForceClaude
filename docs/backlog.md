@@ -180,6 +180,7 @@ Blocks directory reorganised into four categories (layout / visual / commerce / 
 |----|---------|-------|
 | P | 2FA for admin | TOTP flow, QR setup, backup codes. Separate sprint. |
 | R | Per-client git branch script | `scripts/new-client.sh` to automate `git checkout -b client-name` + seed template copy |
+| S | Bulk image assignment via product CSV | Add optional `image_url` column to product import CSV; on import, create a `ProductImage` record linked to the product. Allows full product setup (including hero image) in one CSV upload without clicking through each product. |
 
 ---
 
