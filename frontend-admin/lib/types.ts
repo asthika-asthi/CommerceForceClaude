@@ -59,6 +59,7 @@ export interface Product {
   slug: string
   description?: string
   sku?: string
+  barcode?: string
   price: string
   sale_price?: string
   stock_quantity: number
