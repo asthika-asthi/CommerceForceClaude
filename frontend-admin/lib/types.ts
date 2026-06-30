@@ -316,3 +316,8 @@ export interface VariantCsvImportResult {
   warnings: string[]
   errors: VariantCsvImportError[]
 }
+
+export interface StockTransferResult {
+  from_stock: WarehouseStock
+  to_stock: WarehouseStock
+}
