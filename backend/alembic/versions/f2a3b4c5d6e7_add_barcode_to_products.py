@@ -14,10 +14,12 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('products', sa.Column('barcode', sa.String(100), nullable=True))
-    op.create_index('ix_products_barcode', 'products', ['barcode'])
+    with op.batch_alter_table('products') as batch_op:
+        batch_op.add_column(sa.Column('barcode', sa.String(100), nullable=True))
+        batch_op.create_index('ix_products_barcode', ['barcode'])
 
 
 def downgrade():
-    op.drop_index('ix_products_barcode', table_name='products')
-    op.drop_column('products', 'barcode')
+    with op.batch_alter_table('products') as batch_op:
+        batch_op.drop_index('ix_products_barcode')
+        batch_op.drop_column('barcode')

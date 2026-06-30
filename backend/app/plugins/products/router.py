@@ -51,7 +51,7 @@ async def export_products_csv(db: AsyncSession = Depends(get_db)):
             "stock_quantity": p.stock_quantity,
             "is_active": p.is_active,
             "category_id": p.category_id or "",
-            "barcode": p.barcode or "",
+            "barcode": _csv_safe(p.barcode or ""),
             "created_at": p.created_at.isoformat(),
         })
     output.seek(0)
