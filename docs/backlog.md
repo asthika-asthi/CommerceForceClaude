@@ -227,7 +227,7 @@ HTTPS is not blocking development but IS required before any client goes live.
 
 ### Frontend / Admin
 - **Image management** — **Built and tested (API)** — Media Library supports folder-based organisation (`/uploads/folder/filename.jpg`), grouped display, folder input on upload, and delete. Docker bind-mounted to `./uploads/`. 21 API tests pass (upload, list, delete, overwrite, path traversal, static serving, directory listing blocked). Browser UI still needs manual verification.
-- **Product barcode + multi-image** — **Built, not tested** — `barcode` field added end-to-end (DB, migration, schemas, CSV import/export, both admin forms). Admin create page now has full multi-image panel (add URL or upload, set primary, delete, reorder). Storefront product card respects `is_primary` flag for thumbnail. Needs manual browser test.
+- **Product barcode + multi-image** — **Built and tested (API)** — `barcode` field added end-to-end (DB, migration, schemas, CSV import/export with injection guard, both admin forms). Admin create page now has full multi-image panel. Storefront card uses `is_primary` image as thumbnail. 15 API tests pass (CRUD, max_length, CSV import/export, injection, image add/delete/sort). Browser UI still needs manual verification.
 - **WCAG contrast validation** — no automated check that brand colours meet WCAG AA; manual check required
 - **Font via next/font/google** — config `"brand.font"` injects a runtime Google Fonts link tag (works); for peak performance also update the `next/font/google` import in `layout.tsx` and rebuild
 
