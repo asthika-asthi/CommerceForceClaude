@@ -4,6 +4,34 @@ All template files are in this folder (`docs/templates/`).
 
 ---
 
+## Image organisation (do this before importing products)
+
+Images are served from the `uploads/` folder at the project root. You can drop files in directly — no upload needed.
+
+**Folder structure convention:**
+```
+uploads/
+  products/     → product images
+  brands/       → client logos, brand assets
+  misc/         → banners, placeholders, other
+```
+
+**URL pattern:** `http://localhost:8000/uploads/folder/filename.jpg`
+Example: a file at `uploads/products/tshirt-front.jpg` is live at `http://localhost:8000/uploads/products/tshirt-front.jpg`
+
+**On localhost:** Create the subfolder and copy images in — they are served immediately, no restart needed.
+
+**On Docker:** The `uploads/` folder is bind-mounted into the container, so copying files to `uploads/` on your machine is instantly visible inside Docker too.
+
+**Via Media Library UI:** Go to Admin → Media Library, type a folder name (e.g. `products`) in the folder input, then click Upload Image. The returned URL follows the same pattern.
+
+**On production:** Run once after deployment:
+```
+rsync -av uploads/ user@your-server:/path/to/project/uploads/
+```
+
+---
+
 ## Step 1 — Import products
 
 **Template:** `products_for_variants_template.csv`
@@ -12,6 +40,8 @@ All template files are in this folder (`docs/templates/`).
 After import, go to the product list and note the SKU assigned to each product (shown in the edit page or product table). You need these SKUs for the variant import.
 
 The existing `products_template.csv` is the full-featured version with sale prices, tags, and weight — use that for real client data. Use `products_for_variants_template.csv` when you just need quick products to test variants against.
+
+> **Images:** Upload product images to `uploads/products/` first. Reference the URL in the `image_url` column once that feature is built (backlog item S).
 
 ---
 
