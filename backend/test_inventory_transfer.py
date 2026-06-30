@@ -226,6 +226,16 @@ async def run_tests() -> None:
         )).scalar_one()
     check("[4] WH_D stock still quantity=3", stock.quantity == 3, f"qty={stock.quantity}")
 
+    # Verify no destination record was created/modified in WH_B for V2
+    async with AsyncSessionLocal() as db:
+        dest_v2 = (await db.execute(
+            select(WarehouseStock).where(
+                WarehouseStock.warehouse_id == wh_b_id,
+                WarehouseStock.variant_id == v2_id,
+            )
+        )).scalar_one_or_none()
+    check("[4] WH_B V2 not modified after 409", dest_v2 is None or dest_v2.quantity == 5, f"qty={dest_v2.quantity if dest_v2 else 'None'}")
+
     # ──────────────────────────────────────────────────────────
     # [5] from == to -> 400
     # ──────────────────────────────────────────────────────────
@@ -245,6 +255,16 @@ async def run_tests() -> None:
         raised = e
 
     check("[5] HTTPException 400 raised", raised is not None and raised.status_code == 400, str(raised))
+
+    # Verify WH_A V1 stock is unchanged after the failed same-warehouse transfer
+    async with AsyncSessionLocal() as db:
+        src_v1 = (await db.execute(
+            select(WarehouseStock).where(
+                WarehouseStock.warehouse_id == wh_a_id,
+                WarehouseStock.variant_id == v1_id,
+            )
+        )).scalar_one()
+    check("[5] WH_A V1 stock unchanged after 400", src_v1.quantity == 12, f"qty={src_v1.quantity}")
 
     # ──────────────────────────────────────────────────────────
     # [6] quantity <= 0 -> rejected (Pydantic schema validates gt=0)
@@ -297,6 +317,16 @@ async def run_tests() -> None:
         raised = e
 
     check("[7] HTTPException 404 raised", raised is not None and raised.status_code == 404, str(raised))
+
+    # Verify no destination stock record was created/modified in WH_B for V1 after 404
+    async with AsyncSessionLocal() as db:
+        dest_v1 = (await db.execute(
+            select(WarehouseStock).where(
+                WarehouseStock.warehouse_id == wh_b_id,
+                WarehouseStock.variant_id == v1_id,
+            )
+        )).scalar_one_or_none()
+    check("[7] WH_B V1 not modified after 404", dest_v1 is None or dest_v1.quantity == 10, f"qty={dest_v1.quantity if dest_v1 else 'None'}")
 
     # ──────────────────────────────────────────────────────────
     # [8] Reserved stock not transferable
