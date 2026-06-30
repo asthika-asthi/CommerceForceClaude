@@ -12,7 +12,7 @@ services:
       - "8000:8000"
     volumes:
       - cf_data:/app/data
-      - cf_uploads:/app/uploads
+      - ./uploads:/app/uploads
 
   frontend-starter:
     build:
@@ -84,7 +84,6 @@ services:
 
 volumes:
   cf_data:
-  cf_uploads:
   cf_backups:
   # Uncomment when nginx service is enabled:
   # cf_letsencrypt:

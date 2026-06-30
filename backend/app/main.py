@@ -46,7 +46,7 @@ app.add_exception_handler(AppException, app_exception_handler)
 # UPLOAD_DIR is created at module level in app.routers.media; guard here too for safety
 from app.routers.media import UPLOAD_DIR as _UPLOAD_DIR
 _UPLOAD_DIR.mkdir(exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=str(_UPLOAD_DIR)), name="uploads")
+app.mount("/uploads", StaticFiles(directory=str(_UPLOAD_DIR), html=False), name="uploads")
 
 # System routers
 app.include_router(media_router, prefix="/api/media", tags=["Media"])
