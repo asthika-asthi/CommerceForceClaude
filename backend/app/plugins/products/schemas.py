@@ -44,6 +44,7 @@ class ProductCreate(BaseModel):
     is_featured: bool = False
     weight: Optional[Decimal] = Field(None, ge=0)
     tags: Optional[str] = None
+    barcode: Optional[str] = None
     images: List[ProductImageCreate] = []
 
 
@@ -60,6 +61,7 @@ class ProductUpdate(BaseModel):
     is_featured: Optional[bool] = None
     weight: Optional[Decimal] = None
     tags: Optional[str] = None
+    barcode: Optional[str] = None
 
 
 class ProductOut(BaseModel):
@@ -79,6 +81,7 @@ class ProductOut(BaseModel):
     is_featured: bool
     weight: Optional[Decimal] = None
     tags: Optional[str] = None
+    barcode: Optional[str] = None
     images: List[ProductImageOut] = []
     primary_image: Optional[str] = None
     option_types: List[OptionTypeOut] = []
