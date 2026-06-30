@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from app.plugins.inventory.models import Warehouse, WarehouseStock
-from app.plugins.inventory.schemas import WarehouseCreate, WarehouseUpdate, StockSetRequest, StockAdjustRequest
+from app.plugins.inventory.schemas import WarehouseCreate, WarehouseUpdate, StockSetRequest, StockAdjustRequest, StockTransferRequest
 
 
 async def _load_warehouse(warehouse_id: str, db: AsyncSession) -> Warehouse:
@@ -159,3 +159,47 @@ async def get_variant_stock_total(variant_id: str, db: AsyncSession) -> int:
         .where(WarehouseStock.variant_id == variant_id)
     )
     return result.scalar() or 0
+
+
+async def transfer_stock(data: StockTransferRequest, db: AsyncSession) -> tuple[WarehouseStock, WarehouseStock]:
+    if data.from_warehouse_id == data.to_warehouse_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Source and destination warehouse must be different")
+    if data.quantity <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quantity must be a positive integer")
+
+    result = await db.execute(
+        select(WarehouseStock).where(
+            WarehouseStock.warehouse_id == data.from_warehouse_id,
+            WarehouseStock.variant_id == data.variant_id,
+        ).with_for_update()
+    )
+    source = result.scalar_one_or_none()
+    if not source:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stock record found for this variant in the source warehouse")
+    if source.available_quantity < data.quantity:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Insufficient stock in source warehouse (available: {source.available_quantity})")
+
+    source.quantity -= data.quantity
+    await db.flush()
+
+    result = await db.execute(
+        select(WarehouseStock).where(
+            WarehouseStock.warehouse_id == data.to_warehouse_id,
+            WarehouseStock.variant_id == data.variant_id,
+        ).with_for_update()
+    )
+    dest = result.scalar_one_or_none()
+    if not dest:
+        dest = WarehouseStock(
+            warehouse_id=data.to_warehouse_id,
+            variant_id=data.variant_id,
+            quantity=0,
+            low_stock_threshold=source.low_stock_threshold,
+        )
+        db.add(dest)
+        await db.flush()
+
+    dest.quantity += data.quantity
+    await db.flush()
+
+    return (source, dest)

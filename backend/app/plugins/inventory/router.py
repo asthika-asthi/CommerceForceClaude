@@ -5,6 +5,7 @@ from app.core.dependencies import require_admin
 from app.plugins.inventory.schemas import (
     WarehouseCreate, WarehouseUpdate, WarehouseOut,
     StockSetRequest, StockAdjustRequest, WarehouseStockOut, ProductStockSummary,
+    StockTransferRequest, StockTransferResult,
 )
 from app.plugins.inventory import service
 
@@ -47,6 +48,15 @@ async def set_stock(warehouse_id: str, data: StockSetRequest, db: AsyncSession =
              dependencies=[Depends(require_admin())])
 async def adjust_stock(warehouse_id: str, data: StockAdjustRequest, db: AsyncSession = Depends(get_db)):
     return await service.adjust_stock(warehouse_id, data, db)
+
+
+@router.post("/transfers", response_model=StockTransferResult, dependencies=[Depends(require_admin())])
+async def transfer_stock_endpoint(
+    data: StockTransferRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    source, dest = await service.transfer_stock(data, db)
+    return StockTransferResult(from_stock=source, to_stock=dest)
 
 
 @router.get("/variants/{variant_id}/stock", response_model=ProductStockSummary)

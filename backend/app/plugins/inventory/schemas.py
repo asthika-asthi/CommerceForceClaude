@@ -55,3 +55,15 @@ class ProductStockSummary(BaseModel):
     total_quantity: int
     total_available: int
     warehouses: List[WarehouseStockOut]
+
+
+class StockTransferRequest(BaseModel):
+    from_warehouse_id: str
+    to_warehouse_id: str
+    variant_id: str
+    quantity: int
+
+
+class StockTransferResult(BaseModel):
+    from_stock: WarehouseStockOut
+    to_stock: WarehouseStockOut
