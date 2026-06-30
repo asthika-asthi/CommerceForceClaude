@@ -226,7 +226,7 @@ HTTPS is not blocking development but IS required before any client goes live.
 - **Admin credentials in seed.py** — `admin@commerceforce.dev / Admin1234!` hardcoded; must be changed before any real deployment
 
 ### Frontend / Admin
-- **Image management** — **Built, not tested** — Media Library now supports folder-based organisation (`/uploads/folder/filename.jpg`), grouped display, folder input on upload, and delete. Docker bind-mounted to `./uploads/`. Needs manual browser test (folder copy, upload, delete, copy URL, directory listing blocked).
+- **Image management** — **Built and tested (API)** — Media Library supports folder-based organisation (`/uploads/folder/filename.jpg`), grouped display, folder input on upload, and delete. Docker bind-mounted to `./uploads/`. 21 API tests pass (upload, list, delete, overwrite, path traversal, static serving, directory listing blocked). Browser UI still needs manual verification.
 - **WCAG contrast validation** — no automated check that brand colours meet WCAG AA; manual check required
 - **Font via next/font/google** — config `"brand.font"` injects a runtime Google Fonts link tag (works); for peak performance also update the `next/font/google` import in `layout.tsx` and rebuild
 
