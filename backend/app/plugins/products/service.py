@@ -194,7 +194,7 @@ async def update_image(product_id: str, image_id: str, data: ProductImageUpdate,
 
 async def delete_product(product_id: str, db: AsyncSession) -> None:
     product = await _load(product_id, db, for_update=True)
-    await db.delete(product)
+    db.delete(product)
     await db.flush()
 
 
@@ -205,7 +205,8 @@ async def remove_image(product_id: str, image_id: str, db: AsyncSession) -> None
     img = result.scalar_one_or_none()
     if not img:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-    await db.delete(img)
+    db.delete(img)
+    await db.flush()
 
 
 async def reorder_images(product_id: str, items: list[ImageSortItem], db: AsyncSession) -> list[ProductImage]:
@@ -457,7 +458,7 @@ async def delete_duplicates(keep_ids: list[str], db: AsyncSession) -> int:
                 result = await db.execute(select(Product).where(Product.id == entry["id"]))
                 product = result.scalar_one_or_none()
                 if product:
-                    await db.delete(product)
+                    db.delete(product)
                     deleted += 1
     await db.flush()
     return deleted
