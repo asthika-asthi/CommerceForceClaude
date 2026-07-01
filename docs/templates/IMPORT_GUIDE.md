@@ -41,7 +41,11 @@ After import, go to the product list and note the SKU assigned to each product (
 
 The existing `products_template.csv` is the full-featured version with sale prices, tags, and weight — use that for real client data. Use `products_for_variants_template.csv` when you just need quick products to test variants against.
 
-> **Images:** Upload product images to `uploads/products/` first. Reference the URL in the `image_url` column once that feature is built (backlog item S).
+> **Images:** Add image URLs to the `image_url_1`–`image_url_5` columns. `image_url_1` is the primary
+> (thumbnail) image. Leave all five blank to preserve existing images (e.g. for a price-only update).
+> **If any image column has a value, all existing images for that product are replaced** — treat this
+> as a full image set, not a patch. For updating a single image without touching the others, use
+> Admin → Products → Edit instead. Upload images to `uploads/products/` first so the URLs resolve before import.
 
 ---
 
