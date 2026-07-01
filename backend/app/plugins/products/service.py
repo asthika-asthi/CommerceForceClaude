@@ -3,7 +3,7 @@ import io
 from decimal import Decimal, InvalidOperation
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, func, asc, desc
+from sqlalchemy import select, or_, func, asc, desc, delete
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from app.plugins.products.models import Product, ProductImage
@@ -355,6 +355,25 @@ async def import_from_csv(
             if barcode_raw:
                 existing.barcode = barcode_raw
             await db.flush()
+            image_urls = [
+                row.get("image_url_1", "").strip(),
+                row.get("image_url_2", "").strip(),
+                row.get("image_url_3", "").strip(),
+                row.get("image_url_4", "").strip(),
+                row.get("image_url_5", "").strip(),
+            ]
+            non_blank = [u for u in image_urls if u]
+            if non_blank:
+                await db.execute(delete(ProductImage).where(ProductImage.product_id == existing.id))
+                for idx, url in enumerate(non_blank):
+                    img = ProductImage(
+                        product_id=existing.id,
+                        url=url,
+                        is_primary=(idx == 0),
+                        sort_order=idx,
+                    )
+                    db.add(img)
+                await db.flush()
             updated += 1
         else:
             barcode_raw = (row.get("barcode") or "").strip()
@@ -372,7 +391,26 @@ async def import_from_csv(
                 barcode=(barcode_raw or None),
             )
             try:
-                await create_product(data, db)
+                product = await create_product(data, db)
+                image_urls = [
+                    row.get("image_url_1", "").strip(),
+                    row.get("image_url_2", "").strip(),
+                    row.get("image_url_3", "").strip(),
+                    row.get("image_url_4", "").strip(),
+                    row.get("image_url_5", "").strip(),
+                ]
+                non_blank = [u for u in image_urls if u]
+                if non_blank:
+                    await db.execute(delete(ProductImage).where(ProductImage.product_id == product.id))
+                    for idx, url in enumerate(non_blank):
+                        img = ProductImage(
+                            product_id=product.id,
+                            url=url,
+                            is_primary=(idx == 0),
+                            sort_order=idx,
+                        )
+                        db.add(img)
+                    await db.flush()
                 created += 1
             except Exception as exc:
                 errors.append({"row": i, "error": str(exc)})

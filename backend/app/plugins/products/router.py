@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.dependencies import require_admin
 from app.plugins.products.models import Product
@@ -33,16 +34,22 @@ def _csv_safe(value: str) -> str:
 
 @router.get("/export/csv", dependencies=[Depends(require_admin())])
 async def export_products_csv(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Product).order_by(Product.created_at.desc()))
+    result = await db.execute(
+        select(Product)
+        .options(selectinload(Product.images))
+        .order_by(Product.created_at.desc())
+    )
     products = result.scalars().all()
 
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=[
         "name", "sku", "price", "sale_price", "stock_quantity",
         "is_active", "category_id", "barcode", "created_at",
+        "image_url_1", "image_url_2", "image_url_3", "image_url_4", "image_url_5",
     ])
     writer.writeheader()
     for p in products:
+        sorted_imgs = sorted(p.images, key=lambda img: img.sort_order)
         writer.writerow({
             "name": _csv_safe(p.name),
             "sku": _csv_safe(p.sku or ""),
@@ -53,6 +60,11 @@ async def export_products_csv(db: AsyncSession = Depends(get_db)):
             "category_id": p.category_id or "",
             "barcode": _csv_safe(p.barcode or ""),
             "created_at": p.created_at.isoformat(),
+            "image_url_1": _csv_safe(sorted_imgs[0].url if len(sorted_imgs) > 0 else ""),
+            "image_url_2": _csv_safe(sorted_imgs[1].url if len(sorted_imgs) > 1 else ""),
+            "image_url_3": _csv_safe(sorted_imgs[2].url if len(sorted_imgs) > 2 else ""),
+            "image_url_4": _csv_safe(sorted_imgs[3].url if len(sorted_imgs) > 3 else ""),
+            "image_url_5": _csv_safe(sorted_imgs[4].url if len(sorted_imgs) > 4 else ""),
         })
     output.seek(0)
     return StreamingResponse(
