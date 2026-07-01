@@ -561,7 +561,7 @@ async def test_newsletter_admin_list_active(client: AsyncClient, db):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 200
-    emails = [s["email"] for s in r.json()]
+    emails = [s["email"] for s in r.json()["items"]]
     assert "active1@example.com" in emails
     assert "inactive1@example.com" not in emails
 
@@ -578,7 +578,7 @@ async def test_newsletter_admin_list_all(client: AsyncClient, db):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 200
-    emails = [s["email"] for s in r.json()]
+    emails = [s["email"] for s in r.json()["items"]]
     assert "allact@example.com" in emails
     assert "allinact@example.com" in emails
 

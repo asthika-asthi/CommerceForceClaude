@@ -458,7 +458,7 @@ async def delete_duplicates(keep_ids: list[str], db: AsyncSession) -> int:
                 result = await db.execute(select(Product).where(Product.id == entry["id"]))
                 product = result.scalar_one_or_none()
                 if product:
-                    db.delete(product)
+                    await db.delete(product)
                     deleted += 1
     await db.flush()
     return deleted

@@ -257,10 +257,10 @@ async def test_newsletter_journey(client: AsyncClient, db):
     dup_r = await client.post("/api/newsletter/subscribe", json={"email": "reader@example.com"})
     assert dup_r.status_code == 409, dup_r.text
 
-    # — Admin views subscriber list (returns a plain list, not paginated) —
+    # — Admin views subscriber list (paginated) —
     list_r = await client.get("/api/newsletter/subscribers", headers=admin_h)
     assert list_r.status_code == 200, list_r.text
-    emails = [s["email"] for s in list_r.json()]
+    emails = [s["email"] for s in list_r.json()["items"]]
     assert "reader@example.com" in emails
 
     # — Unsubscribe using token —

@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-06-29. This is the single source of truth for build status.
+Last updated: 2026-07-01. This is the single source of truth for build status.
 
 ---
 
@@ -146,6 +146,38 @@ Comprehensive live test of every plugin and every user-facing flow. All items be
 **Configuration items (not code bugs):**
 - AI chat returns 503 until `OPENROUTER_API_KEY` is set in `.env` — handled gracefully by chat widget
 - Stripe payment method returns 503 until `STRIPE_SECRET_KEY` is set — correct behaviour
+
+### Admin search + pagination (2026-07-01)
+
+Search and pagination added to all 7 admin list pages. 200/200 backend tests pass (including 29 new pagination tests).
+
+**Backend changes (all endpoints now return `{ items, total, page, page_size, pages }`):**
+- `GET /api/auth/users` — paginated with `page`/`page_size` query params
+- `GET /api/newsletter/subscribers` — paginated (CSV export unchanged, uses separate service function)
+- `GET /api/reviews/admin/all` — paginated; `is_approved` filter now server-side
+- `GET /api/contact` — paginated
+- `GET /api/rfq` — `pages` field was missing from `RFQPageOut` schema — fixed
+
+**Frontend changes (all admin list pages):**
+- `components/ui/pagination.tsx` — shared Prev/Next pagination component (only renders when > 1 page)
+- `lib/types.ts` — `Paginated<T>` generic interface added
+- Products: search input with 300ms debounce + pagination; search resets to page 1
+- Orders: pagination (was silently ignoring `?limit=50`; now correctly uses `?page=N`)
+- RFQ: pagination (same fix as orders)
+- Users, Newsletter, Reviews, Enquiries: pagination added to all four
+
+**Pre-existing bug fixed:** `db.delete(product)` in `products/service.py` was missing `await` — caused `test_delete_duplicates_keeps_selected` to fail.
+
+**Playwright E2E tests written** (`frontend-admin/e2e/pagination.spec.ts`, 16 specs):
+- Products: search filtering, empty-result state, clearing search, search resets page
+- Products: pagination Prev/Next navigation, disabled states, page counter
+- Enquiries: pagination Prev/Next
+- Newsletter: pagination, filter toggle resets to page 1
+- No-data: pagination hidden when < 20 records
+
+**To run E2E tests:** start backend on `:8000` and admin on `:3001`, then `npm run test:e2e` from `frontend-admin/`.
+
+---
 
 ### Component library sprint (2026-06-28)
 
