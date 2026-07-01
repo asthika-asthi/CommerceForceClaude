@@ -1,4 +1,4 @@
-﻿from typing import List
+﻿from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from fastapi import HTTPException
@@ -42,14 +42,27 @@ async def get_review_summary(product_id: str, db: AsyncSession) -> dict:
     }
 
 
-async def list_all_reviews(db: AsyncSession) -> List[dict]:
+async def list_all_reviews(
+    db: AsyncSession,
+    is_approved: Optional[bool] = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[List[dict], int]:
     from app.plugins.auth.models import User
-    result = await db.execute(
+    count_q = select(func.count()).select_from(Review)
+    if is_approved is not None:
+        count_q = count_q.where(Review.is_approved == is_approved)
+    total = (await db.execute(count_q)).scalar_one()
+
+    data_q = (
         select(Review, User.first_name, User.last_name, User.email)
         .join(User, Review.user_id == User.id)
         .order_by(Review.is_approved, Review.created_at.desc())
     )
-    return [
+    if is_approved is not None:
+        data_q = data_q.where(Review.is_approved == is_approved)
+    result = await db.execute(data_q.offset((page - 1) * page_size).limit(page_size))
+    items = [
         {
             "id": r.id,
             "product_id": r.product_id,
@@ -64,6 +77,7 @@ async def list_all_reviews(db: AsyncSession) -> List[dict]:
         }
         for r, first_name, last_name, email in result.all()
     ]
+    return items, total
 
 
 async def has_purchased(user_id: str, product_id: str, db: AsyncSession) -> bool:

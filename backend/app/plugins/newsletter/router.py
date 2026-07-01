@@ -1,6 +1,6 @@
 import csv
 import io
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
@@ -9,6 +9,7 @@ from app.plugins.newsletter.schemas import (
     SubscribeRequest, UnsubscribeRequest, SubscriberOut, SubscribeResponse, SubscriberUpdate,
 )
 from app.plugins.newsletter import service
+from app.shared.pagination import Page, paginate
 
 router = APIRouter()
 
@@ -28,12 +29,15 @@ async def unsubscribe(data: UnsubscribeRequest, db: AsyncSession = Depends(get_d
     return {"message": "Successfully unsubscribed"}
 
 
-@router.get("/subscribers", response_model=list[SubscriberOut], dependencies=[Depends(require_admin())])
+@router.get("/subscribers", response_model=Page[SubscriberOut], dependencies=[Depends(require_admin())])
 async def list_subscribers(
     active_only: bool = True,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ):
-    return await service.list_subscribers(db, active_only=active_only)
+    subscribers, total = await service.list_subscribers_paged(db, active_only=active_only, page=page, page_size=page_size)
+    return paginate([SubscriberOut.model_validate(s) for s in subscribers], total, page, page_size)
 
 
 @router.patch("/subscribers/{subscriber_id}", response_model=SubscriberOut, dependencies=[Depends(require_admin())])

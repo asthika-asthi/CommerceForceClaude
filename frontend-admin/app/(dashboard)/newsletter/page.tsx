@@ -2,16 +2,20 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { api } from "@/lib/api"
-import type { Subscriber } from "@/lib/types"
+import type { Subscriber, Paginated } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
+import { Pagination } from "@/components/ui/pagination"
 
 export default function NewsletterPage() {
   const [activeOnly, setActiveOnly] = useState(true)
-  const { data: subscribers = [], isLoading } = useQuery<Subscriber[]>({
-    queryKey: ["subscribers", activeOnly],
-    queryFn: () => api.get(`/api/newsletter/subscribers?active_only=${activeOnly}`),
+  const [page, setPage] = useState(1)
+  const { data, isLoading } = useQuery<Paginated<Subscriber>>({
+    queryKey: ["subscribers", activeOnly, page],
+    queryFn: () => api.get(`/api/newsletter/subscribers?active_only=${activeOnly}&page=${page}&page_size=20`),
   })
+  const subscribers = data?.items ?? []
+  const totalPages = data ? data.pages : 1
   const { data: stats } = useQuery<{ active_subscribers: number }>({
     queryKey: ["newsletter-stats"],
     queryFn: () => api.get("/api/newsletter/stats"),
@@ -27,10 +31,10 @@ export default function NewsletterPage() {
       <div className="flex items-center gap-4 mb-4">
         <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
           <input type="checkbox" checked={activeOnly}
-            onChange={(e) => setActiveOnly(e.target.checked)} />
+            onChange={(e) => { setActiveOnly(e.target.checked); setPage(1) }} />
           Active only
         </label>
-        <span className="text-sm text-slate-500">{subscribers.length} shown</span>
+        <span className="text-sm text-slate-500">{data?.total ?? subscribers.length} shown</span>
       </div>
 
       {isLoading ? (
@@ -60,6 +64,12 @@ export default function NewsletterPage() {
           </table>
         </div>
       )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPrev={() => setPage(p => p - 1)}
+        onNext={() => setPage(p => p + 1)}
+      />
     </div>
   )
 }

@@ -1,19 +1,23 @@
 "use client"
+import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
+import { Pagination } from "@/components/ui/pagination"
 
 import type { RFQ, PaginatedRFQs } from "@/lib/types"
 
 export default function RFQPage() {
   const qc = useQueryClient()
+  const [page, setPage] = useState(1)
   const { data, isLoading } = useQuery<PaginatedRFQs>({
-    queryKey: ["rfqs"],
-    queryFn: () => api.get("/api/rfq?limit=50"),
+    queryKey: ["rfqs", page],
+    queryFn: () => api.get(`/api/rfq?page=${page}&page_size=20`),
   })
   const rfqs = data?.items ?? []
+  const totalPages = data ? Math.ceil(data.total / 20) : 1
 
   const review = useMutation({
     mutationFn: (id: string) => api.post(`/api/rfq/${id}/review`),
@@ -73,6 +77,12 @@ export default function RFQPage() {
           </table>
         </div>
       )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPrev={() => setPage(p => p - 1)}
+        onNext={() => setPage(p => p + 1)}
+      />
     </div>
   )
 }

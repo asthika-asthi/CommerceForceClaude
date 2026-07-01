@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.plugins.contact.models import Enquiry
 from app.plugins.contact.schemas import EnquiryCreate, BespokeCreate
 from app.plugins.branding.service import get_config
@@ -72,9 +72,13 @@ async def create_bespoke(data: BespokeCreate, db: AsyncSession) -> Enquiry:
     return enquiry
 
 
-async def list_enquiries(db: AsyncSession) -> list[Enquiry]:
-    result = await db.execute(select(Enquiry).order_by(Enquiry.created_at.desc()))
-    return list(result.scalars().all())
+async def list_enquiries(db: AsyncSession, page: int = 1, page_size: int = 20) -> tuple[list[Enquiry], int]:
+    total = (await db.execute(select(func.count()).select_from(Enquiry))).scalar_one()
+    result = await db.execute(
+        select(Enquiry).order_by(Enquiry.created_at.desc())
+        .offset((page - 1) * page_size).limit(page_size)
+    )
+    return list(result.scalars().all()), total
 
 
 async def toggle_read(enquiry_id: str, db: AsyncSession) -> Enquiry:

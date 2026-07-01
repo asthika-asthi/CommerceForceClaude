@@ -3,6 +3,7 @@ import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
+import { Pagination } from "@/components/ui/pagination"
 import { Check, Trash2, Star } from "lucide-react"
 
 interface AdminReview {
@@ -18,14 +19,37 @@ interface AdminReview {
   created_at: string
 }
 
+interface ReviewsPage {
+  items: AdminReview[]
+  total: number
+  page: number
+  page_size: number
+  pages: number
+}
+
 export default function ReviewsPage() {
   const qc = useQueryClient()
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all")
+  const [page, setPage] = useState(1)
 
-  const { data: reviews = [], isLoading } = useQuery<AdminReview[]>({
-    queryKey: ["admin-reviews"],
-    queryFn: () => api.get("/api/reviews/admin/all"),
+  const isApprovedParam = filter === "pending" ? "false" : filter === "approved" ? "true" : ""
+
+  const { data, isLoading } = useQuery<ReviewsPage>({
+    queryKey: ["admin-reviews", filter, page],
+    queryFn: () => {
+      const params = new URLSearchParams({ page: String(page), page_size: "20" })
+      if (isApprovedParam !== "") params.set("is_approved", isApprovedParam)
+      return api.get(`/api/reviews/admin/all?${params}`)
+    },
   })
+  const reviews = data?.items ?? []
+  const totalPages = data ? data.pages : 1
+
+  const { data: pendingData } = useQuery<ReviewsPage>({
+    queryKey: ["admin-reviews-pending-count"],
+    queryFn: () => api.get("/api/reviews/admin/all?is_approved=false&page=1&page_size=1"),
+  })
+  const pendingCount = pendingData?.total ?? 0
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => api.patch(`/api/reviews/${id}/approve`, {}),
@@ -34,14 +58,11 @@ export default function ReviewsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.del(`/api/reviews/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-reviews"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-reviews"] })
+      qc.invalidateQueries({ queryKey: ["admin-reviews-pending-count"] })
+    },
   })
-
-  const filtered = reviews.filter((r) =>
-    filter === "all" ? true : filter === "pending" ? !r.is_approved : r.is_approved
-  )
-
-  const pendingCount = reviews.filter((r) => !r.is_approved).length
 
   return (
     <div>
@@ -54,7 +75,7 @@ export default function ReviewsPage() {
         {(["all", "pending", "approved"] as const).map((f) => (
           <button
             key={f}
-            onClick={() => setFilter(f)}
+            onClick={() => { setFilter(f); setPage(1) }}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               filter === f ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
@@ -67,17 +88,17 @@ export default function ReviewsPage() {
         ))}
       </div>
 
-      {isLoading ? (
+      {isLoading && !data ? (
         <div className="flex justify-center py-12">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : reviews.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400">
           No {filter === "all" ? "" : filter} reviews found.
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((review) => (
+          {reviews.map((review) => (
             <div
               key={review.id}
               className={`bg-white rounded-xl border p-5 ${
@@ -129,6 +150,12 @@ export default function ReviewsPage() {
           ))}
         </div>
       )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPrev={() => setPage(p => p - 1)}
+        onNext={() => setPage(p => p + 1)}
+      />
     </div>
   )
 }

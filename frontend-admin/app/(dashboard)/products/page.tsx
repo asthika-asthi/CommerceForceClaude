@@ -1,12 +1,13 @@
 "use client"
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { api } from "@/lib/api"
 import type { Product } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
-import { Pencil, Trash2, Upload, X, Copy } from "lucide-react"
+import { Pagination } from "@/components/ui/pagination"
+import { Pencil, Trash2, Upload, X, Copy, Search } from "lucide-react"
 
 interface DuplicateEntry { id: string; name: string; price: string; stock_quantity: number; category_id: string | null; created_at: string | null }
 interface DuplicateGroup { name: string; products: DuplicateEntry[] }
@@ -33,6 +34,9 @@ export default function ProductsPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [csvResult, setCsvResult] = useState<CsvResult | null>(null)
   const [csvUploading, setCsvUploading] = useState(false)
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [page, setPage] = useState(1)
 
   // Duplicate finder state
   const [dupPanelOpen, setDupPanelOpen] = useState(false)
@@ -43,11 +47,21 @@ export default function ProductsPage() {
   const [dupDeleting, setDupDeleting] = useState(false)
   const [dupResult, setDupResult] = useState<string | null>(null)
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
   const { data, isLoading } = useQuery<ProductsResponse>({
-    queryKey: ["products"],
-    queryFn: () => api.get("/api/products"),
+    queryKey: ["products", page, debouncedSearch],
+    queryFn: () => {
+      const params = new URLSearchParams({ page: String(page), page_size: "20" })
+      if (debouncedSearch) params.set("search", debouncedSearch)
+      return api.get(`/api/products?${params}`)
+    },
   })
   const products = data?.items ?? []
+  const totalPages = data ? Math.ceil(data.total / 20) : 1
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.del(`/api/products/${id}`),
@@ -128,6 +142,16 @@ export default function ProductsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search products…"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+              className="pl-8 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-52"
+            />
+          </div>
           <input
             ref={fileRef}
             type="file"
@@ -280,7 +304,7 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {isLoading ? (
+      {isLoading && !data ? (
         <div className="flex justify-center py-12">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -346,6 +370,12 @@ export default function ProductsPage() {
           </table>
         </div>
       )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPrev={() => setPage(p => p - 1)}
+        onNext={() => setPage(p => p + 1)}
+      />
     </div>
   )
 }

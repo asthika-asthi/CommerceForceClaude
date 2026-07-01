@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from fastapi import HTTPException, status
 from app.plugins.newsletter.models import NewsletterSubscriber
 from app.plugins.newsletter.schemas import SubscribeRequest
@@ -70,6 +70,21 @@ async def delete_subscriber(subscriber_id: str, db: AsyncSession) -> None:
     subscriber = await get_subscriber(subscriber_id, db)
     await db.delete(subscriber)
     await db.flush()
+
+
+async def list_subscribers_paged(
+    db: AsyncSession, active_only: bool = True, page: int = 1, page_size: int = 20
+) -> tuple[list[NewsletterSubscriber], int]:
+    count_q = select(func.count()).select_from(NewsletterSubscriber)
+    if active_only:
+        count_q = count_q.where(NewsletterSubscriber.is_active == True)
+    total = (await db.execute(count_q)).scalar_one()
+
+    data_q = select(NewsletterSubscriber).order_by(NewsletterSubscriber.created_at.desc())
+    if active_only:
+        data_q = data_q.where(NewsletterSubscriber.is_active == True)
+    result = await db.execute(data_q.offset((page - 1) * page_size).limit(page_size))
+    return list(result.scalars().all()), total
 
 
 async def subscriber_count(db: AsyncSession) -> int:

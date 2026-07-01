@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
-import type { Enquiry } from "@/lib/types"
+import { Pagination } from "@/components/ui/pagination"
+import type { Enquiry, Paginated } from "@/lib/types"
 
 const TYPE_LABELS: Record<string, string> = {
   general: "General",
@@ -86,11 +87,14 @@ function EnquiryRow({ e, onToggle }: { e: Enquiry; onToggle: () => void }) {
 
 export default function EnquiriesPage() {
   const qc = useQueryClient()
+  const [page, setPage] = useState(1)
 
-  const { data: enquiries = [], isLoading } = useQuery<Enquiry[]>({
-    queryKey: ["enquiries"],
-    queryFn: () => api.get("/api/contact"),
+  const { data, isLoading } = useQuery<Paginated<Enquiry>>({
+    queryKey: ["enquiries", page],
+    queryFn: () => api.get(`/api/contact?page=${page}&page_size=20`),
   })
+  const enquiries = data?.items ?? []
+  const totalPages = data ? data.pages : 1
 
   const toggleRead = useMutation({
     mutationFn: (id: string) => api.patch<Enquiry>(`/api/contact/${id}/read`),
@@ -99,7 +103,7 @@ export default function EnquiriesPage() {
 
   const unreadCount = enquiries.filter((e) => !e.is_read).length
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <div>
         <PageHeader title="Enquiries" description="Contact and bespoke enquiries" />
@@ -115,9 +119,11 @@ export default function EnquiriesPage() {
       <PageHeader
         title="Enquiries"
         description={
-          unreadCount > 0
-            ? `${enquiries.length} total · ${unreadCount} unread`
-            : `${enquiries.length} total`
+          data
+            ? unreadCount > 0
+              ? `${data.total} total · ${unreadCount} unread this page`
+              : `${data.total} total`
+            : "Contact and bespoke enquiries"
         }
       />
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -147,6 +153,12 @@ export default function EnquiriesPage() {
           </tbody>
         </table>
       </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPrev={() => setPage(p => p - 1)}
+        onNext={() => setPage(p => p + 1)}
+      />
     </div>
   )
 }

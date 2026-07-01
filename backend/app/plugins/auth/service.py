@@ -186,9 +186,14 @@ async def change_password(user: User, data: ChangePasswordRequest, db: AsyncSess
     await db.flush()
 
 
-async def list_users(db: AsyncSession) -> list[User]:
-    result = await db.execute(select(User).order_by(User.email))
-    return list(result.scalars().all())
+async def list_users(db: AsyncSession, page: int = 1, page_size: int = 20) -> tuple[list[User], int]:
+    from sqlalchemy import func
+    total = (await db.execute(select(func.count()).select_from(User))).scalar_one()
+    result = await db.execute(
+        select(User).order_by(User.email)
+        .offset((page - 1) * page_size).limit(page_size)
+    )
+    return list(result.scalars().all()), total
 
 
 async def patch_user(user_id: str, data: dict, db: AsyncSession) -> User:

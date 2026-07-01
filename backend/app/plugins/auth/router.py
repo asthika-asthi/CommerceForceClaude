@@ -1,6 +1,6 @@
 import csv
 import io
-from fastapi import APIRouter, Depends, Response, Request, status
+from fastapi import APIRouter, Depends, Response, Request, status, Query
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +13,7 @@ from app.core.dependencies import get_current_user, require_admin
 from app.plugins.auth.models import User, UserRole
 from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest, ForgotPasswordRequest, ResetPasswordRequest
 from app.plugins.auth import service
+from app.shared.pagination import Page, paginate
 
 REFRESH_COOKIE = "refresh_token"
 
@@ -119,12 +120,15 @@ async def change_password(
     await service.change_password(current_user, data, db)
 
 
-@router.get("/users", response_model=list[UserOut])
+@router.get("/users", response_model=Page[UserOut])
 async def list_users(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=50),
     current_user=Depends(require_admin()),
     db: AsyncSession = Depends(get_db),
 ):
-    return [UserOut.model_validate(u) for u in await service.list_users(db)]
+    users, total = await service.list_users(db, page=page, page_size=page_size)
+    return paginate([UserOut.model_validate(u) for u in users], total, page, page_size)
 
 
 @router.patch("/users/{user_id}", response_model=UserOut)

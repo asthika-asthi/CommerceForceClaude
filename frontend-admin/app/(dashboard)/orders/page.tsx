@@ -1,10 +1,12 @@
 "use client"
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { api } from "@/lib/api"
 import type { PaginatedOrders } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
+import { Pagination } from "@/components/ui/pagination"
 
 function downloadCsv(path: string, filename: string) {
   const token = localStorage.getItem("cf_access_token")
@@ -20,11 +22,13 @@ function downloadCsv(path: string, filename: string) {
 }
 
 export default function OrdersPage() {
+  const [page, setPage] = useState(1)
   const { data, isLoading } = useQuery<PaginatedOrders>({
-    queryKey: ["orders"],
-    queryFn: () => api.get("/api/orders?limit=50"),
+    queryKey: ["orders", page],
+    queryFn: () => api.get(`/api/orders?page=${page}&page_size=20`),
   })
   const orders = data?.items ?? []
+  const totalPages = data ? Math.ceil(data.total / 20) : 1
 
   return (
     <div>
@@ -82,6 +86,12 @@ export default function OrdersPage() {
           </table>
         </div>
       )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPrev={() => setPage(p => p - 1)}
+        onNext={() => setPage(p => p + 1)}
+      />
     </div>
   )
 }

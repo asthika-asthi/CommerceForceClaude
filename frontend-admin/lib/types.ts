@@ -1,3 +1,12 @@
+// ── Pagination ────────────────────────────────────────────────────────────────
+export interface Paginated<T> {
+  items: T[]
+  total: number
+  page: number
+  page_size: number
+  pages: number
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export interface User {
   id: string

@@ -1,9 +1,11 @@
 "use client"
+import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
-import type { User } from "@/lib/types"
+import { Pagination } from "@/components/ui/pagination"
+import type { User, Paginated } from "@/lib/types"
 
 function downloadCsv(path: string, filename: string) {
   const token = localStorage.getItem("cf_access_token")
@@ -26,11 +28,14 @@ const TRADE_STATUS_STYLES: Record<string, string> = {
 
 export default function UsersPage() {
   const qc = useQueryClient()
+  const [page, setPage] = useState(1)
 
-  const { data: users = [], isLoading } = useQuery<User[]>({
-    queryKey: ["users"],
-    queryFn: () => api.get("/api/auth/users"),
+  const { data, isLoading } = useQuery<Paginated<User>>({
+    queryKey: ["users", page],
+    queryFn: () => api.get(`/api/auth/users?page=${page}&page_size=20`),
   })
+  const users = data?.items ?? []
+  const totalPages = data ? data.pages : 1
 
   const patch = useMutation({
     mutationFn: ({ id, body }: { id: string; body: { is_active?: boolean; role?: string; trade_status?: string } }) =>
@@ -38,7 +43,7 @@ export default function UsersPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   })
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <div>
         <PageHeader title="Users" description="Manage customer and staff accounts" />
@@ -56,7 +61,7 @@ export default function UsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Users</h1>
-          <p className="text-sm text-slate-500 mt-0.5">{users.length} accounts</p>
+          <p className="text-sm text-slate-500 mt-0.5">{data?.total ?? users.length} accounts</p>
         </div>
         <button
           onClick={() => downloadCsv("/api/auth/customers/export/csv", "customers.csv")}
@@ -183,6 +188,12 @@ export default function UsersPage() {
           </table>
         </div>
       </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPrev={() => setPage(p => p - 1)}
+        onNext={() => setPage(p => p + 1)}
+      />
     </div>
   )
 }
