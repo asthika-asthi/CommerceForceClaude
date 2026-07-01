@@ -7,7 +7,7 @@ import { PasswordInput } from "@/components/password-input"
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <ResetPasswordForm />
     </Suspense>
   )

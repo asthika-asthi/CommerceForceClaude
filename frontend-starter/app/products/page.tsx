@@ -96,7 +96,7 @@ export default async function ProductsPage({ searchParams }: Props) {
               </li>
             ))}
           </ul>
-          <Suspense>
+          <Suspense fallback={null}>
             <PriceRangeFilter
               currentMin={params.min_price}
               currentMax={params.max_price}

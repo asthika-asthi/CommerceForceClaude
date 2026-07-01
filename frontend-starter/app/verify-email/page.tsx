@@ -6,7 +6,7 @@ import { api } from "@/lib/api"
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <VerifyEmailContent />
     </Suspense>
   )
