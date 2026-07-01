@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
+import { ProductSearchCombobox } from "@/components/ui/product-search-combobox"
 import { ChevronDown, ChevronRight } from "lucide-react"
 
-import type { Warehouse, Product, ProductVariantSummary, StockTransferResult } from "@/lib/types"
+import type { Warehouse, ProductVariantSummary, StockTransferResult } from "@/lib/types"
 
 const DEFAULT_SF = { product_id: "", variant_id: "", quantity: "", threshold: "10", delta: "" }
 
@@ -23,12 +24,6 @@ function VariantPicker({
   onProductChange: (whId: string, productId: string) => void
   onVariantChange: (whId: string, variantId: string) => void
 }) {
-  const { data: productsData } = useQuery({
-    queryKey: ["products-list"],
-    queryFn: () => api.get("/api/products?page_size=500"),
-  })
-  const products: Product[] = productsData?.items ?? []
-
   const { data: variants = [] } = useQuery<ProductVariantSummary[]>({
     queryKey: ["variants", productId],
     queryFn: () => api.get(`/api/products/${productId}/variants`),
@@ -44,16 +39,11 @@ function VariantPicker({
     <>
       <div>
         <label className="block text-xs text-slate-500 mb-1">Product</label>
-        <select
+        <ProductSearchCombobox
           value={productId}
-          onChange={(e) => onProductChange(whId, e.target.value)}
-          className="w-48 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-        >
-          <option value="">Select product…</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+          onChange={(id) => onProductChange(whId, id)}
+          className="w-48"
+        />
       </div>
       <div>
         <label className="block text-xs text-slate-500 mb-1">Variant</label>
@@ -87,12 +77,6 @@ export default function InventoryPage() {
   const [stockError, setStockError] = useState("")
   const [pendingWhId, setPendingWhId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
-
-  const { data: productsData2 } = useQuery({
-    queryKey: ["products-list"],
-    queryFn: () => api.get("/api/products?page_size=500"),
-  })
-  const products: Product[] = productsData2?.items ?? []
 
   const [xferFrom, setXferFrom] = useState("")
   const [xferTo, setXferTo] = useState("")
@@ -348,14 +332,13 @@ export default function InventoryPage() {
             </select>
           </div>
 
-          {/* Product dropdown */}
+          {/* Product search */}
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Product</label>
-            <select value={xferProduct} onChange={e => { setXferProduct(e.target.value); setXferVariant("") }}
-              className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Select…</option>
-              {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+            <ProductSearchCombobox
+              value={xferProduct}
+              onChange={(id) => { setXferProduct(id); setXferVariant("") }}
+            />
           </div>
 
           {/* Variant dropdown */}
