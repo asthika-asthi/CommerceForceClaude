@@ -194,7 +194,7 @@ async def update_image(product_id: str, image_id: str, data: ProductImageUpdate,
 
 async def delete_product(product_id: str, db: AsyncSession) -> None:
     product = await _load(product_id, db, for_update=True)
-    db.delete(product)
+    await db.delete(product)
     await db.flush()
 
 
@@ -205,7 +205,7 @@ async def remove_image(product_id: str, image_id: str, db: AsyncSession) -> None
     img = result.scalar_one_or_none()
     if not img:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
-    db.delete(img)
+    await db.delete(img)
     await db.flush()
 
 
@@ -215,13 +215,16 @@ async def reorder_images(product_id: str, items: list[ImageSortItem], db: AsyncS
     )
     images = {img.id: img for img in result.scalars().all()}
 
+    # Clear primary flag on ALL images first — not just the ones in the request,
+    # so stale is_primary=True on images excluded from the reorder doesn't persist.
+    for img in images.values():
+        img.is_primary = False
+
     for item in items:
         img = images.get(item.id)
         if not img:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Image {item.id} not found")
         img.sort_order = item.sort_order
-        # First image in sorted order is primary
-        img.is_primary = False
 
     await db.flush()
 
