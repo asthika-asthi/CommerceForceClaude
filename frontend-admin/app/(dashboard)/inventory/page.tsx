@@ -23,10 +23,11 @@ function VariantPicker({
   onProductChange: (whId: string, productId: string) => void
   onVariantChange: (whId: string, variantId: string) => void
 }) {
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: productsData } = useQuery({
     queryKey: ["products-list"],
-    queryFn: () => api.get("/api/products"),
+    queryFn: () => api.get("/api/products?page_size=500"),
   })
+  const products: Product[] = productsData?.items ?? []
 
   const { data: variants = [] } = useQuery<ProductVariantSummary[]>({
     queryKey: ["variants", productId],
@@ -87,10 +88,11 @@ export default function InventoryPage() {
   const [pendingWhId, setPendingWhId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: productsData2 } = useQuery({
     queryKey: ["products-list"],
-    queryFn: () => api.get("/api/products"),
+    queryFn: () => api.get("/api/products?page_size=500"),
   })
+  const products: Product[] = productsData2?.items ?? []
 
   const [xferFrom, setXferFrom] = useState("")
   const [xferTo, setXferTo] = useState("")

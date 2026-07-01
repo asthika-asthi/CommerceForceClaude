@@ -83,7 +83,7 @@ async def list_products(
     sort_by: Optional[str] = Query(None, pattern="^(name|price|created_at)$"),
     sort_dir: str = Query("asc", pattern="^(asc|desc)$"),
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=500),
     min_price: Optional[Decimal] = Query(None, ge=0),
     max_price: Optional[Decimal] = Query(None, ge=0),
     db: AsyncSession = Depends(get_db),
