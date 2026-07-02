@@ -2,7 +2,7 @@ import csv
 import io
 from decimal import Decimal
 from typing import Optional
-from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -113,11 +113,13 @@ async def list_products(
 @router.post("/import/csv", response_model=CsvImportResult,
              dependencies=[Depends(require_admin())])
 async def import_products_csv(
+    request: Request,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
     content = (await file.read()).decode("utf-8")
-    result = await service.import_from_csv(content, db)
+    base_url = str(request.base_url).rstrip("/")
+    result = await service.import_from_csv(content, db, base_url=base_url)
     return result
 
 

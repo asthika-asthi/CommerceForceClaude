@@ -281,9 +281,28 @@ async def _resolve_category(value: str, db: AsyncSession) -> Optional[str]:
     return str(new_cat.id)
 
 
+def _resolve_image_url(url: str, base_url: str) -> str:
+    """Turn a relative image path from a CSV into an absolute backend URL.
+
+    CSV authors often write paths like /Catalog_product_images/foo.jpg or
+    Catalog_product_images/foo.jpg.  The backend serves every uploaded file
+    under /uploads/, so we prepend base_url + /uploads/ for any path that
+    isn't already an absolute HTTP URL.
+    """
+    if not url:
+        return url
+    if url.startswith(("http://", "https://")):
+        return url
+    path = url.lstrip("/")
+    if path.startswith("uploads/"):
+        return f"{base_url}/{path}"
+    return f"{base_url}/uploads/{path}"
+
+
 async def import_from_csv(
     content: str,
     db: AsyncSession,
+    base_url: str = "",
 ) -> dict:
     reader = csv.DictReader(io.StringIO(content))
     created = 0
@@ -366,7 +385,7 @@ async def import_from_csv(
                 row.get("image_url_4", "").strip(),
                 row.get("image_url_5", "").strip(),
             ]
-            non_blank = [u for u in image_urls if u]
+            non_blank = [_resolve_image_url(u, base_url) for u in image_urls if u]
             if non_blank:
                 await db.execute(delete(ProductImage).where(ProductImage.product_id == existing.id))
                 for idx, url in enumerate(non_blank):
@@ -403,7 +422,7 @@ async def import_from_csv(
                     row.get("image_url_4", "").strip(),
                     row.get("image_url_5", "").strip(),
                 ]
-                non_blank = [u for u in image_urls if u]
+                non_blank = [_resolve_image_url(u, base_url) for u in image_urls if u]
                 if non_blank:
                     await db.execute(delete(ProductImage).where(ProductImage.product_id == product.id))
                     for idx, url in enumerate(non_blank):
