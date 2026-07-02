@@ -2,6 +2,14 @@
 import Link from "next/link"
 import type { Category } from "@/lib/types"
 
+function resolveImageUrl(url: string): string {
+  if (url.startsWith("/")) {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+    return `${base}${url}`
+  }
+  return url
+}
+
 const CAT_STYLES: Record<string, { emoji: string; bg: string }> = {
   tarpaulins: { emoji: "🛡️", bg: "linear-gradient(135deg,#E8F4FD,#C8E6FA)" },
   "dust-sheets": { emoji: "🧹", bg: "linear-gradient(135deg,#FFF8E1,#FFF0C0)" },
@@ -49,7 +57,7 @@ export function CategoryGrid({ categories }: Props) {
                 {/* Image overlaid on top — hidden via onError if URL is broken */}
                 {cat.image_url && (
                   <img
-                    src={cat.image_url}
+                    src={resolveImageUrl(cat.image_url)}
                     alt=""
                     className="absolute inset-0 w-full h-full object-cover"
                     onError={e => { (e.target as HTMLImageElement).style.display = "none" }}

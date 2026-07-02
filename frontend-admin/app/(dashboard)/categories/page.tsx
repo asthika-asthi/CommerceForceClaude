@@ -3,6 +3,14 @@ import { useRef, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type { Category } from "@/lib/types"
+
+function resolveImageUrl(url: string): string {
+  if (url.startsWith("/")) {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+    return `${base}${url}`
+  }
+  return url
+}
 import { StatusBadge } from "@/components/status-badge"
 import { Trash2, Pencil, X, Upload, Plus } from "lucide-react"
 
@@ -216,7 +224,7 @@ export default function CategoriesPage() {
                 <td className="px-4 py-3 text-slate-500 font-mono text-xs">{c.slug}</td>
                 <td className="px-4 py-3">
                   {c.image_url ? (
-                    <img src={c.image_url} alt={c.name}
+                    <img src={resolveImageUrl(c.image_url)} alt={c.name}
                       className="h-8 w-8 rounded object-cover border border-slate-200"
                       onError={e => { (e.target as HTMLImageElement).style.display = "none" }} />
                   ) : (
@@ -277,8 +285,9 @@ export default function CategoriesPage() {
               <label className="block text-sm font-medium text-slate-700 mb-1">Image URL</label>
               <input value={createForm.image_url}
                 onChange={(e) => setCreateForm(f => ({ ...f, image_url: e.target.value }))}
-                placeholder="https://…"
+                placeholder="/uploads/Categories/Dustsheets.jpg"
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <p className="text-xs text-slate-400 mt-1">Use the path from the Media Library (e.g. <code>/uploads/Categories/Dustsheets.jpg</code>)</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Parent Category</label>
@@ -343,15 +352,15 @@ export default function CategoriesPage() {
               <div className="flex gap-3 items-start">
                 <input value={editForm.image_url}
                   onChange={(e) => setEditForm(f => ({ ...f, image_url: e.target.value }))}
-                  placeholder="https://… or http://localhost:8000/uploads/…"
+                  placeholder="/uploads/Categories/Dustsheets.jpg"
                   className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 {editForm.image_url && (
-                  <img src={editForm.image_url} alt="preview"
+                  <img src={resolveImageUrl(editForm.image_url)} alt="preview"
                     className="h-10 w-10 rounded object-cover border border-slate-200 flex-shrink-0"
                     onError={e => { (e.target as HTMLImageElement).style.display = "none" }} />
                 )}
               </div>
-              <p className="text-xs text-slate-400 mt-1">Used as the category card image on the storefront</p>
+              <p className="text-xs text-slate-400 mt-1">Use the path from the Media Library (e.g. <code>/uploads/Categories/Dustsheets.jpg</code>). Both <code>/uploads/…</code> and full <code>http://…</code> URLs work.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Sort Order</label>
