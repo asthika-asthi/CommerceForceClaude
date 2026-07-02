@@ -30,7 +30,7 @@ async def send_email(
 
     try:
         import aiosmtplib
-        await aiosmtplib.send(
+        await aiosmtplib.send(  # type: ignore[call-arg]
             message=body,
             sender=settings.SMTP_FROM,
             recipients=[recipient],

@@ -27,7 +27,7 @@ class BrandingConfigOut(BaseModel):
                 return json.loads(v)
             except (json.JSONDecodeError, ValueError):
                 return None
-        return v
+        return v if isinstance(v, dict) else None
 
 
 class BrandingConfigUpdate(BaseModel):

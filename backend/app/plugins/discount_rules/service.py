@@ -7,7 +7,7 @@ from app.plugins.discount_rules.schemas import DiscountRuleCreate, DiscountRuleU
 
 async def list_rules(db: AsyncSession) -> list[DiscountRule]:
     result = await db.execute(select(DiscountRule).order_by(DiscountRule.priority.desc()))
-    return result.scalars().all()
+    return list(result.scalars().all())
 
 
 async def get_rule(rule_id: str, db: AsyncSession) -> DiscountRule:

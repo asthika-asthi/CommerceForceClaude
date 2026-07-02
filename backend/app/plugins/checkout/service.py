@@ -193,7 +193,7 @@ async def checkout(
         await coupon_service.record_usage(_coupon_obj, order.id, coupon_discount, db, user_id=user_id)
 
     # Deduct redeemed loyalty points
-    if _points_to_redeem > 0:
+    if _points_to_redeem > 0 and user_id:
         from app.plugins.loyalty import service as loyalty_service
         await loyalty_service.redeem_points(user_id, _points_to_redeem, order.id, _points_discount, db)
 
@@ -203,6 +203,8 @@ async def checkout(
     if data.payment_method == PaymentMethod.cash:
         order.payment_status = PaymentStatus.paid
     elif data.payment_method == PaymentMethod.credit_limit:
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Authentication required for credit limit payments")
         from app.plugins.credit import service as credit_service
         await credit_service.check_and_deduct(user_id, order.total, db)
         order.payment_status = PaymentStatus.paid

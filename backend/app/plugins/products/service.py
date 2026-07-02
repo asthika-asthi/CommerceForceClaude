@@ -217,8 +217,8 @@ async def reorder_images(product_id: str, items: list[ImageSortItem], db: AsyncS
 
     # Clear primary flag on ALL images first — not just the ones in the request,
     # so stale is_primary=True on images excluded from the reorder doesn't persist.
-    for img in images.values():
-        img.is_primary = False
+    for existing_img in images.values():
+        existing_img.is_primary = False
 
     for item in items:
         img = images.get(item.id)

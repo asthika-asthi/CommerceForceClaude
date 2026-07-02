@@ -124,18 +124,18 @@ async def add_item(
     session_id: Optional[str] = None,
 ) -> CartOut:
     # Load variant
-    result = await db.execute(
+    variant_row = await db.execute(
         select(ProductVariant).where(ProductVariant.id == variant_id)
     )
-    variant = result.scalar_one_or_none()
+    variant = variant_row.scalar_one_or_none()
     if not variant or not variant.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
 
     # Load product
-    result = await db.execute(
+    product_row = await db.execute(
         select(Product).where(Product.id == variant.product_id, Product.is_active == True)
     )
-    product = result.scalar_one_or_none()
+    product = product_row.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
 
@@ -145,10 +145,10 @@ async def add_item(
 
     cart = await _get_or_create_cart(db, user_id=user_id, session_id=session_id)
 
-    result = await db.execute(
+    item_row = await db.execute(
         select(CartItem).where(CartItem.cart_id == cart.id, CartItem.variant_id == variant_id)
     )
-    item = result.scalar_one_or_none()
+    item = item_row.scalar_one_or_none()
     if item:
         item.quantity += quantity
     else:

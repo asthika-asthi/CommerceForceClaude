@@ -162,8 +162,8 @@ async def rotate_refresh_token(raw_token: str, db: AsyncSession) -> tuple[User, 
 
     stored.revoked = True
 
-    result = await db.execute(select(User).where(User.id == stored.user_id))
-    user = result.scalar_one_or_none()
+    user_row = await db.execute(select(User).where(User.id == stored.user_id))
+    user = user_row.scalar_one_or_none()
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 

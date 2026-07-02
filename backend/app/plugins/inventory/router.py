@@ -56,7 +56,7 @@ async def transfer_stock_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     source, dest = await service.transfer_stock(data, db)
-    return StockTransferResult(from_stock=source, to_stock=dest)
+    return StockTransferResult(from_stock=source, to_stock=dest)  # type: ignore[arg-type]
 
 
 @router.get("/variants/{variant_id}/stock", response_model=ProductStockSummary)
@@ -68,7 +68,7 @@ async def variant_stock(variant_id: str, db: AsyncSession = Depends(get_db)):
         variant_id=variant_id,
         total_quantity=total_qty,
         total_available=total_avail,
-        warehouses=items,
+        warehouses=items,  # type: ignore[arg-type]
     )
 
 

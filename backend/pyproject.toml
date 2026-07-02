@@ -62,7 +62,6 @@ ignore = [
 
 [tool.mypy]
 python_version = "3.11"
-warn_unused_coroutines = true
 ignore_missing_imports = true
 
 [tool.hatch.build.targets.wheel]

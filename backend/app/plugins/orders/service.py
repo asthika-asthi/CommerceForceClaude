@@ -142,6 +142,9 @@ async def update_status(order_id: str, data: UpdateStatusRequest, db: AsyncSessi
 
 
 async def _issue_stripe_refund(order: Order) -> None:
+    if not order.stripe_payment_intent_id:
+        logger.warning("Order %s has no Stripe payment intent — skipping refund", order.order_number)
+        return
     try:
         import asyncio
         import stripe as stripe_lib
@@ -224,7 +227,7 @@ async def cancel_order(order_id: str, user_id: str, db: AsyncSession) -> Order:
         pass
 
     # Refund credit if paid via credit limit
-    if order.payment_method == PaymentMethod.credit_limit:
+    if order.payment_method == PaymentMethod.credit_limit and order.user_id:
         try:
             from app.plugins.credit import service as credit_service
             await credit_service.restore_credit(order.user_id, order.total, db)

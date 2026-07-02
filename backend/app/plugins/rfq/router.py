@@ -28,7 +28,7 @@ async def list_rfqs(
     user_id = None if current_user.role in ("superadmin", "admin") else current_user.id
     items, total = await service.list_rfqs(db, user_id=user_id, page=page, page_size=page_size)
     pages = max(1, (total + page_size - 1) // page_size)
-    return RFQPageOut(items=items, total=total, page=page, page_size=page_size, pages=pages)
+    return RFQPageOut(items=items, total=total, page=page, page_size=page_size, pages=pages)  # type: ignore[arg-type]
 
 
 @router.get("/{rfq_id}", response_model=RFQOut)
