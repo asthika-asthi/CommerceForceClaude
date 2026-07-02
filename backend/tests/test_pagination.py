@@ -4,7 +4,6 @@ Uses page_size=2 with small data sets so pagination can be verified without
 creating 20+ rows per test.  The response shape { items, total, page, page_size,
 pages } must be consistent across every endpoint.
 """
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import update
 

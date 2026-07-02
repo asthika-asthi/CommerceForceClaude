@@ -1,6 +1,6 @@
 """Tests for admin new-order email notification (Sprint 1C)."""
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 from httpx import AsyncClient
 from sqlalchemy import update
 from app.plugins.auth.models import User, UserRole

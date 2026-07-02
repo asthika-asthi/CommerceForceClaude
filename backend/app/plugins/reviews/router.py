@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, get_current_user_optional, require_admin
+from app.core.dependencies import get_current_user, require_admin
 from app.plugins.reviews import service
 from app.plugins.reviews.schemas import ReviewCreate, ReviewOut, ReviewSummary, ReviewUpdate
 

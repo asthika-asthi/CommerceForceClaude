@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from app.plugins.cart.models import Cart, CartItem
 from app.plugins.cart.schemas import CartOut, CartItemOut
-from app.plugins.products.models import Product, ProductImage, ProductVariant, ProductVariantOption, ProductOptionValue
+from app.plugins.products.models import Product, ProductVariant, ProductVariantOption, ProductOptionValue
 from app.plugins.products import variant_service as vs
 
 

@@ -1,5 +1,4 @@
 """Phase 5 — Content & AI integration tests: Branding, Landing Page, AI Chat."""
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from httpx import AsyncClient
 
@@ -17,7 +16,7 @@ async def register_and_token(client: AsyncClient, data: dict) -> str:
 
 
 async def make_admin(client: AsyncClient, db) -> str:
-    token = await register_and_token(client, ADMIN_DATA)
+    await register_and_token(client, ADMIN_DATA)
     from sqlalchemy import update
     from app.plugins.auth.models import User, UserRole
     await db.execute(update(User).where(User.email == ADMIN_DATA["email"]).values(role=UserRole.admin))
@@ -143,7 +142,7 @@ async def test_create_multiple_sections(client: AsyncClient, db):
 
 async def test_list_sections_active_only(client: AsyncClient, db):
     admin_token = await make_admin(client, db)
-    r1 = await client.post(
+    await client.post(
         "/api/landing_page",
         json={"section_type": "hero", "title": "Active Hero", "sort_order": 0},
         headers={"Authorization": f"Bearer {admin_token}"},
@@ -477,24 +476,6 @@ async def test_product_reimport_updates_not_duplicates(client: AsyncClient, db):
     assert r.json()["created"] == 0
     products = (await client.get("/api/products")).json()["items"]
     assert [p["name"] for p in products].count("Widget A") == 1
-
-
-async def test_product_reimport_updates_price(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
-    await _import_csv(client, admin_token, "name,price\nWidget A,9.99\n")
-    await _import_csv(client, admin_token, "name,price\nWidget A,14.99\n")
-    products = (await client.get("/api/products")).json()["items"]
-    widget = next(p for p in products if p["name"] == "Widget A")
-    assert float(widget["price"]) == 14.99
-
-
-async def test_product_reimport_case_insensitive(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
-    await _import_csv(client, admin_token, "name,price\nWidget A,9.99\n")
-    r = await _import_csv(client, admin_token, "name,price\nwidget a,9.99\n")
-    assert r.json()["updated"] == 1
-    products = (await client.get("/api/products")).json()["items"]
-    assert len([p for p in products if "widget" in p["name"].lower()]) == 1
 
 
 async def test_product_reimport_updates_price(client: AsyncClient, db):

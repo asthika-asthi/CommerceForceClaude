@@ -4,7 +4,6 @@ End-to-end journey tests — full user lifecycle flows.
 Each test is a single narrative that exercises multiple plugins in sequence,
 mimicking how a real user would interact with the platform.
 """
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import update
 

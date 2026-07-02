@@ -6,6 +6,32 @@ This is the **storefront template** for CommerceForce, a headless modular monoli
 
 ---
 
+## Code Rules — Must Always Be Followed
+
+These rules exist because violations caused bugs in this project. Every new page, component, and API integration must follow them.
+
+### Next.js / React
+
+- **Suspense fallback required**: Any component using `useSearchParams()` must be wrapped in `<Suspense fallback={null}>`. Missing `fallback` causes the page to hang and render blank — this has affected 4+ pages in this project.
+- **React keys on all lists**: Every `.map()` returning JSX needs a unique `key` prop on the outermost element. Never use array index as key when items can be reordered or deleted.
+- **Error handling on all async calls**: Wrap `fetch`, `api.get`, and `api.post` calls in `try/catch`. Show the user a visible error state — never swallow failures silently.
+- **"use client" placement**: Components using hooks, event handlers, or browser APIs must have `"use client"` as the very first line.
+
+### API types (`lib/types.ts`)
+
+- **List vs detail endpoints return different shapes**: `GET /api/products` returns `primary_image: string` per item. `GET /api/products/{slug}` returns `images: ProductImage[]`. A component that works on the detail page will be wrong on the listing page if it only reads `images`.
+- **Types drift from the API**: `lib/types.ts` is hand-written. Run `npm run gen:types` after backend schema changes to generate `lib/generated-types.ts` from the live OpenAPI spec, then diff it against `lib/types.ts` to find drift. The backend must be running on `localhost:8000`.
+- **Audit all usages**: When you find a type mismatch, search the whole codebase for every place that assumes the same shape before fixing just one.
+
+### Running tests
+
+```powershell
+npm run test:e2e   # Playwright storefront tests (backend :8000 + storefront :3000 must be running)
+npm run gen:types  # regenerate lib/generated-types.ts from live OpenAPI spec
+```
+
+---
+
 ## Architecture Overview
 
 | Layer | Technology | Purpose |

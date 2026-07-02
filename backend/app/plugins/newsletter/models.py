@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from sqlalchemy import String, Boolean, Text
+from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.base_model import BaseModel
 

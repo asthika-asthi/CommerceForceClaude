@@ -1,5 +1,4 @@
 """Phase 2 — Commerce Engine integration tests."""
-import pytest
 from httpx import AsyncClient
 
 # --- helpers ---
@@ -17,8 +16,8 @@ async def register_and_token(client: AsyncClient, data: dict) -> str:
 
 async def make_admin(client: AsyncClient, db) -> str:
     """Register a user then promote them to admin directly via DB."""
-    token = await register_and_token(client, ADMIN_DATA)
-    from sqlalchemy import select, update
+    await register_and_token(client, ADMIN_DATA)
+    from sqlalchemy import update
     from app.plugins.auth.models import User, UserRole
     await db.execute(update(User).where(User.email == ADMIN_DATA["email"]).values(role=UserRole.admin))
     await db.flush()

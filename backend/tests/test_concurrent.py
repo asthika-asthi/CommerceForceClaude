@@ -19,7 +19,6 @@ IMPORTANT — session model:
   "Session is already flushing".
 """
 import asyncio
-import pytest
 from httpx import AsyncClient
 
 REGISTER_URL = "/api/auth/register"

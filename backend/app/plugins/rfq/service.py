@@ -88,7 +88,7 @@ async def submit_rfq(rfq_id: str, user_id: str, db: AsyncSession) -> RFQ:
 async def review_rfq(rfq_id: str, db: AsyncSession) -> RFQ:
     rfq = await _load(rfq_id, db, for_update=True)
     if rfq.status != RFQStatus.submitted:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"RFQ must be submitted first")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="RFQ must be submitted first")
     rfq.status = RFQStatus.under_review
     await db.flush()
     db.expire(rfq)

@@ -1,5 +1,4 @@
 from itertools import product as itertools_product
-from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload

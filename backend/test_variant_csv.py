@@ -115,10 +115,10 @@ async def run_tests() -> None:
     # ──────────────────────────────────────────────────────────
     print("\n[4] Happy path — create variants")
     async with AsyncSessionLocal() as db:
-        tshirt = await create_product(db, "T-Shirt", "TSHIRT")
-        hoodie = await create_product(db, "Hoodie", "HOODIE")
-        wh_main = await create_warehouse(db, "Main", "MAIN", is_default=True)
-        wh_london = await create_warehouse(db, "London", "LONDON")
+        await create_product(db, "T-Shirt", "TSHIRT")
+        await create_product(db, "Hoodie", "HOODIE")
+        await create_warehouse(db, "Main", "MAIN", is_default=True)
+        await create_warehouse(db, "London", "LONDON")
         await db.commit()
 
     csv_in = "\n".join([
@@ -250,7 +250,6 @@ async def run_tests() -> None:
             select(ProductVariant).where(ProductVariant.sku == "TSHIRT-S-RED")
         )).scalar_one()
         wh = (await db.execute(select(Warehouse).where(Warehouse.code == "MAIN"))).scalar_one()
-        from sqlalchemy import and_
         stock = (await db.execute(
             select(WarehouseStock).where(
                 WarehouseStock.variant_id == v.id,
@@ -320,7 +319,7 @@ async def run_tests() -> None:
     # ──────────────────────────────────────────────────────────
     print("\n[14] Blank is_active -> warning")
     async with AsyncSessionLocal() as db:
-        tshirt = (await db.execute(select(Product).where(Product.sku == "TSHIRT"))).scalar_one()
+        _ = (await db.execute(select(Product).where(Product.sku == "TSHIRT"))).scalar_one()
 
     csv_blank_active = "\n".join([
         "product_sku,variant_sku,option1_name,option1_value,option2_name,option2_value,price_adjustment,is_active",

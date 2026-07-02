@@ -19,7 +19,7 @@ from sqlalchemy import select
 # Import all plugin models so Base.metadata includes them all
 from app.core.base_model import Base
 from app.core.database import async_engine, AsyncSessionLocal
-from app.plugins.products.models import Product, ProductImage
+from app.plugins.products.models import Product
 from app.plugins.products.schemas import ProductCreate, ProductUpdate, ProductImageCreate, ProductOut
 
 import app.plugins.auth.models  # noqa
@@ -285,7 +285,7 @@ async def run_tests() -> None:
     # ──────────────────────────────────────────────────────────
     print("\n[11] CSV export — barcode column present")
     async with AsyncSessionLocal() as db:
-        p_exp = await service.create_product(
+        await service.create_product(
             ProductCreate(name="Export Barcode Product", price="25.00", barcode="1234567890123"), db
         )
         await db.commit()

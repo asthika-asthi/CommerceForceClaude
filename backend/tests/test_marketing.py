@@ -1,5 +1,4 @@
 """Phase 4 — Marketing integration tests: Coupons, Loyalty, Newsletter."""
-import pytest
 from httpx import AsyncClient
 
 REGISTER_URL = "/api/auth/register"
@@ -16,7 +15,7 @@ async def register_and_token(client: AsyncClient, data: dict) -> str:
 
 
 async def make_admin(client: AsyncClient, db) -> str:
-    token = await register_and_token(client, ADMIN_DATA)
+    await register_and_token(client, ADMIN_DATA)
     from sqlalchemy import update
     from app.plugins.auth.models import User, UserRole
     await db.execute(update(User).where(User.email == ADMIN_DATA["email"]).values(role=UserRole.admin))

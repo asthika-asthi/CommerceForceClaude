@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from decimal import Decimal
 from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class ProductImageOut(BaseModel):

@@ -348,8 +348,7 @@ async def run_tests() -> None:
                 variant_id=v3_id,
                 quantity=3,
             )
-            source, dest = await inv_svc.transfer_stock(req, db)
-            from_qty_after_first = source.quantity
+            source, _dest = await inv_svc.transfer_stock(req, db)
             await db.commit()
     except HTTPException as e:
         raised = e

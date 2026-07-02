@@ -1,7 +1,7 @@
 import csv
 import io
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from app.plugins.categories.models import Category

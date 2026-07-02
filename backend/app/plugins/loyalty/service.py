@@ -1,6 +1,5 @@
 import math
 from decimal import Decimal
-from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -96,7 +95,7 @@ async def earn_points(
         order_id=order_id,
         transaction_type=TransactionType.earn,
         points=points,
-        description=f"Points earned on order",
+        description="Points earned on order",
     )
     db.add(tx)
     await db.flush()
