@@ -7,7 +7,8 @@ import { StatusBadge } from "@/components/status-badge"
 import { ProductSearchCombobox } from "@/components/ui/product-search-combobox"
 import { ChevronDown, ChevronRight } from "lucide-react"
 
-import type { Warehouse, ProductVariantSummary, StockTransferResult } from "@/lib/types"
+import type { Warehouse, ProductVariantSummary, StockTransferResult, Product } from "@/lib/types"
+import { Pagination } from "@/components/ui/pagination"
 
 const DEFAULT_SF = { product_id: "", variant_id: "", quantity: "", threshold: "10", delta: "" }
 
@@ -77,6 +78,24 @@ export default function InventoryPage() {
   const [stockError, setStockError] = useState("")
   const [pendingWhId, setPendingWhId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const [stockPage, setStockPage] = useState(1)
+  const [stockSearch, setStockSearch] = useState("")
+
+  const STOCK_PAGE_SIZE = 20
+  const { data: productsData } = useQuery<{ items: Product[]; total: number }>({
+    queryKey: ["products-stock", stockPage, stockSearch],
+    queryFn: () => api.get(`/api/products?page=${stockPage}&page_size=${STOCK_PAGE_SIZE}&search=${encodeURIComponent(stockSearch)}`),
+  })
+  const stockItems = productsData?.items ?? []
+  const stockTotal = productsData?.total ?? 0
+  const stockTotalPages = Math.ceil(stockTotal / STOCK_PAGE_SIZE)
+
+  function stockColor(qty: number) {
+    if (qty === 0) return "text-red-600 font-semibold"
+    if (qty <= 10) return "text-amber-600 font-semibold"
+    return "text-green-700"
+  }
 
   const [xferFrom, setXferFrom] = useState("")
   const [xferTo, setXferTo] = useState("")
@@ -192,6 +211,62 @@ export default function InventoryPage() {
           </button>
         </form>
       )}
+
+      {/* Product Stock Overview */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-slate-900">Product Stock</h2>
+            {stockTotal > 0 && (
+              <span className="text-xs font-medium bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                {stockTotal}
+              </span>
+            )}
+          </div>
+          <input
+            type="text"
+            placeholder="Search by name or SKU…"
+            value={stockSearch}
+            onChange={(e) => { setStockSearch(e.target.value); setStockPage(1) }}
+            className="w-56 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {stockItems.length === 0 ? (
+          <p className="text-sm text-slate-400 py-4 text-center">
+            {stockSearch ? "No products found." : "No products yet."}
+          </p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50">
+              <tr>
+                {["Name", "SKU", "Stock", "Status"].map((h) => (
+                  <th key={h} className="text-left px-4 py-2 text-xs font-medium text-slate-500">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {stockItems.map((p) => (
+                <tr key={p.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-2 text-slate-800 font-medium">{p.name}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-slate-500">{p.sku ?? "—"}</td>
+                  <td className={`px-4 py-2 ${stockColor(p.stock_quantity)}`}>{p.stock_quantity}</td>
+                  <td className="px-4 py-2">
+                    <StatusBadge value={p.is_active ? "active" : "inactive"} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        <Pagination
+          page={stockPage}
+          totalPages={stockTotalPages}
+          onPrev={() => setStockPage((p) => p - 1)}
+          onNext={() => setStockPage((p) => p + 1)}
+        />
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
