@@ -8,7 +8,8 @@ import type { Product } from "@/lib/types"
 
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem)
-  const image = product.images?.find(img => img.is_primary) ?? product.images?.[0]
+  const imageFromArray = product.images?.find(img => img.is_primary) ?? product.images?.[0]
+  const image = imageFromArray ?? (product.primary_image ? { url: product.primary_image, alt_text: product.name } : null)
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
 

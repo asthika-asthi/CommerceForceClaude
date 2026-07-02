@@ -104,6 +104,7 @@ export interface Product {
   is_active: boolean
   category_id?: string
   images: ProductImage[]
+  primary_image?: string
   option_types?: ProductOptionType[]
   variants?: ProductVariant[]
 }
