@@ -74,9 +74,12 @@ export function Footer({ branding, categories }: Props) {
           <div>
             <h4 className="text-[12px] font-bold text-[#CBD8EE] uppercase tracking-[0.8px] mb-4">Help</h4>
             {[
-              "Delivery information", "Returns policy", "FAQs", "Contact us"
-            ].map(label => (
-              <Link key={label} href="/contact" className="block text-[13px] text-[#7A92B0] mb-2.5 hover:text-[#CBD8EE] transition-colors">{label}</Link>
+              { label: "Delivery information", href: "/contact" },
+              { label: "Returns policy", href: "/contact" },
+              { label: "FAQs", href: "/faq" },
+              { label: "Contact us", href: "/contact" },
+            ].map(({ label, href }) => (
+              <Link key={label} href={href} className="block text-[13px] text-[#7A92B0] mb-2.5 hover:text-[#CBD8EE] transition-colors">{label}</Link>
             ))}
           </div>
 

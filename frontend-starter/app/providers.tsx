@@ -8,13 +8,15 @@ import { PluginsProvider } from "@/lib/plugins-context"
 function AppInit({ children }: { children: React.ReactNode }) {
   const initAuth = useAuthStore((s) => s.init)
   const fetchCart = useCartStore((s) => s.fetch)
-  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    Promise.all([initAuth(), fetchCart()]).finally(() => setReady(true))
+    // Run in background — do NOT block rendering. Blocking (return null) hid
+    // all links from the DOM during hydration, making them unclickable on first
+    // load until the promises resolved.
+    initAuth()
+    fetchCart()
   }, [initAuth, fetchCart])
 
-  if (!ready) return null
   return <>{children}</>
 }
 

@@ -48,6 +48,8 @@ export interface Category {
   slug: string
   description?: string
   parent_id?: string
+  image_url?: string
+  sort_order: number
   is_active: boolean
   children?: Category[]
 }
