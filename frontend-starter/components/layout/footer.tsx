@@ -46,7 +46,7 @@ export function Footer({ branding, categories }: Props) {
             <h4 className="text-[12px] font-bold text-[#CBD8EE] uppercase tracking-[0.8px] mb-4">Products</h4>
             {topCategories.length > 0 ? (
               topCategories.map(cat => (
-                <Link key={cat.id} href={`/products?category=${cat.slug}`} className="block text-[13px] text-[#7A92B0] mb-2.5 hover:text-[#CBD8EE] transition-colors">
+                <Link key={cat.id} href={`/products?category=${cat.id}`} className="block text-[13px] text-[#7A92B0] mb-2.5 hover:text-[#CBD8EE] transition-colors">
                   {cat.name}
                 </Link>
               ))

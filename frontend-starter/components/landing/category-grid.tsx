@@ -39,7 +39,7 @@ export function CategoryGrid({ categories }: Props) {
           return (
             <Link
               key={cat.id}
-              href={`/products?category=${cat.slug}`}
+              href={`/products?category=${cat.id}`}
               className="bg-white border border-[#E0DED8] rounded-xl overflow-hidden hover:border-brand hover:shadow-[0_4px_20px_rgba(200,16,46,0.12)] hover:-translate-y-0.5 transition-all group"
             >
               <div className="h-40 flex items-center justify-center text-[64px] relative" style={{ background: style.bg }}>

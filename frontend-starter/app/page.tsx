@@ -44,7 +44,7 @@ export default async function HomePage() {
             title="Featured"
             titleHighlight={activeCategories[0]?.name?.toLowerCase() ?? "products"}
             products={section1Products}
-            viewAllHref={activeCategories[0]?.slug ? `/products?category=${activeCategories[0].slug}` : "/products"}
+            viewAllHref={activeCategories[0]?.id ? `/products?category=${activeCategories[0].id}` : "/products"}
             viewAllLabel={`View all ${activeCategories[0]?.name?.toLowerCase() ?? "products"} →`}
             sectionOffset={0}
           />
