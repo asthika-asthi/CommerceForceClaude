@@ -1,3 +1,4 @@
+"use client"
 import Link from "next/link"
 import type { Category } from "@/lib/types"
 
@@ -42,11 +43,17 @@ export function CategoryGrid({ categories }: Props) {
               href={`/products?category=${cat.id}`}
               className="bg-white border border-[#E0DED8] rounded-xl overflow-hidden hover:border-brand hover:shadow-[0_4px_20px_rgba(200,16,46,0.12)] hover:-translate-y-0.5 transition-all group"
             >
-              <div className="h-40 flex items-center justify-center text-[64px] relative overflow-hidden" style={cat.image_url ? {} : { background: style.bg }}>
-                {cat.image_url ? (
-                  <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
-                ) : (
-                  style.emoji
+              <div className="h-40 relative overflow-hidden flex items-center justify-center text-[64px]" style={{ background: style.bg }}>
+                {/* Emoji always rendered as background fallback */}
+                {style.emoji}
+                {/* Image overlaid on top — hidden via onError if URL is broken */}
+                {cat.image_url && (
+                  <img
+                    src={cat.image_url}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none" }}
+                  />
                 )}
                 <span className="absolute top-2.5 right-2.5 bg-white/90 text-[#5C5C5C] text-[10px] font-semibold px-2 py-0.5 rounded-full border border-[#E0DED8]">
                   products

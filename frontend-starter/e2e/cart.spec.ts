@@ -28,8 +28,11 @@ test.describe('Cart', () => {
   test('clicking Add to Cart shows the Added confirmation state', async ({ page }) => {
     await page.goto('/products')
     await page.waitForLoadState('networkidle')
+    // Wait for React hydration — AppInit sets data-hydrated once useEffect fires,
+    // ensuring event handlers are attached before we click
+    await page.waitForSelector('html[data-hydrated]', { timeout: 10_000 })
     const addBtn = page.locator('button[title="Add to cart"]').first()
-    await expect(addBtn).toBeVisible({ timeout: 10_000 })
+    await expect(addBtn).toBeVisible({ timeout: 5_000 })
     await addBtn.click()
     // Button title changes to "Added!" briefly after a successful add
     await expect(page.locator('button[title="Added!"]')).toBeVisible({ timeout: 5_000 })

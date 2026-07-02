@@ -10,11 +10,9 @@ function AppInit({ children }: { children: React.ReactNode }) {
   const fetchCart = useCartStore((s) => s.fetch)
 
   useEffect(() => {
-    // Run in background — do NOT block rendering. Blocking (return null) hid
-    // all links from the DOM during hydration, making them unclickable on first
-    // load until the promises resolved.
     initAuth()
     fetchCart()
+    document.documentElement.dataset.hydrated = "1"
   }, [initAuth, fetchCart])
 
   return <>{children}</>
