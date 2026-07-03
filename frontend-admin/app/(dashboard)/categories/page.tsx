@@ -4,6 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type { Category } from "@/lib/types"
 
+import { StatusBadge } from "@/components/status-badge"
+import { Trash2, Pencil, X, Upload, Plus } from "lucide-react"
+
 function resolveImageUrl(url: string): string {
   if (url.startsWith("/")) {
     const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
@@ -11,8 +14,6 @@ function resolveImageUrl(url: string): string {
   }
   return url
 }
-import { StatusBadge } from "@/components/status-badge"
-import { Trash2, Pencil, X, Upload, Plus } from "lucide-react"
 
 function downloadCsv(path: string, filename: string) {
   const token = localStorage.getItem("cf_access_token")
