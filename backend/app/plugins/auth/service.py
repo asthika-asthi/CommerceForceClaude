@@ -3,7 +3,7 @@ import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from fastapi import HTTPException, status
 from app.core.security import get_password_hash, verify_password
 from app.core.config import settings
@@ -179,10 +179,19 @@ async def revoke_refresh_token(raw_token: str, db: AsyncSession) -> None:
         stored.revoked = True
 
 
+async def revoke_all_refresh_tokens(user_id: str, db: AsyncSession) -> None:
+    """Revoke every refresh token for a user — call after a password change/reset so
+    existing sessions (including an attacker's) can no longer be refreshed."""
+    await db.execute(
+        update(RefreshToken).where(RefreshToken.user_id == user_id).values(revoked=True)
+    )
+
+
 async def change_password(user: User, data: ChangePasswordRequest, db: AsyncSession) -> None:
     if not verify_password(data.current_password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
     user.hashed_password = get_password_hash(data.new_password)
+    await revoke_all_refresh_tokens(user.id, db)
     await db.flush()
 
 
@@ -196,7 +205,9 @@ async def list_users(db: AsyncSession, page: int = 1, page_size: int = 20) -> tu
     return list(result.scalars().all()), total
 
 
-async def patch_user(user_id: str, data: dict, db: AsyncSession) -> User:
+async def patch_user(
+    user_id: str, data: dict, db: AsyncSession, actor_is_superadmin: bool = False
+) -> User:
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
@@ -204,7 +215,13 @@ async def patch_user(user_id: str, data: dict, db: AsyncSession) -> User:
     if "is_active" in data and data["is_active"] is not None:
         user.is_active = data["is_active"]
     if "role" in data and data["role"] is not None:
-        from app.plugins.auth.models import UserRole
+        # Changing a user's role is a privilege operation — only a superadmin may do it,
+        # otherwise any admin could promote themselves (or anyone) to superadmin.
+        if not actor_is_superadmin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only a superadmin can change a user's role",
+            )
         user.role = UserRole(data["role"])
     if "trade_status" in data and data["trade_status"] is not None:
         user.trade_status = data["trade_status"]
@@ -259,6 +276,7 @@ async def reset_password(token: str, new_password: str, db: AsyncSession) -> Non
 
     user.hashed_password = get_password_hash(new_password)
     stored.used = True
+    await revoke_all_refresh_tokens(user.id, db)
     await db.flush()
 
 

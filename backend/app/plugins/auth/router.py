@@ -138,7 +138,12 @@ async def patch_user(
     current_user=Depends(require_admin()),
     db: AsyncSession = Depends(get_db),
 ):
-    user = await service.patch_user(user_id, data.model_dump(exclude_none=True), db)
+    user = await service.patch_user(
+        user_id,
+        data.model_dump(exclude_none=True),
+        db,
+        actor_is_superadmin=(current_user.role == "superadmin"),
+    )
     return UserOut.model_validate(user)
 
 

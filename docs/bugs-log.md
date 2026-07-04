@@ -20,11 +20,10 @@ plugins) was sampled, not read line-by-line.
 - **Failure scenario:** Customer reaches the card step and abandons (or the card is declined client-side). The order persists with: decremented stock, a consumed coupon-usage count, spent redeemed points, and earned points for an order that was never paid. Nothing ever reverses these.
 - **Fix direction:** For Stripe, defer stock/coupon/loyalty mutations to the `payment_intent.succeeded` webhook, and/or add a `payment_intent.canceled`/expiry handler that restores them. Cash/credit can keep the synchronous path. (See F10 — the frontend half.)
 
-### B4 — A regular admin can self-escalate to superadmin (security)
-- **Where:** `backend/app/plugins/auth/router.py:135` (`patch_user`), `auth/service.py:206`.
-- **What's wrong:** `patch_user` is guarded by `require_admin()` (allows admin **or** superadmin), and the service does `UserRole(data["role"])` with no restriction on the target role.
-- **Failure scenario:** Any `admin` calls `PATCH /api/auth/users/{id}` with `{"role":"superadmin"}` on any account (including their own) and gains full superadmin rights, defeating the admin/superadmin separation.
-- **Fix direction:** Gate role changes behind `require_superadmin()`, or reject `role == "superadmin"` unless the caller is superadmin.
+### B4 — A regular admin can self-escalate to superadmin (security) — **FIXED**
+- **Where:** `backend/app/plugins/auth/router.py` (`patch_user`), `auth/service.py`.
+- **What was wrong:** `patch_user` is guarded by `require_admin()` (allows admin **or** superadmin), and the service applied `UserRole(data["role"])` with no restriction — so any admin could `PATCH /api/auth/users/{id}` with `{"role":"superadmin"}` on any account (including their own) and gain full superadmin rights.
+- **Fix (applied):** `patch_user` now takes `actor_is_superadmin`; if the request tries to change `role` and the caller is not a superadmin, it returns **403**. Admins can still toggle `is_active`/`trade_status`. Covered by `tests/test_security_fixes.py` (admin→superadmin blocked, admin→any-role blocked, admin deactivate still works, superadmin can change role).
 
 ### F8 — Add-to-cart from product listings is broken (passes product id as variant id) — **FIXED**
 - **Where:** `frontend-starter/components/shop/product-card.tsx`, `components/blocks/commerce/featured-products-grid.tsx`, `app/account/wishlist/page.tsx`. Backend: `cart/service.py`.
@@ -35,11 +34,10 @@ plugins) was sampled, not read line-by-line.
 
 ## MEDIUM
 
-### B5 — Password reset/change does not revoke existing sessions (security)
-- **Where:** `backend/app/plugins/auth/service.py:243` (`reset_password`), `:182` (`change_password`).
-- **What's wrong:** Both update the password hash but never revoke the user's `RefreshToken` rows. Only a single-token `revoke_refresh_token` exists; there is no revoke-all-by-user.
-- **Failure scenario:** An account is compromised; the victim resets their password. The attacker's refresh token stays valid until natural expiry (`REFRESH_TOKEN_EXPIRE_DAYS`), so the attacker keeps access.
-- **Fix direction:** On reset and change, mark all of that user's refresh tokens `revoked = True`.
+### B5 — Password reset/change does not revoke existing sessions (security) — **FIXED**
+- **Where:** `backend/app/plugins/auth/service.py` (`reset_password`, `change_password`).
+- **What was wrong:** Both updated the password hash but never revoked the user's `RefreshToken` rows, so an attacker's refresh token stayed valid until natural expiry even after the victim changed their password.
+- **Fix (applied):** New `revoke_all_refresh_tokens(user_id, db)` marks every one of the user's refresh tokens revoked; `change_password` and `reset_password` now call it. Covered by `tests/test_security_fixes.py` (refresh works before, then returns 401 after a change and after a reset).
 
 ### B2 — Explicit-items checkout ignores variant pricing
 - **Where:** `backend/app/plugins/checkout/service.py:84` (`_items_from_explicit`).
