@@ -1,6 +1,7 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-07-01. This is the single source of truth for build status.
+Last updated: 2026-07-04. This is the single source of truth for build status.
+Bug-review findings and their fix status live in `docs/bugs-log.md`.
 
 ---
 
@@ -203,6 +204,31 @@ Blocks directory reorganised into four categories (layout / visual / commerce / 
 - OOS pill detection is per-combination: selecting one option greys out values in other groups that would form an inactive combination. Per-combination narrowing shipped and tested 2026-06-29.
 
 **Admin block-defaults sync:** 3 previously missing entries (`promotions-banner`, `announcement-bar`, `coupon-spotlight`) added to `frontend-admin/lib/block-defaults.ts`.
+
+---
+
+### Bug review + storefront/admin fixes (2026-07-04)
+
+Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verified-clean areas). Fixes made this session:
+
+**Built + Tested (automated — `backend/tests/test_storefront_fixes.py`, 11 tests; new cart E2E; suite now 211 passing):**
+- **Branding config save** — `social_links` type mismatch caused HTTP 422 on *every* save; now accepts empty/JSON/invalid strings, and save failures surface an error instead of failing silently. (commit `a1b97dc`)
+- **Add-to-cart from listings (bug F8)** — product grid / featured / wishlist passed a *product* id where a *variant* id was expected, so nothing was added while the card still flashed "Added!". Cart API now accepts `product_id` and resolves the product's default variant; listings honor the result. New E2E asserts the item actually lands in the cart. (commit `41b35bf`)
+- **Product list API returns `description`** — homepage "quick reference" table now shows real category + description instead of "—" (bug F15). (commit `d0fad8b`)
+- **Checkout discount API dependencies** — coupon-validate amount and loyalty-config rate covered by tests.
+
+**Built, not tested (needs manual browser check):**
+- **Admin Products page** — image thumbnail column (valid / grey "no image" / red "broken URL" states) to spot wrong or missing product images; **"Featured" checkbox** added to the new + edit product forms (backend already supported `is_featured`; only the UI was missing). (commit `f1406b0`)
+- **Homepage now honors the Featured flag** — was querying the wrong param (`is_featured` instead of `featured_only`), so it ignored featured products; now shows real product images in the hero + grids (bugs F12–F14), tops up featured with other active products so both grids stay filled, and uses honest section headings (bug F16). (commits `66ae4c6`, `d0fad8b`)
+- **Checkout order summary** now shows coupon + loyalty discount lines and a correct total (bug F9 display maths); **wishlist toggle** shows a clear failure state (bug F11). (commit `d0fad8b`)
+- Fixed a pre-existing type error in `product-search-combobox.tsx`.
+
+**Open items (found in review, NOT yet fixed — details in `docs/bugs-log.md`):**
+- **B1 (HIGH):** Stripe orders deduct stock / record coupon / earn+redeem loyalty *before* payment; abandoned card checkouts are never reversed.
+- **B4 (HIGH, security):** a regular admin can escalate to superadmin via `PATCH /api/auth/users/{id}`.
+- **B5 (MED, security):** password reset/change doesn't revoke existing sessions.
+- **B2 / B8 / B9 (MED):** explicit-checkout ignores variant pricing; cancel doesn't reverse coupon usage; `update_status` has no state-machine validation.
+- **B3 / B6 / B7 (LOW/INFO):** dual stock sources (product vs warehouse), coupon per-user limit not enforced, login doesn't require email verification.
 
 ---
 
