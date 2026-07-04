@@ -103,6 +103,7 @@ class ProductListOut(BaseModel):
     name: str
     slug: str
     sku: str
+    description: Optional[str] = None
     category_id: Optional[str] = None
     price: Decimal
     sale_price: Optional[Decimal] = None

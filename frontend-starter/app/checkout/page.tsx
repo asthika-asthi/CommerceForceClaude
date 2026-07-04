@@ -72,11 +72,21 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [shippingCost, setShippingCost] = useState<number>(0)
   const shippingDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [couponApplying, setCouponApplying] = useState(false)
+  const [loyaltyRate, setLoyaltyRate] = useState<{ rate: number; min: number; active: boolean } | null>(null)
 
   const stripe = useStripe()
   const elements = useElements()
 
   useEffect(() => { fetch() }, [fetch])
+
+  useEffect(() => {
+    api.get<{ redemption_rate: string; min_redemption: number; is_active: boolean }>("/api/loyalty/config")
+      .then((c) => setLoyaltyRate({ rate: Number(c.redemption_rate), min: c.min_redemption, active: c.is_active }))
+      .catch(() => setLoyaltyRate(null))
+  }, [])
 
   useEffect(() => {
     if (!form.country) return
@@ -141,8 +151,39 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
   const items = cart?.items ?? []
   const subtotal = parseFloat(cart?.subtotal ?? "0")
 
+  // Mirror the backend's discount maths so the displayed total matches what's charged.
+  const loyaltyDiscount =
+    loyaltyRate?.active && form.redeem_points >= loyaltyRate.min
+      ? form.redeem_points * loyaltyRate.rate
+      : 0
+  const discountTotal = Math.min(couponDiscount + loyaltyDiscount, subtotal)
+  const orderTotal = subtotal - discountTotal + shippingCost
+
   function field(key: keyof CheckoutForm) {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value }))
+  }
+
+  async function applyCoupon() {
+    const code = form.coupon_code.trim()
+    if (!code) { setCouponDiscount(0); setCouponMsg(null); return }
+    setCouponApplying(true)
+    try {
+      const res = await api.get<{ valid: boolean; discount_value?: string; message: string }>(
+        `/api/coupons/validate?code=${encodeURIComponent(code)}&subtotal=${subtotal}`,
+      )
+      if (res.valid) {
+        setCouponDiscount(Number(res.discount_value ?? 0))
+        setCouponMsg({ ok: true, text: res.message })
+      } else {
+        setCouponDiscount(0)
+        setCouponMsg({ ok: false, text: res.message })
+      }
+    } catch {
+      setCouponDiscount(0)
+      setCouponMsg({ ok: false, text: "Could not validate coupon — please try again." })
+    } finally {
+      setCouponApplying(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -382,8 +423,19 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
             <div className="space-y-3">
               <div>
                 <label className="block text-sm text-slate-600 mb-1">Coupon code</label>
-                <input value={form.coupon_code} onChange={field("coupon_code")} placeholder="Enter code"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
+                <div className="flex gap-2">
+                  <input value={form.coupon_code}
+                    onChange={(e) => { setForm((f) => ({ ...f, coupon_code: e.target.value })); setCouponDiscount(0); setCouponMsg(null) }}
+                    placeholder="Enter code"
+                    className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
+                  <button type="button" onClick={applyCoupon} disabled={couponApplying || !form.coupon_code.trim()}
+                    className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                    {couponApplying ? "…" : "Apply"}
+                  </button>
+                </div>
+                {couponMsg && (
+                  <p className={`text-xs mt-1 ${couponMsg.ok ? "text-green-600" : "text-red-600"}`}>{couponMsg.text}</p>
+                )}
               </div>
               {user && (
                 <div>
@@ -414,13 +466,25 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
                 <span>Subtotal</span>
                 <span>&#163;{subtotal.toFixed(2)}</span>
               </div>
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Coupon discount</span>
+                  <span>-&#163;{couponDiscount.toFixed(2)}</span>
+                </div>
+              )}
+              {loyaltyDiscount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Loyalty points</span>
+                  <span>-&#163;{loyaltyDiscount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Shipping</span>
-                <span>{shippingCost > 0 ? `&#163;${shippingCost.toFixed(2)}` : "Free"}</span>
+                <span>{shippingCost > 0 ? <>&#163;{shippingCost.toFixed(2)}</> : "Free"}</span>
               </div>
               <div className="flex justify-between font-semibold text-slate-900 pt-2 border-t border-slate-100">
                 <span>Total</span>
-                <span>&#163;{(subtotal + shippingCost).toFixed(2)}</span>
+                <span>&#163;{orderTotal.toFixed(2)}</span>
               </div>
             </div>
             {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-4">{error}</div>}

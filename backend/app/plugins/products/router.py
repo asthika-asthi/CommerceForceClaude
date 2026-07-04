@@ -101,7 +101,7 @@ async def list_products(
         if not primary and p.images:
             primary = p.images[0].url
         list_items.append(ProductListOut(
-            id=p.id, name=p.name, slug=p.slug, sku=p.sku,
+            id=p.id, name=p.name, slug=p.slug, sku=p.sku, description=p.description,
             category_id=p.category_id, price=p.price, sale_price=p.sale_price,
             is_on_sale=p.is_on_sale, effective_price=p.effective_price,
             stock_quantity=p.stock_quantity, in_stock=p.in_stock,

@@ -18,12 +18,17 @@ export default async function HomePage() {
     serverFetch<Category[]>("/api/categories").catch(() => [] as Category[]),
   ])
 
-  let products = featuredRes?.items ?? []
+  const products = [...(featuredRes?.items ?? [])]
 
-  // Fall back to any active products if none are marked as featured
-  if (products.length === 0) {
-    const fallbackRes = await serverFetch<PaginatedResponse<Product>>("/api/products?page_size=8")
-    products = fallbackRes?.items ?? []
+  // Top up to 8 with other active products so both homepage grids stay populated
+  // even when fewer than 8 products are marked as featured.
+  if (products.length < 8) {
+    const fillRes = await serverFetch<PaginatedResponse<Product>>("/api/products?page_size=16")
+    const seen = new Set(products.map(p => p.id))
+    for (const p of fillRes?.items ?? []) {
+      if (products.length >= 8) break
+      if (!seen.has(p.id)) { products.push(p); seen.add(p.id) }
+    }
   }
 
   const activeCategories = (categories ?? []).filter(c => c.is_active)
@@ -42,10 +47,10 @@ export default async function HomePage() {
         <div className="bg-white">
           <ProductGridSection
             title="Featured"
-            titleHighlight={activeCategories[0]?.name?.toLowerCase() ?? "products"}
+            titleHighlight="products"
             products={section1Products}
-            viewAllHref={activeCategories[0]?.id ? `/products?category=${activeCategories[0].id}` : "/products"}
-            viewAllLabel={`View all ${activeCategories[0]?.name?.toLowerCase() ?? "products"} →`}
+            viewAllHref="/products"
+            viewAllLabel="View all products →"
             sectionOffset={0}
           />
         </div>
@@ -53,8 +58,8 @@ export default async function HomePage() {
 
       {section2Products.length > 0 && (
         <ProductGridSection
-          title="🧹 Cotton dust sheets,"
-          titleHighlight="sacks & brushes"
+          title="More from"
+          titleHighlight="our range"
           products={section2Products}
           viewAllHref="/products"
           viewAllLabel="See all products →"
@@ -65,7 +70,7 @@ export default async function HomePage() {
       <SplitCards />
       <StatsBand />
       <HowToOrder />
-      <RangeTable products={products} />
+      <RangeTable products={products} categories={activeCategories} />
       <Testimonials />
       <Newsletter />
     </div>

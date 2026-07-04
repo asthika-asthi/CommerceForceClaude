@@ -1,11 +1,14 @@
-import type { Product } from "@/lib/types"
+import type { Product, Category } from "@/lib/types"
 
 interface Props {
   products: Product[]
+  categories?: Category[]
 }
 
-export function RangeTable({ products }: Props) {
+export function RangeTable({ products, categories = [] }: Props) {
   if (products.length === 0) return null
+
+  const categoryNames = new Map(categories.map(c => [c.id, c.name]))
 
   return (
     <div className="max-w-[1280px] mx-auto px-10 pb-14">
@@ -37,7 +40,7 @@ export function RangeTable({ products }: Props) {
                   </a>
                 </td>
                 <td className="px-5 py-3 text-[13px] text-fg border-b border-[#F0EEEA]">
-                  {(product as any).category_name ?? "—"}
+                  {(product.category_id && categoryNames.get(product.category_id)) ?? "—"}
                 </td>
                 <td className="px-5 py-3 text-[13px] text-fg border-b border-[#F0EEEA] max-w-[280px]">
                   {product.description ? product.description.slice(0, 80) + (product.description.length > 80 ? "…" : "") : "—"}

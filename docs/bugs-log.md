@@ -47,11 +47,10 @@ plugins) was sampled, not read line-by-line.
 - **Failure scenario:** A variant product checked out via the explicit `data.items` path is charged the base price (undercharge) and the order line has no variant recorded.
 - **Fix direction:** Resolve the variant + price adjustment in the explicit path, or remove the path if it is unused.
 
-### F9 — Checkout order summary ignores discounts
-- **Where:** `frontend-starter/app/checkout/page.tsx:423`.
-- **What's wrong:** Displays `Total = subtotal + shipping`, omitting the coupon and loyalty discounts the backend actually applies.
-- **Failure scenario:** The customer sees a total that doesn't match what they're charged (notably the Stripe PaymentIntent amount, which includes discounts). Coupon/points entry gives no visible effect.
-- **Fix direction:** Reflect applied discounts in the summary — ideally via a server-side quote endpoint so the displayed and charged totals always agree.
+### F9 — Checkout order summary ignores discounts — **FIXED**
+- **Where:** `frontend-starter/app/checkout/page.tsx`.
+- **What was wrong:** Displayed `Total = subtotal + shipping`, omitting the coupon and loyalty discounts the backend actually applies, so the shown total didn't match the charge.
+- **Fix (applied):** Added an "Apply" action on the coupon field that calls `GET /api/coupons/validate` and shows the returned discount; fetches `GET /api/loyalty/config` to compute the loyalty-points discount from `redemption_rate`. The summary now shows a "Coupon discount" and "Loyalty points" line and computes `Total = subtotal − min(discounts, subtotal) + shipping`, mirroring the backend. Also fixed a pre-existing bug where the Shipping line rendered a literal `&#163;` (entity inside a template literal).
 
 ### F10 — Order created before card confirmation (frontend half of B1)
 - **Where:** `frontend-starter/app/checkout/page.tsx:165` (POST `/api/checkout`) then `:178` (`stripe.confirmCardPayment`).
@@ -88,10 +87,20 @@ plugins) was sampled, not read line-by-line.
 - **Failure scenario:** A cancelled order that used a capped coupon permanently burns a use.
 - **Fix direction:** Add a coupon-usage reversal on cancel (decrement `used_count`, delete/void the `CouponUsage` row).
 
-### F11 — Minor silent catches
-- **Where:** `frontend-starter/components/shop/wishlist-button.tsx:24`, `components/chat-widget.tsx:39`.
-- **What's wrong:** Errors are swallowed with `.catch(() => {})`; a failed wishlist toggle or chat send gives no feedback.
-- **Fix direction:** Surface a small error state; low priority (best-effort UX).
+### F11 — Minor silent catches — **FIXED (partial, by design)**
+- **Where:** `frontend-starter/components/shop/wishlist-button.tsx`, `components/chat-widget.tsx`.
+- **Finding on closer look:** The two `.catch(() => {})` calls are on *background prefetches* (wishlist ids, chat history) — appropriately silent. The user-initiated actions already had feedback: chat **send** pushes an error bubble; wishlist **toggle** reverts the heart.
+- **Fix (applied):** Added a clear transient failure state to the wishlist toggle (red ring + "Couldn't update wishlist — try again" title) so a failed toggle is obvious, not just a subtle revert. Left the background prefetch catches silent (noisy errors there would be worse UX).
+
+### F15 — Homepage "quick reference" table showed blank Category/Description — **FIXED**
+- **Where:** `frontend-starter/components/landing/range-table.tsx`; backend `ProductListOut`.
+- **What was wrong:** The table read `product.category_name` and `product.description`, but the list endpoint returned neither, so both columns always showed `—`.
+- **Fix (applied):** Added `description` to `ProductListOut` (backend); `RangeTable` now resolves the category name from the categories list passed by the homepage and shows the real description.
+
+### F16 — Homepage second featured grid empty + misleading headings — **FIXED**
+- **Where:** `frontend-starter/app/page.tsx`.
+- **What was wrong:** Sections pulled only featured products (max 8), so with <8 featured the second grid was empty; and the headings ("Featured dust sheets", "Cotton dust sheets…") were fixed text unrelated to the products shown.
+- **Fix (applied):** The homepage now tops up featured products with other active products to fill both grids, and uses honest generic headings ("Featured products", "More from our range").
 
 ---
 

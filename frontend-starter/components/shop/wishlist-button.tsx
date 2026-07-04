@@ -16,6 +16,7 @@ export function WishlistButton({ productId, className = "", size = 16 }: Wishlis
   const wishlistEnabled = usePlugin("wishlist")
   const [inWishlist, setInWishlist] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     if (!user || !wishlistEnabled) return
@@ -30,6 +31,7 @@ export function WishlistButton({ productId, className = "", size = 16 }: Wishlis
     if (loading) return
     const prev = inWishlist
     setLoading(true)
+    setFailed(false)
     try {
       if (inWishlist) {
         await api.del(`/api/wishlist/${productId}`)
@@ -40,6 +42,8 @@ export function WishlistButton({ productId, className = "", size = 16 }: Wishlis
       }
     } catch {
       setInWishlist(prev)
+      setFailed(true)
+      setTimeout(() => setFailed(false), 2500)
     } finally {
       setLoading(false)
     }
@@ -50,9 +54,9 @@ export function WishlistButton({ productId, className = "", size = 16 }: Wishlis
       onClick={(e) => { e.preventDefault(); toggle() }}
       disabled={loading}
       className={`p-1.5 rounded-full transition-colors disabled:opacity-50 ${
-        inWishlist ? "text-red-500 hover:text-red-600" : "text-slate-400 hover:text-red-400"
+        failed ? "text-red-600 ring-1 ring-red-300" : inWishlist ? "text-red-500 hover:text-red-600" : "text-slate-400 hover:text-red-400"
       } ${className}`}
-      title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+      title={failed ? "Couldn't update wishlist — try again" : inWishlist ? "Remove from wishlist" : "Add to wishlist"}
       aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
     >
       <Heart size={size} fill={inWishlist ? "currentColor" : "none"} />
