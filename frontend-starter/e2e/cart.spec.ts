@@ -38,6 +38,28 @@ test.describe('Cart', () => {
     await expect(page.locator('button[title="Added!"]')).toBeVisible({ timeout: 5_000 })
   })
 
+  test('adding a product from the listing actually lands it in the cart (F8 guard)', async ({ page }) => {
+    await page.goto('/products')
+    await page.waitForLoadState('networkidle')
+    await page.waitForSelector('html[data-hydrated]', { timeout: 10_000 })
+
+    const addBtn = page.locator('button[title="Add to cart"]').first()
+    await expect(addBtn).toBeVisible({ timeout: 10_000 })
+    await addBtn.click()
+
+    // "Added!" only appears when the add succeeds (ok === true). The F8 bug flashed
+    // this even though nothing was added, because the listing passed a product id
+    // where a variant id was expected.
+    await expect(page.locator('button[title="Added!"]').first()).toBeVisible({ timeout: 5_000 })
+
+    // The real guard: the item must actually be in the cart, not just a label flip.
+    await page.goto('/cart')
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Your cart is empty')).toHaveCount(0)
+    // Cart line items show a "£X.XX each" unit price — proof a line item rendered.
+    await expect(page.getByText(/each/).first()).toBeVisible({ timeout: 5_000 })
+  })
+
   test('checkout page is reachable', async ({ page }) => {
     await page.goto('/checkout')
     await page.waitForLoadState('networkidle')

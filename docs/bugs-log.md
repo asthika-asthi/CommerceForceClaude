@@ -143,6 +143,22 @@ featured products' actual categories.
 
 ---
 
+## Automated test coverage added (2026-07-04)
+
+The fixes above previously had only regression/smoke checks. New dedicated tests now
+lock in the new behaviour:
+
+- **`backend/tests/test_storefront_fixes.py`** (11 tests, all pass):
+  - F8: add-to-cart by `product_id` resolves the default variant (guest + authed); missing both ids → 422; `variant_id` path still works.
+  - F15: product-list response includes `description`.
+  - Branding `social_links`: empty string → null (no 422), valid JSON string → dict, invalid string → null.
+  - F9 dependencies: coupon-validate returns the discount amount; invalid code → `valid:false`; loyalty-config exposes `redemption_rate`.
+- **`frontend-starter/e2e/cart.spec.ts`** — new F8 guard: after clicking Add-to-cart on the listing, the item actually appears on the cart page (not just a label flip). The old E2E only asserted the button label, which is why F8 slipped through.
+
+Full backend suite now **211 passing**. Still **not** covered by automated tests (manual verification recommended): the admin Featured-toggle/thumbnail UI, the homepage rendering (F16), and the checkout discount *display* maths (F9 frontend) — only its API dependencies are tested.
+
+---
+
 ## Not yet reviewed
 
 Lower-risk areas not read line-by-line: minor CRUD plugins (`reviews`, `newsletter`, `rfq`,
