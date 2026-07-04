@@ -98,9 +98,27 @@ async def create_order(
     return order
 
 
+_ALLOWED_TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
+    OrderStatus.pending: {OrderStatus.confirmed, OrderStatus.processing, OrderStatus.shipped, OrderStatus.delivered, OrderStatus.cancelled},
+    OrderStatus.confirmed: {OrderStatus.processing, OrderStatus.shipped, OrderStatus.delivered, OrderStatus.cancelled},
+    OrderStatus.processing: {OrderStatus.shipped, OrderStatus.delivered, OrderStatus.cancelled},
+    OrderStatus.shipped: {OrderStatus.delivered, OrderStatus.cancelled},
+    OrderStatus.delivered: set(),   # terminal
+    OrderStatus.cancelled: set(),   # terminal
+}
+
+
 async def update_status(order_id: str, data: UpdateStatusRequest, db: AsyncSession) -> Order:
     order = await get_order(order_id, db)
     prev_status = order.status
+
+    # Reject illegal transitions (e.g. reviving a cancelled/delivered order) so stock and
+    # payment state can't be desynced by moving out of a terminal status.
+    if data.status != prev_status and data.status not in _ALLOWED_TRANSITIONS.get(prev_status, set()):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot change order status from '{prev_status}' to '{data.status}'",
+        )
 
     # Restore stock before flush so ORM items are still accessible
     if data.status == OrderStatus.cancelled and prev_status != OrderStatus.cancelled:
@@ -137,6 +155,13 @@ async def update_status(order_id: str, data: UpdateStatusRequest, db: AsyncSessi
                 await loyalty_service.reverse_order_points(order.user_id, order.id, db)
             except ImportError:
                 pass
+
+        # Reverse coupon usage so the cancelled order doesn't burn a coupon use
+        try:
+            from app.plugins.coupons import service as coupon_service
+            await coupon_service.reverse_usage(order.id, db)
+        except ImportError:
+            pass
 
     return order
 
@@ -246,5 +271,12 @@ async def cancel_order(order_id: str, user_id: str, db: AsyncSession) -> Order:
             await loyalty_service.reverse_order_points(order.user_id, order.id, db)
         except ImportError:
             pass
+
+    # Reverse coupon usage so the cancelled order doesn't burn a coupon use
+    try:
+        from app.plugins.coupons import service as coupon_service
+        await coupon_service.reverse_usage(order.id, db)
+    except ImportError:
+        pass
 
     return order

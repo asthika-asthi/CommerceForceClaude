@@ -55,11 +55,10 @@ plugins) was sampled, not read line-by-line.
 - **What's wrong:** The order (and all B1 side effects) is created on the server before the card is confirmed on the client. On card failure/abandonment the frontend only shows an error; the backend order persists.
 - **Fix direction:** Tied to B1 — defer side effects until payment success, or cancel the pending order when confirmation fails.
 
-### B9 — `update_status` has no state-machine validation
-- **Where:** `backend/app/plugins/orders/service.py:115`.
-- **What's wrong:** Sets `order.status = data.status` to any target; only the →cancelled transition is guarded.
-- **Failure scenario:** An admin moves a **cancelled** order (stock already restored) to `shipped`/`confirmed`. Stock is not re-deducted, so inventory is overcounted and a cancelled order gets shipped.
-- **Fix direction:** Enforce an allowed-transition table (e.g. cancelled is terminal; can't ship without confirmed/paid).
+### B9 — `update_status` has no state-machine validation — **FIXED**
+- **Where:** `backend/app/plugins/orders/service.py`.
+- **What was wrong:** `update_status` set `order.status` to any target; an admin could move a **cancelled** order (stock already restored) to `shipped`/`confirmed`, desyncing inventory.
+- **Fix (applied):** Added an `_ALLOWED_TRANSITIONS` table (cancelled and delivered are terminal; no backward moves) and `update_status` now returns **409** for an illegal transition. Legitimate forward moves (e.g. pending→confirmed) still work. Covered by `tests/test_order_lifecycle.py`.
 
 ---
 
@@ -79,11 +78,10 @@ plugins) was sampled, not read line-by-line.
 - **Where:** `backend/app/plugins/auth/service.py:131` (`authenticate`).
 - **What's wrong:** Checks `is_active` but not `is_email_verified`, so verification is effectively optional. Likely intentional — confirm.
 
-### B8 — Cancelling an order never reverses coupon usage
-- **Where:** `backend/app/plugins/orders/service.py` cancel paths (210, 106).
-- **What's wrong:** Cancellation restores stock, credit, and loyalty points but never decrements `coupon.used_count` or removes the `CouponUsage` row.
-- **Failure scenario:** A cancelled order that used a capped coupon permanently burns a use.
-- **Fix direction:** Add a coupon-usage reversal on cancel (decrement `used_count`, delete/void the `CouponUsage` row).
+### B8 — Cancelling an order never reverses coupon usage — **FIXED**
+- **Where:** `backend/app/plugins/orders/service.py` (both cancel paths), `coupons/service.py`.
+- **What was wrong:** Cancellation restored stock, credit, and loyalty but never decremented `coupon.used_count` or removed the `CouponUsage` row, so a cancelled order permanently burned a coupon use.
+- **Fix (applied):** New `coupon_service.reverse_usage(order_id, db)` decrements each coupon's `used_count` and deletes the `CouponUsage` rows; both `cancel_order` (customer) and `update_status`→cancelled (admin) now call it. Covered by `tests/test_order_lifecycle.py`.
 
 ### F11 — Minor silent catches — **FIXED (partial, by design)**
 - **Where:** `frontend-starter/components/shop/wishlist-button.tsx`, `components/chat-widget.tsx`.

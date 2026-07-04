@@ -108,3 +108,16 @@ async def record_usage(
     )
     db.add(usage)
     await db.flush()
+
+
+async def reverse_usage(order_id: str, db: AsyncSession) -> None:
+    """Reverse coupon usage for a cancelled order: decrement each coupon's used_count and
+    drop the CouponUsage rows, so a cancelled order doesn't permanently burn a coupon use."""
+    result = await db.execute(select(CouponUsage).where(CouponUsage.order_id == order_id))
+    for usage in list(result.scalars().all()):
+        coupon_result = await db.execute(select(Coupon).where(Coupon.id == usage.coupon_id))
+        coupon = coupon_result.scalar_one_or_none()
+        if coupon and coupon.used_count > 0:
+            coupon.used_count -= 1
+        await db.delete(usage)
+    await db.flush()
