@@ -1,5 +1,19 @@
 # CommerceForce Backend — Code Rules
 
+## API schema changes — sync the frontend types
+
+When you **add, rename, remove, or retype** a field on any Pydantic request/response
+schema (`*Out`, `*Create`, `*Update`, etc.), the hand-written frontend types
+(`frontend-starter/lib/types.ts` and `frontend-admin/lib/types.ts`) will silently drift
+and cause runtime bugs that `tsc` cannot catch. You MUST reconcile them.
+
+Follow the checklist in **`docs/type-sync.md`** (regenerate storefront types with
+`npm run gen:types`, diff against `lib/types.ts`, reconcile admin by hand, then
+`npx tsc --noEmit`). Remember list vs detail endpoints have different shapes
+(`ProductListOut.primary_image` vs `ProductOut.images[]`).
+
+---
+
 ## Python Async — Critical
 
 ### Always `await` SQLAlchemy async methods

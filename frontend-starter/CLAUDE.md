@@ -20,7 +20,7 @@ These rules exist because violations caused bugs in this project. Every new page
 ### API types (`lib/types.ts`)
 
 - **List vs detail endpoints return different shapes**: `GET /api/products` returns `primary_image: string` per item. `GET /api/products/{slug}` returns `images: ProductImage[]`. A component that works on the detail page will be wrong on the listing page if it only reads `images`.
-- **Types drift from the API**: `lib/types.ts` is hand-written. Run `npm run gen:types` after backend schema changes to generate `lib/generated-types.ts` from the live OpenAPI spec, then diff it against `lib/types.ts` to find drift. The backend must be running on `localhost:8000`.
+- **Types drift from the API**: `lib/types.ts` is hand-written. Run `npm run gen:types` after backend schema changes to generate `lib/generated-types.ts` from the live OpenAPI spec, then diff it against `lib/types.ts` to find drift. The backend must be running on `localhost:8000`. **Full process (incl. the admin app, which has no generator): see `docs/type-sync.md`.**
 - **Audit all usages**: When you find a type mismatch, search the whole codebase for every place that assumes the same shape before fixing just one.
 
 ### Running tests
