@@ -75,7 +75,9 @@ export interface Product {
   sale_price?: string
   stock_quantity: number
   is_active: boolean
+  is_featured?: boolean
   category_id?: string
+  primary_image?: string | null
   images: ProductImage[]
 }
 

@@ -29,7 +29,7 @@ export function ProductSearchCombobox({
     return () => clearTimeout(t)
   }, [query])
 
-  const { data } = useQuery({
+  const { data } = useQuery<{ items: Product[]; total: number }>({
     queryKey: ["product-search", debouncedQuery],
     queryFn: () =>
       api.get(`/api/products?search=${encodeURIComponent(debouncedQuery)}&page_size=20&sort_by=name`),

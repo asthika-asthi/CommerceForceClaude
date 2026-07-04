@@ -7,7 +7,49 @@ import type { Product } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Pagination } from "@/components/ui/pagination"
-import { Pencil, Trash2, Upload, X, Copy, Search } from "lucide-react"
+import { Pencil, Trash2, Upload, X, Copy, Search, ImageOff, AlertTriangle } from "lucide-react"
+
+function resolveImageUrl(url: string): string {
+  if (url.startsWith("/")) {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+    return `${base}${url}`
+  }
+  return url
+}
+
+function ProductThumb({ src, alt }: { src?: string | null; alt: string }) {
+  const [failed, setFailed] = useState(false)
+
+  if (!src) {
+    return (
+      <div
+        title="No image"
+        className="w-11 h-11 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-300"
+      >
+        <ImageOff size={16} />
+      </div>
+    )
+  }
+  if (failed) {
+    return (
+      <div
+        title={`Broken image URL: ${src}`}
+        className="w-11 h-11 rounded-md bg-red-50 border border-red-200 flex items-center justify-center text-red-400"
+      >
+        <AlertTriangle size={16} />
+      </div>
+    )
+  }
+  return (
+    <img
+      src={resolveImageUrl(src)}
+      alt={alt}
+      title={src}
+      onError={() => setFailed(true)}
+      className="w-11 h-11 rounded-md object-cover border border-slate-200 bg-slate-50"
+    />
+  )
+}
 
 interface DuplicateEntry { id: string; name: string; price: string; stock_quantity: number; category_id: string | null; created_at: string | null }
 interface DuplicateGroup { name: string; products: DuplicateEntry[] }
@@ -313,6 +355,7 @@ export default function ProductsPage() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 w-16">Image</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">SKU</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">Price</th>
@@ -324,7 +367,7 @@ export default function ProductsPage() {
             <tbody className="divide-y divide-slate-100">
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-400">
+                  <td colSpan={7} className="text-center py-12 text-slate-400">
                     No products yet.{" "}
                     <Link href="/products/new" className="text-blue-600 hover:underline">Create one</Link>
                     {" "}or{" "}
@@ -334,6 +377,9 @@ export default function ProductsPage() {
               )}
               {products.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <ProductThumb src={p.primary_image} alt={p.name} />
+                  </td>
                   <td className="px-4 py-3 font-medium text-slate-900">
                     <div>{p.name}</div>
                     {p.sale_price && (

@@ -60,7 +60,7 @@ function EditProduct({ id }: { id: string }) {
   const [form, setForm] = useState({
     name: "", description: "", sku: "", barcode: "",
     price: "", sale_price: "", stock_quantity: "0",
-    category_id: "", is_active: true,
+    category_id: "", is_active: true, is_featured: false,
   })
   const [error, setError] = useState("")
 
@@ -89,6 +89,7 @@ function EditProduct({ id }: { id: string }) {
         stock_quantity: String(product.stock_quantity),
         category_id: product.category_id ?? "",
         is_active: product.is_active,
+        is_featured: product.is_featured ?? false,
       })
       const sorted = [...(product.images ?? [])].sort((a, b) => a.sort_order - b.sort_order)
       setImages(sorted)
@@ -505,6 +506,11 @@ function EditProduct({ id }: { id: string }) {
             <input type="checkbox" checked={form.is_active}
               onChange={(e) => set("is_active", e.target.checked)} className="rounded" />
             Active
+          </label>
+          <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <input type="checkbox" checked={form.is_featured}
+              onChange={(e) => set("is_featured", e.target.checked)} className="rounded" />
+            Featured (highlighted on the storefront)
           </label>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

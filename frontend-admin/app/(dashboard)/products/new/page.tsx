@@ -16,7 +16,7 @@ export default function NewProductPage() {
   const [form, setForm] = useState({
     name: "", description: "", sku: "", barcode: "",
     price: "", sale_price: "", stock_quantity: "0",
-    category_id: "", is_active: true,
+    category_id: "", is_active: true, is_featured: false,
   })
   const [images, setImages] = useState<ProductImageCreate[]>([])
   const [newImageUrl, setNewImageUrl] = useState("")
@@ -183,6 +183,12 @@ export default function NewProductPage() {
             onChange={(e) => set("is_active", e.target.checked)}
             className="rounded border-slate-300" />
           Active (visible to customers)
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+          <input type="checkbox" checked={form.is_featured}
+            onChange={(e) => set("is_featured", e.target.checked)}
+            className="rounded border-slate-300" />
+          Featured (highlighted on the storefront)
         </label>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
