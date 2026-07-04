@@ -44,6 +44,19 @@ class BrandingConfigUpdate(BaseModel):
     social_links: Optional[dict] = None
     stripe_publishable_key: Optional[str] = None
 
+    @field_validator("social_links", mode="before")
+    @classmethod
+    def parse_social_links(cls, v: object) -> Optional[dict]:
+        if isinstance(v, str):
+            if not v.strip():
+                return None
+            try:
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, dict) else None
+            except (json.JSONDecodeError, ValueError):
+                return None
+        return v if isinstance(v, dict) else None
+
     @field_serializer("social_links")
     def serialize_social_links(self, v: Optional[dict]) -> Optional[str]:
         return json.dumps(v) if v is not None else None

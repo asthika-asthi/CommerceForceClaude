@@ -88,6 +88,7 @@ export default function BrandingPage() {
   })
   const [form, setForm] = useState<FormState>({})
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (config) {
@@ -95,7 +96,8 @@ export default function BrandingPage() {
       TEXT_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       IMAGE_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       f.custom_css = config.custom_css ?? ""
-      f.social_links = config.social_links ?? ""
+      const sl = (config as unknown as Record<string, unknown>).social_links
+      f.social_links = sl && typeof sl === "object" ? JSON.stringify(sl) : (sl as string | null) ?? ""
       setForm(f)
     }
   }, [config])
@@ -104,8 +106,15 @@ export default function BrandingPage() {
     mutationFn: (d: FormState) => api.put("/api/branding", d),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["branding"] })
+      setSaveError(null)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "Save failed. Please try again."
+      setSaved(false)
+      setSaveError(msg)
+      setTimeout(() => setSaveError(null), 4000)
     },
   })
 
@@ -167,10 +176,13 @@ export default function BrandingPage() {
             placeholder=":root { --brand: #1d4ed8; }" />
         </div>
 
-        <button type="submit" disabled={update.isPending}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
-          {update.isPending ? "Saving…" : saved ? "Saved!" : "Save Branding"}
-        </button>
+        <div className="space-y-2">
+          <button type="submit" disabled={update.isPending}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
+            {update.isPending ? "Saving…" : saved ? "Saved!" : "Save Branding"}
+          </button>
+          {saveError && <p className="text-sm text-red-600">{saveError}</p>}
+        </div>
       </form>
     </div>
   )
