@@ -14,7 +14,7 @@ import { Newsletter } from "@/components/landing/newsletter"
 
 export default async function HomePage() {
   const [featuredRes, categories] = await Promise.all([
-    serverFetch<PaginatedResponse<Product>>("/api/products?is_featured=true&page_size=8"),
+    serverFetch<PaginatedResponse<Product>>("/api/products?featured_only=true&page_size=8"),
     serverFetch<Category[]>("/api/categories").catch(() => [] as Category[]),
   ])
 

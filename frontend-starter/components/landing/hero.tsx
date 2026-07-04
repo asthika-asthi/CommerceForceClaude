@@ -1,6 +1,14 @@
 import Link from "next/link"
 import type { Product } from "@/lib/types"
 
+function resolveImageUrl(url: string): string {
+  if (url.startsWith("/")) {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+    return `${base}${url}`
+  }
+  return url
+}
+
 const PRODUCT_TAGS = ["Best seller", "Trade fave", "In stock", "New range"]
 const PRODUCT_ICONS = ["🛡️", "🧹", "🪣", "🖌️"]
 const PRODUCT_ICON_BGS = ["#E8F4FD", "#FFF8E1", "#F3E5F5", "#E8F5E9"]
@@ -12,14 +20,18 @@ interface Props {
 export function Hero({ bestSellers = [] }: Props) {
   const svgBg = `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C%2Fsvg%3E")`
 
-  const displayProducts = bestSellers.slice(0, 4).map((p, i) => ({
-    name: p.name,
-    meta: p.description?.slice(0, 45) ?? "",
-    icon: PRODUCT_ICONS[i % 4],
-    iconBg: PRODUCT_ICON_BGS[i % 4],
-    tag: PRODUCT_TAGS[i % 4],
-    slug: p.slug,
-  }))
+  const displayProducts = bestSellers.slice(0, 4).map((p, i) => {
+    const rawImage = p.primary_image ?? p.images?.[0]?.url ?? null
+    return {
+      name: p.name,
+      meta: p.description?.slice(0, 45) ?? "",
+      image: rawImage ? resolveImageUrl(rawImage) : null,
+      icon: PRODUCT_ICONS[i % 4],
+      iconBg: PRODUCT_ICON_BGS[i % 4],
+      tag: PRODUCT_TAGS[i % 4],
+      slug: p.slug,
+    }
+  })
 
   return (
     <div
@@ -83,8 +95,12 @@ export function Hero({ bestSellers = [] }: Props) {
                 href={p.slug ? `/products/${p.slug}` : "/products"}
                 className="flex items-center gap-3 py-2.5 border-b border-[#F0EEEA] last:border-none hover:bg-[#FDF0F2] rounded-md pl-1 transition-colors"
               >
-                <div className="w-11 h-11 rounded-lg flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: p.iconBg }}>
-                  {p.icon}
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center text-xl flex-shrink-0 overflow-hidden" style={{ backgroundColor: p.iconBg }}>
+                  {p.image ? (
+                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  ) : (
+                    p.icon
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[14px] font-semibold text-brand-dark leading-tight">{p.name}</div>

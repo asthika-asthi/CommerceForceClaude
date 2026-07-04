@@ -97,6 +97,34 @@ plugins) was sampled, not read line-by-line.
 
 ---
 
+## Homepage featured products (FIXED — commit pending)
+
+Marking products as "Featured" in admin had no effect on the storefront homepage, and the
+homepage sections showed emoji placeholders instead of the products' real images. Three
+distinct bugs, all fixed:
+
+### F12 — Homepage ignored the Featured flag (wrong query param)
+- **Where:** `frontend-starter/app/page.tsx:17`.
+- **What's wrong:** Fetched `/api/products?is_featured=true`, but the backend filter param is `featured_only`. The unknown param was ignored, so the endpoint returned **all** products (verified: `is_featured=true` → 181 results; `featured_only=true` → 3). The homepage showed the first 8 of all products regardless of the Featured flag.
+- **Fix:** Changed the query to `featured_only=true`.
+
+### F13 — Grid sections couldn't render real images (list-vs-detail shape)
+- **Where:** `frontend-starter/components/landing/product-grid-section.tsx:51`.
+- **What's wrong:** Read `product.images?.[0]?.url`, but the list endpoint (`ProductListOut`) returns `primary_image` and no `images` array. Images never resolved, so the section fell back to a gradient + 72px emoji.
+- **Fix:** Read `primary_image` (with `images[0]` fallback) and resolve relative `/uploads/...` paths to the backend base — same class as **F8**.
+
+### F14 — Hero "Best selling" card never showed product images
+- **Where:** `frontend-starter/components/landing/hero.tsx:15-22,86`.
+- **What's wrong:** Mapped each product to a hardcoded rotating emoji (`PRODUCT_ICONS[i % 4]`) and rendered that instead of the image.
+- **Fix:** Render the product's `primary_image` (emoji only as fallback when a product has no image).
+
+**Related design limitations (not bugs, noted for later):** the homepage shows at most 8
+featured products (Hero + grid 1 = first 4; grid 2 = next 4), so grid 2 stays empty until
+≥8 products are featured; and the section headings are fixed text, not derived from the
+featured products' actual categories.
+
+---
+
 ## Verified clean / already fixed
 
 - **Async DB pattern:** every coroutine `commit/flush/refresh/delete/execute` is `await`ed; `.scalars()/.scalar_one()` calls are on already-awaited results. The recurring missing-`await` bug is not present.

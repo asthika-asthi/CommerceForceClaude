@@ -1,6 +1,14 @@
 import Link from "next/link"
 import type { Product } from "@/lib/types"
 
+function resolveImageUrl(url: string): string {
+  if (url.startsWith("/")) {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+    return `${base}${url}`
+  }
+  return url
+}
+
 const GRADIENTS = [
   "linear-gradient(135deg,#DBEAFE,#BFDBFE)",
   "linear-gradient(135deg,#DCFCE7,#BBF7D0)",
@@ -48,8 +56,8 @@ export function ProductGridSection({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {products.map((product, i) => {
             const idx = (sectionOffset + i) % 8
-            const hasImage = product.images?.length > 0
-            const imageUrl = hasImage ? product.images?.[0]?.url ?? null : null
+            const rawImage = product.primary_image ?? product.images?.[0]?.url ?? null
+            const imageUrl = rawImage ? resolveImageUrl(rawImage) : null
             const price = parseFloat(product.price)
             const salePrice = product.sale_price ? parseFloat(product.sale_price) : null
             const isOnSale = salePrice !== null && salePrice < price
