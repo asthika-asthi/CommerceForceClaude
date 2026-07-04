@@ -229,10 +229,10 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 - **B1 (HIGH) — FIXED:** Stripe stock/coupon/loyalty effects are deferred to the `payment_intent.succeeded` webhook (cash/credit still synchronous), so an abandoned card checkout no longer oversells stock or consumes coupons/points. (`tests/test_checkout_deferral.py`)
 - **B8 (MED) — FIXED:** cancelling an order now reverses coupon usage (customer + admin paths). (`tests/test_order_lifecycle.py`)
 - **B9 (MED) — FIXED:** `update_status` now rejects illegal transitions (cancelled/delivered are terminal). (`tests/test_order_lifecycle.py`)
+- **B2 (MED) — FIXED:** explicit-items checkout now resolves the variant (explicit or default), applies its price adjustment, and records `variant_id`. (`tests/test_explicit_checkout.py`)
 
 **Open items (found in review, NOT yet fixed — details in `docs/bugs-log.md`):**
-- **B2 (MED):** explicit-checkout (`data.items`) ignores variant pricing/`variant_id`.
-- **B3 / B6 / B7 (LOW/INFO):** dual stock sources (product vs warehouse), coupon per-user limit not enforced, login doesn't require email verification.
+- **B3 / B6 / B7 (LOW/INFO):** dual stock sources (product vs warehouse); coupon per-user limit not enforced; login doesn't require email verification. These are lower-severity / partly-intentional — confirm intended behavior before changing.
 
 ---
 

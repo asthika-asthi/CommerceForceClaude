@@ -7,6 +7,7 @@ from app.plugins.orders.models import PaymentMethod
 class CheckoutItem(BaseModel):
     product_id: str
     quantity: int
+    variant_id: Optional[str] = None  # optional; defaults to the product's default variant
 
 
 class CheckoutRequest(BaseModel):

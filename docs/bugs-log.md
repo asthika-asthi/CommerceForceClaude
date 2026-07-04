@@ -39,11 +39,10 @@ plugins) was sampled, not read line-by-line.
 - **What was wrong:** Both updated the password hash but never revoked the user's `RefreshToken` rows, so an attacker's refresh token stayed valid until natural expiry even after the victim changed their password.
 - **Fix (applied):** New `revoke_all_refresh_tokens(user_id, db)` marks every one of the user's refresh tokens revoked; `change_password` and `reset_password` now call it. Covered by `tests/test_security_fixes.py` (refresh works before, then returns 401 after a change and after a reset).
 
-### B2 — Explicit-items checkout ignores variant pricing
-- **Where:** `backend/app/plugins/checkout/service.py:84` (`_items_from_explicit`).
-- **What's wrong:** Prices at `product.effective_price` and sets no `variant_id`, whereas the cart path (line 76) adds `variant.price_adjustment`.
-- **Failure scenario:** A variant product checked out via the explicit `data.items` path is charged the base price (undercharge) and the order line has no variant recorded.
-- **Fix direction:** Resolve the variant + price adjustment in the explicit path, or remove the path if it is unused.
+### B2 — Explicit-items checkout ignores variant pricing — **FIXED**
+- **Where:** `backend/app/plugins/checkout/service.py` (`_items_from_explicit`), `checkout/schemas.py`.
+- **What was wrong:** Priced at `product.effective_price` and set no `variant_id`, unlike the cart path which adds `variant.price_adjustment` — so variant products bought via `data.items` were undercharged and untraceable.
+- **Fix (applied):** `CheckoutItem` gained an optional `variant_id`; `_items_from_explicit` now resolves the explicit variant (or the product's default via `get_or_create_default_variant`), applies its `price_adjustment`, and records `variant_id`/`variant_label` — matching the cart path. Covered by `tests/test_explicit_checkout.py`.
 
 ### F9 — Checkout order summary ignores discounts — **FIXED**
 - **Where:** `frontend-starter/app/checkout/page.tsx`.

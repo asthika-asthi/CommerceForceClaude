@@ -82,20 +82,43 @@ async def _items_from_cart(cart: Cart, db: AsyncSession) -> list[dict]:
 
 
 async def _items_from_explicit(checkout_items: list[CheckoutItem], db: AsyncSession) -> list[dict]:
+    from app.plugins.products import variant_service as vs
     items = []
     for ci in checkout_items:
         result = await db.execute(select(Product).where(Product.id == ci.product_id, Product.is_active == True))
         product = result.scalar_one_or_none()
         if not product:
             raise HTTPException(status_code=404, detail=f"Product '{ci.product_id}' not found")
+
+        # Resolve the variant: an explicit variant_id if given, otherwise the product's
+        # default variant — so pricing and variant_id match the cart checkout path.
+        if ci.variant_id:
+            variant_result = await db.execute(
+                select(ProductVariant).where(
+                    ProductVariant.id == ci.variant_id, ProductVariant.product_id == product.id
+                )
+            )
+            variant = variant_result.scalar_one_or_none()
+            if not variant or not variant.is_active:
+                raise HTTPException(status_code=409, detail=f"Variant '{ci.variant_id}' is not available")
+        else:
+            variant = await vs.get_or_create_default_variant(product.id, db)
+
         if product.stock_quantity < ci.quantity:
             raise HTTPException(status_code=409, detail=f"Insufficient stock for '{product.name}'")
+
+        variant_label = variant.label if hasattr(variant, "label") and variant.label else variant.sku
+        unit_price = product.effective_price + (
+            variant.price_adjustment if variant.price_adjustment is not None else Decimal("0")
+        )
         items.append({
             "product_id": product.id,
             "product_name": product.name,
             "product_sku": product.sku,
-            "unit_price": product.effective_price,
+            "unit_price": unit_price,
             "quantity": ci.quantity,
+            "variant_id": variant.id,
+            "variant_label": variant_label,
         })
     return items
 
