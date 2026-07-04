@@ -117,12 +117,20 @@ async def get_cart(
 
 
 async def add_item(
-    variant_id: str,
+    variant_id: Optional[str],
     quantity: int,
     db: AsyncSession,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
+    product_id: Optional[str] = None,
 ) -> CartOut:
+    # Quick-add from a listing passes product_id only — resolve its default variant.
+    if not variant_id:
+        if not product_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="variant_id or product_id required")
+        default_variant = await vs.get_or_create_default_variant(product_id, db)
+        variant_id = default_variant.id
+
     # Load variant
     variant_row = await db.execute(
         select(ProductVariant).where(ProductVariant.id == variant_id)

@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class CartItemOut(BaseModel):
@@ -28,8 +28,17 @@ class CartOut(BaseModel):
 
 
 class AddItemRequest(BaseModel):
-    variant_id: str
+    # Either variant_id (specific variant, from the product detail page) or
+    # product_id (quick-add from a listing — resolves the product's default variant).
+    variant_id: Optional[str] = None
+    product_id: Optional[str] = None
     quantity: int = 1
+
+    @model_validator(mode="after")
+    def require_one_id(self) -> "AddItemRequest":
+        if not self.variant_id and not self.product_id:
+            raise ValueError("Either variant_id or product_id is required")
+        return self
 
 
 class UpdateItemRequest(BaseModel):

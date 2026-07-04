@@ -8,6 +8,7 @@ interface CartState {
   isLoading: boolean
   fetch: () => Promise<void>
   addItem: (variant_id: string, quantity?: number) => Promise<boolean>
+  addProduct: (product_id: string, quantity?: number) => Promise<boolean>
   updateItem: (variant_id: string, quantity: number) => Promise<boolean>
   removeItem: (variant_id: string) => Promise<boolean>
   clear: () => void
@@ -32,6 +33,16 @@ export const useCartStore = create<CartState>((set, get) => ({
   addItem: async (variant_id, quantity = 1) => {
     try {
       await api.post("/api/cart/items", { variant_id, quantity })
+      await get().fetch()
+      return true
+    } catch {
+      return false
+    }
+  },
+
+  addProduct: async (product_id, quantity = 1) => {
+    try {
+      await api.post("/api/cart/items", { product_id, quantity })
       await get().fetch()
       return true
     } catch {

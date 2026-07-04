@@ -38,9 +38,9 @@ async def add_item(
     db: AsyncSession = Depends(get_db),
 ):
     if current_user:
-        return await service.add_item(data.variant_id, data.quantity, db, user_id=current_user.id)
+        return await service.add_item(data.variant_id, data.quantity, db, user_id=current_user.id, product_id=data.product_id)
     session_id = _get_session_id(request, response)
-    return await service.add_item(data.variant_id, data.quantity, db, session_id=session_id)
+    return await service.add_item(data.variant_id, data.quantity, db, session_id=session_id, product_id=data.product_id)
 
 
 @router.put("/items/{variant_id}", response_model=CartOut)

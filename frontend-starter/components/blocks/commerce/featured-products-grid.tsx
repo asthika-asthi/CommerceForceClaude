@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ShoppingCart, Check, Package } from 'lucide-react'
+import { ShoppingCart, Check, Package, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useCartStore } from '@/store/cart'
 import type { Product, ProductsResponse } from '@/lib/types'
@@ -27,21 +27,28 @@ function SkeletonCard() {
 }
 
 function ProductGridCard({ product }: { product: Product }) {
-  const addItem = useCartStore((s) => s.addItem)
+  const addProduct = useCartStore((s) => s.addProduct)
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
+  const [failed, setFailed] = useState(false)
 
-  const image = product.images?.[0]
+  const imageUrl = product.primary_image ?? product.images?.[0]?.url ?? null
   const price = parseFloat(product.price)
   const salePrice = product.sale_price ? parseFloat(product.sale_price) : null
 
   async function handleAdd() {
     if (adding) return
     setAdding(true)
+    setFailed(false)
     try {
-      await addItem(product.id)
-      setAdded(true)
-      setTimeout(() => setAdded(false), 2000)
+      const ok = await addProduct(product.id)
+      if (ok) {
+        setAdded(true)
+        setTimeout(() => setAdded(false), 2000)
+      } else {
+        setFailed(true)
+        setTimeout(() => setFailed(false), 2500)
+      }
     } finally {
       setAdding(false)
     }
@@ -55,10 +62,10 @@ function ProductGridCard({ product }: { product: Product }) {
     >
       <Link href={`/products/${product.slug}`} className="block overflow-hidden">
         <div className="aspect-square bg-slate-100 overflow-hidden">
-          {image ? (
+          {imageUrl ? (
             <img
-              src={image.url}
-              alt={image.alt_text ?? product.name}
+              src={imageUrl}
+              alt={product.name}
               loading="lazy"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
@@ -91,10 +98,12 @@ function ProductGridCard({ product }: { product: Product }) {
             <button
               onClick={handleAdd}
               disabled={adding}
-              aria-label={added ? 'Added to cart' : 'Add to cart'}
+              aria-label={added ? 'Added to cart' : failed ? 'Failed to add' : 'Add to cart'}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-60 ${
                 added
                   ? 'bg-green-600 text-white'
+                  : failed
+                  ? 'bg-red-600 text-white'
                   : 'bg-brand hover:bg-brand-hover text-white'
               }`}
             >
@@ -102,6 +111,11 @@ function ProductGridCard({ product }: { product: Product }) {
                 <>
                   <Check size={13} />
                   Added
+                </>
+              ) : failed ? (
+                <>
+                  <X size={13} />
+                  Try again
                 </>
               ) : (
                 <>

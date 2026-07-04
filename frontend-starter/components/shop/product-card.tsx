@@ -1,17 +1,18 @@
 ﻿"use client"
 import { useState } from "react"
 import Link from "next/link"
-import { ShoppingCart, Check } from "lucide-react"
+import { ShoppingCart, Check, X } from "lucide-react"
 import { useCartStore } from "@/store/cart"
 import { WishlistButton } from "@/components/shop/wishlist-button"
 import type { Product } from "@/lib/types"
 
 export function ProductCard({ product }: { product: Product }) {
-  const addItem = useCartStore((s) => s.addItem)
+  const addProduct = useCartStore((s) => s.addProduct)
   const imageFromArray = product.images?.find(img => img.is_primary) ?? product.images?.[0]
   const image = imageFromArray ?? (product.primary_image ? { url: product.primary_image, alt_text: product.name } : null)
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   const price = parseFloat(product.price)
   const salePrice = product.sale_price ? parseFloat(product.sale_price) : null
@@ -20,10 +21,16 @@ export function ProductCard({ product }: { product: Product }) {
   async function handleAdd() {
     if (adding) return
     setAdding(true)
+    setFailed(false)
     try {
-      await addItem(product.id)
-      setAdded(true)
-      setTimeout(() => setAdded(false), 2000)
+      const ok = await addProduct(product.id)
+      if (ok) {
+        setAdded(true)
+        setTimeout(() => setAdded(false), 2000)
+      } else {
+        setFailed(true)
+        setTimeout(() => setFailed(false), 2500)
+      }
     } finally {
       setAdding(false)
     }
@@ -68,11 +75,11 @@ export function ProductCard({ product }: { product: Product }) {
               onClick={handleAdd}
               disabled={adding}
               className={`p-2 rounded-lg transition-colors disabled:opacity-60 ${
-                added ? "bg-green-600 text-white" : "bg-brand hover:bg-brand-hover text-white"
+                added ? "bg-green-600 text-white" : failed ? "bg-red-600 text-white" : "bg-brand hover:bg-brand-hover text-white"
               }`}
-              title={added ? "Added!" : "Add to cart"}
+              title={added ? "Added!" : failed ? "Couldn't add — try again" : "Add to cart"}
             >
-              {added ? <Check size={15} /> : <ShoppingCart size={15} />}
+              {added ? <Check size={15} /> : failed ? <X size={15} /> : <ShoppingCart size={15} />}
             </button>
           ) : (
             <span className="text-xs text-slate-400 font-medium">Out of stock</span>

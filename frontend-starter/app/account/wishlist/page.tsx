@@ -11,7 +11,7 @@ import { useCartStore } from "@/store/cart"
 export default function WishlistPage() {
   const user = useAuthStore((s) => s.user)
   const router = useRouter()
-  const addItem = useCartStore((s) => s.addItem)
+  const addProduct = useCartStore((s) => s.addProduct)
   const [items, setItems] = useState<(WishlistItem & { product?: Product })[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -51,8 +51,9 @@ export default function WishlistPage() {
   }
 
   async function moveToCart(productId: string) {
-    await addItem(productId)
-    await remove(productId)
+    // Only remove from the wishlist if the item actually made it into the cart.
+    const ok = await addProduct(productId)
+    if (ok) await remove(productId)
   }
 
   if (!user || loading) return <div className="flex justify-center py-20 text-slate-400">Loading...</div>

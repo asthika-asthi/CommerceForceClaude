@@ -26,12 +26,10 @@ plugins) was sampled, not read line-by-line.
 - **Failure scenario:** Any `admin` calls `PATCH /api/auth/users/{id}` with `{"role":"superadmin"}` on any account (including their own) and gains full superadmin rights, defeating the admin/superadmin separation.
 - **Fix direction:** Gate role changes behind `require_superadmin()`, or reject `role == "superadmin"` unless the caller is superadmin.
 
-### F8 — Add-to-cart from product listings is broken (passes product id as variant id)
-- **Where:** `frontend-starter/components/shop/product-card.tsx:24`, `components/blocks/commerce/featured-products-grid.tsx:42`, `app/account/wishlist/page.tsx:54`. Backend: `cart/service.py:127`.
-- **What's wrong:** These call `addItem(product.id)`, but the cart store and backend expect a **variant id**. `add_item` looks up `ProductVariant.id == variant_id` and returns 404 for a product id, so nothing is added. product-card and featured-grid ignore the `false` return and still flash "Added!".
-- **Failure scenario:** A shopper clicks "Add to cart" on the product grid, featured section, or wishlist. The item is never added; two of the three still show a green "Added!" confirmation. The existing E2E passes because it only asserts the button label, not cart contents.
-- **Basis:** The product detail page (`add-to-cart-button.tsx:59`) correctly uses a real `variantId` and checks the boolean — proving variants have their own ids and the listings are wrong. Likely a loose end from when the cart became variant-based.
-- **Fix direction:** Listings must add the product's default/selected variant id and honor the boolean result (show an error on failure).
+### F8 — Add-to-cart from product listings is broken (passes product id as variant id) — **FIXED**
+- **Where:** `frontend-starter/components/shop/product-card.tsx`, `components/blocks/commerce/featured-products-grid.tsx`, `app/account/wishlist/page.tsx`. Backend: `cart/service.py`.
+- **What was wrong:** These called `addItem(product.id)`, but the cart store and backend expect a **variant id**. `add_item` looked up `ProductVariant.id == variant_id` and returned 404 for a product id, so nothing was added. product-card and featured-grid ignored the `false` return and still flashed "Added!".
+- **Fix (applied):** The backend cart now accepts a `product_id` and resolves the product's **default variant** server-side (`AddItemRequest` takes `variant_id` *or* `product_id`; `add_item` calls `get_or_create_default_variant`). A new `addProduct(product_id)` cart-store method posts `product_id`; the three listing components use it and now honor the boolean — showing a red "try again" state on failure instead of a false "Added!". The product detail page still uses `addItem(variantId)` for option-specific adds. Verified live (product_id add resolves the default variant) and with the full backend suite (200 passing).
 
 ---
 
