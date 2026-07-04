@@ -64,7 +64,9 @@ async def delete_coupon(coupon_id: str, db: AsyncSession) -> None:
     await db.flush()
 
 
-async def validate_coupon(code: str, subtotal: Decimal, db: AsyncSession) -> tuple[Coupon, Decimal]:
+async def validate_coupon(
+    code: str, subtotal: Decimal, db: AsyncSession, user_id: Optional[str] = None
+) -> tuple[Coupon, Decimal]:
     """Return (coupon, discount_amount) or raise HTTPException."""
     result = await db.execute(select(Coupon).where(Coupon.code == code.upper().strip()).with_for_update())
     coupon = result.scalar_one_or_none()
@@ -78,6 +80,15 @@ async def validate_coupon(code: str, subtotal: Decimal, db: AsyncSession) -> tup
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon has expired")
     if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon has reached its maximum uses")
+    # One redemption per customer (only enforceable for authenticated users).
+    if user_id is not None:
+        prior = await db.execute(
+            select(CouponUsage).where(
+                CouponUsage.coupon_id == coupon.id, CouponUsage.user_id == user_id
+            ).limit(1)
+        )
+        if prior.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You have already used this coupon")
     if coupon.min_order_value and subtotal < coupon.min_order_value:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

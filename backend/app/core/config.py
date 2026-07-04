@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # Auth policy — when True, customers must verify their email before they can log in.
+    REQUIRE_EMAIL_VERIFICATION: bool = True
+
     # Redis / Celery
     REDIS_URL: str = "redis://localhost:6379/0"
 

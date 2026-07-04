@@ -230,9 +230,10 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 - **B8 (MED) — FIXED:** cancelling an order now reverses coupon usage (customer + admin paths). (`tests/test_order_lifecycle.py`)
 - **B9 (MED) — FIXED:** `update_status` now rejects illegal transitions (cancelled/delivered are terminal). (`tests/test_order_lifecycle.py`)
 - **B2 (MED) — FIXED:** explicit-items checkout now resolves the variant (explicit or default), applies its price adjustment, and records `variant_id`. (`tests/test_explicit_checkout.py`)
+- **B6 — FIXED:** coupons are now one redemption per customer (authenticated). (`tests/test_coupon_per_user.py`)
+- **B7 — FIXED:** email verification required — unverified customers are blocked from login (behind `REQUIRE_EMAIL_VERIFICATION`, default on), with a resend-verification flow. (`tests/test_email_verification.py`)
 
-**Open items (found in review, NOT yet fixed — details in `docs/bugs-log.md`):**
-- **B3 / B6 / B7 (LOW/INFO):** dual stock sources (product vs warehouse); coupon per-user limit not enforced; login doesn't require email verification. These are lower-severity / partly-intentional — confirm intended behavior before changing.
+**All review findings B1–B9 are now fixed except B3 (deferred). `docs/bugs-log.md` is the detailed record.**
 
 ---
 
@@ -243,6 +244,7 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 | P | 2FA for admin | TOTP flow, QR setup, backup codes. Separate sprint. |
 | R | Per-client git branch script | `scripts/new-client.sh` to automate `git checkout -b client-name` + seed template copy |
 | S | Bulk image assignment via product CSV | Add optional `image_url` column to product import CSV; on import, create a `ProductImage` record linked to the product. Allows full product setup (including hero image) in one CSV upload without clicking through each product. |
+| U | Consolidate stock to one source of truth (B3) | Checkout uses only `Product.stock_quantity`; the per-variant `WarehouseStock` system is built but never wired into selling (`deduct_stock_for_variant`/`get_variant_stock_total` are unused). Decide based on need: single pool → keep product-level authoritative and retire/relabel the warehouse feature; multi-warehouse → make warehouse authoritative and derive the shop's stock. Deferred pending the multi-warehouse decision. |
 | T | Eliminate frontend/backend type duplication | The frontends keep hand-written type mirrors (`frontend-starter/lib/types.ts`, `frontend-admin/lib/types.ts`) that silently drift from the backend Pydantic schemas — the cause of several 2026-07-04 bugs (`primary_image` vs `images[]`, missing `description`/`is_featured`). Fix: add an automated drift-check (CI/pre-commit runs `gen:types` and fails if `types.ts` is stale) and/or true codegen so frontend types are derived, not hand-kept; also add a `gen:types` script to the admin app (it currently has none). Process documented in `docs/type-sync.md`. |
 
 ---

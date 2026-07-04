@@ -63,19 +63,21 @@ plugins) was sampled, not read line-by-line.
 
 ## LOW / INFO
 
-### B3 — Two divergent stock sources of truth
-- **Where:** `checkout/service.py` + `products/service.py` (`deduct_stock`, product-level) vs `inventory/service.py` (`WarehouseStock`, per-variant).
-- **What's wrong:** Checkout validates/deducts `product.stock_quantity`; the inventory plugin tracks per-variant warehouse stock separately. Nothing reconciles them, so they can drift.
-- **Fix direction:** Decide which is authoritative and make the other derive from it (or sync on deduct/restore).
+### B3 — Two divergent stock sources of truth — **DEFERRED (decision pending)**
+- **Where:** `products/service.py` (`deduct_stock`, product-level) vs `inventory/service.py` (`WarehouseStock`, per-variant).
+- **Finding on closer look:** Checkout/cart use **only** `Product.stock_quantity`. The warehouse functions `deduct_stock_for_variant`/`get_variant_stock_total` are **defined but never called** — the warehouse system is built but not wired into selling. So product-level is the de-facto single source of truth; warehouse stock is a disconnected admin ledger.
+- **Decision:** Deferred by the user (unsure whether multiple warehouses are needed). The fix depends on that: if one stock pool → keep product-level authoritative and retire/relabel the warehouse feature; if multi-warehouse → make warehouse authoritative and derive the shop's stock from it. Tracked as backlog item **U**.
 
-### B6 — Coupon "one per customer" not enforced
-- **Where:** `backend/app/plugins/coupons/service.py:67` (`validate_coupon`).
-- **What's wrong:** Only the global `used_count >= max_uses` is checked. `CouponUsage.user_id` is written but never read.
-- **Fix direction:** If per-customer limits are intended, count this user's prior `CouponUsage` rows in `validate_coupon` and reject.
+### B6 — Coupon "one per customer" not enforced — **FIXED**
+- **Where:** `backend/app/plugins/coupons/service.py` (`validate_coupon`), `coupons/router.py`, `checkout/service.py`.
+- **What was wrong:** Only the global `used_count >= max_uses` was checked; `CouponUsage.user_id` was written but never read.
+- **Fix (applied):** `validate_coupon(..., user_id=None)` now rejects (400) if the authenticated user already has a `CouponUsage` for that coupon. Checkout and the `GET /validate` preview pass the user. Guests are unaffected (no identity). Covered by `tests/test_coupon_per_user.py`.
 
-### B7 — Login doesn't require email verification
-- **Where:** `backend/app/plugins/auth/service.py:131` (`authenticate`).
-- **What's wrong:** Checks `is_active` but not `is_email_verified`, so verification is effectively optional. Likely intentional — confirm.
+### B7 — Login doesn't require email verification — **FIXED**
+- **Where:** `backend/app/plugins/auth/service.py` (`authenticate`), `auth/router.py`, `seed.py`, `frontend-starter/app/login/page.tsx`.
+- **What was wrong:** `authenticate` checked `is_active` but not `is_email_verified`.
+- **Fix (applied):** Behind `settings.REQUIRE_EMAIL_VERIFICATION` (default **True**; off in the test env), `authenticate` now blocks unverified **customers** with 403 (admin/superadmin exempt; seeded admins marked verified). Added `resend_verification` service + `POST /api/auth/resend-verification`; trade registration also sends a verification email. The login page shows the message plus a "Resend verification email" action. Covered by `tests/test_email_verification.py`.
+- **Note:** registration still auto-logs-in the first session (unchanged, to avoid churning the many `register→token` dependents); the gate bites on subsequent logins. A stricter "no session until verified" is a possible follow-up.
 
 ### B8 — Cancelling an order never reverses coupon usage — **FIXED**
 - **Where:** `backend/app/plugins/orders/service.py` (both cancel paths), `coupons/service.py`.

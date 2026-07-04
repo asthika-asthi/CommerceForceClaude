@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.core.dependencies import require_admin
+from app.core.dependencies import require_admin, get_current_user_optional
 from app.plugins.coupons.models import Coupon
 from app.plugins.coupons.schemas import CouponCreate, CouponUpdate, CouponOut, CouponRead, CouponValidateOut
 from app.plugins.coupons import service
@@ -51,10 +51,13 @@ async def delete_coupon(coupon_id: str, db: AsyncSession = Depends(get_db)):
 async def validate_coupon(
     code: str = Query(...),
     subtotal: Decimal = Query(...),
+    current_user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        coupon, discount = await service.validate_coupon(code, subtotal, db)
+        coupon, discount = await service.validate_coupon(
+            code, subtotal, db, user_id=current_user.id if current_user else None
+        )
         return CouponValidateOut(
             valid=True,
             discount_type=coupon.discount_type,

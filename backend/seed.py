@@ -56,6 +56,7 @@ async def seed_superadmin(db) -> None:
         last_name="Admin",
         role=UserRole.superadmin,
         is_active=True,
+        is_email_verified=True,
     )
     db.add(superadmin)
     await db.commit()
@@ -81,6 +82,7 @@ async def seed_admin(db) -> None:
         last_name="User",
         role=UserRole.admin,
         is_active=True,
+        is_email_verified=True,
     )
     db.add(admin)
     await db.commit()

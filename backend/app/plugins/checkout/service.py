@@ -209,7 +209,7 @@ async def checkout(
     if data.coupon_code:
         try:
             from app.plugins.coupons import service as coupon_service
-            _, coupon_discount = await coupon_service.validate_coupon(data.coupon_code, subtotal, db)
+            _, coupon_discount = await coupon_service.validate_coupon(data.coupon_code, subtotal, db, user_id=user_id)
             discount_amount += coupon_discount
         except ImportError:
             raise HTTPException(status_code=400, detail="Coupon codes are not enabled on this platform")

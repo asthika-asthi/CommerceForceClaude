@@ -88,6 +88,12 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
     await service.reset_password(data.token, data.new_password, db)
 
 
+@router.post("/resend-verification", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("3/minute")
+async def resend_verification(request: Request, data: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    await service.resend_verification(data.email, db)
+
+
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
     raw_token = request.cookies.get(REFRESH_COOKIE)

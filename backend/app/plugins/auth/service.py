@@ -19,14 +19,33 @@ PASSWORD_RESET_EXPIRE_MINUTES = 30
 EMAIL_VERIFICATION_EXPIRE_HOURS = 24
 
 
+async def _issue_and_send_verification(user: User, db: AsyncSession) -> None:
+    """Generate a fresh verification token on the user and email the link. Shared by
+    registration (customer + trade) and the resend endpoint."""
+    raw_token = secrets.token_urlsafe(32)
+    user.email_verification_token = hashlib.sha256(raw_token.encode()).hexdigest()
+    user.email_verification_expires_at = datetime.now(timezone.utc) + timedelta(hours=EMAIL_VERIFICATION_EXPIRE_HOURS)
+    await db.flush()
+
+    verify_url = f"{settings.STOREFRONT_URL}/verify-email?token={raw_token}"
+    logger.info("Email verification link for %s: %s", user.email, verify_url)
+    print(f"\n[EMAIL VERIFY] {user.email} -> {verify_url}\n", flush=True)
+    await send_email(
+        user.email,
+        "Please verify your email address",
+        f"Hi {user.first_name},\n\n"
+        f"Thanks for creating an account! Please verify your email address by clicking the link below "
+        f"(valid for {EMAIL_VERIFICATION_EXPIRE_HOURS} hours):\n\n"
+        f"{verify_url}\n\n"
+        f"If you didn't create this account, you can safely ignore this email.",
+        db,
+    )
+
+
 async def create_user(data: RegisterRequest, db: AsyncSession) -> User:
     result = await db.execute(select(User).where(User.email == data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-
-    raw_token = secrets.token_urlsafe(32)
-    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=EMAIL_VERIFICATION_EXPIRE_HOURS)
 
     user = User(
         email=data.email,
@@ -36,27 +55,20 @@ async def create_user(data: RegisterRequest, db: AsyncSession) -> User:
         role=UserRole.customer,
         company_name=data.company_name,
         phone=data.phone,
-        email_verification_token=token_hash,
-        email_verification_expires_at=expires_at,
     )
     db.add(user)
     await db.flush()
-
-    verify_url = f"{settings.STOREFRONT_URL}/verify-email?token={raw_token}"
-    logger.info("Email verification link for %s: %s", data.email, verify_url)
-    print(f"\n[EMAIL VERIFY] {data.email} -> {verify_url}\n", flush=True)
-    await send_email(
-        data.email,
-        "Please verify your email address",
-        f"Hi {data.first_name},\n\n"
-        f"Thanks for creating an account! Please verify your email address by clicking the link below "
-        f"(valid for {EMAIL_VERIFICATION_EXPIRE_HOURS} hours):\n\n"
-        f"{verify_url}\n\n"
-        f"If you didn't create this account, you can safely ignore this email.",
-        db,
-    )
-
+    await _issue_and_send_verification(user, db)
     return user
+
+
+async def resend_verification(email: str, db: AsyncSession) -> None:
+    """Re-issue a verification email. Always silent (no account enumeration)."""
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user or user.is_email_verified or user.role != UserRole.customer:
+        return
+    await _issue_and_send_verification(user, db)
 
 
 async def verify_email_token(raw_token: str, db: AsyncSession) -> User:
@@ -104,6 +116,7 @@ async def create_trade_user(data: TradeRegisterRequest, db: AsyncSession) -> Use
     )
     db.add(user)
     await db.flush()
+    await _issue_and_send_verification(user, db)
 
     # Notify admin of new trade application
     if settings.SMTP_USER:
@@ -135,6 +148,13 @@ async def authenticate(email: str, password: str, db: AsyncSession) -> User:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is disabled")
+    # Customers must verify their email first (admins/superadmins are exempt — they don't
+    # self-register). Gated behind a setting so deployments can opt out.
+    if settings.REQUIRE_EMAIL_VERIFICATION and user.role == UserRole.customer and not user.is_email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email address before signing in. Check your inbox or request a new link.",
+        )
     return user
 
 

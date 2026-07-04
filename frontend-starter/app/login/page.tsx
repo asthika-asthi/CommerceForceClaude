@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuthStore } from "@/store/auth"
 import { PasswordInput } from "@/components/password-input"
+import { api } from "@/lib/api"
 
 export default function LoginPage() {
   return (
@@ -22,18 +23,34 @@ function LoginForm() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [needsVerification, setNeedsVerification] = useState(false)
+  const [resendMsg, setResendMsg] = useState("")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
+    setNeedsVerification(false)
+    setResendMsg("")
     setLoading(true)
     try {
       await login(email, password)
       router.push(redirect)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
+      const msg = err instanceof Error ? err.message : "Login failed"
+      setError(msg)
+      if (/verify your email/i.test(msg)) setNeedsVerification(true)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function resendVerification() {
+    setResendMsg("")
+    try {
+      await api.post("/api/auth/resend-verification", { email })
+      setResendMsg("Verification email sent — please check your inbox.")
+    } catch {
+      setResendMsg("Verification email sent — please check your inbox.")
     }
   }
 
@@ -43,6 +60,14 @@ function LoginForm() {
         <h1 className="text-2xl font-bold text-slate-900 mb-6 text-center">Sign in</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>}
+          {needsVerification && (
+            <div className="text-sm text-slate-600">
+              <button type="button" onClick={resendVerification} className="text-brand-dark font-medium hover:underline">
+                Resend verification email
+              </button>
+              {resendMsg && <p className="mt-1 text-green-600">{resendMsg}</p>}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
