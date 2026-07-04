@@ -223,12 +223,12 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 - **Checkout order summary** now shows coupon + loyalty discount lines and a correct total (bug F9 display maths); **wishlist toggle** shows a clear failure state (bug F11). (commit `d0fad8b`)
 - Fixed a pre-existing type error in `product-search-combobox.tsx`.
 
-**Security fixes (done 2026-07-04, tested — `tests/test_security_fixes.py`, 6 tests):**
-- **B4 (HIGH, security) — FIXED:** role changes via `PATCH /api/auth/users/{id}` now require superadmin, so an admin can no longer escalate itself/anyone to superadmin.
-- **B5 (MED, security) — FIXED:** password change/reset now revokes all of the user's refresh tokens, so existing sessions can't be refreshed afterward.
+**Security + payment fixes (done 2026-07-04, tested):**
+- **B4 (HIGH, security) — FIXED:** role changes via `PATCH /api/auth/users/{id}` now require superadmin, so an admin can no longer escalate itself/anyone to superadmin. (`tests/test_security_fixes.py`)
+- **B5 (MED, security) — FIXED:** password change/reset now revokes all of the user's refresh tokens, so existing sessions can't be refreshed afterward. (`tests/test_security_fixes.py`)
+- **B1 (HIGH) — FIXED:** Stripe stock/coupon/loyalty effects are deferred to the `payment_intent.succeeded` webhook (cash/credit still synchronous), so an abandoned card checkout no longer oversells stock or consumes coupons/points. (`tests/test_checkout_deferral.py`)
 
 **Open items (found in review, NOT yet fixed — details in `docs/bugs-log.md`):**
-- **B1 (HIGH):** Stripe orders deduct stock / record coupon / earn+redeem loyalty *before* payment; abandoned card checkouts are never reversed.
 - **B2 / B8 / B9 (MED):** explicit-checkout ignores variant pricing; cancel doesn't reverse coupon usage; `update_status` has no state-machine validation.
 - **B3 / B6 / B7 (LOW/INFO):** dual stock sources (product vs warehouse), coupon per-user limit not enforced, login doesn't require email verification.
 

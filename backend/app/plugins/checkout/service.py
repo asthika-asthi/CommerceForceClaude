@@ -100,6 +100,59 @@ async def _items_from_explicit(checkout_items: list[CheckoutItem], db: AsyncSess
     return items
 
 
+async def _apply_paid_order_effects(
+    order: Order,
+    stock_items: list[tuple[Optional[str], int]],
+    coupon_code: Optional[str],
+    points_to_redeem: int,
+    db: AsyncSession,
+) -> None:
+    """Apply the integrity-critical side effects of a PAID order: deduct stock, record
+    coupon usage, and redeem + earn loyalty points.
+
+    Called synchronously for cash/credit checkouts, and from the Stripe webhook once
+    ``payment_intent.succeeded`` fires — so an abandoned or failed card checkout never
+    consumes stock, coupon uses, or loyalty points.
+    """
+    # 1. Deduct stock (product-level; raises 409 if insufficient).
+    for product_id, quantity in stock_items:
+        if product_id:
+            await product_service.deduct_stock(product_id, quantity, db)
+
+    # 2. Record coupon usage (recompute the coupon's discount portion for the record).
+    if coupon_code:
+        try:
+            from app.plugins.coupons import service as coupon_service
+            from app.plugins.coupons.models import Coupon, DiscountType
+            result = await db.execute(select(Coupon).where(Coupon.code == coupon_code.upper().strip()))
+            coupon = result.scalar_one_or_none()
+            if coupon:
+                if coupon.discount_type == DiscountType.percentage:
+                    coupon_discount = (order.subtotal * coupon.discount_value / Decimal("100")).quantize(Decimal("0.01"))
+                else:
+                    coupon_discount = min(coupon.discount_value, order.subtotal)
+                await coupon_service.record_usage(coupon, order.id, coupon_discount, db, user_id=order.user_id)
+        except ImportError:
+            pass
+
+    # 3. Redeem loyalty points.
+    if points_to_redeem > 0 and order.user_id:
+        try:
+            from app.plugins.loyalty import service as loyalty_service
+            points_discount = await loyalty_service.validate_redemption(order.user_id, points_to_redeem, db)
+            await loyalty_service.redeem_points(order.user_id, points_to_redeem, order.id, points_discount, db)
+        except ImportError:
+            pass
+
+    # 4. Earn loyalty points on the final total.
+    if order.user_id:
+        try:
+            from app.plugins.loyalty import service as loyalty_service
+            await loyalty_service.earn_points(order.user_id, order.total, order.id, db)
+        except ImportError:
+            pass
+
+
 async def checkout(
     data: CheckoutRequest,
     db: AsyncSession,
@@ -127,13 +180,13 @@ async def checkout(
     # Calculate subtotal for discount validation
     subtotal = sum(Decimal(str(i["unit_price"])) * i["quantity"] for i in items)
 
-    # Resolve coupon discount (if coupon plugin active)
+    # Resolve coupon discount (if coupon plugin active). Validation happens up front so an
+    # invalid coupon fails the checkout, but the usage is only *recorded* once paid.
     discount_amount = Decimal("0")
-    _coupon_obj = None
     if data.coupon_code:
         try:
             from app.plugins.coupons import service as coupon_service
-            _coupon_obj, coupon_discount = await coupon_service.validate_coupon(data.coupon_code, subtotal, db)
+            _, coupon_discount = await coupon_service.validate_coupon(data.coupon_code, subtotal, db)
             discount_amount += coupon_discount
         except ImportError:
             raise HTTPException(status_code=400, detail="Coupon codes are not enabled on this platform")
@@ -183,31 +236,22 @@ async def checkout(
         shipping_cost=shipping_cost,
     )
 
-    # Deduct stock for each item
-    for item in items:
-        await product_service.deduct_stock(item["product_id"], item["quantity"], db)
+    # Stock, coupon usage, and loyalty are applied only once the order is PAID —
+    # synchronously here for cash/credit, or from the Stripe webhook on payment success.
+    # This prevents an abandoned/failed card checkout from consuming them.
+    stock_items = [(i["product_id"], i["quantity"]) for i in items]
 
-    # Record coupon usage
-    if _coupon_obj is not None:
-        from app.plugins.coupons import service as coupon_service
-        await coupon_service.record_usage(_coupon_obj, order.id, coupon_discount, db, user_id=user_id)
-
-    # Deduct redeemed loyalty points
-    if _points_to_redeem > 0 and user_id:
-        from app.plugins.loyalty import service as loyalty_service
-        await loyalty_service.redeem_points(user_id, _points_to_redeem, order.id, _points_discount, db)
-
-    # Mark cash orders as paid immediately; deduct credit for credit_limit orders;
-    # create Stripe PaymentIntent for card payments.
     client_secret: Optional[str] = None
     if data.payment_method == PaymentMethod.cash:
         order.payment_status = PaymentStatus.paid
+        await _apply_paid_order_effects(order, stock_items, data.coupon_code, _points_to_redeem, db)
     elif data.payment_method == PaymentMethod.credit_limit:
         if not user_id:
             raise HTTPException(status_code=400, detail="Authentication required for credit limit payments")
         from app.plugins.credit import service as credit_service
         await credit_service.check_and_deduct(user_id, order.total, db)
         order.payment_status = PaymentStatus.paid
+        await _apply_paid_order_effects(order, stock_items, data.coupon_code, _points_to_redeem, db)
     elif data.payment_method == PaymentMethod.stripe:
         if not settings.STRIPE_SECRET_KEY:
             raise HTTPException(status_code=503, detail="Card payments are not configured on this platform")
@@ -218,21 +262,19 @@ async def checkout(
                 stripe_lib.PaymentIntent.create,
                 amount=int(order.total * 100),
                 currency="gbp",
-                metadata={"order_id": order.id},
+                metadata={
+                    "order_id": order.id,
+                    "coupon_code": data.coupon_code or "",
+                    "redeem_points": str(_points_to_redeem),
+                },
             )
             order.stripe_payment_intent_id = pi.id
             client_secret = pi.client_secret
         except Exception as exc:
             logger.error("Stripe PaymentIntent creation failed: %s", exc)
             raise HTTPException(status_code=502, detail="Payment processing unavailable")
-
-    # Earn loyalty points on the final order total (if loyalty plugin active, authenticated user)
-    if user_id:
-        try:
-            from app.plugins.loyalty import service as loyalty_service
-            await loyalty_service.earn_points(user_id, order.total, order.id, db)
-        except ImportError:
-            pass  # loyalty plugin not enabled, skip silently
+        # Side effects are intentionally deferred to handle_stripe_webhook() — do NOT
+        # deduct stock / record coupon / touch loyalty until payment actually succeeds.
 
     # Clear the cart after successful checkout
     if data.use_cart:
@@ -297,6 +339,25 @@ async def handle_stripe_webhook(payload: bytes, sig_header: str, db: AsyncSessio
                 order.payment_status = PaymentStatus.paid
                 order.status = OrderStatus.confirmed
                 await db.flush()
+
+                # Apply the deferred side effects now that payment has succeeded. Guarded
+                # by the payment_status check above, so a duplicate webhook won't re-apply.
+                md = pi.get("metadata") or {}
+                coupon_code = md.get("coupon_code") or None
+                try:
+                    points_to_redeem = int(md.get("redeem_points") or 0)
+                except (TypeError, ValueError):
+                    points_to_redeem = 0
+                stock_items = [(oi.product_id, oi.quantity) for oi in order.items]
+                try:
+                    await _apply_paid_order_effects(order, stock_items, coupon_code, points_to_redeem, db)
+                    await db.flush()
+                except Exception as exc:
+                    # Payment already captured — never fail the webhook; log for reconciliation.
+                    logger.error(
+                        "Post-payment side effects failed for order %s: %s — manual reconciliation needed",
+                        order.order_number, exc,
+                    )
 
                 recipient = order.guest_email
                 if not recipient and order.user_id:

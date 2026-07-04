@@ -14,11 +14,11 @@ plugins) was sampled, not read line-by-line.
 
 ## HIGH
 
-### B1 — Stripe payments mutate state before the card is charged
-- **Where:** `backend/app/plugins/checkout/service.py` — stock deducted (188), coupon usage recorded (193), loyalty redeemed (198) and earned (233); webhook `handle_stripe_webhook` (~290).
-- **What's wrong:** For Stripe, `checkout()` only creates a PaymentIntent — the card is confirmed later on the client. But stock/coupon/loyalty mutations run unconditionally *before* payment. The webhook only flips `payment_status`/`status`; it performs none of these mutations. There is no `payment_intent.payment_failed`/`canceled` handler, and `restore_stock` runs only on manual order cancellation. `get_db` commits on a 200 response.
-- **Failure scenario:** Customer reaches the card step and abandons (or the card is declined client-side). The order persists with: decremented stock, a consumed coupon-usage count, spent redeemed points, and earned points for an order that was never paid. Nothing ever reverses these.
-- **Fix direction:** For Stripe, defer stock/coupon/loyalty mutations to the `payment_intent.succeeded` webhook, and/or add a `payment_intent.canceled`/expiry handler that restores them. Cash/credit can keep the synchronous path. (See F10 — the frontend half.)
+### B1 — Stripe payments mutate state before the card is charged — **FIXED**
+- **Where:** `backend/app/plugins/checkout/service.py`.
+- **What was wrong:** For Stripe, `checkout()` only creates a PaymentIntent, but stock/coupon/loyalty mutations ran unconditionally *before* payment; the webhook only flipped status and there was no reversal path. An abandoned/declined card checkout permanently oversold stock, consumed a coupon use, spent redeemed points, and earned points for an unpaid order.
+- **Fix (applied):** The integrity-critical effects (deduct stock, record coupon usage, redeem + earn loyalty) are extracted into `_apply_paid_order_effects` and applied **only when the order is paid**: synchronously for cash/credit, and from `handle_stripe_webhook` on `payment_intent.succeeded` for card. The coupon code + points-to-redeem are stashed in the PaymentIntent `metadata` for the webhook to replay (no schema change). The webhook application is guarded by the existing `payment_status != paid` check, so duplicate deliveries don't double-apply. Covered by `tests/test_checkout_deferral.py` (Stripe defers then applies on webhook; webhook idempotent; cash still applies synchronously). Full suite 220 passing.
+- **Note:** F10 (frontend creates the order before card confirmation) is now benign — the order stays `pending` with no side effects until the webhook, so an abandoned card payment leaks nothing.
 
 ### B4 — A regular admin can self-escalate to superadmin (security) — **FIXED**
 - **Where:** `backend/app/plugins/auth/router.py` (`patch_user`), `auth/service.py`.
