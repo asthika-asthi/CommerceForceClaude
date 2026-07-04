@@ -120,12 +120,20 @@ docker compose logs backend
 
 ### 4.1 Create database tables
 ```bash
-docker compose exec backend alembic upgrade head
+docker compose exec backend python init_db.py
+docker compose exec backend alembic stamp head
 ```
 
-This creates all the database tables. **Must be run once on first deployment.** If you skip this, every page on the storefront will error.
+This creates all the database tables from the models, then marks Alembic as up-to-date so
+future migrations apply cleanly. **Must be run once on first deployment.** If you skip this,
+every page on the storefront will error.
 
-It is safe to run again — it skips tables that already exist.
+> ⚠️ Do **not** run `alembic upgrade head` on a fresh database — the migration chain assumes
+> the product-variant tables already exist and will fail with `no such table: product_variants`.
+> `init_db.py` builds the current schema directly from the models (the source of truth). Use
+> `alembic upgrade head` only for *incremental* migrations on an already-initialised database.
+
+`init_db.py` is safe to re-run — it skips tables that already exist.
 
 ### 4.2 Create accounts and branding
 ```bash
@@ -388,11 +396,12 @@ docker compose down -v
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | "Site can't be reached" | Firewall ports closed | `ufw allow 3000 && ufw allow 3001 && ufw allow 8000` |
-| Page loads but everything errors | Database tables don't exist | `docker compose exec backend alembic upgrade head` |
+| Page loads but everything errors | Database tables don't exist | `docker compose exec backend python init_db.py` then `docker compose exec backend alembic stamp head` |
 | `SERVER_IP variable is not set` | Root `.env` missing | Create `/opt/.../CommerceForceClaude/.env` with `SERVER_IP=x.x.x.x` |
 | `ADMIN_EMAIL is not set` | Missing var in `backend/.env` | Add the missing line to `backend/.env`, then `docker compose restart backend` |
 | Backend container keeps restarting | Startup error | `docker compose logs backend` to see the error |
-| "No such table" errors in logs | Migrations not run | `docker compose exec backend alembic upgrade head` |
+| "No such table" errors in logs | Schema not initialised | `docker compose exec backend python init_db.py` then `docker compose exec backend alembic stamp head` |
+| `no such table: product_variants` during `alembic upgrade head` | Migration chain can't build a fresh DB | Don't use `alembic upgrade head` on an empty DB — use `python init_db.py` + `alembic stamp head` (see Section 4.1) |
 | `No module named 'aiosqlite'` | Old Docker image | `docker compose up --build -d` |
 | Forgot Password: no email arrives | VPS blocks SMTP port 587 | Get link from logs: `docker compose logs backend \| grep "PASSWORD RESET"` |
 | CSV import: products created but no category | Category name typo in CSV | Products CSV auto-creates categories now — check the category was created |
