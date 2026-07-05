@@ -40,6 +40,7 @@ Use these as talking points / on-screen captions:
 | **Bulk tools** | Import your whole catalogue from a spreadsheet; export orders and products to CSV. |
 | **Marketing built in** | Newsletter capture, promotional banners, announcement bar, and product reviews. |
 | **AI chat assistant** | An on-site chat widget that answers customer questions automatically. |
+| **Sell in any currency** | Each store is set to its own currency (£, $, €, ₹, and more) — prices, checkout, and card payments all use it. |
 | **Your brand, your look** | Set your logo, colours, and fonts; build your homepage from ready-made sections. |
 | **Reliable & secure** | Runs on your own server, HTTPS-secured, with automatic nightly backups. |
 
@@ -191,6 +192,7 @@ This is what your shoppers see — useful to narrate in a demo video:
 The **Superadmin** role is for the agency that deploys and styles stores for clients:
 
 - **Per-client branding & theming** — colours, fonts, logos, and homepage layout are tailored per client.
+- **Currency** — each store's currency is set at deployment via `CURRENCY_CODE` in the client's config (e.g. `USD`, `EUR`, `INR`; defaults to `GBP`). It drives every price symbol in the storefront and admin **and** the Stripe charge currency. Supported: GBP £, USD $, EUR €, INR ₹, AUD, CAD, AED, SGD, NZD. (It's a build-time setting, so changing it later means a quick rebuild — see `docs/new-client-setup.md`.)
 - **Landing-page block system** — assemble each client's homepage from a library of reusable sections.
 - **Deployment** — each store runs in Docker on its own server, secured with HTTPS, with automatic nightly backups. First-time setup and go-live steps are documented in `docs/new-client-setup.md`.
 - **Role separation** — the agency (superadmin) handles build/design; the client (admin) handles business operations only.
@@ -231,7 +233,7 @@ A ready-to-adapt outline for your promo video.
 
 *Visual: logo + call to action.*
 
-**Key selling points to repeat:** one dashboard · trade + retail in one · card/cash/credit · variants · loyalty & coupons · your brand · secure & backed up.
+**Key selling points to repeat:** one dashboard · trade + retail in one · card/cash/credit · any currency · variants · loyalty & coupons · your brand · secure & backed up.
 
 ---
 

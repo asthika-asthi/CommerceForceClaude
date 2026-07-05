@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-07-04. This is the single source of truth for build status.
+Last updated: 2026-07-05. This is the single source of truth for build status.
 Bug-review findings and their fix status live in `docs/bugs-log.md`.
 
 ---
@@ -234,6 +234,25 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 - **B7 — FIXED:** email verification required — unverified customers are blocked from login (behind `REQUIRE_EMAIL_VERIFICATION`, default on), with a resend-verification flow. (`tests/test_email_verification.py`)
 
 **All review findings B1–B9 are now fixed except B3 (deferred). `docs/bugs-log.md` is the detailed record.**
+
+---
+
+### VPS stability fixes + per-client currency (2026-07-05)
+
+**Built + Tested (automated):**
+- **SQLite concurrency hang** — engine now uses WAL + busy_timeout (backend was wedging under the superadmin's setup activity, needing a restart). (`tests/test_stability_fixes.py`)
+- **`COOKIE_SECURE` setting** — refresh cookie Secure flag is configurable so HTTP-only deployments work. (`tests/test_stability_fixes.py`)
+- **Admin category list `include_empty`** — imported categories now show in admin before products exist. (`tests/test_stability_fixes.py`)
+- **Per-client currency** — `CURRENCY_CODE` / `NEXT_PUBLIC_CURRENCY_CODE` (default GBP) drives price symbols + Stripe charge currency + order emails. Backend fully unit-tested (symbols, format, Stripe, email); storefront price rendering covered by E2E. (`tests/test_currency.py`, `frontend-starter/e2e/currency.spec.ts`)
+
+**Built, NOT tested — needs manual browser verification:**
+- **Login-error display fix** — admin/storefront login now shows the real error instead of flashing + reloading (api.ts no longer runs refresh-redirect on `/api/auth/*`). *tsc-clean only; verify a wrong-password login keeps the message on screen.*
+- **Media library "Copy URL" over HTTP** — clipboard fallback for non-secure contexts. *Verify copy works on the VPS (HTTP) — no automated test.*
+- **Currency in a non-GBP deployment** — only the GBP default is E2E-tested. *Deploy one client with `CURRENCY_CODE=USD` (or similar) and confirm the storefront + admin show the right symbol and Stripe charges in that currency.*
+- **Admin currency labels** — Credit/Loyalty/Discount/Shipping/Products label symbols were bulk-replaced; tsc-clean but not visually reviewed per page.
+- **Frontend `formatMoney` unit logic** — no JS unit-test runner is set up (only Playwright). Logic mirrors the tested backend `format_money`; a vitest setup would close this gap.
+
+**Deploy note:** currency is build-time — set `CURRENCY_CODE` in the root `.env`, then rebuild the frontends (`docker compose build frontend-starter frontend-admin`). HTTP deploys also need `COOKIE_SECURE=false`. See `docs/new-client-setup.md`.
 
 ---
 
