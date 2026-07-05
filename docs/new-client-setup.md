@@ -93,6 +93,13 @@ openssl rand -hex 32
 > **won't send over HTTP** — causing constant logouts and "new tab drops to login". Set it back
 > to `COOKIE_SECURE=true` once HTTPS is enabled (Section 12).
 
+> **Currency:** the store currency defaults to GBP (£). To use another currency, set
+> `CURRENCY_CODE` in the **root** `.env` (next to `docker-compose.yml`), e.g. `CURRENCY_CODE=USD`.
+> This drives the storefront/admin price symbols **and** the Stripe charge currency. Because the
+> frontends bake it in at build time, **rebuild the frontends** after changing it:
+> `docker compose build frontend-starter frontend-admin && docker compose up -d --force-recreate`.
+> Supported: GBP £, USD $, EUR €, INR ₹, AUD A$, CAD C$, AED, SGD S$, NZD NZ$ (others show the code).
+
 </details>
 
 ---

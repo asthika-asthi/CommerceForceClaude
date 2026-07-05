@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import type { Product, ReviewSummary } from "@/lib/types"
 import { AddToCartButton } from "./add-to-cart-button"
 import { WishlistButton } from "@/components/shop/wishlist-button"
+import { formatMoney } from "@/lib/currency"
 
 interface Props {
   product: Product
@@ -97,8 +98,8 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
         </div>
 
         <div className="flex items-baseline gap-3 mb-2">
-          <span className="text-2xl font-bold text-slate-900">&#163;{displayPrice.toFixed(2)}</span>
-          {salePrice && <span className="text-lg text-slate-400 line-through">&#163;{basePrice.toFixed(2)}</span>}
+          <span className="text-2xl font-bold text-slate-900">{formatMoney(displayPrice.toFixed(2))}</span>
+          {salePrice && <span className="text-lg text-slate-400 line-through">{formatMoney(basePrice.toFixed(2))}</span>}
         </div>
 
         {summary && summary.total_reviews > 0 && (

@@ -5,6 +5,7 @@ import { ShoppingCart, Check, X } from "lucide-react"
 import { useCartStore } from "@/store/cart"
 import { WishlistButton } from "@/components/shop/wishlist-button"
 import type { Product } from "@/lib/types"
+import { formatMoney } from "@/lib/currency"
 
 export function ProductCard({ product }: { product: Product }) {
   const addProduct = useCartStore((s) => s.addProduct)
@@ -65,9 +66,9 @@ export function ProductCard({ product }: { product: Product }) {
 
         <div className="flex items-center justify-between mt-3">
           <div>
-            <span className="font-bold text-slate-900">&#163;{displayPrice.toFixed(2)}</span>
+            <span className="font-bold text-slate-900">{formatMoney(displayPrice.toFixed(2))}</span>
             {salePrice && (
-              <span className="ml-2 text-xs text-slate-400 line-through">&#163;{price.toFixed(2)}</span>
+              <span className="ml-2 text-xs text-slate-400 line-through">{formatMoney(price.toFixed(2))}</span>
             )}
           </div>
           {product.stock_quantity > 0 ? (

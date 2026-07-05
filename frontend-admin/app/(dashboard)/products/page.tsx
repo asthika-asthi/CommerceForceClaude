@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Pagination } from "@/components/ui/pagination"
 import { Pencil, Trash2, Upload, X, Copy, Search, ImageOff, AlertTriangle } from "lucide-react"
+import { formatMoney } from "@/lib/currency"
 
 function resolveImageUrl(url: string): string {
   if (url.startsWith("/")) {
@@ -320,7 +321,7 @@ export default function ProductsPage() {
                               />
                             </td>
                             <td className="px-3 py-2 text-slate-700 font-medium">{p.name}</td>
-                            <td className="px-3 py-2 text-slate-600">£{parseFloat(p.price).toFixed(2)}</td>
+                            <td className="px-3 py-2 text-slate-600">{formatMoney(parseFloat(p.price).toFixed(2))}</td>
                             <td className="px-3 py-2 text-slate-600">{p.stock_quantity}</td>
                             <td className="px-3 py-2 text-slate-500">
                               {p.created_at ? new Date(p.created_at).toLocaleDateString() : "—"}
@@ -383,11 +384,11 @@ export default function ProductsPage() {
                   <td className="px-4 py-3 font-medium text-slate-900">
                     <div>{p.name}</div>
                     {p.sale_price && (
-                      <div className="text-xs text-slate-400 line-through">£{p.price}</div>
+                      <div className="text-xs text-slate-400 line-through">{formatMoney(p.price)}</div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-slate-500 font-mono text-xs">{p.sku ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-700">£{p.sale_price ?? p.price}</td>
+                  <td className="px-4 py-3 text-slate-700">{formatMoney(p.sale_price ?? p.price)}</td>
                   <td className="px-4 py-3 text-slate-700">{p.stock_quantity}</td>
                   <td className="px-4 py-3">
                     <StatusBadge value={p.is_active ? "active" : "inactive"} />

@@ -13,6 +13,7 @@ from app.plugins.orders import service as order_service
 from app.plugins.orders.models import Order, OrderStatus, PaymentMethod, PaymentStatus
 from app.plugins.checkout.schemas import CheckoutRequest, CheckoutItem
 from app.shared.email import send_email
+from app.shared.currency import format_money
 
 logger = logging.getLogger(__name__)
 
@@ -284,7 +285,7 @@ async def checkout(
             pi = await asyncio.to_thread(
                 stripe_lib.PaymentIntent.create,
                 amount=int(order.total * 100),
-                currency="gbp",
+                currency=settings.CURRENCY_CODE.lower(),
                 metadata={
                     "order_id": order.id,
                     "coupon_code": data.coupon_code or "",
@@ -422,7 +423,7 @@ async def _send_order_confirmation_email(
     to: str, order: Order, items: list[dict], db: AsyncSession
 ) -> None:
     items_text = "\n".join(
-        f"  {i['product_name']} x{i['quantity']}  £{float(i['unit_price']) * i['quantity']:.2f}"
+        f"  {i['product_name']} x{i['quantity']}  {format_money(float(i['unit_price']) * i['quantity'])}"
         for i in items
     )
     payment_label = {
@@ -435,20 +436,20 @@ async def _send_order_confirmation_email(
         f"Thank you for your order!\n\n"
         f"Order number: {order.order_number}\n\n"
         f"Items:\n{items_text}\n\n"
-        f"Subtotal:  £{order.subtotal:.2f}\n"
+        f"Subtotal:  {format_money(order.subtotal)}\n"
     )
     if order.discount_amount > 0:
-        body += f"Discount:  -£{order.discount_amount:.2f}\n"
+        body += f"Discount:  -{format_money(order.discount_amount)}\n"
     body += (
-        f"Total:     £{order.total:.2f}\n\n"
+        f"Total:     {format_money(order.total)}\n\n"
         f"Payment:   {payment_label}\n"
     )
     if order.shipping_address:
         body += f"\nShipping address:\n{order.shipping_address}\n"
     body += "\nWe will keep you updated on your order status. Thank you for shopping with us!"
 
-    logger.info("Order confirmation for %s: %s — £%s", to, order.order_number, order.total)
-    print(f"\n[ORDER CONFIRMATION] {to} — {order.order_number} — £{order.total:.2f}\n", flush=True)
+    logger.info("Order confirmation for %s: %s — %s", to, order.order_number, format_money(order.total))
+    print(f"\n[ORDER CONFIRMATION] {to} — {order.order_number} — {format_money(order.total)}\n", flush=True)
 
     await send_email(to, f"Order confirmed — {order.order_number}", body, db)
 
@@ -469,7 +470,7 @@ async def _send_admin_order_notification(
         return
 
     items_text = "\n".join(
-        f"  {i['product_name']} x{i['quantity']}  £{float(i['unit_price']) * i['quantity']:.2f}"
+        f"  {i['product_name']} x{i['quantity']}  {format_money(float(i['unit_price']) * i['quantity'])}"
         for i in items
     )
     customer = order.guest_email or f"User {order.user_id}"
@@ -477,8 +478,8 @@ async def _send_admin_order_notification(
         f"New order received!\n\n"
         f"Order:    {order.order_number}\n"
         f"Customer: {customer}\n"
-        f"Total:    £{order.total:.2f}\n\n"
+        f"Total:    {format_money(order.total)}\n\n"
         f"Items:\n{items_text}\n\n"
         f"View order: {settings.ADMIN_URL}/orders/{order.id}\n"
     )
-    await send_email(admin_email, f"New order — {order.order_number} — £{order.total:.2f}", body, db)
+    await send_email(admin_email, f"New order — {order.order_number} — {format_money(order.total)}", body, db)

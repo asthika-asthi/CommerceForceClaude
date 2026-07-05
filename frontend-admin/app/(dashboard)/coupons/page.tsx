@@ -5,6 +5,7 @@ import { api } from "@/lib/api"
 import type { Coupon } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
+import { CURRENCY_SYMBOL } from "@/lib/currency"
 
 export default function CouponsPage() {
   const qc = useQueryClient()
@@ -126,7 +127,7 @@ export default function CouponsPage() {
                   <td className="px-4 py-2.5 text-slate-700">{c.name}</td>
                   <td className="px-4 py-2.5 text-slate-500 capitalize">{c.discount_type}</td>
                   <td className="px-4 py-2.5 text-slate-700">
-                    {c.discount_type === "percentage" ? `${c.discount_value}%` : `£${c.discount_value}`}
+                    {c.discount_type === "percentage" ? `${c.discount_value}%` : `${CURRENCY_SYMBOL}${c.discount_value}`}
                   </td>
                   <td className="px-4 py-2.5 text-slate-500">
                     {c.used_count}{c.max_uses ? `/${c.max_uses}` : ""}

@@ -7,6 +7,7 @@ import { api } from "@/lib/api"
 import type { WishlistItem, Product } from "@/lib/types"
 import { ArrowLeft, Heart, ShoppingCart } from "lucide-react"
 import { useCartStore } from "@/store/cart"
+import { formatMoney } from "@/lib/currency"
 
 export default function WishlistPage() {
   const user = useAuthStore((s) => s.user)
@@ -87,7 +88,7 @@ export default function WishlistPage() {
                     <>
                       <Link href={`/products/${p.slug}`} className="font-medium text-slate-900 hover:text-brand-dark text-sm line-clamp-1">{p.name}</Link>
                       <p className="text-sm font-bold text-slate-900 mt-0.5">
-                        &#163;{parseFloat(p.sale_price ?? p.price).toFixed(2)}
+                        {formatMoney(parseFloat(p.sale_price ?? p.price).toFixed(2))}
                       </p>
                       <p className={`text-xs mt-0.5 ${p.stock_quantity > 0 ? "text-green-600" : "text-red-500"}`}>
                         {p.stock_quantity > 0 ? "In stock" : "Out of stock"}

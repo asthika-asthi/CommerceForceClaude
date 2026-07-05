@@ -6,6 +6,7 @@ import { ShoppingCart, Check, Package, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useCartStore } from '@/store/cart'
 import type { Product, ProductsResponse } from '@/lib/types'
+import { formatMoney } from "@/lib/currency"
 
 interface FeaturedProductsGridProps {
   title?: string
@@ -87,10 +88,10 @@ function ProductGridCard({ product }: { product: Product }) {
         <div className="mt-auto pt-3 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-brand-dark text-base">
-              &#163;{(salePrice ?? price).toFixed(2)}
+              {formatMoney((salePrice ?? price).toFixed(2))}
             </span>
             {salePrice && (
-              <span className="text-xs text-muted line-through">&#163;{price.toFixed(2)}</span>
+              <span className="text-xs text-muted line-through">{formatMoney(price.toFixed(2))}</span>
             )}
           </div>
 

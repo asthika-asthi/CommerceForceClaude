@@ -6,6 +6,7 @@ import { api } from "@/lib/api"
 import type { Order } from "@/lib/types"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import { formatMoney } from "@/lib/currency"
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-50 text-yellow-700",
@@ -55,7 +56,7 @@ export default function OrderDetailPage() {
               <p className="text-sm font-medium text-slate-900">{item.product_name}</p>
               <p className="text-xs text-slate-400 mt-0.5">Qty: {item.quantity}</p>
             </div>
-            <p className="text-sm font-semibold text-slate-900">£{(parseFloat(item.unit_price) * item.quantity).toFixed(2)}</p>
+            <p className="text-sm font-semibold text-slate-900">{formatMoney((parseFloat(item.unit_price) * item.quantity).toFixed(2))}</p>
           </div>
         ))}
       </div>
@@ -64,12 +65,12 @@ export default function OrderDetailPage() {
         {parseFloat(order.discount_amount) > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-slate-500">Discount</span>
-            <span className="text-green-600">−£{parseFloat(order.discount_amount).toFixed(2)}</span>
+            <span className="text-green-600">−{formatMoney(parseFloat(order.discount_amount).toFixed(2))}</span>
           </div>
         )}
         <div className="flex justify-between font-semibold text-slate-900 pt-2 border-t border-slate-100">
           <span>Total</span>
-          <span>£{parseFloat(order.total).toFixed(2)}</span>
+          <span>{formatMoney(parseFloat(order.total).toFixed(2))}</span>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import type { PaginatedOrders } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Pagination } from "@/components/ui/pagination"
+import { formatMoney } from "@/lib/currency"
 
 function downloadCsv(path: string, filename: string) {
   const token = localStorage.getItem("cf_access_token")
@@ -70,7 +71,7 @@ export default function OrdersPage() {
                   <td className="px-4 py-3 text-slate-600">
                     {o.guest_email ?? (o.user_id ? `User ${o.user_id.slice(0, 8)}` : "—")}
                   </td>
-                  <td className="px-4 py-3 font-medium text-slate-900">£{parseFloat(o.total).toFixed(2)}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">{formatMoney(parseFloat(o.total).toFixed(2))}</td>
                   <td className="px-4 py-3"><StatusBadge value={o.status} /></td>
                   <td className="px-4 py-3"><StatusBadge value={o.payment_status} /></td>
                   <td className="px-4 py-3 text-slate-500 text-xs">

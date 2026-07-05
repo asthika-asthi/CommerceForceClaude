@@ -6,6 +6,7 @@ import type { CreditAccount } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Pencil, Trash2, X } from "lucide-react"
+import { CURRENCY_SYMBOL, formatMoney } from "@/lib/currency"
 
 export default function CreditPage() {
   const qc = useQueryClient()
@@ -74,7 +75,7 @@ export default function CreditPage() {
               className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Credit Limit (£) *</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Credit Limit ({CURRENCY_SYMBOL}) *</label>
             <input required type="number" min="0" step="0.01" value={createForm.credit_limit}
               onChange={(e) => setCreateForm((f) => ({ ...f, credit_limit: e.target.value }))}
               className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -115,9 +116,9 @@ export default function CreditPage() {
                 <React.Fragment key={a.id}>
                   <tr className={`hover:bg-slate-50 ${editId === a.user_id ? "bg-blue-50" : ""}`}>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-700">{a.user_id.slice(0, 12)}…</td>
-                    <td className="px-4 py-2.5 text-slate-800">£{parseFloat(a.credit_limit).toFixed(2)}</td>
-                    <td className="px-4 py-2.5 text-slate-600">£{parseFloat(a.used_credit).toFixed(2)}</td>
-                    <td className="px-4 py-2.5 font-medium text-green-700">£{parseFloat(a.available_credit).toFixed(2)}</td>
+                    <td className="px-4 py-2.5 text-slate-800">{formatMoney(parseFloat(a.credit_limit).toFixed(2))}</td>
+                    <td className="px-4 py-2.5 text-slate-600">{formatMoney(parseFloat(a.used_credit).toFixed(2))}</td>
+                    <td className="px-4 py-2.5 font-medium text-green-700">{formatMoney(parseFloat(a.available_credit).toFixed(2))}</td>
                     <td className="px-4 py-2.5"><StatusBadge value={a.is_active ? "active" : "inactive"} /></td>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-1">
@@ -136,7 +137,7 @@ export default function CreditPage() {
                         <form onSubmit={(e) => { e.preventDefault(); update.mutate({ userId: a.user_id, data: editForm }) }}
                           className="flex gap-4 items-end flex-wrap">
                           <div>
-                            <label className="block text-xs font-medium text-slate-600 mb-1">Credit Limit (£)</label>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Credit Limit ({CURRENCY_SYMBOL})</label>
                             <input type="number" min="0" step="0.01" required value={editForm.credit_limit}
                               onChange={(e) => setEditForm((f) => ({ ...f, credit_limit: e.target.value }))}
                               className="w-32 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />

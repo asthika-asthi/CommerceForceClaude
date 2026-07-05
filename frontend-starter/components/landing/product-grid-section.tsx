@@ -1,5 +1,6 @@
 import Link from "next/link"
 import type { Product } from "@/lib/types"
+import { formatMoney } from "@/lib/currency"
 
 function resolveImageUrl(url: string): string {
   if (url.startsWith("/")) {
@@ -95,10 +96,10 @@ export function ProductGridSection({
                 <div className="p-3.5 pt-3 border-t border-[#F0EEEA] mt-3 flex items-center justify-between">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-[17px] font-bold text-brand-dark">
-                      £{isOnSale ? salePrice!.toFixed(2) : price.toFixed(2)}
+                      {formatMoney(isOnSale ? salePrice!.toFixed(2) : price.toFixed(2))}
                     </span>
                     {isOnSale && (
-                      <span className="text-[12px] text-[#9a9a9a] line-through">£{price.toFixed(2)}</span>
+                      <span className="text-[12px] text-[#9a9a9a] line-through">{formatMoney(price.toFixed(2))}</span>
                     )}
                   </div>
                   <Link

@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     # sessions can't be refreshed.
     COOKIE_SECURE: bool = True
 
+    # Store currency (ISO 4217 code, e.g. GBP, USD, EUR, INR). Set per client at deploy.
+    # Drives the Stripe charge currency and the symbol shown in order emails.
+    CURRENCY_CODE: str = "GBP"
+
     # Redis / Celery
     REDIS_URL: str = "redis://localhost:6379/0"
 

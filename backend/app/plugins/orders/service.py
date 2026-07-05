@@ -218,11 +218,12 @@ async def fulfil_order(order_id: str, data: FulfilRequest, db: AsyncSession) -> 
                 if order.tracking_number
                 else "\nTracking information will be provided separately.\n"
             )
+            from app.shared.currency import format_money
             await send_email(
                 recipient,
                 f"Your order has been shipped — {order.order_number}",
                 f"Good news! Your order {order.order_number} has been dispatched.{tracking_line}\n"
-                f"Total: £{order.total:.2f}\n\n"
+                f"Total: {format_money(order.total)}\n\n"
                 f"Thank you for shopping with us!",
                 db,
             )

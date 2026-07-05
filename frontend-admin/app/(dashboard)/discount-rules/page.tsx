@@ -5,6 +5,7 @@ import { api } from "@/lib/api"
 import type { DiscountRule } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
+import { CURRENCY_SYMBOL } from "@/lib/currency"
 
 const emptyForm = {
   name: "",
@@ -88,7 +89,7 @@ export default function DiscountRulesPage() {
               className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
             >
               <option value="percentage">Percentage (%)</option>
-              <option value="fixed">Fixed (£)</option>
+              <option value="fixed">Fixed ({CURRENCY_SYMBOL})</option>
             </select>
           </div>
           <div>
@@ -190,10 +191,10 @@ export default function DiscountRulesPage() {
                   </td>
                   <td className="px-4 py-2.5 text-slate-500 capitalize">{r.discount_type}</td>
                   <td className="px-4 py-2.5 text-slate-700">
-                    {r.discount_type === "percentage" ? `${r.discount_value}%` : `£${r.discount_value}`}
+                    {r.discount_type === "percentage" ? `${r.discount_value}%` : `${CURRENCY_SYMBOL}${r.discount_value}`}
                   </td>
                   <td className="px-4 py-2.5 text-slate-500">
-                    {r.min_order_value ? `£${r.min_order_value}` : "—"}
+                    {r.min_order_value ? `${CURRENCY_SYMBOL}${r.min_order_value}` : "—"}
                   </td>
                   <td className="px-4 py-2.5 text-slate-500">{r.priority}</td>
                   <td className="px-4 py-2.5">

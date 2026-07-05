@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import Link from "next/link"
 import type { PaginatedOrders } from "@/lib/types"
+import { CURRENCY_SYMBOL, formatMoney } from "@/lib/currency"
 
 interface ProductsResponse { items: { id: string; stock_quantity: number; is_active: boolean }[]; total: number }
 interface DailyRevenue { date: string; revenue: number; count: number }
@@ -36,7 +37,7 @@ function RevenueChart({ data }: { data: DailyRevenue[] }) {
       {gridLines.map(t => (
         <g key={t}>
           <text x={pad.left - 6} y={pad.top + cH - t * cH + 4} textAnchor="end" fontSize="9" fill="#94a3b8">
-            £{(maxRev * t).toFixed(0)}
+            {formatMoney((maxRev * t).toFixed(0))}
           </text>
           <line x1={pad.left} y1={pad.top + cH - t * cH} x2={pad.left + cW} y2={pad.top + cH - t * cH} stroke="#e2e8f0" strokeWidth="1" />
         </g>
@@ -63,7 +64,7 @@ function TopProductsChart({ data }: { data: TopProduct[] }) {
           <div className="flex-1 bg-slate-100 rounded-full h-2">
             <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${(d.revenue / max) * 100}%` }} />
           </div>
-          <div className="text-xs font-medium text-slate-700 w-16 text-right shrink-0">£{d.revenue.toFixed(2)}</div>
+          <div className="text-xs font-medium text-slate-700 w-16 text-right shrink-0">{formatMoney(d.revenue.toFixed(2))}</div>
           <div className="text-xs text-slate-400 w-12 text-right shrink-0">{d.units} sold</div>
         </div>
       ))}
@@ -116,7 +117,7 @@ export default function DashboardPage() {
   const kpis = [
     { label: "Total Orders", value: totalOrders, color: "text-blue-600" },
     { label: "Pending Orders", value: pendingOrders, color: "text-yellow-600" },
-    { label: "Revenue (paid)", value: `£${revenue.toFixed(2)}`, color: "text-green-600" },
+    { label: "Revenue (paid)", value: `${CURRENCY_SYMBOL}${revenue.toFixed(2)}`, color: "text-green-600" },
     { label: "Active Products", value: totalProducts, color: "text-slate-800" },
     { label: "Low Stock (<10)", value: lowStockProducts, color: lowStockProducts > 0 ? "text-red-600" : "text-green-600" },
   ]
@@ -172,7 +173,7 @@ export default function DashboardPage() {
                 </td>
                 <td className="px-4 py-2.5"><StatusBadge value={o.status} /></td>
                 <td className="px-4 py-2.5"><StatusBadge value={o.payment_status} /></td>
-                <td className="px-4 py-2.5 font-medium text-slate-800">£{parseFloat(o.total).toFixed(2)}</td>
+                <td className="px-4 py-2.5 font-medium text-slate-800">{formatMoney(parseFloat(o.total).toFixed(2))}</td>
                 <td className="px-4 py-2.5 text-slate-500 text-xs">
                   {o.created_at ? new Date(o.created_at).toLocaleDateString("en-GB") : "—"}
                 </td>

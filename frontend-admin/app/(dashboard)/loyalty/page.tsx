@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type { LoyaltyConfig } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
+import { CURRENCY_SYMBOL } from "@/lib/currency"
 
 export default function LoyaltyPage() {
   const qc = useQueryClient()
@@ -40,8 +41,8 @@ export default function LoyaltyPage() {
       {/* Current config display */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { label: "Points per £1", value: config.points_per_dollar },
-          { label: "Redemption Rate", value: `£${config.redemption_rate}/pt` },
+          { label: `Points per ${CURRENCY_SYMBOL}1`, value: config.points_per_dollar },
+          { label: "Redemption Rate", value: `${CURRENCY_SYMBOL}${config.redemption_rate}/pt` },
           { label: "Min Redemption", value: `${config.min_redemption} pts` },
         ].map(({ label, value }) => (
           <div key={label} className="bg-white rounded-xl border border-slate-200 p-4">
@@ -56,8 +57,8 @@ export default function LoyaltyPage() {
         className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-slate-700">Update Configuration</h3>
         {[
-          { key: "points_per_dollar", label: "Points per £1 spent", placeholder: config.points_per_dollar },
-          { key: "redemption_rate", label: "Redemption Rate (£ per point)", placeholder: config.redemption_rate },
+          { key: "points_per_dollar", label: `Points per ${CURRENCY_SYMBOL}1 spent`, placeholder: config.points_per_dollar },
+          { key: "redemption_rate", label: `Redemption Rate (${CURRENCY_SYMBOL} per point)`, placeholder: config.redemption_rate },
           { key: "min_redemption", label: "Minimum Points to Redeem", placeholder: String(config.min_redemption) },
         ].map(({ key, label, placeholder }) => (
           <div key={key}>

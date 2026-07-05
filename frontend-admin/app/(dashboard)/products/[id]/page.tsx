@@ -7,6 +7,7 @@ import type { Product, Category, ProductImage } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { Trash2, ChevronUp, ChevronDown, Star } from "lucide-react"
+import { CURRENCY_SYMBOL } from "@/lib/currency"
 
 // ── Variant domain types ──────────────────────────────────────────────────────
 interface OptionValue {
@@ -660,7 +661,7 @@ function EditProduct({ id }: { id: string }) {
                         <tr className="border-b border-slate-200">
                           <th className="text-left py-2 pr-4 font-medium text-slate-600">Variant</th>
                           <th className="text-left py-2 pr-4 font-medium text-slate-600">SKU</th>
-                          <th className="text-left py-2 pr-4 font-medium text-slate-600">Price adj. (£)</th>
+                          <th className="text-left py-2 pr-4 font-medium text-slate-600">Price adj. ({CURRENCY_SYMBOL})</th>
                           <th className="text-left py-2 font-medium text-slate-600">Active</th>
                         </tr>
                       </thead>

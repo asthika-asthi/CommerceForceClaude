@@ -13,6 +13,7 @@ import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import Link from "next/link"
 import type { Address } from "@/lib/types"
+import { formatMoney } from "@/lib/currency"
 
 type PaymentMethodKey = "cash" | "credit_limit" | "stripe"
 
@@ -457,34 +458,34 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
               {items.map((item) => (
                 <div key={item.id} className="flex justify-between text-sm">
                   <span className="text-slate-600">{item.product_name} x {item.quantity}</span>
-                  <span className="text-slate-900">&#163;{parseFloat(item.line_total).toFixed(2)}</span>
+                  <span className="text-slate-900">{formatMoney(parseFloat(item.line_total).toFixed(2))}</span>
                 </div>
               ))}
             </div>
             <div className="border-t border-slate-100 pt-3 space-y-2 mb-6">
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Subtotal</span>
-                <span>&#163;{subtotal.toFixed(2)}</span>
+                <span>{formatMoney(subtotal.toFixed(2))}</span>
               </div>
               {couponDiscount > 0 && (
                 <div className="flex justify-between text-sm text-green-600">
                   <span>Coupon discount</span>
-                  <span>-&#163;{couponDiscount.toFixed(2)}</span>
+                  <span>-{formatMoney(couponDiscount.toFixed(2))}</span>
                 </div>
               )}
               {loyaltyDiscount > 0 && (
                 <div className="flex justify-between text-sm text-green-600">
                   <span>Loyalty points</span>
-                  <span>-&#163;{loyaltyDiscount.toFixed(2)}</span>
+                  <span>-{formatMoney(loyaltyDiscount.toFixed(2))}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Shipping</span>
-                <span>{shippingCost > 0 ? <>&#163;{shippingCost.toFixed(2)}</> : "Free"}</span>
+                <span>{shippingCost > 0 ? <>{formatMoney(shippingCost.toFixed(2))}</> : "Free"}</span>
               </div>
               <div className="flex justify-between font-semibold text-slate-900 pt-2 border-t border-slate-100">
                 <span>Total</span>
-                <span>&#163;{orderTotal.toFixed(2)}</span>
+                <span>{formatMoney(orderTotal.toFixed(2))}</span>
               </div>
             </div>
             {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-4">{error}</div>}

@@ -6,6 +6,7 @@ import { api } from "@/lib/api"
 import type { Order } from "@/lib/types"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import { formatMoney } from "@/lib/currency"
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-50 text-yellow-700",
@@ -60,7 +61,7 @@ export default function OrdersPage() {
                 )}
               </div>
               <div className="text-right flex flex-col items-end gap-1">
-                <p className="text-sm font-semibold text-slate-900">&#163;{parseFloat(order.total).toFixed(2)}</p>
+                <p className="text-sm font-semibold text-slate-900">{formatMoney(parseFloat(order.total).toFixed(2))}</p>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status] ?? "bg-slate-50 text-slate-700"}`}>
                   {order.status}
                 </span>

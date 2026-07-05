@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useState } from "react"
+import { CURRENCY_SYMBOL } from "@/lib/currency"
 
 interface PriceRangeFilterProps {
   currentMin?: string
@@ -50,7 +51,7 @@ export function PriceRangeFilter({ currentMin, currentMax }: PriceRangeFilterPro
       <h2 className="font-semibold text-slate-900 mb-3">Price Range</h2>
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">£</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{CURRENCY_SYMBOL}</span>
           <input
             type="number"
             min="0"
@@ -64,7 +65,7 @@ export function PriceRangeFilter({ currentMin, currentMax }: PriceRangeFilterPro
         </div>
         <span className="text-slate-400 text-sm">–</span>
         <div className="relative flex-1">
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">£</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{CURRENCY_SYMBOL}</span>
           <input
             type="number"
             min="0"
@@ -98,10 +99,10 @@ export function PriceRangeFilter({ currentMin, currentMax }: PriceRangeFilterPro
       {isActive && (
         <p className="mt-1.5 text-xs text-brand-dark">
           {currentMin && currentMax
-            ? `£${currentMin} – £${currentMax}`
+            ? `${CURRENCY_SYMBOL}${currentMin} – ${CURRENCY_SYMBOL}${currentMax}`
             : currentMin
-            ? `From £${currentMin}`
-            : `Up to £${currentMax}`}
+            ? `From ${CURRENCY_SYMBOL}${currentMin}`
+            : `Up to ${CURRENCY_SYMBOL}${currentMax}`}
         </p>
       )}
     </div>

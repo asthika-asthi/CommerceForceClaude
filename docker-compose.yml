@@ -5,6 +5,8 @@ services:
       - ./backend/.env
     environment:
       DATABASE_URL: sqlite+aiosqlite:////app/data/commerceforce.db
+      # Store currency (ISO code) — set CURRENCY_CODE in the root .env, default GBP.
+      CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
       # CORS and URL values are set in backend/.env by generate-env.sh
     # In production, ports are NOT exposed directly — nginx handles external traffic.
     # Remove the port mapping below once nginx is set up and verified.
@@ -21,6 +23,7 @@ services:
         # In production these are set to the HTTPS domain by generate-env.sh
         NEXT_PUBLIC_API_URL: "http://${SERVER_IP}:8000"
         NEXT_PUBLIC_STOREFRONT_URL: "http://${SERVER_IP}:3000"
+        NEXT_PUBLIC_CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
     # Port 3000 is accessed via nginx in production; exposed here for dev/fallback only
     ports:
       - "3000:3000"
@@ -32,6 +35,7 @@ services:
       context: ./frontend-admin
       args:
         NEXT_PUBLIC_API_URL: "http://${SERVER_IP}:8000"
+        NEXT_PUBLIC_CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
     ports:
       - "3001:3001"
     depends_on:

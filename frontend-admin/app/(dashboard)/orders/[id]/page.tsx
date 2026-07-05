@@ -7,6 +7,7 @@ import type { Order, OrderStatus } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { ArrowLeft, Truck } from "lucide-react"
+import { CURRENCY_SYMBOL, formatMoney } from "@/lib/currency"
 
 const ORDER_STATUSES: OrderStatus[] = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]
 
@@ -141,7 +142,7 @@ function OrderDetail({ id }: { id: string }) {
           <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm">
             <p className="font-medium text-amber-800 mb-1">Issue Stripe refund?</p>
             <p className="text-amber-700 mb-3">
-              This order was paid via Stripe (£{order.total}). Cancelling will automatically issue a full refund to the customer&apos;s card. This cannot be undone.
+              This order was paid via Stripe ({formatMoney(order.total)}). Cancelling will automatically issue a full refund to the customer&apos;s card. This cannot be undone.
             </p>
             <div className="flex gap-2">
               <button onClick={() => updateStatus.mutate("cancelled")} disabled={updateStatus.isPending}
@@ -170,11 +171,11 @@ function OrderDetail({ id }: { id: string }) {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Totals</h3>
           <dl className="space-y-1.5 text-sm">
-            <Row label="Subtotal" value={`£${order.subtotal}`} />
+            <Row label="Subtotal" value={`${CURRENCY_SYMBOL}${order.subtotal}`} />
             {parseFloat(order.discount_amount) > 0 && (
-              <Row label="Discount" value={`-£${order.discount_amount}`} />
+              <Row label="Discount" value={`-${CURRENCY_SYMBOL}${order.discount_amount}`} />
             )}
-            <Row label="Total" value={`£${order.total}`} />
+            <Row label="Total" value={`${CURRENCY_SYMBOL}${order.total}`} />
           </dl>
         </div>
       </div>
@@ -200,8 +201,8 @@ function OrderDetail({ id }: { id: string }) {
                 <td className="px-4 py-2.5 text-slate-800">{item.product_name}</td>
                 <td className="px-4 py-2.5 font-mono text-xs text-slate-500">{item.product_sku ?? "—"}</td>
                 <td className="px-4 py-2.5 text-right text-slate-700">{item.quantity}</td>
-                <td className="px-4 py-2.5 text-right text-slate-700">£{item.unit_price}</td>
-                <td className="px-4 py-2.5 text-right font-medium text-slate-900">£{item.subtotal}</td>
+                <td className="px-4 py-2.5 text-right text-slate-700">{formatMoney(item.unit_price)}</td>
+                <td className="px-4 py-2.5 text-right font-medium text-slate-900">{formatMoney(item.subtotal)}</td>
               </tr>
             ))}
           </tbody>

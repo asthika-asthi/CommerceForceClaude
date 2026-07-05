@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
 import { Trash2, Plus, Pencil, Check, X } from "lucide-react"
+import { CURRENCY_SYMBOL, formatMoney } from "@/lib/currency"
 
 interface ShippingZone {
   id: string
@@ -34,7 +35,7 @@ function ZoneRow({
       <tr className="border-t border-slate-100">
         <td className="py-2.5 px-3 text-sm">{zone.name}</td>
         <td className="py-2.5 px-3 text-sm font-mono text-slate-600">{zone.countries}</td>
-        <td className="py-2.5 px-3 text-sm">£{parseFloat(zone.flat_rate).toFixed(2)}</td>
+        <td className="py-2.5 px-3 text-sm">{formatMoney(parseFloat(zone.flat_rate).toFixed(2))}</td>
         <td className="py-2.5 px-3 text-sm">
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${zone.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
             {zone.is_active ? "Active" : "Inactive"}
@@ -68,7 +69,7 @@ function ZoneRow({
       </td>
       <td className="py-2 px-3">
         <div className="flex items-center gap-1">
-          <span className="text-sm text-slate-500">£</span>
+          <span className="text-sm text-slate-500">{CURRENCY_SYMBOL}</span>
           <input type="number" step="0.01" min="0" value={form.flat_rate}
             onChange={e => setForm(f => ({ ...f, flat_rate: e.target.value }))}
             className="w-20 border border-slate-300 rounded px-2 py-1 text-sm" />
