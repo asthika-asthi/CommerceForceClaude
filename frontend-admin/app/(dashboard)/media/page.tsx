@@ -72,9 +72,36 @@ export default function MediaPage() {
   }
 
   async function copyUrl(url: string) {
-    await navigator.clipboard.writeText(url)
-    setCopied(url)
-    setTimeout(() => setCopied(null), 2000)
+    let ok = false
+    // The async Clipboard API only works in a secure context (HTTPS or localhost).
+    // Over plain HTTP (e.g. the VPS on an IP) it's unavailable, so fall back to the
+    // legacy execCommand copy.
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url)
+        ok = true
+      }
+    } catch {
+      ok = false
+    }
+    if (!ok) {
+      const ta = document.createElement("textarea")
+      ta.value = url
+      ta.style.position = "fixed"
+      ta.style.left = "-9999px"
+      document.body.appendChild(ta)
+      ta.select()
+      try {
+        ok = document.execCommand("copy")
+      } catch {
+        ok = false
+      }
+      document.body.removeChild(ta)
+    }
+    if (ok) {
+      setCopied(url)
+      setTimeout(() => setCopied(null), 2000)
+    }
   }
 
   const groupedFiles = useMemo(() => {
