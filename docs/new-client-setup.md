@@ -404,6 +404,7 @@ docker compose down -v
 | `no such table: product_variants` during `alembic upgrade head` | Migration chain can't build a fresh DB | Don't use `alembic upgrade head` on an empty DB — use `python init_db.py` + `alembic stamp head` (see Section 4.1) |
 | `No module named 'aiosqlite'` | Old Docker image | `docker compose up --build -d` |
 | Forgot Password: no email arrives | VPS blocks SMTP port 587 | Get link from logs: `docker compose logs backend \| grep "PASSWORD RESET"` |
+| Can't log in as superadmin/admin | Account missing or password differs from DB | See `docs/accounts-and-passwords.md` (check accounts, create-or-reset from `.env`) |
 | CSV import: products created but no category | Category name typo in CSV | Products CSV auto-creates categories now — check the category was created |
 | CSV import: "invalid price" error | Price uses comma instead of period | Change `29,99` to `29.99` in the CSV |
 | Category CSV: "parent not found" error | Parent row appears after child in the file | Move parent rows above child rows in the CSV |
