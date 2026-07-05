@@ -43,7 +43,11 @@ async def import_categories_csv(
 
 
 @router.get("", response_model=list[CategoryOut])
-async def list_categories(db: AsyncSession = Depends(get_db)):
+async def list_categories(include_empty: bool = False, db: AsyncSession = Depends(get_db)):
+    # include_empty=true (admin) returns every category, even those with no products yet;
+    # the default (storefront) hides empty categories from shoppers.
+    if include_empty:
+        return await service.list_all_categories(db)
     return await service.list_root_categories(db)
 
 

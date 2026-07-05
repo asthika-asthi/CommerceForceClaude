@@ -23,7 +23,11 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
 
   const res = await fetch(`${BASE}${path}`, { ...options, headers, credentials: "include" })
 
-  if (res.status === 401 && retry) {
+  // Never run the refresh flow on auth endpoints (login/refresh/etc.) — they must surface
+  // their own error (e.g. "Invalid credentials") rather than becoming "Session expired".
+  const isAuthEndpoint = path.startsWith("/api/auth/")
+
+  if (res.status === 401 && retry && !isAuthEndpoint) {
     const ref = await fetch(`${BASE}/api/auth/refresh`, { method: "POST", credentials: "include" })
     if (ref.ok) {
       const d = await ref.json()

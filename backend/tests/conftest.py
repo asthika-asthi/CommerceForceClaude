@@ -4,6 +4,7 @@ import os
 os.environ["ENABLED_PLUGINS"] = "auth,categories,products,cart,orders,checkout,rfq,credit,inventory,coupons,loyalty,newsletter,branding,landing_page,ai_chat,contact,reviews,shipping"
 os.environ["ANTHROPIC_API_KEY"] = "test-key"
 os.environ["ENVIRONMENT"] = "development"  # keep refresh cookies non-secure for HTTP test client
+os.environ["COOKIE_SECURE"] = "false"  # HTTP test client — refresh cookie must be sendable
 os.environ["REQUIRE_EMAIL_VERIFICATION"] = "false"  # existing suite runs gate-off; B7 tests flip it on
 
 import pytest  # noqa: E402

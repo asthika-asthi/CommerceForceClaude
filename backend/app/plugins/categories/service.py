@@ -79,6 +79,21 @@ async def list_root_categories(db: AsyncSession) -> list[Category]:
     return list(result.scalars().all())
 
 
+async def list_all_categories(db: AsyncSession) -> list[Category]:
+    """Every root category (with children) — including empty and inactive ones.
+
+    Used by the admin so that categories imported before any products exist are still
+    visible for management. The storefront uses list_root_categories (filtered) instead.
+    """
+    result = await db.execute(
+        select(Category)
+        .where(Category.parent_id.is_(None))
+        .options(_children_opt())
+        .order_by(Category.sort_order, Category.name)
+    )
+    return list(result.scalars().all())
+
+
 async def update_category(category_id: str, data: CategoryUpdate, db: AsyncSession) -> Category:
     cat = await _load(category_id, db)
     for field, value in data.model_dump(exclude_unset=True).items():

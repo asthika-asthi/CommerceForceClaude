@@ -88,6 +88,11 @@ Create `backend/.env` — copy the template from `scripts/generate-env.sh` and f
 openssl rand -hex 32
 ```
 
+> **Running on plain HTTP (no domain/HTTPS yet)?** Add `COOKIE_SECURE=false` to `backend/.env`.
+> The login refresh cookie is marked *Secure* by default (correct for HTTPS), which the browser
+> **won't send over HTTP** — causing constant logouts and "new tab drops to login". Set it back
+> to `COOKIE_SECURE=true` once HTTPS is enabled (Section 12).
+
 </details>
 
 ---
@@ -405,6 +410,8 @@ docker compose down -v
 | `No module named 'aiosqlite'` | Old Docker image | `docker compose up --build -d` |
 | Forgot Password: no email arrives | VPS blocks SMTP port 587 | Get link from logs: `docker compose logs backend \| grep "PASSWORD RESET"` |
 | Can't log in as superadmin/admin | Account missing or password differs from DB | See `docs/accounts-and-passwords.md` (check accounts, create-or-reset from `.env`) |
+| Constant logouts / new tab drops to login | Running on HTTP but refresh cookie is `Secure` | Set `COOKIE_SECURE=false` in `backend/.env`, then `docker compose up -d --force-recreate backend` |
+| Backend becomes unresponsive under load, needs restart | (Fixed) SQLite now uses WAL + busy timeout | Pull latest and rebuild backend; no config needed |
 | CSV import: products created but no category | Category name typo in CSV | Products CSV auto-creates categories now — check the category was created |
 | CSV import: "invalid price" error | Price uses comma instead of period | Change `29,99` to `29.99` in the CSV |
 | Category CSV: "parent not found" error | Parent row appears after child in the file | Move parent rows above child rows in the CSV |

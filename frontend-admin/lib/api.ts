@@ -27,8 +27,12 @@ async function request<T>(
 
   const res = await fetch(`${BASE}${path}`, { ...options, headers, credentials: "include" })
 
-  if (res.status === 401 && retry) {
-    // Attempt refresh
+  // Auth endpoints (login, refresh, etc.) must surface their own errors — never run the
+  // refresh-and-reload flow on them, or a failed login reloads the page and wipes the message.
+  const isAuthEndpoint = path.startsWith("/api/auth/")
+
+  if (res.status === 401 && retry && !isAuthEndpoint) {
+    // Access token expired on a protected endpoint — try a one-time refresh.
     const refreshRes = await fetch(`${BASE}/api/auth/refresh`, {
       method: "POST",
       credentials: "include",

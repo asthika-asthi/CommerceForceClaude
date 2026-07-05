@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     # Auth policy — when True, customers must verify their email before they can log in.
     REQUIRE_EMAIL_VERIFICATION: bool = True
 
+    # Refresh-cookie Secure flag. Keep True for HTTPS deployments. Set False for an
+    # HTTP-only deployment (no TLS yet), otherwise the browser won't send the cookie and
+    # sessions can't be refreshed.
+    COOKIE_SECURE: bool = True
+
     # Redis / Celery
     REDIS_URL: str = "redis://localhost:6379/0"
 

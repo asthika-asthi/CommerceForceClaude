@@ -41,7 +41,8 @@ export default function CategoriesPage() {
   const [csvUploading, setCsvUploading] = useState(false)
   const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ["categories"],
-    queryFn: () => api.get("/api/categories"),
+    // include_empty so newly-imported categories show even before they have products
+    queryFn: () => api.get("/api/categories?include_empty=true"),
   })
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState(EMPTY_CREATE)
