@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-07-05. This is the single source of truth for build status.
+Last updated: 2026-07-06. This is the single source of truth for build status.
 Bug-review findings and their fix status live in `docs/bugs-log.md`.
 
 ---
@@ -266,6 +266,43 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 | V | Repair the Alembic migration chain | `alembic upgrade head` fails on a fresh DB (`no such table: product_variants`) — the variant tables were added via `create_all`, never in a migration, but `c8d9e0f1a2b3` alters them. Workaround in place: `init_db.py` (create_all from models) + `alembic stamp head`; documented in `docs/new-client-setup.md`. Proper fix: author a migration that creates the variant tables (product_variants, product_option_types/values, product_variant_options) and recreates cart_items/warehouse_stock with `variant_id`, slotted before `c8d9e0f1a2b3`, so `alembic upgrade head` works end-to-end. |
 | U | Consolidate stock to one source of truth (B3) | Checkout uses only `Product.stock_quantity`; the per-variant `WarehouseStock` system is built but never wired into selling (`deduct_stock_for_variant`/`get_variant_stock_total` are unused). Decide based on need: single pool → keep product-level authoritative and retire/relabel the warehouse feature; multi-warehouse → make warehouse authoritative and derive the shop's stock. Deferred pending the multi-warehouse decision. |
 | T | Eliminate frontend/backend type duplication | The frontends keep hand-written type mirrors (`frontend-starter/lib/types.ts`, `frontend-admin/lib/types.ts`) that silently drift from the backend Pydantic schemas — the cause of several 2026-07-04 bugs (`primary_image` vs `images[]`, missing `description`/`is_featured`). Fix: add an automated drift-check (CI/pre-commit runs `gen:types` and fails if `types.ts` is stale) and/or true codegen so frontend types are derived, not hand-kept; also add a `gen:types` script to the admin app (it currently has none). Process documented in `docs/type-sync.md`. |
+
+---
+
+## Not built — Scheduling & Provider-Notes plugin (DESIGNED, spec approved 2026-07-05)
+
+**Design spec:** `docs/superpowers/specs/2026-07-05-scheduling-plugin-design.md`
+**Branch:** `feat/scheduling-plugin`. Ready to write the implementation plan (writing-plans skill) → build.
+
+A single reusable `scheduling` plugin for appointment booking + per-client visit
+journals. Shipped configured for the current **medical client** (Patient / Doctor /
+Visit / SOAP clinical notes), but the engine is neutral (`Client` / `Provider` /
+`Appointment` / `JournalEntry`) so future verticals (salon, tutoring, consulting) are a
+config change (labels + note template + intake schema via `GET /api/scheduling/config`),
+not a rebuild.
+
+**v1 scope:**
+- New tables (all inherit `BaseModel`): `Provider`, `AppointmentType`,
+  `ProviderAvailability`, `AvailabilityException`, `Client`, `Appointment`,
+  `JournalEntry`, `NoteAccessLog`.
+- Booking-only (no online payment yet); immediate confirmation email (reuses existing
+  email util). No double-booking, enforced with a concurrency test.
+- `Client` (patient) is a standalone record, auto-linked to a customer `User` when a
+  logged-in customer books; guest bookings supported (guest-email pattern).
+- Journals are **provider-scoped** (own clients, or `can_view_all_clients` lead flag)
+  with a `NoteAccessLog` audit row on every read/create/edit.
+- **Both** admin back-office (calendar, appointments, provider/type/availability mgmt,
+  per-patient client hub + journal) **and** public storefront self-service booking flow
+  + "My appointments".
+
+**Deferred (post-v1):** online payment at booking; scheduled email/SMS reminders
+(Celery, v1.1); DB-defined custom note templates + per-vertical setup wizard;
+group/class bookings and room/equipment resource scheduling.
+
+**Open questions to confirm before building** (raised with user):
+- Will doctors log in themselves to write notes (per-provider scoping), or does
+  front-desk staff enter everything (simpler, drop per-provider login)?
+- Guest booking allowed, or must every patient have an account?
 
 ---
 
