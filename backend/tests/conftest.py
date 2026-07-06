@@ -47,6 +47,10 @@ async def setup_test_db():
     from app.plugins.reviews.models import Review  # noqa
     from app.plugins.discount_rules.models import DiscountRule  # noqa
     from app.plugins.shipping.models import ShippingZone  # noqa
+    from app.plugins.scheduling.models import (  # noqa
+        Provider, AppointmentType, ProviderAvailability, AvailabilityException,
+        Client, Appointment, JournalEntry, NoteAccessLog,
+    )
     from app.shared.email import EmailLog  # noqa
 
     async with test_engine.begin() as conn:

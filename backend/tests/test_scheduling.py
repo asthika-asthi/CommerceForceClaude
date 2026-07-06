@@ -1,5 +1,8 @@
 """Scheduling plugin — Task 1: plugin skeleton registers and appears in the menu."""
+from datetime import datetime, timedelta, timezone
+
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def test_plugin_registered(client: AsyncClient):
@@ -27,3 +30,37 @@ async def test_config_endpoint(client: AsyncClient):
 
     assert isinstance(body["intake_schema"], list) and len(body["intake_schema"]) > 0
     assert any(f["key"] == "allergies" for f in body["intake_schema"])
+
+
+async def test_models_create_tables(db: AsyncSession):
+    from app.plugins.scheduling.models import Appointment, AppointmentType, Client, Provider
+
+    provider = Provider(display_name="Dr Smith")
+    appointment_type = AppointmentType(name="Consult", duration_minutes=30)
+    provider.appointment_types.append(appointment_type)
+    client_obj = Client(first_name="Jane", last_name="Doe")
+
+    db.add(provider)
+    db.add(appointment_type)
+    db.add(client_obj)
+    await db.flush()
+
+    assert provider.id is not None
+    assert appointment_type.id is not None
+    assert client_obj.id is not None
+
+    start_at = datetime.now(timezone.utc)
+    end_at = start_at + timedelta(minutes=30)
+    appointment = Appointment(
+        provider_id=provider.id,
+        client_id=client_obj.id,
+        appointment_type_id=appointment_type.id,
+        start_at=start_at,
+        end_at=end_at,
+    )
+    db.add(appointment)
+    await db.flush()
+
+    assert appointment.id is not None
+    assert appointment.provider.display_name == "Dr Smith"
+    assert appointment.client.first_name == "Jane"
