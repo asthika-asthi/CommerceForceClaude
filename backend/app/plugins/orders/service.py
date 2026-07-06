@@ -108,6 +108,63 @@ _ALLOWED_TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
 }
 
 
+async def _apply_cancellation_effects(order: Order, db: AsyncSession) -> None:
+    """Reverse every side effect of an order when it is cancelled.
+
+    Shared by the admin (update_status) and customer (cancel_order) paths so the two can't
+    drift apart. Stock restoration and the card refund only run for a PAID order: an unpaid
+    order (e.g. an abandoned card checkout, whose stock deduction is deferred to the Stripe
+    webhook) never took stock or captured money, so restoring/refunding it would inflate
+    inventory or issue a phantom refund. Loyalty and coupon reversals are keyed by order_id
+    and no-op when nothing was applied, so they are always safe to call.
+    """
+    paid = order.payment_status == PaymentStatus.paid
+
+    # 1. Restore product stock — only if it was actually deducted (paid orders).
+    if paid:
+        try:
+            from app.plugins.products import service as product_service
+            for item in order.items:
+                if item.product_id:
+                    await product_service.restore_stock(item.product_id, item.quantity, db)
+        except ImportError:
+            pass
+    await db.flush()
+
+    # 2. Refund the card for a paid Stripe order (fire-and-forget; logs on failure).
+    if (
+        paid
+        and order.payment_method == PaymentMethod.stripe
+        and order.stripe_payment_intent_id
+    ):
+        await _issue_stripe_refund(order)
+
+    # 3. Restore credit for a paid credit-limit order.
+    if paid and order.payment_method == PaymentMethod.credit_limit and order.user_id:
+        try:
+            from app.plugins.credit import service as credit_service
+            await credit_service.restore_credit(order.user_id, order.total, db)
+        except ImportError:
+            pass
+        except HTTPException as exc:
+            logger.warning("Credit restore failed for order %s: %s", order.id, exc)
+
+    # 4. Reverse earned/redeemed loyalty points (keyed by order_id — no-op if none).
+    if order.user_id:
+        try:
+            from app.plugins.loyalty import service as loyalty_service
+            await loyalty_service.reverse_order_points(order.user_id, order.id, db)
+        except ImportError:
+            pass
+
+    # 5. Reverse coupon usage (keyed by order_id — no-op if none was recorded).
+    try:
+        from app.plugins.coupons import service as coupon_service
+        await coupon_service.reverse_usage(order.id, db)
+    except ImportError:
+        pass
+
+
 async def update_status(order_id: str, data: UpdateStatusRequest, db: AsyncSession) -> Order:
     order = await get_order(order_id, db)
     prev_status = order.status
@@ -120,48 +177,11 @@ async def update_status(order_id: str, data: UpdateStatusRequest, db: AsyncSessi
             detail=f"Cannot change order status from '{prev_status}' to '{data.status}'",
         )
 
-    # Restore stock before flush so ORM items are still accessible
-    if data.status == OrderStatus.cancelled and prev_status != OrderStatus.cancelled:
-        try:
-            from app.plugins.products import service as product_service
-            for item in order.items:
-                if item.product_id:
-                    await product_service.restore_stock(item.product_id, item.quantity, db)
-        except ImportError:
-            pass
-
     order.status = data.status
     await db.flush()
 
-    # Fire-and-forget Stripe refund when a paid Stripe order is cancelled
     if data.status == OrderStatus.cancelled and prev_status != OrderStatus.cancelled:
-        if (
-            order.payment_method == PaymentMethod.stripe
-            and order.stripe_payment_intent_id
-            and order.payment_status == PaymentStatus.paid
-        ):
-            await _issue_stripe_refund(order)
-
-        # Restore credit and reverse loyalty when admin cancels
-        if order.payment_method == PaymentMethod.credit_limit and order.user_id:
-            try:
-                from app.plugins.credit import service as credit_service
-                await credit_service.restore_credit(order.user_id, order.total, db)
-            except (ImportError, HTTPException) as exc:
-                logger.warning("Credit restore failed for order %s: %s", order.id, exc)
-        if order.user_id:
-            try:
-                from app.plugins.loyalty import service as loyalty_service
-                await loyalty_service.reverse_order_points(order.user_id, order.id, db)
-            except ImportError:
-                pass
-
-        # Reverse coupon usage so the cancelled order doesn't burn a coupon use
-        try:
-            from app.plugins.coupons import service as coupon_service
-            await coupon_service.reverse_usage(order.id, db)
-        except ImportError:
-            pass
+        await _apply_cancellation_effects(order, db)
 
     return order
 
@@ -243,41 +263,7 @@ async def cancel_order(order_id: str, user_id: str, db: AsyncSession) -> Order:
     order.status = OrderStatus.cancelled
     await db.flush()
 
-    # Restore product stock for each order item
-    try:
-        from app.plugins.products import service as product_service
-        for item in order.items:
-            if item.product_id:
-                await product_service.restore_stock(item.product_id, item.quantity, db)
-    except ImportError:
-        pass
-
-    # Refund credit if paid via credit limit
-    if order.payment_method == PaymentMethod.credit_limit and order.user_id:
-        try:
-            from app.plugins.credit import service as credit_service
-            await credit_service.restore_credit(order.user_id, order.total, db)
-        except ImportError:
-            pass
-        except HTTPException as e:
-            logger.warning(
-                "Credit restore failed for order %s (user %s): %s — credit may need manual reconciliation",
-                order.id, order.user_id, e.detail,
-            )
-
-    # Reverse loyalty points for registered users
-    if order.user_id:
-        try:
-            from app.plugins.loyalty import service as loyalty_service
-            await loyalty_service.reverse_order_points(order.user_id, order.id, db)
-        except ImportError:
-            pass
-
-    # Reverse coupon usage so the cancelled order doesn't burn a coupon use
-    try:
-        from app.plugins.coupons import service as coupon_service
-        await coupon_service.reverse_usage(order.id, db)
-    except ImportError:
-        pass
-
+    # Same reversal path as an admin cancel — restores stock/credit, refunds the card, and
+    # reverses loyalty/coupon, all guarded so an unpaid order isn't over-restored/refunded.
+    await _apply_cancellation_effects(order, db)
     return order

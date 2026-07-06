@@ -2,6 +2,55 @@
 
 Created: 2026-07-04. Findings from a full-codebase bug review (backend + storefront + admin).
 
+---
+
+## Round 2 — deep review of previously-unread paths (2026-07-06)
+
+A second pass focused on the areas the first review left "not read line-by-line" (auth
+internals, order lifecycle after the B1 deferral, cart, media, seed) plus subtle bug
+classes. Three bugs found and **FIXED**; covered by `backend/tests/test_cancellation_effects.py`
+(6 tests). Full suite: **254 passing**.
+
+### R1 — Cancelling an UNPAID order inflated stock (HIGH, inventory) — **FIXED**
+- **Where:** `orders/service.py` — both `cancel_order` (customer) and `update_status`→cancelled (admin).
+- **What was wrong:** A regression introduced by the B1 fix. Since B1, Stripe orders defer
+  stock deduction to the `payment_intent.succeeded` webhook, so a pending/never-paid card
+  order has deducted **zero** stock. But both cancel paths called `restore_stock`
+  unconditionally on cancel, **adding phantom stock** that was never removed. Every
+  cancellation of an abandoned card order inflated inventory and let the store oversell.
+- **Fix:** Extracted a shared `_apply_cancellation_effects(order, db)` helper that both
+  paths call. Stock restore (and the card refund) now run **only when
+  `order.payment_status == PaymentStatus.paid`**. Loyalty/coupon reversals are keyed by
+  order_id and no-op when nothing was applied, so they stay unconditional.
+
+### R2 — Customer self-cancel of a paid card order issued no refund (MEDIUM, money) — **FIXED**
+- **Where:** `orders/service.py` `cancel_order` (customer path).
+- **What was wrong:** The admin path (`update_status`) issued a Stripe refund on cancel,
+  but the customer path had drifted and reversed credit/loyalty/coupon **without ever
+  calling `_issue_stripe_refund`**. A customer cancelling a paid card order (status
+  `confirmed`) kept the goods reversed but was never refunded — money retained silently.
+- **Fix:** The shared `_apply_cancellation_effects` helper now issues the refund for any
+  paid Stripe order, so both cancel paths behave identically (closing the divergence class).
+
+### R3 — `POST /api/auth/forgot-password` had no rate limit (LOW-MED, abuse) — **FIXED**
+- **Where:** `auth/router.py`.
+- **What was wrong:** `register` (3/min), `login` (5/min) and `resend-verification`
+  (3/min) were throttled; `forgot-password` was not — allowing password-reset email
+  bombing of any address and timing-based account enumeration.
+- **Fix:** Added `@limiter.limit("3/minute")` (and the `request: Request` parameter),
+  matching the sibling endpoints.
+
+### Noted, not yet fixed (from Round 2)
+- **Coupon "once-per-user" is TOCTOU on card payments** — validated at checkout but only
+  *recorded* at the webhook, so parallel card checkouts with the same coupon can each pass
+  and all record. Recommend a DB unique constraint on `(coupon_id, user_id)`.
+- **Email verification is bypassable for the whole first session** — registration issues a
+  7-day refresh token immediately; the verification gate only bites at `login`. Documented
+  under B7; flagged again as it weakens a default-on control.
+- **`discount_rules/service.py` commits mid-request** (`create/update/delete_rule` call
+  `db.commit()` directly) while the rest of the app lets `get_db()` own the commit — latent
+  transaction-ownership footgun.
+
 Status of each: **Open** unless marked otherwise. No code fixes were made for these except
 where noted. Severity reflects impact × likelihood.
 
