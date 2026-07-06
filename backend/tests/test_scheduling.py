@@ -136,3 +136,120 @@ async def test_provider_get_missing_404(client: AsyncClient, db: AsyncSession):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 404
+
+
+# ── APPOINTMENT TYPES CRUD (Task 5) ────────────────────────────────────────────
+
+async def test_appointment_type_crud(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/providers",
+        json={"display_name": "Dr House"},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    provider_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={"name": "Consultation", "duration_minutes": 30, "provider_ids": [provider_id]},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["name"] == "Consultation"
+    assert body["duration_minutes"] == 30
+    assert len(body["providers"]) == 1
+    assert body["providers"][0]["id"] == provider_id
+    assert body["providers"][0]["display_name"] == "Dr House"
+    type_id = body["id"]
+
+    r = await client.get(f"/api/scheduling/appointment-types/{type_id}", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["providers"][0]["id"] == provider_id
+
+    r = await client.get(
+        f"/api/scheduling/appointment-types?provider_id={provider_id}",
+        headers=headers,
+    )
+    assert r.status_code == 200
+    assert any(t["id"] == type_id for t in r.json()["items"])
+
+    r = await client.patch(
+        f"/api/scheduling/appointment-types/{type_id}",
+        json={"duration_minutes": 45},
+        headers=headers,
+    )
+    assert r.status_code == 200
+
+    r = await client.get(f"/api/scheduling/appointment-types/{type_id}", headers=headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["duration_minutes"] == 45
+    assert len(body["providers"]) == 1
+    assert body["providers"][0]["id"] == provider_id
+
+    r = await client.delete(f"/api/scheduling/appointment-types/{type_id}", headers=headers)
+    assert r.status_code == 204
+
+    r = await client.get("/api/scheduling/appointment-types?active_only=true", headers=headers)
+    assert r.status_code == 200
+    assert not any(t["id"] == type_id for t in r.json()["items"])
+
+
+async def test_type_rejects_unknown_provider(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={"name": "Checkup", "duration_minutes": 15, "provider_ids": ["does-not-exist"]},
+        headers=headers,
+    )
+    assert r.status_code == 404
+
+
+async def test_type_update_replaces_providers(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "P1"}, headers=headers
+    )
+    p1_id = r.json()["id"]
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "P2"}, headers=headers
+    )
+    p2_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={"name": "Followup", "duration_minutes": 20, "provider_ids": [p1_id]},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    type_id = r.json()["id"]
+
+    r = await client.patch(
+        f"/api/scheduling/appointment-types/{type_id}",
+        json={"provider_ids": [p2_id]},
+        headers=headers,
+    )
+    assert r.status_code == 200
+
+    r = await client.get(f"/api/scheduling/appointment-types/{type_id}", headers=headers)
+    assert r.status_code == 200
+    provider_ids = [p["id"] for p in r.json()["providers"]]
+    assert provider_ids == [p2_id]
+
+
+async def test_appointment_type_requires_admin(client: AsyncClient):
+    token = await register_and_token(client, CUSTOMER_DATA)
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={"name": "Consultation", "duration_minutes": 30},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 403

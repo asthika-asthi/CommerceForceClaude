@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel
@@ -45,5 +46,55 @@ class ProviderListOut(BaseModel):
     display_name: str
     title: Optional[str] = None
     specialty: Optional[str] = None
+    is_active: bool
+    model_config = {"from_attributes": True}
+
+
+# ── APPOINTMENT TYPES ───────────────────────────────────────────────────────────
+
+class ProviderRef(BaseModel):
+    id: str
+    display_name: str
+    model_config = {"from_attributes": True}
+
+
+class AppointmentTypeCreate(BaseModel):
+    name: str
+    duration_minutes: int
+    description: Optional[str] = None
+    price: Optional[Decimal] = None
+    color: Optional[str] = None
+    is_active: bool = True
+    provider_ids: Optional[list[str]] = None
+
+
+class AppointmentTypeUpdate(BaseModel):
+    name: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    description: Optional[str] = None
+    price: Optional[Decimal] = None
+    color: Optional[str] = None
+    is_active: Optional[bool] = None
+    provider_ids: Optional[list[str]] = None
+
+
+class AppointmentTypeOut(BaseModel):
+    id: str
+    name: str
+    duration_minutes: int
+    description: Optional[str] = None
+    price: Optional[Decimal] = None
+    color: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+    providers: list[ProviderRef] = []
+    model_config = {"from_attributes": True}
+
+
+class AppointmentTypeListOut(BaseModel):
+    id: str
+    name: str
+    duration_minutes: int
+    price: Optional[Decimal] = None
     is_active: bool
     model_config = {"from_attributes": True}
