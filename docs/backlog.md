@@ -2,6 +2,8 @@
 
 Last updated: 2026-07-05. This is the single source of truth for build status.
 Bug-review findings and their fix status live in `docs/bugs-log.md`.
+Forward-looking gaps, per-profile coverage, and the multi-tenant question live in
+`docs/gap-analysis-and-roadmap.md`.
 
 ---
 
