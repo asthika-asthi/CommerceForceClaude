@@ -69,6 +69,9 @@ class Provider(BaseModel):
     exceptions: Mapped[list["AvailabilityException"]] = relationship(
         "AvailabilityException", back_populates="provider", cascade="all, delete-orphan", lazy="selectin"
     )
+    # lazy="selectin" eager-loads only the first hop from a query root; nested two-hop
+    # access (provider.appointment_types[].providers) needs explicit selectinload() at the
+    # query site to avoid MissingGreenlet in async.
     appointment_types: Mapped[list["AppointmentType"]] = relationship(
         "AppointmentType", secondary=scheduling_provider_types, back_populates="providers", lazy="selectin"
     )
@@ -84,6 +87,9 @@ class AppointmentType(BaseModel):
     color: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
+    # lazy="selectin" eager-loads only the first hop from a query root; nested two-hop
+    # access (appointment_type.providers[].appointment_types) needs explicit selectinload()
+    # at the query site to avoid MissingGreenlet in async.
     providers: Mapped[list["Provider"]] = relationship(
         "Provider", secondary=scheduling_provider_types, back_populates="appointment_types", lazy="selectin"
     )
@@ -174,12 +180,12 @@ class JournalEntry(BaseModel):
         String(36), ForeignKey("scheduling_providers.id"), nullable=False, index=True
     )
     appointment_id: Mapped[Optional[str]] = mapped_column(
-        String(36), ForeignKey("scheduling_appointments.id", ondelete="SET NULL"), nullable=True
+        String(36), ForeignKey("scheduling_appointments.id", ondelete="SET NULL"), nullable=True, index=True
     )
     template: Mapped[str] = mapped_column(String(100), nullable=False)
     content: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     created_by: Mapped[Optional[str]] = mapped_column(
-        String(36), ForeignKey("users.id"), nullable=True
+        String(36), ForeignKey("users.id"), nullable=True, index=True
     )
 
     client: Mapped["Client"] = relationship("Client", back_populates="journal_entries", lazy="selectin")

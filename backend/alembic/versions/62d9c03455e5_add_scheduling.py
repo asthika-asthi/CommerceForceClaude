@@ -132,6 +132,8 @@ def upgrade():
     )
     op.create_index('ix_scheduling_journal_entries_client_id', 'scheduling_journal_entries', ['client_id'])
     op.create_index('ix_scheduling_journal_entries_provider_id', 'scheduling_journal_entries', ['provider_id'])
+    op.create_index('ix_scheduling_journal_entries_appointment_id', 'scheduling_journal_entries', ['appointment_id'])
+    op.create_index('ix_scheduling_journal_entries_created_by', 'scheduling_journal_entries', ['created_by'])
 
     op.create_table(
         'scheduling_note_access_log',
@@ -154,6 +156,8 @@ def downgrade():
     op.drop_index('ix_scheduling_note_access_log_journal_entry_id', table_name='scheduling_note_access_log')
     op.drop_table('scheduling_note_access_log')
 
+    op.drop_index('ix_scheduling_journal_entries_created_by', table_name='scheduling_journal_entries')
+    op.drop_index('ix_scheduling_journal_entries_appointment_id', table_name='scheduling_journal_entries')
     op.drop_index('ix_scheduling_journal_entries_provider_id', table_name='scheduling_journal_entries')
     op.drop_index('ix_scheduling_journal_entries_client_id', table_name='scheduling_journal_entries')
     op.drop_table('scheduling_journal_entries')
@@ -162,6 +166,9 @@ def downgrade():
     op.drop_index('ix_scheduling_appointments_client_id', table_name='scheduling_appointments')
     op.drop_index('ix_scheduling_appointments_provider_id', table_name='scheduling_appointments')
     op.drop_table('scheduling_appointments')
+    # Drop the enum type implicitly created with scheduling_appointments (Postgres);
+    # no-op on SQLite. Prevents DuplicateObject on a subsequent upgrade.
+    sa.Enum(name='appointmentstatus').drop(op.get_bind(), checkfirst=True)
 
     op.drop_index('ix_scheduling_clients_user_id', table_name='scheduling_clients')
     op.drop_index('ix_scheduling_clients_email', table_name='scheduling_clients')
