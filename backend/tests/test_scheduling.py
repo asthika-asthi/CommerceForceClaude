@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.test_commerce import CUSTOMER_DATA, make_admin, register_and_token
+
 
 async def test_plugin_registered(client: AsyncClient):
     r = await client.get("/api/health")
@@ -64,3 +66,73 @@ async def test_models_create_tables(db: AsyncSession):
     assert appointment.id is not None
     assert appointment.provider.display_name == "Dr Smith"
     assert appointment.client.first_name == "Jane"
+
+
+# ── PROVIDERS CRUD (Task 4) ────────────────────────────────────────────────────
+
+async def test_provider_crud(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/providers",
+        json={"display_name": "Dr Smith", "title": "GP"},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["id"]
+    assert body["is_active"] is True
+    provider_id = body["id"]
+
+    r = await client.get("/api/scheduling/providers", headers=headers)
+    assert r.status_code == 200
+    listed = r.json()
+    assert any(p["id"] == provider_id for p in listed["items"])
+
+    r = await client.patch(
+        f"/api/scheduling/providers/{provider_id}",
+        json={"title": "Consultant"},
+        headers=headers,
+    )
+    assert r.status_code == 200
+
+    r = await client.get(f"/api/scheduling/providers/{provider_id}", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["title"] == "Consultant"
+
+    r = await client.delete(f"/api/scheduling/providers/{provider_id}", headers=headers)
+    assert r.status_code == 204
+
+    r = await client.get(f"/api/scheduling/providers/{provider_id}", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["is_active"] is False
+
+    r = await client.get("/api/scheduling/providers?active_only=true", headers=headers)
+    assert r.status_code == 200
+    assert not any(p["id"] == provider_id for p in r.json()["items"])
+
+
+async def test_provider_requires_admin(client: AsyncClient):
+    token = await register_and_token(client, CUSTOMER_DATA)
+    r = await client.post(
+        "/api/scheduling/providers",
+        json={"display_name": "Dr Jones"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 403
+
+    r = await client.post(
+        "/api/scheduling/providers",
+        json={"display_name": "Dr Jones"},
+    )
+    assert r.status_code == 401
+
+
+async def test_provider_get_missing_404(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    r = await client.get(
+        "/api/scheduling/providers/nonexistent-id",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 404
