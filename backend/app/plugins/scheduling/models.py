@@ -99,7 +99,7 @@ class ProviderAvailability(BaseModel):
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
 
-    provider: Mapped["Provider"] = relationship("Provider", back_populates="availability")
+    provider: Mapped["Provider"] = relationship("Provider", back_populates="availability", lazy="selectin")
 
 
 class AvailabilityException(BaseModel):
@@ -113,7 +113,7 @@ class AvailabilityException(BaseModel):
     start_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
     end_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
 
-    provider: Mapped["Provider"] = relationship("Provider", back_populates="exceptions")
+    provider: Mapped["Provider"] = relationship("Provider", back_populates="exceptions", lazy="selectin")
 
 
 class Client(BaseModel):
@@ -182,7 +182,7 @@ class JournalEntry(BaseModel):
         String(36), ForeignKey("users.id"), nullable=True
     )
 
-    client: Mapped["Client"] = relationship("Client", back_populates="journal_entries")
+    client: Mapped["Client"] = relationship("Client", back_populates="journal_entries", lazy="selectin")
 
 
 class NoteAccessLog(BaseModel):
