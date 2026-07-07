@@ -302,21 +302,32 @@ Live boot smoke confirmed: plugin appears in `/api/health` + `/api/menu`, and
 - Provider-scoped journals + `NoteAccessLog` audit on every read/create/edit; superadmin
   and `can_view_all_clients` overrides; `GET /audit` (superadmin only).
 
-### NOT built — frontends (separate plans, per spec)
-- **Admin** (`frontend-admin`): calendar, appointments, providers/types/availability mgmt,
-  per-patient client hub + SOAP journal. Add icon to `ICON_MAP` in `sidebar.tsx` + TS types.
-- **Storefront** (`frontend-starter`): public self-service booking flow + "My appointments".
+### Built, NOT manually tested — frontends (tsc clean, need a browser session)
+Built 2026-07-07; each task tsc + eslint clean. Need manual browser verification in a test
+session (no automated E2E written for these yet).
+- **Admin** (`frontend-admin`, under `app/(dashboard)/scheduling/`): Providers, Appointment
+  Types, Availability (recurring hours + date exceptions) CRUD; Appointments management
+  (filters, create, reschedule, cancel, status) + a week-agenda **Calendar** landing page;
+  **Clients (Patients)** list + per-client **hub** (demographics + intake fields, appointment
+  history, and a template-driven **SOAP journal** editor that degrades to a muted "no access"
+  notice on a 403). `"calendar"` added to `ICON_MAP`; TS types in `lib/types.ts`.
+- **Storefront** (`frontend-starter`): public self-service **booking wizard** at `/book`
+  (Service → Provider → Date/slot → Details → Confirm; guest or logged-in; labels from
+  `/api/scheduling/config`; plugin-gated navbar link); **My Appointments** at
+  `/account/appointments` (upcoming/past, cancel, reschedule via slot picker).
+- **Backend addition for the storefront:** public read endpoints
+  `GET /api/scheduling/public/appointment-types` and `/public/providers?appointment_type_id=`
+  (active-only) so the booking flow can populate its pickers.
 
-### Fast-follow (backend refinements, non-blocking — found in code review)
-- **Loader-strategy perf:** `Client.appointments`/`journal_entries` and `Provider`'s
-  collections are `lazy="selectin"`, so listing appointments drags each client's/provider's
-  full history. Switch those reverse collections to lazy-default + explicit `selectinload`
-  where actually needed. (Journal service already uses explicit selects.)
-- Superadmin *creating* a journal entry (provider_id=None) is implemented but not yet
-  test-covered — add a test to lock the behavior.
-- Exact-slot uniqueness is status-agnostic: re-booking the identical `start_at` after a
-  cancellation returns 409. Acceptable v1; revisit with a partial (non-cancelled) unique
-  index if needed.
+### Fast-follow — DONE (2026-07-07)
+- ~~Loader-strategy perf~~ — **Done.** `Client.appointments`/`journal_entries` dropped to
+  lazy-default (no code accessed them lazily); ends the list-appointments history cascade.
+- ~~Superadmin journal-create test~~ — **Done.** `test_superadmin_creates_journal` added.
+- ~~Status-agnostic slot uniqueness~~ — **Done.** Replaced with a **partial unique index**
+  `WHERE status != 'cancelled'`, so a cancelled slot can be re-booked while two active
+  bookings for the same slot still conflict. `test_can_rebook_cancelled_slot` covers it.
+
+**Backend totals:** ~51 scheduling tests + 1 concurrency test; full suite **300 passing**.
 
 **Deferred (post-v1, per spec):** online payment at booking; scheduled email/SMS
 reminders (Celery, v1.1); DB-defined custom note templates + per-vertical setup wizard;
