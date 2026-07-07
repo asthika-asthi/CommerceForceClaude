@@ -282,3 +282,45 @@ export interface ReviewSummary {
   average_rating: number
   total_reviews: number
 }
+
+// ── Scheduling / Booking ──────────────────────────────────────────────────────
+export interface SchedulingConfig {
+  terms: Record<string, string>
+  note_template: {
+    name: string
+    label: string
+    fields: { key: string; label: string; type: string }[]
+  }
+  intake_schema: { key: string; label: string; type: string }[]
+}
+
+export interface BookableService {
+  id: string
+  name: string
+  duration_minutes: number
+  description?: string
+  price?: string | number
+  is_active: boolean
+}
+
+export interface BookableProvider {
+  id: string
+  display_name: string
+  title?: string
+  specialty?: string
+  is_active: boolean
+}
+
+export interface AvailabilitySlots {
+  slots: string[]
+}
+
+export interface BookingConfirmation {
+  id: string
+  start_at: string
+  end_at: string
+  status: string
+  provider_name?: string
+  appointment_type_name?: string
+  client_name?: string
+}
