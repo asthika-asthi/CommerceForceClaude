@@ -23,8 +23,8 @@ def upgrade():
         sa.Column('is_active', sa.Boolean(), nullable=False, server_default='1'),
         sa.Column('starts_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('ends_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     )
 
 

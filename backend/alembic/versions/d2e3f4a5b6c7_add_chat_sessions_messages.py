@@ -22,7 +22,7 @@ def upgrade():
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     )
-    op.create_index('ix_chat_sessions_session_key', 'chat_sessions', ['session_key'])
+    op.create_index('ix_chat_sessions_session_key', 'chat_sessions', ['session_key'], unique=True)
     op.create_index('ix_chat_sessions_user_id', 'chat_sessions', ['user_id'])
 
     op.create_table(
