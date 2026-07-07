@@ -1,3 +1,4 @@
+import logging
 from datetime import date as date_
 from datetime import datetime, time as time_, timedelta, timezone
 from typing import Optional
@@ -31,6 +32,10 @@ from app.plugins.scheduling.schemas import (
     ProviderCreate,
     ProviderUpdate,
 )
+from app.plugins.scheduling.templates import TERMS
+from app.shared.email import send_email
+
+logger = logging.getLogger(__name__)
 
 
 async def create_provider(data: ProviderCreate, db: AsyncSession) -> Provider:
@@ -521,6 +526,28 @@ async def _has_overlap(
     return result.first() is not None
 
 
+async def _send_appointment_confirmation(appt: Appointment, db: AsyncSession) -> None:
+    recipient = appt.client.email if appt.client else None
+    if not recipient:
+        return
+
+    first_name = appt.client.first_name or ""
+    provider_name = appt.provider.display_name if appt.provider else ""
+    type_name = appt.appointment_type.name if appt.appointment_type else ""
+    start_text = _as_utc(appt.start_at).strftime("%A %d %B %Y at %H:%M UTC")
+
+    subject = f"Your {TERMS['appointment_singular']} is confirmed"
+    body = (
+        f"Hi {first_name},\n\n"
+        f"Your {TERMS['appointment_singular'].lower()} has been confirmed.\n\n"
+        f"{type_name} with {provider_name}\n"
+        f"{start_text}\n\n"
+        f"We look forward to seeing you."
+    )
+
+    await send_email(recipient, subject, body, db)
+
+
 async def create_appointment(data: AppointmentCreate, db: AsyncSession, *, current_user) -> Appointment:
     provider = await get_provider(data.provider_id, db)
     if not provider.is_active:
@@ -612,7 +639,16 @@ async def create_appointment(data: AppointmentCreate, db: AsyncSession, *, curre
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="That time slot is no longer available"
         )
-    return await _get_appointment_raw(appointment.id, db)
+    booked_appointment = await _get_appointment_raw(appointment.id, db)
+
+    try:
+        await _send_appointment_confirmation(booked_appointment, db)
+    except Exception as exc:
+        logger.warning(
+            "Appointment confirmation email failed for appointment %s: %s", booked_appointment.id, exc
+        )
+
+    return booked_appointment
 
 
 async def list_appointments(

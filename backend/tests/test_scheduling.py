@@ -1216,3 +1216,62 @@ async def test_customer_list_excludes_others(client: AsyncClient, db: AsyncSessi
     ids = [a["id"] for a in r.json()["items"]]
     assert cust1_appt_id in ids
     assert cust2_appt_id not in ids
+
+
+# ── BOOKING CONFIRMATION EMAIL (Task 11) ────────────────────────────────────────
+
+async def test_booking_sends_confirmation(client: AsyncClient, db: AsyncSession, monkeypatch):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    calls = []
+
+    async def fake_send_email(to, subject, body, db):
+        calls.append((to, subject))
+        return True
+
+    monkeypatch.setattr("app.plugins.scheduling.service.send_email", fake_send_email)
+
+    guest_email = "confirm-guest@example.com"
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": BOOKING_START,
+            "first_name": "Confirm",
+            "last_name": "Guest",
+            "email": guest_email,
+        },
+    )
+    assert r.status_code == 201
+
+    assert len(calls) == 1
+    to, subject = calls[0]
+    assert to == guest_email
+    assert subject == "Your Visit is confirmed"
+
+
+async def test_booking_email_failure_does_not_break_booking(client: AsyncClient, db: AsyncSession, monkeypatch):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    async def failing_send_email(to, subject, body, db):
+        raise RuntimeError("smtp down")
+
+    monkeypatch.setattr("app.plugins.scheduling.service.send_email", failing_send_email)
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": BOOKING_START,
+            "first_name": "Fail",
+            "last_name": "Guest",
+            "email": "fail-email-guest@example.com",
+        },
+    )
+    assert r.status_code == 201
