@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, get_current_user_optional, require_admin
-from app.plugins.scheduling import service, templates
+from app.core.dependencies import get_current_user, get_current_user_optional, require_admin, require_superadmin
+from app.plugins.scheduling import journal_service, service, templates
 from app.plugins.scheduling.models import AppointmentStatus
 from app.plugins.scheduling.schemas import (
     AppointmentCreate,
@@ -26,6 +26,11 @@ from app.plugins.scheduling.schemas import (
     ClientUpdate,
     ExceptionCreate,
     ExceptionOut,
+    JournalEntryCreate,
+    JournalEntryListOut,
+    JournalEntryOut,
+    JournalEntryUpdate,
+    NoteAccessLogOut,
     ProviderCreate,
     ProviderListOut,
     ProviderOut,
@@ -311,6 +316,76 @@ async def update_client(client_id: str, data: ClientUpdate, db: AsyncSession = D
 )
 async def deactivate_client(client_id: str, db: AsyncSession = Depends(get_db)):
     await service.deactivate_client(client_id, db)
+
+
+# ── PROVIDER-SCOPED JOURNAL + AUDIT LOG (Task 12) ───────────────────────────────
+# require_admin() is the coarse gate (superadmin or admin); the finer
+# provider-scoping (related provider / can_view_all_clients / superadmin) is
+# enforced inside journal_service against the specific client_id / entry.
+
+@router.get(
+    "/clients/{client_id}/journal",
+    response_model=list[JournalEntryListOut],
+)
+async def list_client_journal(
+    client_id: str,
+    current_user=Depends(require_admin()),
+    db: AsyncSession = Depends(get_db),
+):
+    return await journal_service.list_client_journal(current_user, client_id, db)
+
+
+@router.post(
+    "/clients/{client_id}/journal",
+    response_model=JournalEntryOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_client_journal_entry(
+    client_id: str,
+    data: JournalEntryCreate,
+    current_user=Depends(require_admin()),
+    db: AsyncSession = Depends(get_db),
+):
+    return await journal_service.create_journal_entry(current_user, client_id, data, db)
+
+
+@router.get(
+    "/journal/{entry_id}",
+    response_model=JournalEntryOut,
+)
+async def get_journal_entry(
+    entry_id: str,
+    current_user=Depends(require_admin()),
+    db: AsyncSession = Depends(get_db),
+):
+    return await journal_service.get_journal_entry(current_user, entry_id, db)
+
+
+@router.patch(
+    "/journal/{entry_id}",
+    response_model=JournalEntryOut,
+)
+async def update_journal_entry(
+    entry_id: str,
+    data: JournalEntryUpdate,
+    current_user=Depends(require_admin()),
+    db: AsyncSession = Depends(get_db),
+):
+    return await journal_service.update_journal_entry(current_user, entry_id, data, db)
+
+
+@router.get(
+    "/audit",
+    response_model=Page[NoteAccessLogOut],
+    dependencies=[Depends(require_superadmin())],
+)
+async def list_note_access_audit(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+):
+    items, total = await journal_service.list_audit(db, page, page_size)
+    return paginate([NoteAccessLogOut.model_validate(i) for i in items], total, page, page_size)
 
 
 # ── APPOINTMENT BOOKING + LIFECYCLE (Task 9) ────────────────────────────────────

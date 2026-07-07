@@ -190,8 +190,12 @@ class JournalEntry(BaseModel):
     client_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("scheduling_clients.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    provider_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("scheduling_providers.id"), nullable=False, index=True
+    # Nullable: a superadmin acting outside the treating-provider relationship
+    # (see journal_service.assert_can_access_client_journal) authors entries with
+    # no provider attribution rather than falsely attributing them to a provider
+    # who didn't write them.
+    provider_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("scheduling_providers.id"), nullable=True, index=True
     )
     appointment_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("scheduling_appointments.id", ondelete="SET NULL"), nullable=True, index=True

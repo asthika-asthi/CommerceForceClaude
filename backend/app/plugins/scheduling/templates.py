@@ -5,6 +5,8 @@ but ships configured for a medical deployment by default (patient/doctor/visit/c
 note, SOAP notes). All labels and form schemas below are what both the storefront and
 admin frontends read via GET /api/scheduling/config.
 """
+from typing import Any
+
 from app.core.config import settings
 
 # Neutral concept -> deployment-specific label. This is the active (medical) deployment.
@@ -20,7 +22,7 @@ TERMS = {
 }
 
 # Available note templates, keyed by name.
-NOTE_TEMPLATES = {
+NOTE_TEMPLATES: dict[str, dict[str, Any]] = {
     "soap": {
         "name": "soap",
         "label": "SOAP Note",

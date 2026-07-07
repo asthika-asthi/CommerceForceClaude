@@ -1275,3 +1275,263 @@ async def test_booking_email_failure_does_not_break_booking(client: AsyncClient,
         },
     )
     assert r.status_code == 201
+
+
+# ── PROVIDER-SCOPED JOURNAL + AUDIT LOG (Task 12) ───────────────────────────────
+
+SOAP_CONTENT = {
+    "subjective": "Patient reports mild headache.",
+    "objective": "BP 120/80.",
+    "assessment": "Tension headache.",
+    "plan": "Rest and hydration.",
+}
+
+
+async def _make_user_with_role(client: AsyncClient, db, email: str, role: str) -> str:
+    """Register a fresh user with `email` then promote them to `role` via the DB
+    (mirrors make_admin, but parameterized so tests can create a second, distinct
+    admin, or a superadmin). Returns a fresh access token for that role."""
+    from sqlalchemy import update
+
+    from app.plugins.auth.models import User, UserRole
+
+    password = "testpass1"
+    await register_and_token(client, {
+        "email": email,
+        "password": password,
+        "first_name": "Test",
+        "last_name": "User",
+    })
+    await db.execute(update(User).where(User.email == email).values(role=UserRole(role)))
+    await db.flush()
+    r = await client.post("/api/auth/login", json={"email": email, "password": password})
+    return r.json()["access_token"]
+
+
+async def _user_id(client: AsyncClient, token: str) -> str:
+    r = await client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
+    return r.json()["id"]
+
+
+async def _setup_journal_fixture(client: AsyncClient, db: AsyncSession) -> dict:
+    """Admin user becomes "Provider A", linked via Provider.user_id, with a real
+    relationship to a client (an appointment) so provider-scoped access is allowed."""
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    admin_user_id = await _user_id(client, admin_token)
+
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    r = await client.patch(
+        f"/api/scheduling/providers/{provider_id}",
+        json={"user_id": admin_user_id},
+        headers=admin_headers,
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe", "email": "jane-journal@example.com"},
+        headers=admin_headers,
+    )
+    assert r.status_code == 201
+    client_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": BOOKING_START,
+            "client_id": client_id,
+        },
+        headers=admin_headers,
+    )
+    assert r.status_code == 201
+
+    return {
+        "admin_token": admin_token,
+        "admin_headers": admin_headers,
+        "admin_user_id": admin_user_id,
+        "provider_id": provider_id,
+        "type_id": type_id,
+        "client_id": client_id,
+    }
+
+
+async def test_provider_creates_and_reads_journal(client: AsyncClient, db: AsyncSession):
+    fx = await _setup_journal_fixture(client, db)
+
+    r = await client.post(
+        f"/api/scheduling/clients/{fx['client_id']}/journal",
+        json={"template": "soap", "content": SOAP_CONTENT},
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["client_id"] == fx["client_id"]
+    assert body["provider_id"] == fx["provider_id"]
+    assert body["template"] == "soap"
+    assert body["content"] == SOAP_CONTENT
+    entry_id = body["id"]
+
+    r = await client.get(f"/api/scheduling/clients/{fx['client_id']}/journal", headers=fx["admin_headers"])
+    assert r.status_code == 200
+    items = r.json()
+    assert any(item["id"] == entry_id for item in items)
+
+    r = await client.get(f"/api/scheduling/journal/{entry_id}", headers=fx["admin_headers"])
+    assert r.status_code == 200
+    assert r.json()["content"] == SOAP_CONTENT
+
+
+async def test_journal_audit_rows_written(client: AsyncClient, db: AsyncSession):
+    fx = await _setup_journal_fixture(client, db)
+
+    r = await client.post(
+        f"/api/scheduling/clients/{fx['client_id']}/journal",
+        json={"template": "soap", "content": SOAP_CONTENT},
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 201
+    entry_id = r.json()["id"]
+
+    r = await client.get(f"/api/scheduling/journal/{entry_id}", headers=fx["admin_headers"])
+    assert r.status_code == 200
+
+    from sqlalchemy import select
+
+    from app.plugins.scheduling.models import NoteAccessLog
+
+    result = await db.execute(select(NoteAccessLog).where(NoteAccessLog.client_id == fx["client_id"]))
+    logs = list(result.scalars().all())
+    actions = [log.action for log in logs]
+    assert "create" in actions
+    assert "view" in actions
+    assert all(log.user_id == fx["admin_user_id"] for log in logs)
+
+
+async def test_journal_edit_logs_audit(client: AsyncClient, db: AsyncSession):
+    fx = await _setup_journal_fixture(client, db)
+
+    r = await client.post(
+        f"/api/scheduling/clients/{fx['client_id']}/journal",
+        json={"template": "soap", "content": SOAP_CONTENT},
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 201
+    entry_id = r.json()["id"]
+
+    updated_content = {**SOAP_CONTENT, "plan": "Follow up in 2 weeks."}
+    r = await client.patch(
+        f"/api/scheduling/journal/{entry_id}",
+        json={"content": updated_content},
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 200
+    assert r.json()["content"] == updated_content
+
+    from sqlalchemy import select
+
+    from app.plugins.scheduling.models import NoteAccessLog
+
+    result = await db.execute(select(NoteAccessLog).where(NoteAccessLog.journal_entry_id == entry_id))
+    actions = [log.action for log in result.scalars().all()]
+    assert "edit" in actions
+
+
+async def test_unrelated_provider_denied(client: AsyncClient, db: AsyncSession):
+    fx = await _setup_journal_fixture(client, db)
+
+    b_token = await _make_user_with_role(client, db, "provider-b@example.com", "admin")
+    b_user_id = await _user_id(client, b_token)
+    b_headers = {"Authorization": f"Bearer {b_token}"}
+
+    r = await client.post(
+        "/api/scheduling/providers",
+        json={"display_name": "Dr B", "user_id": b_user_id, "can_view_all_clients": False},
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 201
+
+    r = await client.get(f"/api/scheduling/clients/{fx['client_id']}/journal", headers=b_headers)
+    assert r.status_code == 403
+
+
+async def test_can_view_all_clients_flag(client: AsyncClient, db: AsyncSession):
+    fx = await _setup_journal_fixture(client, db)
+
+    c_token = await _make_user_with_role(client, db, "provider-c@example.com", "admin")
+    c_user_id = await _user_id(client, c_token)
+    c_headers = {"Authorization": f"Bearer {c_token}"}
+
+    r = await client.post(
+        "/api/scheduling/providers",
+        json={"display_name": "Dr C", "user_id": c_user_id, "can_view_all_clients": True},
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 201
+
+    r = await client.get(f"/api/scheduling/clients/{fx['client_id']}/journal", headers=c_headers)
+    assert r.status_code == 200
+
+
+async def test_admin_without_provider_denied(client: AsyncClient, db: AsyncSession):
+    fx = await _setup_journal_fixture(client, db)
+
+    d_token = await _make_user_with_role(client, db, "admin-no-provider@example.com", "admin")
+    d_headers = {"Authorization": f"Bearer {d_token}"}
+
+    r = await client.get(f"/api/scheduling/clients/{fx['client_id']}/journal", headers=d_headers)
+    assert r.status_code == 403
+
+
+async def test_superadmin_can_read_and_audit(client: AsyncClient, db: AsyncSession):
+    fx = await _setup_journal_fixture(client, db)
+
+    r = await client.post(
+        f"/api/scheduling/clients/{fx['client_id']}/journal",
+        json={"template": "soap", "content": SOAP_CONTENT},
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 201
+
+    sa_token = await _make_user_with_role(client, db, "superadmin-journal@example.com", "superadmin")
+    sa_headers = {"Authorization": f"Bearer {sa_token}"}
+
+    r = await client.get(f"/api/scheduling/clients/{fx['client_id']}/journal", headers=sa_headers)
+    assert r.status_code == 200
+
+    r = await client.get("/api/scheduling/audit", headers=sa_headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total"] >= 1
+
+
+async def test_journal_bad_template_rejected(client: AsyncClient, db: AsyncSession):
+    fx = await _setup_journal_fixture(client, db)
+
+    r = await client.post(
+        f"/api/scheduling/clients/{fx['client_id']}/journal",
+        json={"template": "nonsense", "content": {}},
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 422
+
+    r = await client.post(
+        f"/api/scheduling/clients/{fx['client_id']}/journal",
+        json={
+            "template": "soap",
+            "content": {"subjective": "x", "objective": "y", "assessment": "z"},
+        },
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 422
+
+    r = await client.post(
+        f"/api/scheduling/clients/{fx['client_id']}/journal",
+        json={"template": "soap", "content": {**SOAP_CONTENT, "extra_key": "nope"}},
+        headers=fx["admin_headers"],
+    )
+    assert r.status_code == 422

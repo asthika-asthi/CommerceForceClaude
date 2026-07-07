@@ -276,3 +276,47 @@ class StatusChangeRequest(BaseModel):
 
 class CancelRequest(BaseModel):
     cancellation_reason: Optional[str] = None
+
+
+# ── PROVIDER-SCOPED JOURNAL + AUDIT LOG (Task 12) ───────────────────────────────
+
+class JournalEntryCreate(BaseModel):
+    template: str
+    content: dict[str, Any]
+    appointment_id: Optional[str] = None
+
+
+class JournalEntryUpdate(BaseModel):
+    content: dict[str, Any]
+
+
+class JournalEntryOut(BaseModel):
+    id: str
+    client_id: str
+    provider_id: Optional[str] = None
+    appointment_id: Optional[str] = None
+    template: str
+    content: dict[str, Any]
+    created_by: Optional[str] = None
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
+class JournalEntryListOut(BaseModel):
+    id: str
+    client_id: str
+    provider_id: Optional[str] = None
+    template: str
+    created_by: Optional[str] = None
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
+class NoteAccessLogOut(BaseModel):
+    id: str
+    journal_entry_id: Optional[str] = None
+    client_id: Optional[str] = None
+    user_id: str
+    action: str
+    created_at: datetime
+    model_config = {"from_attributes": True}
