@@ -1535,3 +1535,111 @@ async def test_journal_bad_template_rejected(client: AsyncClient, db: AsyncSessi
         headers=fx["admin_headers"],
     )
     assert r.status_code == 422
+
+
+async def test_superadmin_creates_journal(client: AsyncClient, db: AsyncSession):
+    """A superadmin writing a journal entry is not "the treating provider" — the
+    entry must be created with provider_id=None, attributed only via created_by,
+    and still produce a NoteAccessLog 'create' row (see journal_service docstring)."""
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe"},
+        headers=admin_headers,
+    )
+    assert r.status_code == 201
+    client_id = r.json()["id"]
+
+    sa_token = await _make_user_with_role(
+        client, db, "superadmin-creates-journal@example.com", "superadmin"
+    )
+    sa_headers = {"Authorization": f"Bearer {sa_token}"}
+    sa_user_id = await _user_id(client, sa_token)
+
+    r = await client.post(
+        f"/api/scheduling/clients/{client_id}/journal",
+        json={"template": "soap", "content": SOAP_CONTENT},
+        headers=sa_headers,
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["provider_id"] is None
+    assert body["created_by"] == sa_user_id
+    entry_id = body["id"]
+
+    from sqlalchemy import select
+
+    from app.plugins.scheduling.models import NoteAccessLog
+
+    result = await db.execute(
+        select(NoteAccessLog).where(
+            NoteAccessLog.journal_entry_id == entry_id, NoteAccessLog.action == "create"
+        )
+    )
+    assert result.scalar_one_or_none() is not None
+
+
+# ── PARTIAL SLOT UNIQUENESS (fast-follow) ───────────────────────────────────────
+
+async def test_can_rebook_cancelled_slot(client: AsyncClient, db: AsyncSession):
+    """Cancelling a booking must free up its exact start_at slot for re-booking —
+    the DB-level uniqueness guard only applies to non-cancelled rows."""
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe"},
+        headers=admin_headers,
+    )
+    assert r.status_code == 201
+    client_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": BOOKING_START,
+        },
+        headers=admin_headers,
+    )
+    assert r.status_code == 201
+    first_appt_id = r.json()["id"]
+
+    r = await client.post(
+        f"/api/scheduling/appointments/{first_appt_id}/cancel",
+        json={},
+        headers=admin_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["status"] == "cancelled"
+
+    # Re-booking the SAME provider + start_at must now succeed (previously 409).
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": BOOKING_START,
+        },
+        headers=admin_headers,
+    )
+    assert r.status_code == 201
+    second_appt_id = r.json()["id"]
+    assert second_appt_id != first_appt_id
+
+    from sqlalchemy import select
+
+    from app.plugins.scheduling.models import Appointment
+
+    result = await db.execute(select(Appointment).where(Appointment.provider_id == provider_id))
+    rows = list(result.scalars().all())
+    assert len(rows) == 2
+    statuses = sorted(a.status.value for a in rows)
+    assert statuses == ["cancelled", "confirmed"]

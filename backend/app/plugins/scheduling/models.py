@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     Enum as SAEnum,
     ForeignKey,
+    Index,
     Integer,
     JSON,
     Numeric,
@@ -17,7 +18,7 @@ from sqlalchemy import (
     Table,
     Text,
     Time,
-    UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -137,11 +138,17 @@ class Client(BaseModel):
     custom_fields: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
+    # Deliberately NOT lazy="selectin": Appointment.client is selectin, so eager-loading
+    # these collections here would mean every appointment/journal list query also
+    # pulls each client's ENTIRE appointment history + all journal entries — an
+    # unbounded cascade. Nothing in this plugin accesses these collections lazily
+    # (journal_service and service.py always query explicitly), so plain lazy="select"
+    # is safe; if a future call site needs them, use an explicit selectinload() there.
     appointments: Mapped[list["Appointment"]] = relationship(
-        "Appointment", back_populates="client", cascade="all, delete-orphan", lazy="selectin"
+        "Appointment", back_populates="client", cascade="all, delete-orphan"
     )
     journal_entries: Mapped[list["JournalEntry"]] = relationship(
-        "JournalEntry", back_populates="client", cascade="all, delete-orphan", lazy="selectin"
+        "JournalEntry", back_populates="client", cascade="all, delete-orphan"
     )
 
 
@@ -151,14 +158,20 @@ class Appointment(BaseModel):
     # application-level guard in service.create_appointment (lock provider row +
     # overlap check) is not sufficient when two requests use SEPARATE DB sessions
     # (e.g. on SQLite, with_for_update() is a no-op), so both can pass the overlap
-    # check before either commits. This unique constraint makes the DB itself
-    # reject the second insert for the exact-same-slot case; service.py catches
-    # the resulting IntegrityError and converts it to the same 409 response.
-    # Note: this applies regardless of status, so re-booking the identical start
-    # after a cancellation is a (rare, acceptable for v1) edge case that would
-    # also 409 — see test_scheduling_concurrent.py.
+    # check before either commits. This unique index makes the DB itself reject
+    # the second insert for the exact-same-slot case; service.py catches the
+    # resulting IntegrityError and converts it to the same 409 response.
+    # It is PARTIAL (excludes cancelled rows) so that cancelling a booking frees
+    # its exact start_at back up for re-booking, instead of permanently blocking
+    # that slot — see test_can_rebook_cancelled_slot in test_scheduling.py.
     __table_args__ = (
-        UniqueConstraint("provider_id", "start_at", name="uq_scheduling_appointments_provider_start"),
+        Index(
+            "uq_scheduling_appt_provider_start_active",
+            "provider_id", "start_at",
+            unique=True,
+            sqlite_where=text("status != 'cancelled'"),
+            postgresql_where=text("status != 'cancelled'"),
+        ),
     )
 
     provider_id: Mapped[str] = mapped_column(

@@ -113,13 +113,21 @@ def upgrade():
         sa.Column('cancellation_reason', sa.Text, nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
-        # Task 10: DB-enforced guard against double-booking under concurrent
-        # sessions — see the comment on Appointment.__table_args__ in models.py.
-        sa.UniqueConstraint('provider_id', 'start_at', name='uq_scheduling_appointments_provider_start'),
     )
     op.create_index('ix_scheduling_appointments_provider_id', 'scheduling_appointments', ['provider_id'])
     op.create_index('ix_scheduling_appointments_client_id', 'scheduling_appointments', ['client_id'])
     op.create_index('ix_scheduling_appointments_appointment_type_id', 'scheduling_appointments', ['appointment_type_id'])
+    # Task 10: DB-enforced guard against double-booking under concurrent sessions —
+    # see the comment on Appointment.__table_args__ in models.py. PARTIAL (excludes
+    # cancelled rows) so a cancelled appointment's slot can be re-booked.
+    op.create_index(
+        'uq_scheduling_appt_provider_start_active',
+        'scheduling_appointments',
+        ['provider_id', 'start_at'],
+        unique=True,
+        sqlite_where=sa.text("status != 'cancelled'"),
+        postgresql_where=sa.text("status != 'cancelled'"),
+    )
 
     op.create_table(
         'scheduling_journal_entries',
@@ -165,6 +173,7 @@ def downgrade():
     op.drop_index('ix_scheduling_journal_entries_client_id', table_name='scheduling_journal_entries')
     op.drop_table('scheduling_journal_entries')
 
+    op.drop_index('uq_scheduling_appt_provider_start_active', table_name='scheduling_appointments')
     op.drop_index('ix_scheduling_appointments_appointment_type_id', table_name='scheduling_appointments')
     op.drop_index('ix_scheduling_appointments_client_id', table_name='scheduling_appointments')
     op.drop_index('ix_scheduling_appointments_provider_id', table_name='scheduling_appointments')
