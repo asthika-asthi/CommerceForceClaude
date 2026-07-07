@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-07-06. This is the single source of truth for build status.
+Last updated: 2026-07-07. This is the single source of truth for build status.
 Bug-review findings and their fix status live in `docs/bugs-log.md`.
 
 ---
@@ -269,40 +269,58 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 
 ---
 
-## Not built — Scheduling & Provider-Notes plugin (DESIGNED, spec approved 2026-07-05)
+## Scheduling & Provider-Notes plugin — BACKEND BUILT (2026-07-07), frontends not built
 
 **Design spec:** `docs/superpowers/specs/2026-07-05-scheduling-plugin-design.md`
-**Branch:** `feat/scheduling-plugin`. Ready to write the implementation plan (writing-plans skill) → build.
+**Impl plan:** `docs/superpowers/plans/2026-07-06-scheduling-plugin-backend.md`
+**Branch:** `feat/scheduling-plugin`.
 
 A single reusable `scheduling` plugin for appointment booking + per-client visit
 journals. Shipped configured for the current **medical client** (Patient / Doctor /
-Visit / SOAP clinical notes), but the engine is neutral (`Client` / `Provider` /
-`Appointment` / `JournalEntry`) so future verticals (salon, tutoring, consulting) are a
-config change (labels + note template + intake schema via `GET /api/scheduling/config`),
-not a rebuild.
+Visit / SOAP clinical notes); the engine is neutral (`Client` / `Provider` /
+`Appointment` / `JournalEntry`) so future verticals (salon, tutoring, rental, events)
+are a config change (labels + note template + intake schema via
+`GET /api/scheduling/config`), not a rebuild. This unlocks ICP profiles 5, 8, 10 (see
+`gap-analysis-and-roadmap.md`).
 
-**v1 scope:**
-- New tables (all inherit `BaseModel`): `Provider`, `AppointmentType`,
-  `ProviderAvailability`, `AvailabilityException`, `Client`, `Appointment`,
-  `JournalEntry`, `NoteAccessLog`.
-- Booking-only (no online payment yet); immediate confirmation email (reuses existing
-  email util). No double-booking, enforced with a concurrency test.
-- `Client` (patient) is a standalone record, auto-linked to a customer `User` when a
-  logged-in customer books; guest bookings supported (guest-email pattern).
-- Journals are **provider-scoped** (own clients, or `can_view_all_clients` lead flag)
-  with a `NoteAccessLog` audit row on every read/create/edit.
-- **Both** admin back-office (calendar, appointments, provider/type/availability mgmt,
-  per-patient client hub + journal) **and** public storefront self-service booking flow
-  + "My appointments".
+### Built + Tested (automated) — backend
+Built via subagent-driven TDD across 13 tasks; each task spec- and quality-reviewed.
+**~48 scheduling tests + 1 concurrency test; full suite 296 passing.** ruff + mypy clean.
+Live boot smoke confirmed: plugin appears in `/api/health` + `/api/menu`, and
+`/api/scheduling/config` returns the medical labels + SOAP template.
+- 8 tables + assoc + migration (`62d9c03455e5`; nullable-provider follow-up `808038705490`).
+- Config/terminology + note-template registry; public `GET /config`.
+- Providers, appointment-types (+ provider m2m), availability + exceptions — admin CRUD.
+- Public `GET /availability` open-slot computation (recurring hours − exceptions − booked).
+- Clients (patients) CRUD + customer self-record (`/clients/me`) + auto-link on booking.
+- Appointment booking (admin / logged-in customer / guest) with lifecycle
+  (list/get/reschedule/cancel/status transitions). **Double-booking prevented** by a
+  DB `UniqueConstraint(provider_id, start_at)` + `IntegrityError`→409 (the SQLite
+  `with_for_update` lock is a no-op; the constraint makes it deterministic; the row lock
+  is real on Postgres). Non-admins can't book in the past or for another client.
+- Booking confirmation email (non-blocking, reuses shared email util).
+- Provider-scoped journals + `NoteAccessLog` audit on every read/create/edit; superadmin
+  and `can_view_all_clients` overrides; `GET /audit` (superadmin only).
 
-**Deferred (post-v1):** online payment at booking; scheduled email/SMS reminders
-(Celery, v1.1); DB-defined custom note templates + per-vertical setup wizard;
+### NOT built — frontends (separate plans, per spec)
+- **Admin** (`frontend-admin`): calendar, appointments, providers/types/availability mgmt,
+  per-patient client hub + SOAP journal. Add icon to `ICON_MAP` in `sidebar.tsx` + TS types.
+- **Storefront** (`frontend-starter`): public self-service booking flow + "My appointments".
+
+### Fast-follow (backend refinements, non-blocking — found in code review)
+- **Loader-strategy perf:** `Client.appointments`/`journal_entries` and `Provider`'s
+  collections are `lazy="selectin"`, so listing appointments drags each client's/provider's
+  full history. Switch those reverse collections to lazy-default + explicit `selectinload`
+  where actually needed. (Journal service already uses explicit selects.)
+- Superadmin *creating* a journal entry (provider_id=None) is implemented but not yet
+  test-covered — add a test to lock the behavior.
+- Exact-slot uniqueness is status-agnostic: re-booking the identical `start_at` after a
+  cancellation returns 409. Acceptable v1; revisit with a partial (non-cancelled) unique
+  index if needed.
+
+**Deferred (post-v1, per spec):** online payment at booking; scheduled email/SMS
+reminders (Celery, v1.1); DB-defined custom note templates + per-vertical setup wizard;
 group/class bookings and room/equipment resource scheduling.
-
-**Open questions to confirm before building** (raised with user):
-- Will doctors log in themselves to write notes (per-provider scoping), or does
-  front-desk staff enter everything (simpler, drop per-provider login)?
-- Guest booking allowed, or must every patient have an account?
 
 ---
 
