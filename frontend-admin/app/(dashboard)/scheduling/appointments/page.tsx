@@ -142,7 +142,7 @@ export default function AppointmentsPage() {
 
   const { data: providersData } = useQuery<Paginated<SchedulingProviderList>>({
     queryKey: ["scheduling-providers"],
-    queryFn: () => api.get("/api/scheduling/providers?page=1&page_size=100"),
+    queryFn: () => api.get("/api/scheduling/providers?page=1&page_size=50"),
   })
   const providers = providersData?.items ?? []
 
@@ -172,7 +172,7 @@ export default function AppointmentsPage() {
 
   const { data: createTypesData } = useQuery<Paginated<SchedulingAppointmentTypeList>>({
     queryKey: ["scheduling-appointment-types", createForm.provider_id],
-    queryFn: () => api.get(`/api/scheduling/appointment-types?page_size=100&provider_id=${createForm.provider_id}`),
+    queryFn: () => api.get(`/api/scheduling/appointment-types?page_size=50&provider_id=${createForm.provider_id}`),
     enabled: !!createForm.provider_id,
   })
   const createTypes = createTypesData?.items ?? []

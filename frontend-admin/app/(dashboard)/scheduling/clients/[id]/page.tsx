@@ -140,7 +140,7 @@ function ClientDetail({ id }: { id: string }) {
   // ── Appointment history ────────────────────────────────────────────────────
   const { data: apptData, isLoading: apptLoading } = useQuery<Paginated<SchedulingAppointmentList>>({
     queryKey: ["scheduling-client-appointments", id],
-    queryFn: () => api.get(`/api/scheduling/appointments?client_id=${id}&page_size=100`),
+    queryFn: () => api.get(`/api/scheduling/appointments?client_id=${id}&page_size=50`),
   })
   const appointments = apptData?.items ?? []
 

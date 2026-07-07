@@ -49,7 +49,7 @@ export default function SchedulingCalendarPage() {
 
   const { data: providersData } = useQuery<Paginated<SchedulingProviderList>>({
     queryKey: ["scheduling-providers"],
-    queryFn: () => api.get("/api/scheduling/providers?page=1&page_size=100"),
+    queryFn: () => api.get("/api/scheduling/providers?page=1&page_size=50"),
   })
   const providers = providersData?.items ?? []
 
