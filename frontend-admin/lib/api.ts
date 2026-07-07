@@ -50,7 +50,9 @@ async function request<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail ?? "Request failed")
+    const error = new Error(err.detail ?? "Request failed") as Error & { status?: number }
+    error.status = res.status
+    throw error
   }
 
   if (res.status === 204) return undefined as T

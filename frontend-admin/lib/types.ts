@@ -436,3 +436,46 @@ export interface SchedulingClientList {
   phone?: string
   is_active: boolean
 }
+
+export interface SchedulingClient {
+  id: string
+  first_name: string
+  last_name: string
+  email?: string
+  phone?: string
+  date_of_birth?: string
+  user_id?: string
+  custom_fields: Record<string, unknown>
+  is_active: boolean
+  created_at: string
+}
+
+export interface SchedulingJournalEntryList {
+  id: string
+  client_id: string
+  provider_id: string
+  template: string
+  created_by: string
+  created_at: string
+}
+
+export interface SchedulingJournalEntry extends SchedulingJournalEntryList {
+  appointment_id?: string
+  content: Record<string, unknown>
+}
+
+export interface SchedulingConfigField {
+  key: string
+  label: string
+  type: string
+}
+
+export interface SchedulingConfig {
+  terms: Record<string, string>
+  note_template: {
+    name: string
+    label: string
+    fields: SchedulingConfigField[]
+  }
+  intake_schema: SchedulingConfigField[]
+}
