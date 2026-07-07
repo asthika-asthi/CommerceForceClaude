@@ -293,8 +293,8 @@ async def compute_open_slots(
         select(Appointment).where(
             Appointment.provider_id == provider_id,
             Appointment.status != AppointmentStatus.cancelled,
-            Appointment.start_at >= window_start,
             Appointment.start_at < window_end,
+            Appointment.end_at > window_start,
         )
     )
     appointments = list(appt_result.scalars().all())
