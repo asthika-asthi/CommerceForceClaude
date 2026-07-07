@@ -335,3 +335,61 @@ export interface StockTransferResult {
   from_stock: WarehouseStock
   to_stock: WarehouseStock
 }
+
+// ── Scheduling ────────────────────────────────────────────────────────────────
+export interface SchedulingProviderList {
+  id: string
+  display_name: string
+  title?: string
+  specialty?: string
+  is_active: boolean
+}
+
+export interface SchedulingProvider {
+  id: string
+  display_name: string
+  title?: string
+  specialty?: string
+  bio?: string
+  color?: string
+  user_id?: string
+  can_view_all_clients: boolean
+  is_active: boolean
+  created_at?: string
+}
+
+export interface SchedulingAppointmentTypeList {
+  id: string
+  name: string
+  duration_minutes: number
+  price?: string
+  is_active: boolean
+}
+
+export interface SchedulingAppointmentType {
+  id: string
+  name: string
+  duration_minutes: number
+  description?: string
+  price?: string
+  color?: string
+  is_active: boolean
+  providers: { id: string; display_name: string }[]
+}
+
+export interface SchedulingAvailability {
+  id: string
+  provider_id: string
+  weekday: number
+  start_time: string
+  end_time: string
+}
+
+export interface SchedulingException {
+  id: string
+  provider_id: string
+  date: string
+  is_available: boolean
+  start_time?: string
+  end_time?: string
+}
