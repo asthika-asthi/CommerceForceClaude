@@ -70,6 +70,22 @@ async def list_providers(
     return items, total
 
 
+async def list_public_providers(
+    db: AsyncSession, appointment_type_id: str | None = None
+) -> list[Provider]:
+    """Plain, unpaginated list of ACTIVE providers for the public booking picker.
+
+    If appointment_type_id is given, only returns providers who offer that type
+    (mirrors the provider_id filter in list_appointment_types, joined the other way).
+    """
+    query = select(Provider).where(Provider.is_active == True)  # noqa: E712
+    if appointment_type_id:
+        query = query.join(Provider.appointment_types).where(AppointmentType.id == appointment_type_id)
+    query = query.order_by(Provider.display_name)
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
 async def update_provider(provider_id: str, data: ProviderUpdate, db: AsyncSession) -> Provider:
     provider = await get_provider(provider_id, db)
     for field, value in data.model_dump(exclude_unset=True).items():
@@ -148,6 +164,16 @@ async def list_appointment_types(
     result = await db.execute(query)
     items = list(result.scalars().all())
     return items, total
+
+
+async def list_public_appointment_types(db: AsyncSession) -> list[AppointmentType]:
+    """Plain, unpaginated list of ACTIVE appointment types for the public booking picker."""
+    result = await db.execute(
+        select(AppointmentType)
+        .where(AppointmentType.is_active == True)  # noqa: E712
+        .order_by(AppointmentType.name)
+    )
+    return list(result.scalars().all())
 
 
 async def update_appointment_type(

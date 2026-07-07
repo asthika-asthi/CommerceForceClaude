@@ -102,6 +102,16 @@ class AppointmentTypeListOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PublicAppointmentTypeOut(BaseModel):
+    id: str
+    name: str
+    duration_minutes: int
+    description: Optional[str] = None
+    price: Optional[Decimal] = None
+    is_active: bool
+    model_config = {"from_attributes": True}
+
+
 # ── PROVIDER AVAILABILITY (Task 6) ──────────────────────────────────────────────
 
 class AvailabilityCreate(BaseModel):

@@ -35,6 +35,7 @@ from app.plugins.scheduling.schemas import (
     ProviderListOut,
     ProviderOut,
     ProviderUpdate,
+    PublicAppointmentTypeOut,
     RescheduleRequest,
     SlotsOut,
     StatusChangeRequest,
@@ -47,6 +48,31 @@ router = APIRouter()
 @router.get("/config")
 async def get_config():
     return templates.get_active_config()
+
+
+# ── PUBLIC BOOKING PICKERS (storefront self-service, no auth) ──────────────────
+# Active-only, read-only, unpaginated — feed the storefront's service/provider
+# pickers before it calls the already-public GET /availability.
+
+@router.get(
+    "/public/appointment-types",
+    response_model=list[PublicAppointmentTypeOut],
+)
+async def list_public_appointment_types(db: AsyncSession = Depends(get_db)):
+    items = await service.list_public_appointment_types(db)
+    return [PublicAppointmentTypeOut.model_validate(t) for t in items]
+
+
+@router.get(
+    "/public/providers",
+    response_model=list[ProviderListOut],
+)
+async def list_public_providers(
+    appointment_type_id: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    items = await service.list_public_providers(db, appointment_type_id=appointment_type_id)
+    return [ProviderListOut.model_validate(p) for p in items]
 
 
 @router.post(

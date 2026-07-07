@@ -1643,3 +1643,86 @@ async def test_can_rebook_cancelled_slot(client: AsyncClient, db: AsyncSession):
     assert len(rows) == 2
     statuses = sorted(a.status.value for a in rows)
     assert statuses == ["cancelled", "confirmed"]
+
+
+# ── PUBLIC BOOKING PICKERS (storefront self-service) ───────────────────────────
+
+async def test_public_appointment_types_no_auth(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={"name": "Active Type", "duration_minutes": 30},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    active_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={"name": "Inactive Type", "duration_minutes": 45},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    inactive_id = r.json()["id"]
+    r = await client.delete(f"/api/scheduling/appointment-types/{inactive_id}", headers=headers)
+    assert r.status_code == 204
+
+    r = await client.get("/api/scheduling/public/appointment-types")
+    assert r.status_code == 200
+    items = r.json()
+    ids = [t["id"] for t in items]
+    assert active_id in ids
+    assert inactive_id not in ids
+    assert all(t["is_active"] for t in items)
+
+
+async def test_public_providers_by_type_no_auth(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "P1 Offers"}, headers=headers
+    )
+    assert r.status_code == 201
+    p1_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "P2 No Offer"}, headers=headers
+    )
+    assert r.status_code == 201
+    p2_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "P3 Inactive"}, headers=headers
+    )
+    assert r.status_code == 201
+    p3_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={
+            "name": "Type For Public Providers",
+            "duration_minutes": 30,
+            "provider_ids": [p1_id, p3_id],
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201
+    type_id = r.json()["id"]
+
+    r = await client.delete(f"/api/scheduling/providers/{p3_id}", headers=headers)
+    assert r.status_code == 204
+
+    r = await client.get(f"/api/scheduling/public/providers?appointment_type_id={type_id}")
+    assert r.status_code == 200
+    ids = [p["id"] for p in r.json()]
+    assert ids == [p1_id]
+
+    r = await client.get("/api/scheduling/public/providers")
+    assert r.status_code == 200
+    ids = [p["id"] for p in r.json()]
+    assert p1_id in ids
+    assert p2_id in ids
+    assert p3_id not in ids
