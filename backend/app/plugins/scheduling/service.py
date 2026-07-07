@@ -1,12 +1,17 @@
+from datetime import date as date_
+from typing import Optional
+
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.plugins.scheduling.models import AppointmentType, Provider
+from app.plugins.scheduling.models import AppointmentType, AvailabilityException, Provider, ProviderAvailability
 from app.plugins.scheduling.schemas import (
     AppointmentTypeCreate,
     AppointmentTypeUpdate,
+    AvailabilityCreate,
+    ExceptionCreate,
     ProviderCreate,
     ProviderUpdate,
 )
@@ -141,4 +146,73 @@ async def deactivate_appointment_type(appointment_type_id: str, db: AsyncSession
     """Soft delete: preserves appointment history that references this type."""
     appointment_type = await get_appointment_type(appointment_type_id, db)
     appointment_type.is_active = False
+    await db.flush()
+
+
+# ── PROVIDER AVAILABILITY (Task 6) ──────────────────────────────────────────────
+
+async def add_availability(
+    provider_id: str, data: AvailabilityCreate, db: AsyncSession
+) -> ProviderAvailability:
+    await get_provider(provider_id, db)
+    availability = ProviderAvailability(provider_id=provider_id, **data.model_dump())
+    db.add(availability)
+    await db.flush()
+    return availability
+
+
+async def list_availability(provider_id: str, db: AsyncSession) -> list[ProviderAvailability]:
+    result = await db.execute(
+        select(ProviderAvailability)
+        .where(ProviderAvailability.provider_id == provider_id)
+        .order_by(ProviderAvailability.weekday, ProviderAvailability.start_time)
+    )
+    return list(result.scalars().all())
+
+
+async def delete_availability(availability_id: str, db: AsyncSession) -> None:
+    result = await db.execute(
+        select(ProviderAvailability).where(ProviderAvailability.id == availability_id)
+    )
+    availability = result.scalar_one_or_none()
+    if not availability:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Availability not found")
+    await db.delete(availability)
+    await db.flush()
+
+
+async def add_exception(
+    provider_id: str, data: ExceptionCreate, db: AsyncSession
+) -> AvailabilityException:
+    await get_provider(provider_id, db)
+    exception = AvailabilityException(provider_id=provider_id, **data.model_dump())
+    db.add(exception)
+    await db.flush()
+    return exception
+
+
+async def list_exceptions(
+    provider_id: str,
+    db: AsyncSession,
+    date_from: Optional[date_] = None,
+    date_to: Optional[date_] = None,
+) -> list[AvailabilityException]:
+    query = select(AvailabilityException).where(AvailabilityException.provider_id == provider_id)
+    if date_from is not None:
+        query = query.where(AvailabilityException.date >= date_from)
+    if date_to is not None:
+        query = query.where(AvailabilityException.date <= date_to)
+    query = query.order_by(AvailabilityException.date)
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
+async def delete_exception(exception_id: str, db: AsyncSession) -> None:
+    result = await db.execute(
+        select(AvailabilityException).where(AvailabilityException.id == exception_id)
+    )
+    exception = result.scalar_one_or_none()
+    if not exception:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exception not found")
+    await db.delete(exception)
     await db.flush()

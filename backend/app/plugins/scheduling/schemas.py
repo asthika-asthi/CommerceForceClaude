@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class ProviderCreate(BaseModel):
@@ -97,4 +97,54 @@ class AppointmentTypeListOut(BaseModel):
     duration_minutes: int
     price: Optional[Decimal] = None
     is_active: bool
+    model_config = {"from_attributes": True}
+
+
+# ── PROVIDER AVAILABILITY (Task 6) ──────────────────────────────────────────────
+
+class AvailabilityCreate(BaseModel):
+    weekday: int
+    start_time: time
+    end_time: time
+
+    @model_validator(mode="after")
+    def _validate_weekday_and_range(self) -> "AvailabilityCreate":
+        if not 0 <= self.weekday <= 6:
+            raise ValueError("weekday must be between 0 and 6")
+        if self.end_time <= self.start_time:
+            raise ValueError("end_time must be after start_time")
+        return self
+
+
+class AvailabilityOut(BaseModel):
+    id: str
+    provider_id: str
+    weekday: int
+    start_time: time
+    end_time: time
+    model_config = {"from_attributes": True}
+
+
+class ExceptionCreate(BaseModel):
+    date: date
+    is_available: bool
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+
+    @model_validator(mode="after")
+    def _validate_times(self) -> "ExceptionCreate":
+        if self.is_available and (self.start_time is None or self.end_time is None):
+            raise ValueError("start_time and end_time are required when is_available is True")
+        if self.start_time is not None and self.end_time is not None and self.end_time <= self.start_time:
+            raise ValueError("end_time must be after start_time")
+        return self
+
+
+class ExceptionOut(BaseModel):
+    id: str
+    provider_id: str
+    date: date
+    is_available: bool
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
     model_config = {"from_attributes": True}

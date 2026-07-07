@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, status
@@ -11,6 +12,10 @@ from app.plugins.scheduling.schemas import (
     AppointmentTypeListOut,
     AppointmentTypeOut,
     AppointmentTypeUpdate,
+    AvailabilityCreate,
+    AvailabilityOut,
+    ExceptionCreate,
+    ExceptionOut,
     ProviderCreate,
     ProviderListOut,
     ProviderOut,
@@ -137,3 +142,70 @@ async def update_appointment_type(
 )
 async def deactivate_appointment_type(appointment_type_id: str, db: AsyncSession = Depends(get_db)):
     await service.deactivate_appointment_type(appointment_type_id, db)
+
+
+# ── PROVIDER AVAILABILITY (Task 6) ─────────────────────────────────────────────
+
+@router.post(
+    "/providers/{provider_id}/availability",
+    response_model=AvailabilityOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin())],
+)
+async def add_availability(
+    provider_id: str, data: AvailabilityCreate, db: AsyncSession = Depends(get_db)
+):
+    return await service.add_availability(provider_id, data, db)
+
+
+@router.get(
+    "/providers/{provider_id}/availability",
+    response_model=list[AvailabilityOut],
+    dependencies=[Depends(require_admin())],
+)
+async def list_availability(provider_id: str, db: AsyncSession = Depends(get_db)):
+    return await service.list_availability(provider_id, db)
+
+
+@router.delete(
+    "/availability/{availability_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin())],
+)
+async def delete_availability(availability_id: str, db: AsyncSession = Depends(get_db)):
+    await service.delete_availability(availability_id, db)
+
+
+@router.post(
+    "/providers/{provider_id}/exceptions",
+    response_model=ExceptionOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin())],
+)
+async def add_exception(
+    provider_id: str, data: ExceptionCreate, db: AsyncSession = Depends(get_db)
+):
+    return await service.add_exception(provider_id, data, db)
+
+
+@router.get(
+    "/providers/{provider_id}/exceptions",
+    response_model=list[ExceptionOut],
+    dependencies=[Depends(require_admin())],
+)
+async def list_exceptions(
+    provider_id: str,
+    date_from: Optional[date] = Query(None, alias="from"),
+    date_to: Optional[date] = Query(None, alias="to"),
+    db: AsyncSession = Depends(get_db),
+):
+    return await service.list_exceptions(provider_id, db, date_from=date_from, date_to=date_to)
+
+
+@router.delete(
+    "/exceptions/{exception_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin())],
+)
+async def delete_exception(exception_id: str, db: AsyncSession = Depends(get_db)):
+    await service.delete_exception(exception_id, db)

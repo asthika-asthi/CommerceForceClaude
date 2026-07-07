@@ -253,3 +253,137 @@ async def test_appointment_type_requires_admin(client: AsyncClient):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 403
+
+
+# ── AVAILABILITY + EXCEPTIONS CRUD (Task 6) ────────────────────────────────────
+
+async def test_availability_crud(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "Dr Avail"}, headers=headers
+    )
+    assert r.status_code == 201
+    provider_id = r.json()["id"]
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/availability",
+        json={"weekday": 0, "start_time": "09:00:00", "end_time": "17:00:00"},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["weekday"] == 0
+    assert body["provider_id"] == provider_id
+    availability_id = body["id"]
+
+    r = await client.get(
+        f"/api/scheduling/providers/{provider_id}/availability", headers=headers
+    )
+    assert r.status_code == 200
+    assert len(r.json()) == 1
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/availability",
+        json={"weekday": 1, "start_time": "17:00:00", "end_time": "09:00:00"},
+        headers=headers,
+    )
+    assert r.status_code == 422
+
+    r = await client.delete(
+        f"/api/scheduling/availability/{availability_id}", headers=headers
+    )
+    assert r.status_code == 204
+
+    r = await client.get(
+        f"/api/scheduling/providers/{provider_id}/availability", headers=headers
+    )
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+async def test_exception_crud(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "Dr Except"}, headers=headers
+    )
+    assert r.status_code == 201
+    provider_id = r.json()["id"]
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/exceptions",
+        json={"date": "2026-08-03", "is_available": False},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    block_id = r.json()["id"]
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/exceptions",
+        json={"date": "2026-08-04", "is_available": True},
+        headers=headers,
+    )
+    assert r.status_code == 422
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/exceptions",
+        json={
+            "date": "2026-08-04",
+            "is_available": True,
+            "start_time": "10:00:00",
+            "end_time": "12:00:00",
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201
+    extra_id = r.json()["id"]
+
+    r = await client.get(
+        f"/api/scheduling/providers/{provider_id}/exceptions"
+        "?from=2026-08-04&to=2026-08-04",
+        headers=headers,
+    )
+    assert r.status_code == 200
+    items = r.json()
+    assert len(items) == 1
+    assert items[0]["date"] == "2026-08-04"
+
+    r = await client.delete(
+        f"/api/scheduling/exceptions/{block_id}", headers=headers
+    )
+    assert r.status_code == 204
+    r = await client.delete(
+        f"/api/scheduling/exceptions/{extra_id}", headers=headers
+    )
+    assert r.status_code == 204
+
+
+async def test_availability_requires_admin(client: AsyncClient, db: AsyncSession):
+    admin_token = await make_admin(client, db)
+    r = await client.post(
+        "/api/scheduling/providers",
+        json={"display_name": "Dr NoAccess"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    provider_id = r.json()["id"]
+
+    cust_token = await register_and_token(client, CUSTOMER_DATA)
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/availability",
+        json={"weekday": 0, "start_time": "09:00:00", "end_time": "17:00:00"},
+        headers={"Authorization": f"Bearer {cust_token}"},
+    )
+    assert r.status_code == 403
+
+
+async def test_availability_provider_missing_404(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    r = await client.post(
+        "/api/scheduling/providers/nonexistent-id/availability",
+        json={"weekday": 0, "start_time": "09:00:00", "end_time": "17:00:00"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 404
