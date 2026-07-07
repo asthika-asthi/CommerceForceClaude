@@ -511,6 +511,57 @@ async def test_slots_respects_block_exception(client: AsyncClient, db: AsyncSess
     assert r.json()["slots"] == []
 
 
+async def test_slots_timed_block_exception(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_basic_availability(client, headers)
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/exceptions",
+        json={
+            "date": "2026-08-03",
+            "is_available": False,
+            "start_time": "09:30:00",
+            "end_time": "10:00:00",
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201
+
+    r = await client.get(
+        "/api/scheduling/availability",
+        params={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "date_from": "2026-08-03",
+            "date_to": "2026-08-03",
+        },
+    )
+    assert r.status_code == 200
+    slots = r.json()["slots"]
+    times = [s[11:16] for s in slots]
+    assert "09:30" not in times
+    assert times == ["09:00", "10:00", "10:30"]
+
+
+async def test_exception_partial_block_rejected(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "Dr Partial"}, headers=headers
+    )
+    assert r.status_code == 201
+    provider_id = r.json()["id"]
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/exceptions",
+        json={"date": "2026-08-03", "is_available": False, "start_time": "09:00:00"},
+        headers=headers,
+    )
+    assert r.status_code == 422
+
+
 async def test_slots_range_cap(client: AsyncClient, db: AsyncSession):
     token = await make_admin(client, db)
     headers = {"Authorization": f"Bearer {token}"}

@@ -264,11 +264,6 @@ async def compute_open_slots(
     date_to: date_,
     db: AsyncSession,
 ) -> list[datetime]:
-    appointment_type = await get_appointment_type(appointment_type_id, db)
-    if not appointment_type.is_active:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment type not found")
-    await get_provider(provider_id, db)
-
     if date_to < date_from:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="date_to must not be before date_from"
@@ -277,6 +272,13 @@ async def compute_open_slots(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="date range too wide, max 31 days"
         )
+
+    appointment_type = await get_appointment_type(appointment_type_id, db)
+    if not appointment_type.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment type not found")
+    provider = await get_provider(provider_id, db)
+    if not provider.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Provider not found")
 
     duration_minutes = appointment_type.duration_minutes
 

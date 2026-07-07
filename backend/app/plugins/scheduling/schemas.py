@@ -135,6 +135,10 @@ class ExceptionCreate(BaseModel):
     def _validate_times(self) -> "ExceptionCreate":
         if self.is_available and (self.start_time is None or self.end_time is None):
             raise ValueError("start_time and end_time are required when is_available is True")
+        if not self.is_available and (self.start_time is None) != (self.end_time is None):
+            raise ValueError(
+                "when is_available is False, provide both start_time and end_time or neither"
+            )
         if self.start_time is not None and self.end_time is not None and self.end_time <= self.start_time:
             raise ValueError("end_time must be after start_time")
         return self
