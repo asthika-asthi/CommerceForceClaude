@@ -1,7 +1,7 @@
 """add price_adjustment to product_variants
 
 Revision ID: c8d9e0f1a2b3
-Revises: b2c3d4e5f6a7, e3f4a5b6c7d8
+Revises: a0b1c2d3e4f5
 Create Date: 2026-06-29
 """
 from alembic import op
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 
 
 revision = 'c8d9e0f1a2b3'
-down_revision = ('b2c3d4e5f6a7', 'e3f4a5b6c7d8')
+down_revision = 'a0b1c2d3e4f5'
 branch_labels = None
 depends_on = None
 

@@ -140,10 +140,11 @@ This creates all the database tables from the models, then marks Alembic as up-t
 future migrations apply cleanly. **Must be run once on first deployment.** If you skip this,
 every page on the storefront will error.
 
-> ⚠️ Do **not** run `alembic upgrade head` on a fresh database — the migration chain assumes
-> the product-variant tables already exist and will fail with `no such table: product_variants`.
-> `init_db.py` builds the current schema directly from the models (the source of truth). Use
-> `alembic upgrade head` only for *incremental* migrations on an already-initialised database.
+> The Alembic migration chain is fixed: `docker compose exec backend alembic upgrade head` now
+> also works end-to-end on a fresh database (migration `a0b1c2d3e4f5` backfills the
+> product-variant tables that used to be missing from the chain). `init_db.py` + `alembic stamp
+> head` above is still the recommended path for new deployments — it's faster and avoids running
+> ~18 migrations one at a time — but `alembic upgrade head` is no longer broken as a fallback.
 
 `init_db.py` is safe to re-run — it skips tables that already exist.
 
@@ -413,7 +414,7 @@ docker compose down -v
 | `ADMIN_EMAIL is not set` | Missing var in `backend/.env` | Add the missing line to `backend/.env`, then `docker compose restart backend` |
 | Backend container keeps restarting | Startup error | `docker compose logs backend` to see the error |
 | "No such table" errors in logs | Schema not initialised | `docker compose exec backend python init_db.py` then `docker compose exec backend alembic stamp head` |
-| `no such table: product_variants` during `alembic upgrade head` | Migration chain can't build a fresh DB | Don't use `alembic upgrade head` on an empty DB — use `python init_db.py` + `alembic stamp head` (see Section 4.1) |
+| `no such table: product_variants` during `alembic upgrade head` | Old image predating the fix in migration `a0b1c2d3e4f5` | Rebuild/pull the latest backend image; on current code `alembic upgrade head` works on an empty DB, or use `python init_db.py` + `alembic stamp head` (see Section 4.1) |
 | `No module named 'aiosqlite'` | Old Docker image | `docker compose up --build -d` |
 | Forgot Password: no email arrives | VPS blocks SMTP port 587 | Get link from logs: `docker compose logs backend \| grep "PASSWORD RESET"` |
 | Can't log in as superadmin/admin | Account missing or password differs from DB | See `docs/accounts-and-passwords.md` (check accounts, create-or-reset from `.env`) |
