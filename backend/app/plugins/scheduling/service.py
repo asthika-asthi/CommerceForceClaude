@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -596,7 +597,21 @@ async def create_appointment(data: AppointmentCreate, db: AsyncSession, *, curre
         booked_by=booked_by,
     )
     db.add(appointment)
-    await db.flush()
+    try:
+        await db.flush()
+    except IntegrityError:
+        # Belt-and-braces: the overlap check above can race when two requests use
+        # SEPARATE DB sessions (with_for_update() is a no-op on SQLite, so the lock
+        # taken earlier does not serialize them). The DB-enforced unique constraint
+        # on (provider_id, start_at) is the last line of defense — convert the loser's
+        # IntegrityError into the same 409 the overlap check would have raised.
+        # Roll back explicitly (rather than relying on the caller) so a shared/reused
+        # session (as in the test suite's `client`/`db` fixtures) isn't left in a
+        # failed-transaction state for whatever runs next.
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="That time slot is no longer available"
+        )
     return await _get_appointment_raw(appointment.id, db)
 
 

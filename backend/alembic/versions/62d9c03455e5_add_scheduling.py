@@ -113,6 +113,9 @@ def upgrade():
         sa.Column('cancellation_reason', sa.Text, nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+        # Task 10: DB-enforced guard against double-booking under concurrent
+        # sessions — see the comment on Appointment.__table_args__ in models.py.
+        sa.UniqueConstraint('provider_id', 'start_at', name='uq_scheduling_appointments_provider_start'),
     )
     op.create_index('ix_scheduling_appointments_provider_id', 'scheduling_appointments', ['provider_id'])
     op.create_index('ix_scheduling_appointments_client_id', 'scheduling_appointments', ['client_id'])

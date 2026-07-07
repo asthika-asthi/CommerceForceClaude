@@ -17,6 +17,7 @@ from sqlalchemy import (
     Table,
     Text,
     Time,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -146,6 +147,19 @@ class Client(BaseModel):
 
 class Appointment(BaseModel):
     __tablename__ = "scheduling_appointments"
+    # Task 10: DB-enforced last line of defense against double-booking. The
+    # application-level guard in service.create_appointment (lock provider row +
+    # overlap check) is not sufficient when two requests use SEPARATE DB sessions
+    # (e.g. on SQLite, with_for_update() is a no-op), so both can pass the overlap
+    # check before either commits. This unique constraint makes the DB itself
+    # reject the second insert for the exact-same-slot case; service.py catches
+    # the resulting IntegrityError and converts it to the same 409 response.
+    # Note: this applies regardless of status, so re-booking the identical start
+    # after a cancellation is a (rare, acceptable for v1) edge case that would
+    # also 409 — see test_scheduling_concurrent.py.
+    __table_args__ = (
+        UniqueConstraint("provider_id", "start_at", name="uq_scheduling_appointments_provider_start"),
+    )
 
     provider_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("scheduling_providers.id"), nullable=False, index=True
