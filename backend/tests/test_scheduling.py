@@ -1,5 +1,5 @@
 """Scheduling plugin — Task 1: plugin skeleton registers and appears in the menu."""
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -387,3 +387,160 @@ async def test_availability_provider_missing_404(client: AsyncClient, db: AsyncS
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 404
+
+
+# ── OPEN SLOT COMPUTATION + PUBLIC AVAILABILITY (Task 7) ───────────────────────
+
+async def _setup_basic_availability(
+    client: AsyncClient,
+    headers: dict,
+    weekday: int = 0,
+    start_time: str = "09:00:00",
+    end_time: str = "11:00:00",
+    duration_minutes: int = 30,
+) -> tuple[str, str]:
+    """Create a provider + a 30-min appointment type + a weekly availability window."""
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "Dr Slots"}, headers=headers
+    )
+    assert r.status_code == 201
+    provider_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={"name": "Consult", "duration_minutes": duration_minutes},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    type_id = r.json()["id"]
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/availability",
+        json={"weekday": weekday, "start_time": start_time, "end_time": end_time},
+        headers=headers,
+    )
+    assert r.status_code == 201
+
+    return provider_id, type_id
+
+
+async def test_slots_basic(client: AsyncClient, db: AsyncSession):
+    assert date(2026, 8, 3).weekday() == 0  # Monday — deterministic fixture date
+
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_basic_availability(client, headers)
+
+    r = await client.get(
+        "/api/scheduling/availability",
+        params={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "date_from": "2026-08-03",
+            "date_to": "2026-08-03",
+        },
+    )
+    assert r.status_code == 200
+    slots = r.json()["slots"]
+    assert len(slots) == 4
+    times = [s[11:16] for s in slots]
+    assert times == ["09:00", "09:30", "10:00", "10:30"]
+
+
+async def test_slots_excludes_booked(client: AsyncClient, db: AsyncSession):
+    from app.plugins.scheduling.models import Appointment, AppointmentStatus, Client
+
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_basic_availability(client, headers)
+
+    client_obj = Client(first_name="Jane", last_name="Doe")
+    db.add(client_obj)
+    await db.flush()
+
+    appt = Appointment(
+        provider_id=provider_id,
+        client_id=client_obj.id,
+        appointment_type_id=type_id,
+        start_at=datetime(2026, 8, 3, 9, 30, tzinfo=timezone.utc),
+        end_at=datetime(2026, 8, 3, 10, 0, tzinfo=timezone.utc),
+        status=AppointmentStatus.confirmed,
+    )
+    db.add(appt)
+    await db.flush()
+
+    r = await client.get(
+        "/api/scheduling/availability",
+        params={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "date_from": "2026-08-03",
+            "date_to": "2026-08-03",
+        },
+    )
+    assert r.status_code == 200
+    slots = r.json()["slots"]
+    assert len(slots) == 3
+    times = [s[11:16] for s in slots]
+    assert "09:30" not in times
+    assert times == ["09:00", "10:00", "10:30"]
+
+
+async def test_slots_respects_block_exception(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_basic_availability(client, headers)
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/exceptions",
+        json={"date": "2026-08-03", "is_available": False},
+        headers=headers,
+    )
+    assert r.status_code == 201
+
+    r = await client.get(
+        "/api/scheduling/availability",
+        params={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "date_from": "2026-08-03",
+            "date_to": "2026-08-03",
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["slots"] == []
+
+
+async def test_slots_range_cap(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_basic_availability(client, headers)
+
+    r = await client.get(
+        "/api/scheduling/availability",
+        params={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "date_from": "2026-08-03",
+            "date_to": "2026-09-30",
+        },
+    )
+    assert r.status_code == 400
+
+
+async def test_slots_public_no_auth(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_basic_availability(client, headers)
+
+    # No Authorization header on this request — endpoint must be public.
+    r = await client.get(
+        "/api/scheduling/availability",
+        params={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "date_from": "2026-08-03",
+            "date_to": "2026-08-03",
+        },
+    )
+    assert r.status_code == 200

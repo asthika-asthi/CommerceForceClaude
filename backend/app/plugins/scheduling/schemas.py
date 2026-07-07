@@ -148,3 +148,9 @@ class ExceptionOut(BaseModel):
     start_time: Optional[time] = None
     end_time: Optional[time] = None
     model_config = {"from_attributes": True}
+
+
+# ── OPEN SLOT COMPUTATION (Task 7) ──────────────────────────────────────────────
+
+class SlotsOut(BaseModel):
+    slots: list[datetime]

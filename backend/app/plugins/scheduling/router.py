@@ -20,6 +20,7 @@ from app.plugins.scheduling.schemas import (
     ProviderListOut,
     ProviderOut,
     ProviderUpdate,
+    SlotsOut,
 )
 from app.shared.pagination import Page, paginate
 
@@ -209,3 +210,20 @@ async def list_exceptions(
 )
 async def delete_exception(exception_id: str, db: AsyncSession = Depends(get_db)):
     await service.delete_exception(exception_id, db)
+
+
+# ── OPEN SLOT COMPUTATION (Task 7) — PUBLIC, no auth ───────────────────────────
+
+@router.get(
+    "/availability",
+    response_model=SlotsOut,
+)
+async def get_availability(
+    provider_id: str,
+    appointment_type_id: str,
+    date_from: date,
+    date_to: date,
+    db: AsyncSession = Depends(get_db),
+):
+    slots = await service.compute_open_slots(provider_id, appointment_type_id, date_from, date_to, db)
+    return SlotsOut(slots=slots)
