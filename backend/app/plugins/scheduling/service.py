@@ -12,6 +12,7 @@ from app.plugins.scheduling.models import (
     AppointmentStatus,
     AppointmentType,
     AvailabilityException,
+    Client,
     Provider,
     ProviderAvailability,
 )
@@ -19,6 +20,9 @@ from app.plugins.scheduling.schemas import (
     AppointmentTypeCreate,
     AppointmentTypeUpdate,
     AvailabilityCreate,
+    ClientCreate,
+    ClientSelfUpdate,
+    ClientUpdate,
     ExceptionCreate,
     ProviderCreate,
     ProviderUpdate,
@@ -341,3 +345,90 @@ async def compute_open_slots(
                 t += duration_minutes
 
     return sorted(set(slots))
+
+
+# ── CLIENTS (Task 8) ────────────────────────────────────────────────────────────
+
+async def create_client(data: ClientCreate, db: AsyncSession) -> Client:
+    client_obj = Client(**data.model_dump())
+    db.add(client_obj)
+    await db.flush()
+    return client_obj
+
+
+async def get_client(client_id: str, db: AsyncSession) -> Client:
+    result = await db.execute(select(Client).where(Client.id == client_id))
+    client_obj = result.scalar_one_or_none()
+    if not client_obj:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+    return client_obj
+
+
+async def list_clients(
+    db: AsyncSession, page: int, page_size: int, search: Optional[str] = None
+) -> tuple[list[Client], int]:
+    query = select(Client)
+    count_query = select(func.count()).select_from(Client)
+    if search:
+        needle = search.lower()
+        search_filter = (
+            func.lower(Client.first_name).contains(needle)
+            | func.lower(Client.last_name).contains(needle)
+            | func.lower(Client.email).contains(needle)
+        )
+        query = query.where(search_filter)
+        count_query = count_query.where(search_filter)
+
+    total = (await db.execute(count_query)).scalar_one()
+
+    query = query.order_by(Client.last_name, Client.first_name).offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    items = list(result.scalars().all())
+    return items, total
+
+
+async def update_client(client_id: str, data: ClientUpdate, db: AsyncSession) -> Client:
+    client_obj = await get_client(client_id, db)
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(client_obj, field, value)
+    await db.flush()
+    return client_obj
+
+
+async def deactivate_client(client_id: str, db: AsyncSession) -> None:
+    client_obj = await get_client(client_id, db)
+    client_obj.is_active = False
+    await db.flush()
+
+
+async def get_client_for_user(user_id: str, db: AsyncSession) -> Client:
+    result = await db.execute(select(Client).where(Client.user_id == user_id))
+    client_obj = result.scalar_one_or_none()
+    if not client_obj:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+    return client_obj
+
+
+async def update_client_self(user_id: str, data: ClientSelfUpdate, db: AsyncSession) -> Client:
+    client_obj = await get_client_for_user(user_id, db)
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(client_obj, field, value)
+    await db.flush()
+    return client_obj
+
+
+async def get_or_create_client_for_user(
+    user_id: str, db: AsyncSession, *, defaults: Optional[dict] = None
+) -> Client:
+    result = await db.execute(select(Client).where(Client.user_id == user_id))
+    client_obj = result.scalar_one_or_none()
+    if client_obj:
+        return client_obj
+
+    payload = dict(defaults or {})
+    payload.setdefault("first_name", "")
+    payload.setdefault("last_name", "")
+    client_obj = Client(user_id=user_id, **payload)
+    db.add(client_obj)
+    await db.flush()
+    return client_obj

@@ -1,6 +1,6 @@
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, model_validator
 
@@ -158,3 +158,58 @@ class ExceptionOut(BaseModel):
 
 class SlotsOut(BaseModel):
     slots: list[datetime]
+
+
+# ── CLIENTS (Task 8) ────────────────────────────────────────────────────────────
+
+class ClientCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    custom_fields: dict[str, Any] = {}
+    user_id: Optional[str] = None
+
+
+class ClientUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    custom_fields: Optional[dict[str, Any]] = None
+    user_id: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class ClientOut(BaseModel):
+    id: str
+    first_name: str
+    last_name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    user_id: Optional[str] = None
+    custom_fields: dict[str, Any]
+    is_active: bool
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
+class ClientListOut(BaseModel):
+    id: str
+    first_name: str
+    last_name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    is_active: bool
+    model_config = {"from_attributes": True}
+
+
+class ClientSelfUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    custom_fields: Optional[dict[str, Any]] = None

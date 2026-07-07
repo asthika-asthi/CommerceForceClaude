@@ -595,3 +595,153 @@ async def test_slots_public_no_auth(client: AsyncClient, db: AsyncSession):
         },
     )
     assert r.status_code == 200
+
+
+# ── CLIENTS CRUD + CUSTOMER SELF-RECORD (Task 8) ───────────────────────────────
+
+async def test_client_crud(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe", "email": "jane@ex.com"},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["id"]
+    assert body["is_active"] is True
+    client_id = body["id"]
+
+    r = await client.get("/api/scheduling/clients", headers=headers)
+    assert r.status_code == 200
+    assert any(c["id"] == client_id for c in r.json()["items"])
+
+    r = await client.get("/api/scheduling/clients?search=doe", headers=headers)
+    assert r.status_code == 200
+    assert any(c["id"] == client_id for c in r.json()["items"])
+
+    r = await client.get("/api/scheduling/clients?search=zzz", headers=headers)
+    assert r.status_code == 200
+    assert not any(c["id"] == client_id for c in r.json()["items"])
+
+    r = await client.patch(
+        f"/api/scheduling/clients/{client_id}",
+        json={"phone": "5551234"},
+        headers=headers,
+    )
+    assert r.status_code == 200
+
+    r = await client.get(f"/api/scheduling/clients/{client_id}", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["phone"] == "5551234"
+
+    r = await client.delete(f"/api/scheduling/clients/{client_id}", headers=headers)
+    assert r.status_code == 204
+
+    r = await client.get(f"/api/scheduling/clients/{client_id}", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["is_active"] is False
+
+
+async def test_client_me(client: AsyncClient, db: AsyncSession):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+    cust_data = {
+        "email": "client-me-cust@example.com",
+        "password": "custpass1",
+        "first_name": "Sam",
+        "last_name": "Client",
+    }
+    cust_token = await register_and_token(client, cust_data)
+    cust_headers = {"Authorization": f"Bearer {cust_token}"}
+
+    r = await client.get("/api/auth/me", headers=cust_headers)
+    assert r.status_code == 200
+    user_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Sam", "last_name": "Client", "user_id": user_id},
+        headers=admin_headers,
+    )
+    assert r.status_code == 201
+    linked_client_id = r.json()["id"]
+
+    r = await client.get("/api/scheduling/clients/me", headers=cust_headers)
+    assert r.status_code == 200
+    assert r.json()["id"] == linked_client_id
+
+    r = await client.patch(
+        "/api/scheduling/clients/me",
+        json={"phone": "12345"},
+        headers=cust_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["phone"] == "12345"
+
+    other_cust_data = {
+        "email": "client-me-other@example.com",
+        "password": "custpass1",
+        "first_name": "Other",
+        "last_name": "Customer",
+    }
+    other_token = await register_and_token(client, other_cust_data)
+    r = await client.get(
+        "/api/scheduling/clients/me",
+        headers={"Authorization": f"Bearer {other_token}"},
+    )
+    assert r.status_code == 404
+
+
+async def test_client_me_requires_auth(client: AsyncClient):
+    r = await client.get("/api/scheduling/clients/me")
+    assert r.status_code == 401
+
+
+async def test_client_requires_admin(client: AsyncClient):
+    token = await register_and_token(client, CUSTOMER_DATA)
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 403
+
+
+async def test_get_or_create_client_for_user_idempotent(client: AsyncClient, db: AsyncSession):
+    from app.plugins.scheduling import service
+
+    cust_data = {
+        "email": "getorcreate-cust@example.com",
+        "password": "custpass1",
+        "first_name": "Alice",
+        "last_name": "Idempo",
+    }
+    token = await register_and_token(client, cust_data)
+    r = await client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+    uid = r.json()["id"]
+
+    created = await service.get_or_create_client_for_user(
+        uid, db, defaults={"first_name": "A", "last_name": "B", "email": "a@b.com"}
+    )
+    assert created.first_name == "A"
+    first_id = created.id
+
+    again = await service.get_or_create_client_for_user(
+        uid, db, defaults={"first_name": "A", "last_name": "B", "email": "a@b.com"}
+    )
+    assert again.id == first_id
+
+    from sqlalchemy import func, select
+
+    from app.plugins.scheduling.models import Client
+
+    count = (
+        await db.execute(
+            select(func.count()).select_from(Client).where(Client.user_id == uid)
+        )
+    ).scalar_one()
+    assert count == 1

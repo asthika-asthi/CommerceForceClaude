@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import require_admin
+from app.core.dependencies import get_current_user, require_admin
 from app.plugins.scheduling import service, templates
 from app.plugins.scheduling.schemas import (
     AppointmentTypeCreate,
@@ -14,6 +14,11 @@ from app.plugins.scheduling.schemas import (
     AppointmentTypeUpdate,
     AvailabilityCreate,
     AvailabilityOut,
+    ClientCreate,
+    ClientListOut,
+    ClientOut,
+    ClientSelfUpdate,
+    ClientUpdate,
     ExceptionCreate,
     ExceptionOut,
     ProviderCreate,
@@ -227,3 +232,75 @@ async def get_availability(
 ):
     slots = await service.compute_open_slots(provider_id, appointment_type_id, date_from, date_to, db)
     return SlotsOut(slots=slots)
+
+
+# ── CLIENTS (Task 8) ────────────────────────────────────────────────────────────
+# NOTE: /clients/me routes are defined BEFORE /clients/{client_id} so "me" is not
+# captured as a client_id path param.
+
+@router.get("/clients/me", response_model=ClientOut)
+async def get_my_client(
+    current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    return await service.get_client_for_user(current_user.id, db)
+
+
+@router.patch("/clients/me", response_model=ClientOut)
+async def update_my_client(
+    data: ClientSelfUpdate,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await service.update_client_self(current_user.id, data, db)
+
+
+@router.post(
+    "/clients",
+    response_model=ClientOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin())],
+)
+async def create_client(data: ClientCreate, db: AsyncSession = Depends(get_db)):
+    return await service.create_client(data, db)
+
+
+@router.get(
+    "/clients",
+    response_model=Page[ClientListOut],
+    dependencies=[Depends(require_admin())],
+)
+async def list_clients(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=50),
+    search: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    items, total = await service.list_clients(db, page=page, page_size=page_size, search=search)
+    return paginate([ClientListOut.model_validate(c) for c in items], total, page, page_size)
+
+
+@router.get(
+    "/clients/{client_id}",
+    response_model=ClientOut,
+    dependencies=[Depends(require_admin())],
+)
+async def get_client(client_id: str, db: AsyncSession = Depends(get_db)):
+    return await service.get_client(client_id, db)
+
+
+@router.patch(
+    "/clients/{client_id}",
+    response_model=ClientOut,
+    dependencies=[Depends(require_admin())],
+)
+async def update_client(client_id: str, data: ClientUpdate, db: AsyncSession = Depends(get_db)):
+    return await service.update_client(client_id, data, db)
+
+
+@router.delete(
+    "/clients/{client_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin())],
+)
+async def deactivate_client(client_id: str, db: AsyncSession = Depends(get_db)):
+    await service.deactivate_client(client_id, db)
