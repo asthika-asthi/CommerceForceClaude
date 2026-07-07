@@ -44,13 +44,20 @@ function ProviderCheckboxes({
     return <p className="text-xs text-slate-400">No providers yet — create one first.</p>
   }
   return (
-    <div className="flex flex-wrap gap-3">
-      {providers.map((p) => (
-        <label key={p.id} className="flex items-center gap-1.5 text-sm text-slate-700">
-          <input type="checkbox" checked={selected.includes(p.id)} onChange={() => onToggle(p.id)} />
-          {p.display_name}
-        </label>
-      ))}
+    <div>
+      <div className="flex flex-wrap gap-3">
+        {providers.map((p) => (
+          <label key={p.id} className="flex items-center gap-1.5 text-sm text-slate-700">
+            <input type="checkbox" checked={selected.includes(p.id)} onChange={() => onToggle(p.id)} />
+            {p.display_name}
+          </label>
+        ))}
+      </div>
+      <p className={`text-xs mt-1.5 ${selected.length === 0 ? "text-amber-600" : "text-slate-400"}`}>
+        {selected.length === 0
+          ? "⚠ Select at least one provider — a type with no provider can't be booked."
+          : "These providers offer this service and can be booked for it."}
+      </p>
     </div>
   )
 }

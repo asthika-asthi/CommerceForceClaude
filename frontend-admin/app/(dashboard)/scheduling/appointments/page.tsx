@@ -61,46 +61,72 @@ function ClientSearch({
 }) {
   const [query, setQuery] = useState("")
   const [debounced, setDebounced] = useState("")
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query), 300)
     return () => clearTimeout(t)
   }, [query])
 
+  const canSearch = debounced.trim().length >= 2
   const { data } = useQuery<Paginated<SchedulingClientList>>({
     queryKey: ["scheduling-clients", debounced],
-    queryFn: () => api.get(`/api/scheduling/clients?page=1&page_size=50&search=${encodeURIComponent(debounced)}`),
-    enabled: debounced.length >= 2,
+    queryFn: () => api.get(`/api/scheduling/clients?page=1&page_size=20&search=${encodeURIComponent(debounced.trim())}`),
+    enabled: canSearch,
   })
   const results = data?.items ?? []
 
+  // Once a client is chosen, show it with a "Change" affordance instead of the search box.
+  if (value && label) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="flex-1 text-sm text-slate-800 border border-slate-200 bg-slate-50 rounded-lg px-3 py-1.5">{label}</span>
+        <button
+          type="button"
+          onClick={() => { onSelect("", ""); setQuery(""); setDebounced(""); setOpen(true) }}
+          className="text-xs text-blue-600 hover:underline"
+        >
+          Change
+        </button>
+      </div>
+    )
+  }
+
   return (
-    <div>
+    <div className="relative">
       <input
         type="text"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search clients by name/email…"
-        className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-1.5"
-      />
-      <select
-        required
-        value={value}
-        onChange={(e) => {
-          const picked = results.find((c) => c.id === e.target.value)
-          onSelect(e.target.value, picked ? `${picked.first_name} ${picked.last_name} (${picked.email})` : "")
-        }}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        placeholder="Search clients by name or email…"
         className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">
-          {value && label ? label : results.length === 0 ? "Type at least 2 characters to search…" : "Select a client…"}
-        </option>
-        {results.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.first_name} {c.last_name} ({c.email})
-          </option>
-        ))}
-      </select>
+      />
+      {query.trim().length > 0 && !canSearch && (
+        <p className="text-xs text-slate-400 mt-1">Type at least 2 characters to search.</p>
+      )}
+      {open && canSearch && (
+        <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-auto">
+          {results.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-slate-400">No matching clients. Add one on the Clients page first.</div>
+          ) : (
+            results.map((c) => (
+              <button
+                type="button"
+                key={c.id}
+                onClick={() => {
+                  onSelect(c.id, `${c.first_name} ${c.last_name}${c.email ? ` (${c.email})` : ""}`)
+                  setOpen(false)
+                  setQuery("")
+                }}
+                className="block w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-blue-50"
+              >
+                {c.first_name} {c.last_name}{c.email ? <span className="text-slate-400"> · {c.email}</span> : null}
+              </button>
+            ))
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -308,6 +334,12 @@ export default function AppointmentsPage() {
                 <option key={t.id} value={t.id}>{t.name} ({t.duration_minutes} min)</option>
               ))}
             </select>
+            {createForm.provider_id && createTypesData && createTypes.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                This provider isn&apos;t offering any appointment types yet. Assign this provider to a type on the{" "}
+                <a href="/scheduling/types" className="underline font-medium">Appointment Types</a> page, then come back.
+              </p>
+            )}
           </div>
           <div className="col-span-2">
             <label className="block text-xs font-medium text-slate-600 mb-1">Client *</label>
