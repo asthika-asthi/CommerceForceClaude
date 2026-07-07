@@ -324,3 +324,22 @@ export interface BookingConfirmation {
   appointment_type_name?: string
   client_name?: string
 }
+
+export type AppointmentStatus = "requested" | "confirmed" | "completed" | "cancelled" | "no_show"
+
+export interface MyAppointment {
+  id: string
+  start_at: string
+  end_at: string
+  status: AppointmentStatus
+  provider_name?: string
+  client_name?: string
+  appointment_type_name?: string
+}
+
+export interface MyAppointmentDetail extends MyAppointment {
+  provider_id: string
+  appointment_type_id: string
+  reason?: string
+  cancellation_reason?: string
+}

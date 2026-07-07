@@ -20,6 +20,7 @@ export default function AccountPage() {
   const loyaltyEnabled = usePlugin("loyalty")
   const wishlistEnabled = usePlugin("wishlist")
   const addressesEnabled = usePlugin("addresses")
+  const schedulingEnabled = usePlugin("scheduling")
 
   useEffect(() => {
     if (!user) { router.push("/login"); return }
@@ -54,6 +55,9 @@ export default function AccountPage() {
         <div className="flex items-center gap-3">
           {ordersEnabled && (
             <Link href="/account/orders" className="text-sm text-slate-500 hover:text-slate-800">All orders</Link>
+          )}
+          {schedulingEnabled && (
+            <Link href="/account/appointments" className="text-sm text-slate-500 hover:text-slate-800">My appointments</Link>
           )}
           {wishlistEnabled && (
             <Link href="/account/wishlist" className="text-sm text-slate-500 hover:text-slate-800">Wishlist</Link>
