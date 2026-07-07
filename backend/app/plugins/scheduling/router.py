@@ -1,19 +1,24 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_admin
+from app.core.dependencies import get_current_user, get_current_user_optional, require_admin
 from app.plugins.scheduling import service, templates
+from app.plugins.scheduling.models import AppointmentStatus
 from app.plugins.scheduling.schemas import (
+    AppointmentCreate,
+    AppointmentListOut,
+    AppointmentOut,
     AppointmentTypeCreate,
     AppointmentTypeListOut,
     AppointmentTypeOut,
     AppointmentTypeUpdate,
     AvailabilityCreate,
     AvailabilityOut,
+    CancelRequest,
     ClientCreate,
     ClientListOut,
     ClientOut,
@@ -25,7 +30,9 @@ from app.plugins.scheduling.schemas import (
     ProviderListOut,
     ProviderOut,
     ProviderUpdate,
+    RescheduleRequest,
     SlotsOut,
+    StatusChangeRequest,
 )
 from app.shared.pagination import Page, paginate
 
@@ -304,3 +311,109 @@ async def update_client(client_id: str, data: ClientUpdate, db: AsyncSession = D
 )
 async def deactivate_client(client_id: str, db: AsyncSession = Depends(get_db)):
     await service.deactivate_client(client_id, db)
+
+
+# ── APPOINTMENT BOOKING + LIFECYCLE (Task 9) ────────────────────────────────────
+# NOTE: static sub-paths ("/appointments/{id}/status" etc.) are fine after the
+# dynamic {appointment_id} routes here since none of them collide with "me"-style
+# literal segments the way /clients/me does.
+
+@router.post(
+    "/appointments",
+    response_model=AppointmentOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_appointment(
+    data: AppointmentCreate,
+    current_user=Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db),
+):
+    appt = await service.create_appointment(data, db, current_user=current_user)
+    return service.to_appointment_out(appt)
+
+
+@router.get(
+    "/appointments",
+    response_model=Page[AppointmentListOut],
+)
+async def list_appointments(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=50),
+    provider_id: Optional[str] = None,
+    client_id: Optional[str] = None,
+    appt_status: Optional[AppointmentStatus] = Query(None, alias="status"),
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    items, total = await service.list_appointments(
+        db,
+        current_user=current_user,
+        provider_id=provider_id,
+        client_id=client_id,
+        appt_status=appt_status,
+        date_from=date_from,
+        date_to=date_to,
+        page=page,
+        page_size=page_size,
+    )
+    return paginate([service.to_appointment_list_out(a) for a in items], total, page, page_size)
+
+
+@router.get(
+    "/appointments/{appointment_id}",
+    response_model=AppointmentOut,
+)
+async def get_appointment(
+    appointment_id: str,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    appt = await service.get_appointment(appointment_id, db, current_user=current_user)
+    return service.to_appointment_out(appt)
+
+
+@router.patch(
+    "/appointments/{appointment_id}/status",
+    response_model=AppointmentOut,
+    dependencies=[Depends(require_admin())],
+)
+async def change_appointment_status(
+    appointment_id: str,
+    data: StatusChangeRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    appt = await service.change_status(appointment_id, data.status, data.cancellation_reason, db)
+    return service.to_appointment_out(appt)
+
+
+@router.post(
+    "/appointments/{appointment_id}/reschedule",
+    response_model=AppointmentOut,
+)
+async def reschedule_appointment(
+    appointment_id: str,
+    data: RescheduleRequest,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    appt = await service.reschedule_appointment(appointment_id, data.start_at, db, current_user=current_user)
+    return service.to_appointment_out(appt)
+
+
+@router.post(
+    "/appointments/{appointment_id}/cancel",
+    response_model=AppointmentOut,
+)
+async def cancel_appointment(
+    appointment_id: str,
+    data: Optional[CancelRequest] = None,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    cancellation_reason = data.cancellation_reason if data else None
+    appt = await service.cancel_appointment(
+        appointment_id, db, current_user=current_user, cancellation_reason=cancellation_reason
+    )
+    return service.to_appointment_out(appt)

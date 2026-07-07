@@ -745,3 +745,351 @@ async def test_get_or_create_client_for_user_idempotent(client: AsyncClient, db:
         )
     ).scalar_one()
     assert count == 1
+
+
+# ── APPOINTMENT BOOKING + LIFECYCLE (Task 9) ───────────────────────────────────
+
+BOOKING_START = "2026-08-03T09:00:00+00:00"  # Monday — matches slot-test fixture date
+
+
+async def _setup_booking_fixture(client: AsyncClient, headers: dict) -> tuple[str, str]:
+    """Create a provider + a 30-min appointment type LINKED to that provider + Monday availability."""
+    r = await client.post(
+        "/api/scheduling/providers", json={"display_name": "Dr Book"}, headers=headers
+    )
+    assert r.status_code == 201
+    provider_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={"name": "Consult", "duration_minutes": 30, "provider_ids": [provider_id]},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    type_id = r.json()["id"]
+
+    r = await client.post(
+        f"/api/scheduling/providers/{provider_id}/availability",
+        json={"weekday": 0, "start_time": "09:00:00", "end_time": "17:00:00"},
+        headers=headers,
+    )
+    assert r.status_code == 201
+
+    return provider_id, type_id
+
+
+async def test_admin_books_for_existing_client(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, headers)
+
+    r = await client.get("/api/auth/me", headers=headers)
+    admin_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe", "email": "jane@ex.com"},
+        headers=headers,
+    )
+    assert r.status_code == 201
+    client_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": BOOKING_START,
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["start_at"][:19] == BOOKING_START[:19]
+    assert body["end_at"][11:19] == "09:30:00"
+    assert body["status"] == "confirmed"
+    assert body["booked_by"] == admin_id
+    assert body["client_id"] == client_id
+
+
+async def test_customer_books_self(client: AsyncClient, db: AsyncSession):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    cust_data = {
+        "email": "book-self-cust@example.com",
+        "password": "custpass1",
+        "first_name": "Sam",
+        "last_name": "Selfbook",
+    }
+    cust_token = await register_and_token(client, cust_data)
+    cust_headers = {"Authorization": f"Bearer {cust_token}"}
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": BOOKING_START,
+        },
+        headers=cust_headers,
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["booked_by"] == "self"
+    appt_id = body["id"]
+
+    from sqlalchemy import select as sa_select
+
+    from app.plugins.scheduling.models import Client as ClientModel
+
+    r = await client.get("/api/auth/me", headers=cust_headers)
+    uid = r.json()["id"]
+    result = await db.execute(sa_select(ClientModel).where(ClientModel.user_id == uid))
+    client_obj = result.scalar_one_or_none()
+    assert client_obj is not None
+    assert client_obj.id == body["client_id"]
+
+    r = await client.get("/api/scheduling/appointments", headers=cust_headers)
+    assert r.status_code == 200
+    assert any(a["id"] == appt_id for a in r.json()["items"])
+
+
+async def test_guest_books_with_email(client: AsyncClient, db: AsyncSession):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": BOOKING_START,
+            "first_name": "Guest",
+            "last_name": "Person",
+            "email": "guest@example.com",
+        },
+    )
+    assert r.status_code == 201
+    body = r.json()
+    assert body["booked_by"] == "guest"
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": "2026-08-03T10:00:00+00:00",
+            "first_name": "NoEmail",
+            "last_name": "Guest",
+        },
+    )
+    assert r.status_code == 400
+
+
+async def test_double_booking_rejected(client: AsyncClient, db: AsyncSession):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe"},
+        headers=admin_headers,
+    )
+    client_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": BOOKING_START,
+        },
+        headers=admin_headers,
+    )
+    assert r.status_code == 201
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": "2026-08-03T09:15:00+00:00",
+        },
+        headers=admin_headers,
+    )
+    assert r.status_code == 409
+
+
+async def test_provider_must_offer_type(client: AsyncClient, db: AsyncSession):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, _type_id = await _setup_booking_fixture(client, admin_headers)
+
+    r = await client.post(
+        "/api/scheduling/appointment-types",
+        json={"name": "Unlinked", "duration_minutes": 30},
+        headers=admin_headers,
+    )
+    assert r.status_code == 201
+    unlinked_type_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": unlinked_type_id,
+            "start_at": BOOKING_START,
+            "first_name": "Guest",
+            "last_name": "Person",
+            "email": "guest2@example.com",
+        },
+    )
+    assert r.status_code == 400
+
+
+async def test_customer_cancels_own_and_cannot_cancel_others(client: AsyncClient, db: AsyncSession):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    cust_data = {
+        "email": "cancel-own-cust@example.com",
+        "password": "custpass1",
+        "first_name": "Cancel",
+        "last_name": "Owner",
+    }
+    cust_token = await register_and_token(client, cust_data)
+    cust_headers = {"Authorization": f"Bearer {cust_token}"}
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": BOOKING_START,
+        },
+        headers=cust_headers,
+    )
+    assert r.status_code == 201
+    appt_id = r.json()["id"]
+
+    other_data = {
+        "email": "cancel-other-cust@example.com",
+        "password": "custpass1",
+        "first_name": "Other",
+        "last_name": "Customer",
+    }
+    other_token = await register_and_token(client, other_data)
+    other_headers = {"Authorization": f"Bearer {other_token}"}
+
+    r = await client.post(
+        f"/api/scheduling/appointments/{appt_id}/cancel",
+        json={},
+        headers=other_headers,
+    )
+    assert r.status_code == 403
+
+    r = await client.post(
+        f"/api/scheduling/appointments/{appt_id}/cancel",
+        json={},
+        headers=cust_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["status"] == "cancelled"
+
+
+async def test_illegal_status_transition(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, headers)
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe"},
+        headers=headers,
+    )
+    client_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": BOOKING_START,
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201
+    appt_id = r.json()["id"]
+    assert r.json()["status"] == "confirmed"
+
+    r = await client.patch(
+        f"/api/scheduling/appointments/{appt_id}/status",
+        json={"status": "cancelled", "cancellation_reason": "no longer needed"},
+        headers=headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["status"] == "cancelled"
+
+    r = await client.patch(
+        f"/api/scheduling/appointments/{appt_id}/status",
+        json={"status": "confirmed"},
+        headers=headers,
+    )
+    assert r.status_code == 409
+
+
+async def test_reschedule_moves_slot(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, headers)
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe"},
+        headers=headers,
+    )
+    client_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": BOOKING_START,
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201
+    appt_id = r.json()["id"]
+
+    r = await client.post(
+        f"/api/scheduling/appointments/{appt_id}/reschedule",
+        json={"start_at": "2026-08-03T10:00:00+00:00"},
+        headers=headers,
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["start_at"][11:19] == "10:00:00"
+    assert body["end_at"][11:19] == "10:30:00"
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": BOOKING_START,
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201

@@ -4,6 +4,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, model_validator
 
+from app.plugins.scheduling.models import AppointmentStatus
+
 
 class ProviderCreate(BaseModel):
     display_name: str
@@ -213,3 +215,64 @@ class ClientSelfUpdate(BaseModel):
     phone: Optional[str] = None
     date_of_birth: Optional[date] = None
     custom_fields: Optional[dict[str, Any]] = None
+
+
+# ── APPOINTMENT BOOKING + LIFECYCLE (Task 9) ────────────────────────────────────
+
+class AppointmentCreate(BaseModel):
+    provider_id: str
+    appointment_type_id: str
+    start_at: datetime
+    reason: Optional[str] = None
+
+    # Admin path: book for an existing client record.
+    client_id: Optional[str] = None
+
+    # Guest / self path: identity details (ignored for logged-in-customer bookings,
+    # which always resolve to the caller's own client record).
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class AppointmentOut(BaseModel):
+    id: str
+    provider_id: str
+    client_id: str
+    appointment_type_id: str
+    start_at: datetime
+    end_at: datetime
+    status: AppointmentStatus
+    reason: Optional[str] = None
+    booked_by: Optional[str] = None
+    cancellation_reason: Optional[str] = None
+    created_at: datetime
+    provider_name: Optional[str] = None
+    client_name: Optional[str] = None
+    appointment_type_name: Optional[str] = None
+    model_config = {"from_attributes": True}
+
+
+class AppointmentListOut(BaseModel):
+    id: str
+    start_at: datetime
+    end_at: datetime
+    status: AppointmentStatus
+    provider_name: Optional[str] = None
+    client_name: Optional[str] = None
+    appointment_type_name: Optional[str] = None
+    model_config = {"from_attributes": True}
+
+
+class RescheduleRequest(BaseModel):
+    start_at: datetime
+
+
+class StatusChangeRequest(BaseModel):
+    status: AppointmentStatus
+    cancellation_reason: Optional[str] = None
+
+
+class CancelRequest(BaseModel):
+    cancellation_reason: Optional[str] = None
