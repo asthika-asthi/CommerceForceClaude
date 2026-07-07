@@ -540,6 +540,11 @@ async def create_appointment(data: AppointmentCreate, db: AsyncSession, *, curre
     end_at = start_at + timedelta(minutes=appointment_type.duration_minutes)
 
     is_admin = _is_admin(current_user)
+    # Customers/guests can't book in the past; admins may backfill freely.
+    if not is_admin and start_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="cannot book an appointment in the past"
+        )
     if is_admin and data.client_id:
         client_obj = await get_client(data.client_id, db)
         booked_by = current_user.id
@@ -646,8 +651,6 @@ async def get_appointment(appointment_id: str, db: AsyncSession, *, current_user
     return appt
 
 
-_TERMINAL_STATUSES = {AppointmentStatus.cancelled, AppointmentStatus.completed, AppointmentStatus.no_show}
-
 _APPOINTMENT_TRANSITIONS: dict[AppointmentStatus, set[AppointmentStatus]] = {
     AppointmentStatus.requested: {AppointmentStatus.confirmed, AppointmentStatus.cancelled, AppointmentStatus.no_show},
     AppointmentStatus.confirmed: {AppointmentStatus.completed, AppointmentStatus.cancelled, AppointmentStatus.no_show},
@@ -656,6 +659,14 @@ _APPOINTMENT_TRANSITIONS: dict[AppointmentStatus, set[AppointmentStatus]] = {
     AppointmentStatus.no_show: set(),
 }
 
+# A status a customer may still cancel from (before it reaches a terminal state).
+_CANCELLABLE_STATUSES = {AppointmentStatus.requested, AppointmentStatus.confirmed}
+
+
+def _is_terminal(appt_status: AppointmentStatus) -> bool:
+    """Single source of truth: a status is terminal when it has no outgoing transitions."""
+    return not _APPOINTMENT_TRANSITIONS[appt_status]
+
 
 async def reschedule_appointment(
     appointment_id: str, new_start_at: datetime, db: AsyncSession, *, current_user
@@ -663,13 +674,17 @@ async def reschedule_appointment(
     appt = await _get_appointment_raw(appointment_id, db)
     _check_owner_or_admin(appt, current_user)
 
-    if appt.status in _TERMINAL_STATUSES:
+    if _is_terminal(appt.status):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Cannot reschedule an appointment with status '{appt.status.value}'",
         )
 
     new_start_at = _as_utc(new_start_at)
+    if not _is_admin(current_user) and new_start_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="cannot book an appointment in the past"
+        )
     new_end_at = new_start_at + timedelta(minutes=appt.appointment_type.duration_minutes)
 
     await db.execute(select(Provider).where(Provider.id == appt.provider_id).with_for_update())
@@ -712,7 +727,7 @@ async def cancel_appointment(
 ) -> Appointment:
     appt = await _get_appointment_raw(appointment_id, db)
     _check_owner_or_admin(appt, current_user)
-    if appt.status not in (AppointmentStatus.requested, AppointmentStatus.confirmed):
+    if appt.status not in _CANCELLABLE_STATUSES:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Cannot cancel appointment with status '{appt.status.value}'",

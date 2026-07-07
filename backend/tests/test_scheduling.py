@@ -1093,3 +1093,126 @@ async def test_reschedule_moves_slot(client: AsyncClient, db: AsyncSession):
         headers=headers,
     )
     assert r.status_code == 201
+
+
+async def test_reschedule_into_occupied_slot_rejected(client: AsyncClient, db: AsyncSession):
+    token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, headers)
+
+    r = await client.post(
+        "/api/scheduling/clients",
+        json={"first_name": "Jane", "last_name": "Doe"},
+        headers=headers,
+    )
+    client_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": BOOKING_START,
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "client_id": client_id,
+            "start_at": "2026-08-03T10:00:00+00:00",
+        },
+        headers=headers,
+    )
+    assert r.status_code == 201
+    appt_b_id = r.json()["id"]
+
+    # Reschedule B onto A's slot — exercises the exclude-self overlap branch against a real conflict.
+    r = await client.post(
+        f"/api/scheduling/appointments/{appt_b_id}/reschedule",
+        json={"start_at": BOOKING_START},
+        headers=headers,
+    )
+    assert r.status_code == 409
+
+
+async def test_customer_cannot_book_past(client: AsyncClient, db: AsyncSession):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    cust_token = await register_and_token(client, {
+        "email": "book-past-cust@example.com",
+        "password": "custpass1",
+        "first_name": "Past",
+        "last_name": "Booker",
+    })
+    cust_headers = {"Authorization": f"Bearer {cust_token}"}
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": "2020-01-01T09:00:00+00:00",
+        },
+        headers=cust_headers,
+    )
+    assert r.status_code == 400
+
+
+async def test_customer_list_excludes_others(client: AsyncClient, db: AsyncSession):
+    admin_token = await make_admin(client, db)
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    provider_id, type_id = await _setup_booking_fixture(client, admin_headers)
+
+    cust1_token = await register_and_token(client, {
+        "email": "list-cust1@example.com",
+        "password": "custpass1",
+        "first_name": "Cust",
+        "last_name": "One",
+    })
+    cust1_headers = {"Authorization": f"Bearer {cust1_token}"}
+
+    cust2_token = await register_and_token(client, {
+        "email": "list-cust2@example.com",
+        "password": "custpass1",
+        "first_name": "Cust",
+        "last_name": "Two",
+    })
+    cust2_headers = {"Authorization": f"Bearer {cust2_token}"}
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": BOOKING_START,
+        },
+        headers=cust1_headers,
+    )
+    assert r.status_code == 201
+    cust1_appt_id = r.json()["id"]
+
+    r = await client.post(
+        "/api/scheduling/appointments",
+        json={
+            "provider_id": provider_id,
+            "appointment_type_id": type_id,
+            "start_at": "2026-08-03T10:00:00+00:00",
+        },
+        headers=cust2_headers,
+    )
+    assert r.status_code == 201
+    cust2_appt_id = r.json()["id"]
+
+    r = await client.get("/api/scheduling/appointments", headers=cust1_headers)
+    assert r.status_code == 200
+    ids = [a["id"] for a in r.json()["items"]]
+    assert cust1_appt_id in ids
+    assert cust2_appt_id not in ids
