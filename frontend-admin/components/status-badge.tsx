@@ -21,6 +21,10 @@ const STYLES: Record<string, string> = {
   // Boolean
   active:      "bg-green-100 text-green-800",
   inactive:    "bg-slate-100 text-slate-600",
+  // Scheduling appointment status
+  requested:   "bg-amber-100 text-amber-800",
+  completed:   "bg-green-100 text-green-800",
+  no_show:     "bg-orange-100 text-orange-800",
 }
 
 export function StatusBadge({ value }: { value: string }) {

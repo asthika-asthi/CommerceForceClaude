@@ -393,3 +393,46 @@ export interface SchedulingException {
   start_time?: string
   end_time?: string
 }
+
+export type SchedulingAppointmentStatus =
+  | "requested"
+  | "confirmed"
+  | "completed"
+  | "cancelled"
+  | "no_show"
+
+export interface SchedulingAppointmentList {
+  id: string
+  start_at: string
+  end_at: string
+  status: SchedulingAppointmentStatus
+  provider_name: string
+  client_name: string
+  appointment_type_name: string
+}
+
+export interface SchedulingAppointment {
+  id: string
+  provider_id: string
+  client_id: string
+  appointment_type_id: string
+  start_at: string
+  end_at: string
+  status: SchedulingAppointmentStatus
+  reason?: string
+  booked_by?: string
+  cancellation_reason?: string
+  provider_name: string
+  client_name: string
+  appointment_type_name: string
+  created_at: string
+}
+
+export interface SchedulingClientList {
+  id: string
+  first_name: string
+  last_name: string
+  email: string
+  phone?: string
+  is_active: boolean
+}
