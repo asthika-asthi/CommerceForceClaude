@@ -132,9 +132,10 @@ test.describe('Scheduling — public booking flow', () => {
     await slotBtn.click()
 
     // Step 4 — guest details (first two text inputs = first/last name; email is type=email)
-    await expect(page.getByText('Your details')).toBeVisible({ timeout: 10_000 })
-    await page.locator('input:not([type="email"]):not([type="date"])').nth(0).fill('E2E')
-    await page.locator('input:not([type="email"]):not([type="date"])').nth(1).fill('Guest')
+    await expect(page.getByRole('heading', { name: 'Your details' })).toBeVisible({ timeout: 10_000 })
+    // Scope to the guest fields by their labels (the storefront navbar also has an <input>).
+    await page.locator('label:has-text("First name") + input').fill('E2E')
+    await page.locator('label:has-text("Last name") + input').fill('Guest')
     await page.locator('input[type="email"]').fill(GUEST_EMAIL)
 
     // Confirm — the Book button is enabled once required fields are filled
