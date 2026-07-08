@@ -41,7 +41,9 @@ async function loginAsAdmin(page: import('@playwright/test').Page) {
   await page.fill('input[type="email"]', ADMIN_EMAIL)
   await page.fill('input[type="password"]', ADMIN_PASSWORD)
   await page.click('button[type="submit"]')
-  await page.waitForURL('**/dashboard', { timeout: 10_000 })
+  // Admin lands on /products after login (app/login/page.tsx). Wait for any authenticated
+  // page rather than a specific route, so this doesn't break if the landing changes.
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
 }
 
 // ── Products: search input ────────────────────────────────────────────────────
