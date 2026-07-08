@@ -1,7 +1,7 @@
 import os
 
 # Set env vars BEFORE any app module is imported — config uses @lru_cache
-os.environ["ENABLED_PLUGINS"] = "auth,categories,products,cart,orders,checkout,rfq,credit,inventory,coupons,loyalty,newsletter,branding,landing_page,ai_chat,contact,reviews,shipping"
+os.environ["ENABLED_PLUGINS"] = "auth,categories,products,cart,orders,checkout,rfq,credit,inventory,coupons,loyalty,newsletter,branding,landing_page,ai_chat,contact,reviews,shipping,scheduling"
 os.environ["ANTHROPIC_API_KEY"] = "test-key"
 os.environ["ENVIRONMENT"] = "development"  # keep refresh cookies non-secure for HTTP test client
 os.environ["COOKIE_SECURE"] = "false"  # HTTP test client — refresh cookie must be sendable
@@ -47,6 +47,10 @@ async def setup_test_db():
     from app.plugins.reviews.models import Review  # noqa
     from app.plugins.discount_rules.models import DiscountRule  # noqa
     from app.plugins.shipping.models import ShippingZone  # noqa
+    from app.plugins.scheduling.models import (  # noqa
+        Provider, AppointmentType, ProviderAvailability, AvailabilityException,
+        Client, Appointment, JournalEntry, NoteAccessLog,
+    )
     from app.shared.email import EmailLog  # noqa
 
     async with test_engine.begin() as conn:

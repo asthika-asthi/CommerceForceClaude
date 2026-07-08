@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     # Drives the Stripe charge currency and the symbol shown in order emails.
     CURRENCY_CODE: str = "GBP"
 
+    # Which visit-note template a scheduling deployment uses (see plugins/scheduling/
+    # templates.py). Ships medical = SOAP.
+    SCHEDULING_NOTE_TEMPLATE: str = "soap"
+
     # Redis / Celery
     REDIS_URL: str = "redis://localhost:6379/0"
 

@@ -335,3 +335,147 @@ export interface StockTransferResult {
   from_stock: WarehouseStock
   to_stock: WarehouseStock
 }
+
+// ── Scheduling ────────────────────────────────────────────────────────────────
+export interface SchedulingProviderList {
+  id: string
+  display_name: string
+  title?: string
+  specialty?: string
+  is_active: boolean
+}
+
+export interface SchedulingProvider {
+  id: string
+  display_name: string
+  title?: string
+  specialty?: string
+  bio?: string
+  color?: string
+  user_id?: string
+  can_view_all_clients: boolean
+  is_active: boolean
+  created_at?: string
+}
+
+export interface SchedulingAppointmentTypeList {
+  id: string
+  name: string
+  duration_minutes: number
+  price?: string
+  is_active: boolean
+}
+
+export interface SchedulingAppointmentType {
+  id: string
+  name: string
+  duration_minutes: number
+  description?: string
+  price?: string
+  color?: string
+  is_active: boolean
+  providers: { id: string; display_name: string }[]
+}
+
+export interface SchedulingAvailability {
+  id: string
+  provider_id: string
+  weekday: number
+  start_time: string
+  end_time: string
+}
+
+export interface SchedulingException {
+  id: string
+  provider_id: string
+  date: string
+  is_available: boolean
+  start_time?: string
+  end_time?: string
+}
+
+export type SchedulingAppointmentStatus =
+  | "requested"
+  | "confirmed"
+  | "completed"
+  | "cancelled"
+  | "no_show"
+
+export interface SchedulingAppointmentList {
+  id: string
+  start_at: string
+  end_at: string
+  status: SchedulingAppointmentStatus
+  provider_name: string
+  client_name: string
+  appointment_type_name: string
+}
+
+export interface SchedulingAppointment {
+  id: string
+  provider_id: string
+  client_id: string
+  appointment_type_id: string
+  start_at: string
+  end_at: string
+  status: SchedulingAppointmentStatus
+  reason?: string
+  booked_by?: string
+  cancellation_reason?: string
+  provider_name: string
+  client_name: string
+  appointment_type_name: string
+  created_at: string
+}
+
+export interface SchedulingClientList {
+  id: string
+  first_name: string
+  last_name: string
+  email: string
+  phone?: string
+  is_active: boolean
+}
+
+export interface SchedulingClient {
+  id: string
+  first_name: string
+  last_name: string
+  email?: string
+  phone?: string
+  date_of_birth?: string
+  user_id?: string
+  custom_fields: Record<string, unknown>
+  is_active: boolean
+  created_at: string
+}
+
+export interface SchedulingJournalEntryList {
+  id: string
+  client_id: string
+  provider_id: string
+  template: string
+  created_by: string
+  created_at: string
+}
+
+export interface SchedulingJournalEntry extends SchedulingJournalEntryList {
+  appointment_id?: string
+  content: Record<string, unknown>
+}
+
+export interface SchedulingConfigField {
+  key: string
+  label: string
+  type: string
+}
+
+export interface SchedulingConfig {
+  terms: Record<string, string>
+  note_template: {
+    name: string
+    label: string
+    fields: SchedulingConfigField[]
+  }
+  intake_schema: SchedulingConfigField[]
+}

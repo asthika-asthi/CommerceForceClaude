@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-07-05. This is the single source of truth for build status.
+Last updated: 2026-07-07. This is the single source of truth for build status.
 Bug-review findings and their fix status live in `docs/bugs-log.md`.
 Forward-looking gaps, per-profile coverage, and the multi-tenant question live in
 `docs/gap-analysis-and-roadmap.md`.
@@ -265,9 +265,75 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 | P | 2FA for admin | TOTP flow, QR setup, backup codes. Separate sprint. |
 | R | Per-client git branch script | `scripts/new-client.sh` to automate `git checkout -b client-name` + seed template copy |
 | S | Bulk image assignment via product CSV | Add optional `image_url` column to product import CSV; on import, create a `ProductImage` record linked to the product. Allows full product setup (including hero image) in one CSV upload without clicking through each product. |
-| V | Repair the Alembic migration chain | `alembic upgrade head` fails on a fresh DB (`no such table: product_variants`) — the variant tables were added via `create_all`, never in a migration, but `c8d9e0f1a2b3` alters them. Workaround in place: `init_db.py` (create_all from models) + `alembic stamp head`; documented in `docs/new-client-setup.md`. Proper fix: author a migration that creates the variant tables (product_variants, product_option_types/values, product_variant_options) and recreates cart_items/warehouse_stock with `variant_id`, slotted before `c8d9e0f1a2b3`, so `alembic upgrade head` works end-to-end. |
+| V | ~~Repair the Alembic migration chain~~ — **DONE** | New migration `a0b1c2d3e4f5` backfills the product-variant tables (`product_variants`, `product_option_types`, `product_option_values`, `product_variant_options`) and reshapes `cart_items`/`order_items`/`warehouse_stock` to use `variant_id`; wired in as the mergepoint immediately before `c8d9e0f1a2b3`. `alembic upgrade head` on a fresh DB now completes end-to-end and verified to produce a schema matching `create_all`. Follow-up (2026-07-07) closed the remaining drift: `alembic/env.py` was missing model imports for `reviews`, `discount_rules`, `shipping`, `addresses`, `wishlist`, `announcements` (caused autogenerate to propose spurious `DROP TABLE`s); `announcements.created_at`/`updated_at` are now `NOT NULL` in migration `d1e2f3a4b5c6` to match the model; `chat_sessions.session_key` now gets a single unique index (`ix_chat_sessions_session_key`, set unique in `d2e3f4a5b6c7`) instead of a non-unique index plus a redundant unique constraint — `e3f4a5b6c7d8` is now a no-op kept only for chain/merge-point integrity. Verified: empty `alembic revision --autogenerate` on a fresh DB, and byte-for-byte schema match (columns + indexes) between `alembic upgrade head` and `init_db.py`'s `create_all`. |
 | U | Consolidate stock to one source of truth (B3) | Checkout uses only `Product.stock_quantity`; the per-variant `WarehouseStock` system is built but never wired into selling (`deduct_stock_for_variant`/`get_variant_stock_total` are unused). Decide based on need: single pool → keep product-level authoritative and retire/relabel the warehouse feature; multi-warehouse → make warehouse authoritative and derive the shop's stock. Deferred pending the multi-warehouse decision. |
 | T | Eliminate frontend/backend type duplication | The frontends keep hand-written type mirrors (`frontend-starter/lib/types.ts`, `frontend-admin/lib/types.ts`) that silently drift from the backend Pydantic schemas — the cause of several 2026-07-04 bugs (`primary_image` vs `images[]`, missing `description`/`is_featured`). Fix: add an automated drift-check (CI/pre-commit runs `gen:types` and fails if `types.ts` is stale) and/or true codegen so frontend types are derived, not hand-kept; also add a `gen:types` script to the admin app (it currently has none). Process documented in `docs/type-sync.md`. |
+
+---
+
+## Scheduling & Provider-Notes plugin — BACKEND BUILT (2026-07-07), frontends not built
+
+**Design spec:** `docs/superpowers/specs/2026-07-05-scheduling-plugin-design.md`
+**Impl plan:** `docs/superpowers/plans/2026-07-06-scheduling-plugin-backend.md`
+**Branch:** `feat/scheduling-plugin`.
+
+A single reusable `scheduling` plugin for appointment booking + per-client visit
+journals. Shipped configured for the current **medical client** (Patient / Doctor /
+Visit / SOAP clinical notes); the engine is neutral (`Client` / `Provider` /
+`Appointment` / `JournalEntry`) so future verticals (salon, tutoring, rental, events)
+are a config change (labels + note template + intake schema via
+`GET /api/scheduling/config`), not a rebuild. This unlocks ICP profiles 5, 8, 10 (see
+`gap-analysis-and-roadmap.md`).
+
+### Built + Tested (automated) — backend
+Built via subagent-driven TDD across 13 tasks; each task spec- and quality-reviewed.
+**~48 scheduling tests + 1 concurrency test; full suite 296 passing.** ruff + mypy clean.
+Live boot smoke confirmed: plugin appears in `/api/health` + `/api/menu`, and
+`/api/scheduling/config` returns the medical labels + SOAP template.
+- 8 tables + assoc + migration (`62d9c03455e5`; nullable-provider follow-up `808038705490`).
+- Config/terminology + note-template registry; public `GET /config`.
+- Providers, appointment-types (+ provider m2m), availability + exceptions — admin CRUD.
+- Public `GET /availability` open-slot computation (recurring hours − exceptions − booked).
+- Clients (patients) CRUD + customer self-record (`/clients/me`) + auto-link on booking.
+- Appointment booking (admin / logged-in customer / guest) with lifecycle
+  (list/get/reschedule/cancel/status transitions). **Double-booking prevented** by a
+  DB `UniqueConstraint(provider_id, start_at)` + `IntegrityError`→409 (the SQLite
+  `with_for_update` lock is a no-op; the constraint makes it deterministic; the row lock
+  is real on Postgres). Non-admins can't book in the past or for another client.
+- Booking confirmation email (non-blocking, reuses shared email util).
+- Provider-scoped journals + `NoteAccessLog` audit on every read/create/edit; superadmin
+  and `can_view_all_clients` overrides; `GET /audit` (superadmin only).
+
+### Built, NOT manually tested — frontends (tsc clean, need a browser session)
+Built 2026-07-07; each task tsc + eslint clean. Need manual browser verification in a test
+session (no automated E2E written for these yet).
+- **Admin** (`frontend-admin`, under `app/(dashboard)/scheduling/`): Providers, Appointment
+  Types, Availability (recurring hours + date exceptions) CRUD; Appointments management
+  (filters, create, reschedule, cancel, status) + a week-agenda **Calendar** landing page;
+  **Clients (Patients)** list + per-client **hub** (demographics + intake fields, appointment
+  history, and a template-driven **SOAP journal** editor that degrades to a muted "no access"
+  notice on a 403). `"calendar"` added to `ICON_MAP`; TS types in `lib/types.ts`.
+- **Storefront** (`frontend-starter`): public self-service **booking wizard** at `/book`
+  (Service → Provider → Date/slot → Details → Confirm; guest or logged-in; labels from
+  `/api/scheduling/config`; plugin-gated navbar link); **My Appointments** at
+  `/account/appointments` (upcoming/past, cancel, reschedule via slot picker).
+- **Backend addition for the storefront:** public read endpoints
+  `GET /api/scheduling/public/appointment-types` and `/public/providers?appointment_type_id=`
+  (active-only) so the booking flow can populate its pickers.
+
+### Fast-follow — DONE (2026-07-07)
+- ~~Loader-strategy perf~~ — **Done.** `Client.appointments`/`journal_entries` dropped to
+  lazy-default (no code accessed them lazily); ends the list-appointments history cascade.
+- ~~Superadmin journal-create test~~ — **Done.** `test_superadmin_creates_journal` added.
+- ~~Status-agnostic slot uniqueness~~ — **Done.** Replaced with a **partial unique index**
+  `WHERE status != 'cancelled'`, so a cancelled slot can be re-booked while two active
+  bookings for the same slot still conflict. `test_can_rebook_cancelled_slot` covers it.
+
+**Backend totals:** ~51 scheduling tests + 1 concurrency test; full suite **300 passing**.
+
+**Deferred (post-v1, per spec):** online payment at booking; scheduled email/SMS
+reminders (Celery, v1.1); DB-defined custom note templates + per-vertical setup wizard;
+group/class bookings and room/equipment resource scheduling.
 
 ---
 

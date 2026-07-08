@@ -22,6 +22,7 @@ export function Navbar({ branding }: Props) {
   const logout = useAuthStore((s) => s.logout)
   const cart = useCartStore((s) => s.cart)
   const cartEnabled = usePlugin("cart")
+  const schedulingEnabled = usePlugin("scheduling")
   const itemCount = cart?.item_count ?? 0
   const [query, setQuery] = useState("")
   const [menuOpen, setMenuOpen] = useState(false)
@@ -107,6 +108,12 @@ export function Navbar({ branding }: Props) {
             </Link>
           )}
 
+          {schedulingEnabled && (
+            <Link href="/book" className="hidden md:block text-sm font-medium text-brand-dark hover:underline px-2 whitespace-nowrap">
+              Book
+            </Link>
+          )}
+
           <a href="/contact" className="hidden md:block bg-brand hover:bg-brand-hover text-white text-sm font-semibold px-5 py-[10px] rounded-lg transition-colors whitespace-nowrap">
             Get a Quote
           </a>
@@ -122,6 +129,9 @@ export function Navbar({ branding }: Props) {
       {menuOpen && (
         <div className="md:hidden border-t border-[#E0DED8] bg-white px-6 py-4 space-y-3">
           <Link href="/products" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-fg py-1">All Products</Link>
+          {schedulingEnabled && (
+            <Link href="/book" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-fg py-1">Book</Link>
+          )}
           {cartEnabled && (
             <Link href="/cart" onClick={() => setMenuOpen(false)} className="block text-sm text-fg py-1">Cart</Link>
           )}
