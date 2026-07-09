@@ -82,6 +82,35 @@ async def test_checkout_country_with_no_zone_means_no_tax(client: AsyncClient, d
     assert float(body["total"]) == 50.0
 
 
+async def test_order_detail_exposes_tax_and_shipping(client: AsyncClient, db):
+    """Regression: OrderOut previously omitted shipping_cost entirely, so the
+    admin/storefront order-detail pages could never display it."""
+    admin_token = await _admin_token(client, db)
+    await _create_zone(client, admin_token, "GB", 20.00)
+    await client.post("/api/shipping/zones", json={
+        "name": "UK", "countries": "GB", "flat_rate": 5.00, "is_active": True,
+    }, headers={"Authorization": f"Bearer {admin_token}"})
+    product_id = await _make_product(client, admin_token, "Detail Widget", price="100.00")
+
+    r = await client.post("/api/checkout", json={
+        "use_cart": False,
+        "items": [{"product_id": product_id, "quantity": 1}],
+        "payment_method": "cash",
+        "guest_email": "g@example.com",
+        "shipping_address": "1 Test St",
+        "delivery_country": "GB",
+    })
+    assert r.status_code == 201, r.text
+    order_id = r.json()["order_id"]
+
+    detail = await client.get(f"/api/orders/{order_id}", headers={"Authorization": f"Bearer {admin_token}"})
+    assert detail.status_code == 200, detail.text
+    body = detail.json()
+    assert float(body["tax_amount"]) == 20.0
+    assert float(body["shipping_cost"]) == 5.0
+    assert float(body["total"]) == 125.0
+
+
 async def test_tax_computed_on_discounted_subtotal(client: AsyncClient, db):
     """Tax base is subtotal minus discount, not the raw subtotal."""
     admin_token = await _admin_token(client, db)
