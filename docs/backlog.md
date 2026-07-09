@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-07-07. This is the single source of truth for build status.
+Last updated: 2026-07-09. This is the single source of truth for build status.
 Bug-review findings and their fix status live in `docs/bugs-log.md`.
 Forward-looking gaps, per-profile coverage, and the multi-tenant question live in
 `docs/gap-analysis-and-roadmap.md`.
@@ -279,6 +279,34 @@ only be changed by editing code. This sprint makes colours admin-configurable en
 **Shared logic note:** colour derivation lives in `frontend-starter/lib/theme-colors.ts` with a synced copy at `frontend-admin/lib/theme-colors.ts` (apps share no package — same discipline as type-sync).
 
 **Deploy note:** run `docker compose exec backend alembic upgrade head` after pulling; no seed changes needed (empty `theme_colors` keeps current appearance).
+
+---
+
+### Commercial-readiness batch: Tax/VAT, Analytics, Abandoned-cart, Guest tracking, GDPR (2026-07-09)
+
+**Branch:** `feat/commercial-readiness`, 8 commits (5 features + 3 standalone bug fixes surfaced along the way).
+Closes the five gaps in `gap-analysis-and-roadmap.md` Part B that came up first in client conversations —
+none blocked launch, but all five are standard Shopify/Woo-parity asks.
+
+**Built + Tested (automated — 360 backend tests passing, ruff/mypy clean, both frontends tsc+build clean):**
+
+- **Tax/VAT** — new `tax` plugin (per-country rate zones, mirrors `shipping` exactly). Checkout computes VAT on the discounted subtotal; flows through to order total, CSV export, confirmation email, and admin/storefront order-detail pages (which previously showed no shipping line either). Admin UI at Settings → Tax. (`tests/test_tax.py`, `tests/test_tax_checkout.py`)
+- **Analytics (GA4 / Meta Pixel)** — `BrandingConfig.ga4_measurement_id`/`meta_pixel_id`, strictly validated server-side (a `<script>` tag is a much higher-severity injection surface than `custom_css`'s `<style>` tag, so unlike that field this one does *not* accept free text). Loads via `next/script` only after the visitor accepts the cookie banner; reacts live to accept/decline via a custom event. Cookie-consent and cookie-policy copy updated (used to assert "no tracking cookies are ever used").
+- **Guest order tracking** — public `POST /api/orders/track` (order number + email, enumeration-safe like forgot-password, rate-limited) and a `/track-order` page. Order-detail presentation extracted into a shared component so the authenticated account page and the new public page can't drift. Confirmation email and checkout-success page now link to it (the latter previously linked guests to an authenticated-only URL that 404s for them).
+- **Abandoned-cart recovery** — no task queue existed anywhere in this codebase (Celery/Redis were listed as dependencies but never wired to a worker/broker — corrected in `gap-analysis-and-roadmap.md`, which had claimed otherwise). Added an in-process APScheduler job instead of standing up Celery+Redis+a worker container from scratch. Guest carts now capture a recovery email via a dismissible cart-page prompt (previously impossible — guest carts had no email until checkout); logged-in carts use the account email. One reminder per abandonment; a cart's reminder flag resets if it's modified again.
+- **GDPR export + delete** — self-service JSON export (`GET /api/auth/me/export-data`, immediate — non-destructive). Deletion is request-then-admin-approval (mirrors the RFQ draft/submitted/reviewed status shape) — approval anonymizes the account in place, never a hard delete: orders survive per the privacy policy's 7-year retention commitment but have free-text PII redacted; reviews keep their body text but are unlinked from the author. Admin UI at Data Requests.
+
+**Bugs found and fixed along the way (not scoped to any one feature above):**
+- **`OrderOut` never exposed `shipping_cost`** — the column has existed since the shipping plugin shipped, but the schema behind `GET /api/orders/{id}` never declared it, so the admin/storefront order-detail Shipping rows (added for tax) would have silently never rendered.
+- **SMTP was completely broken** — `aiosmtplib` 5.x made `message` positional-only; the existing call passed it as a keyword, raising a `TypeError` on every send attempt, silently masked by the console-fallback path. Also `subject` was never passed to `aiosmtplib` at all, so even a working send would have gone out with no Subject line. Every prior "email sent" claim in this codebase was actually just a print statement. Fixed by building a proper `EmailMessage`; verified live — sends now reach the real SMTP server and fail only on auth (no password configured), not the old `TypeError`.
+- **`addresses` and `wishlist` plugins had zero test coverage** — neither was in the test suite's `ENABLED_PLUGINS`, so their tables were never created in the test DB and their endpoints were never exercised by any test, until the GDPR tests (which call both) exposed it.
+- **Reviews INNER JOIN would have hidden anonymized reviews** — `reviews.user_id` had to become nullable for GDPR unlinking; the two admin/storefront review-listing queries used `INNER JOIN` on that column, which would have silently dropped an anonymized review from listings instead of just losing its author name. Changed to `LEFT JOIN` with a "Former customer" fallback.
+
+**Built, NOT tested — needs manual browser verification:**
+- Analytics script actually loading/not-loading in a real browser tied to cookie accept/decline (automated tests cover only the backend ID validators and the consent-copy text — no Playwright coverage for third-party script injection).
+- Admin Tax Zones and Data Requests pages, and the storefront cart recovery-email prompt and account Privacy section — tsc/build-clean, exercised via direct API calls during development, not clicked through in a browser.
+
+**Deploy note:** run `docker compose exec backend alembic upgrade head` after pulling (4 new migrations: `tax_zones` table, `branding_config` analytics columns, `carts` recovery fields, `data_deletion_requests` table + `reviews.user_id` relaxed to nullable). Add `tax` to `ENABLED_PLUGINS` if the client needs VAT. New Python dependency: `apscheduler`.
 
 ---
 
