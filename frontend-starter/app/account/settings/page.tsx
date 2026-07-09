@@ -4,9 +4,17 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
-import type { User } from "@/lib/types"
+import type { User, DeletionRequest } from "@/lib/types"
 import { ArrowLeft } from "lucide-react"
 import { PasswordInput } from "@/components/password-input"
+import { ConfirmDialog } from "@/components/confirm-dialog"
+
+const DELETION_STATUS_COPY: Record<DeletionRequest["status"], string> = {
+  pending: "Your deletion request is pending review — we'll respond within 30 days.",
+  approved: "Your deletion request has been approved and is being processed.",
+  rejected: "Your deletion request was reviewed and not actioned. Contact support if you have questions.",
+  completed: "Your account has been deleted.",
+}
 
 export default function AccountSettingsPage() {
   const user = useAuthStore((s) => s.user)
@@ -22,6 +30,12 @@ export default function AccountSettingsPage() {
   const [pwLoading, setPwLoading] = useState(false)
   const [pwSaved, setPwSaved] = useState(false)
   const [pwError, setPwError] = useState("")
+
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState("")
+  const [deletionRequest, setDeletionRequest] = useState<DeletionRequest | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteError, setDeleteError] = useState("")
 
   // Redirect guard — waits for auth to hydrate
   useEffect(() => {
@@ -39,6 +53,35 @@ export default function AccountSettingsPage() {
       company_name: user.company_name ?? "",
     })
   }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!user) return
+    api.get<DeletionRequest | null>("/api/auth/me/deletion-request").then(setDeletionRequest).catch(() => {})
+  }, [user?.id])
+
+  async function handleExportData() {
+    setExportError("")
+    setExporting(true)
+    try {
+      await api.download("/api/auth/me/export-data", "my-data.json")
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : "Download failed")
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  async function handleConfirmDelete() {
+    setDeleteError("")
+    try {
+      const req = await api.post<DeletionRequest>("/api/auth/me/deletion-request")
+      setDeletionRequest(req)
+      setShowDeleteConfirm(false)
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Could not submit request")
+      setShowDeleteConfirm(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -150,6 +193,49 @@ export default function AccountSettingsPage() {
           {pwLoading ? "Changing…" : pwSaved ? "Password changed!" : "Change password"}
         </button>
       </form>
+
+      <h2 className="text-xl font-bold text-slate-900 mt-10 mb-4">Privacy</h2>
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-5">
+        <div>
+          <p className="text-sm font-medium text-slate-800 mb-1">Download my data</p>
+          <p className="text-xs text-slate-500 mb-3">
+            Get a copy of everything we hold against your account — orders, addresses, reviews and more — as a JSON file.
+          </p>
+          <button type="button" onClick={handleExportData} disabled={exporting}
+            className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+            {exporting ? "Preparing…" : "Download my data"}
+          </button>
+          {exportError && <p className="text-xs text-red-600 mt-2">{exportError}</p>}
+        </div>
+
+        <div className="pt-5 border-t border-slate-100">
+          <p className="text-sm font-medium text-slate-800 mb-1">Delete my account</p>
+          {deletionRequest ? (
+            <p className="text-xs text-slate-600">{DELETION_STATUS_COPY[deletionRequest.status]}</p>
+          ) : (
+            <>
+              <p className="text-xs text-slate-500 mb-3">
+                Request permanent deletion of your account. An admin will review the request — we'll respond within 30 days.
+              </p>
+              <button type="button" onClick={() => setShowDeleteConfirm(true)}
+                className="px-4 py-2 rounded-lg text-sm font-medium border border-red-200 text-red-600 hover:bg-red-50">
+                Delete my account
+              </button>
+            </>
+          )}
+          {deleteError && <p className="text-xs text-red-600 mt-2">{deleteError}</p>}
+        </div>
+      </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete your account?"
+        description="This submits a request to permanently delete your account. An admin will review it before anything happens — we'll respond within 30 days. Your order history is kept for legal/accounting purposes but stripped of personal details."
+        confirmLabel="Submit request"
+        destructive
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   )
 }

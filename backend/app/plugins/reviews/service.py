@@ -8,9 +8,11 @@ from app.plugins.reviews.schemas import ReviewCreate
 
 async def list_approved_reviews(product_id: str, db: AsyncSession) -> List[dict]:
     from app.plugins.auth.models import User
+    # Outer join: a review whose author's account was deleted (GDPR) has
+    # user_id=NULL but keeps its body text — it must still show up here.
     result = await db.execute(
         select(Review, User.first_name)
-        .join(User, Review.user_id == User.id)
+        .outerjoin(User, Review.user_id == User.id)
         .where(Review.product_id == product_id, Review.is_approved == True)
         .order_by(Review.created_at.desc())
     )
@@ -23,7 +25,7 @@ async def list_approved_reviews(product_id: str, db: AsyncSession) -> List[dict]
             "title": r.title,
             "body": r.body,
             "is_approved": r.is_approved,
-            "reviewer_name": first_name,
+            "reviewer_name": first_name or "Former customer",
             "created_at": r.created_at,
         }
         for r, first_name in result.all()
@@ -56,7 +58,7 @@ async def list_all_reviews(
 
     data_q = (
         select(Review, User.first_name, User.last_name, User.email)
-        .join(User, Review.user_id == User.id)
+        .outerjoin(User, Review.user_id == User.id)
         .order_by(Review.is_approved, Review.created_at.desc())
     )
     if is_approved is not None:
@@ -71,7 +73,7 @@ async def list_all_reviews(
             "title": r.title,
             "body": r.body,
             "is_approved": r.is_approved,
-            "reviewer_name": f"{first_name} {last_name}",
+            "reviewer_name": f"{first_name} {last_name}" if first_name else "Former customer (deleted account)",
             "reviewer_email": email,
             "created_at": r.created_at,
         }

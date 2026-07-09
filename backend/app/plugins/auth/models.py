@@ -47,3 +47,32 @@ class PasswordResetToken(BaseModel):
     token_hash: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class DeletionRequestStatus(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+    completed = "completed"
+
+
+class DataDeletionRequest(BaseModel):
+    """A GDPR 'right to be forgotten' request. Self-service to submit, admin
+    review required before anything is scrubbed — see auth/service.py's
+    anonymize_user(). `created_at` (inherited) is the request timestamp."""
+    __tablename__ = "data_deletion_requests"
+
+    user_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # Captured at request time so the admin can still identify the requester
+    # even after the account has been anonymized.
+    user_email_snapshot: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[DeletionRequestStatus] = mapped_column(
+        SAEnum(DeletionRequestStatus), default=DeletionRequestStatus.pending, nullable=False
+    )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewed_by: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    admin_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

@@ -1,13 +1,16 @@
 import hashlib
 import logging
 import secrets
+import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
+from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from app.core.security import get_password_hash, verify_password
 from app.core.config import settings
-from app.plugins.auth.models import User, RefreshToken, PasswordResetToken, UserRole
+from app.plugins.auth.models import User, RefreshToken, PasswordResetToken, UserRole, DataDeletionRequest, DeletionRequestStatus
 from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, UpdateProfileRequest, ChangePasswordRequest
 from app.shared.email import send_email
 
@@ -312,3 +315,215 @@ async def update_profile(user: User, data: UpdateProfileRequest, db: AsyncSessio
     await db.flush()
     await db.refresh(user)
     return user
+
+
+# ── GDPR: data export ────────────────────────────────────────────────────────
+
+def _row_to_dict(row: Any, exclude: Optional[set[str]] = None) -> dict:
+    skip = (exclude or set()) | {"_sa_instance_state"}
+    return {k: v for k, v in vars(row).items() if k not in skip}
+
+
+async def export_user_data(user: User, db: AsyncSession) -> dict:
+    """Everything this platform holds that's linked to this account, as one
+    JSON-serializable dict. Self-service, immediate — non-destructive, so no
+    admin approval step (contrast with account deletion, below)."""
+    from app.plugins.orders.models import Order
+    from app.plugins.addresses.models import Address
+    from app.plugins.wishlist.models import WishlistItem
+    from app.plugins.reviews.models import Review
+    from app.plugins.cart.models import Cart
+
+    data: dict[str, Any] = {
+        "account": _row_to_dict(user, exclude={"hashed_password", "email_verification_token"}),
+    }
+
+    orders = (await db.execute(
+        select(Order).where(Order.user_id == user.id).options(selectinload(Order.items))
+    )).scalars().all()
+    data["orders"] = [
+        {**_row_to_dict(o, exclude={"items"}), "items": [_row_to_dict(i) for i in o.items]}
+        for o in orders
+    ]
+
+    data["addresses"] = [
+        _row_to_dict(a) for a in (await db.execute(select(Address).where(Address.user_id == user.id))).scalars().all()
+    ]
+    data["wishlist_items"] = [
+        _row_to_dict(w) for w in (await db.execute(select(WishlistItem).where(WishlistItem.user_id == user.id))).scalars().all()
+    ]
+    data["reviews"] = [
+        _row_to_dict(r) for r in (await db.execute(select(Review).where(Review.user_id == user.id))).scalars().all()
+    ]
+
+    try:
+        from app.plugins.credit.models import CreditAccount
+        credit = (await db.execute(select(CreditAccount).where(CreditAccount.user_id == user.id))).scalar_one_or_none()
+        data["credit_account"] = _row_to_dict(credit) if credit else None
+    except ImportError:
+        pass
+
+    try:
+        from app.plugins.loyalty.models import LoyaltyAccount, LoyaltyTransaction
+        loyalty = (await db.execute(select(LoyaltyAccount).where(LoyaltyAccount.user_id == user.id))).scalar_one_or_none()
+        data["loyalty_account"] = _row_to_dict(loyalty) if loyalty else None
+        data["loyalty_transactions"] = [
+            _row_to_dict(t) for t in
+            (await db.execute(select(LoyaltyTransaction).where(LoyaltyTransaction.user_id == user.id))).scalars().all()
+        ]
+    except ImportError:
+        pass
+
+    try:
+        from app.plugins.coupons.models import CouponUsage
+        data["coupon_usages"] = [
+            _row_to_dict(c) for c in
+            (await db.execute(select(CouponUsage).where(CouponUsage.user_id == user.id))).scalars().all()
+        ]
+    except ImportError:
+        pass
+
+    try:
+        from app.plugins.rfq.models import RFQ
+        rfqs = (await db.execute(
+            select(RFQ).where(RFQ.user_id == user.id).options(selectinload(RFQ.items))
+        )).scalars().all()
+        data["rfqs"] = [
+            {**_row_to_dict(r, exclude={"items"}), "items": [_row_to_dict(i) for i in r.items]}
+            for r in rfqs
+        ]
+    except ImportError:
+        pass
+
+    cart = (await db.execute(
+        select(Cart).where(Cart.user_id == user.id).options(selectinload(Cart.items))
+    )).scalar_one_or_none()
+    data["cart"] = {**_row_to_dict(cart, exclude={"items"}), "items": [_row_to_dict(i) for i in cart.items]} if cart else None
+
+    return data
+
+
+# ── GDPR: account deletion (request → admin review → anonymize) ────────────
+
+async def request_deletion(user: User, db: AsyncSession) -> DataDeletionRequest:
+    existing = await db.execute(
+        select(DataDeletionRequest).where(
+            DataDeletionRequest.user_id == user.id,
+            DataDeletionRequest.status == DeletionRequestStatus.pending,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A deletion request is already pending review")
+
+    req = DataDeletionRequest(
+        id=str(uuid.uuid4()),
+        user_id=user.id,
+        user_email_snapshot=user.email,
+        status=DeletionRequestStatus.pending,
+    )
+    db.add(req)
+    await db.flush()
+    return req
+
+
+async def get_own_deletion_request(user: User, db: AsyncSession) -> Optional[DataDeletionRequest]:
+    result = await db.execute(
+        select(DataDeletionRequest)
+        .where(DataDeletionRequest.user_id == user.id)
+        .order_by(DataDeletionRequest.created_at.desc())
+    )
+    return result.scalars().first()
+
+
+async def list_deletion_requests(
+    db: AsyncSession, status_filter: Optional[str] = None, page: int = 1, page_size: int = 20
+) -> tuple[list[DataDeletionRequest], int]:
+    from sqlalchemy import func
+    query = select(DataDeletionRequest)
+    if status_filter:
+        query = query.where(DataDeletionRequest.status == DeletionRequestStatus(status_filter))
+    total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar_one()
+    result = await db.execute(
+        query.order_by(DataDeletionRequest.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    )
+    return list(result.scalars().all()), total
+
+
+async def _load_deletion_request(request_id: str, db: AsyncSession) -> DataDeletionRequest:
+    result = await db.execute(select(DataDeletionRequest).where(DataDeletionRequest.id == request_id))
+    req = result.scalar_one_or_none()
+    if not req:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deletion request not found")
+    return req
+
+
+async def anonymize_user(user_id: str, db: AsyncSession) -> None:
+    """Scrub an account's PII in place. Never a hard delete — orders and other
+    financial/audit records are retained per the privacy policy's retention
+    commitments (order records: 7 years), just stripped of free-text PII.
+
+    Deliberately out of scope: scheduling_journal_entries.created_by and
+    scheduling_note_access_log.user_id are clinical/audit records tied to
+    provider (staff) accounts, not customers — not touched by this
+    customer-facing GDPR flow.
+    """
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        return
+
+    placeholder = f"deleted-user-{user.id}@deleted.local"
+    user.email = placeholder
+    user.first_name = "Deleted"
+    user.last_name = "User"
+    user.phone = None
+    user.company_name = None
+    user.vat_number = None
+    user.is_active = False
+    user.hashed_password = get_password_hash(secrets.token_urlsafe(32))
+    await revoke_all_refresh_tokens(user.id, db)
+
+    from app.plugins.orders.models import Order
+    orders = (await db.execute(select(Order).where(Order.user_id == user_id))).scalars().all()
+    for order in orders:
+        order.guest_email = None
+        order.shipping_address = "[redacted]" if order.shipping_address else order.shipping_address
+        order.notes = "[redacted]" if order.notes else order.notes
+
+    from app.plugins.reviews.models import Review
+    await db.execute(update(Review).where(Review.user_id == user_id).values(user_id=None))
+
+    from app.plugins.addresses.models import Address
+    for addr in (await db.execute(select(Address).where(Address.user_id == user_id))).scalars().all():
+        await db.delete(addr)
+
+    from app.plugins.wishlist.models import WishlistItem
+    for item in (await db.execute(select(WishlistItem).where(WishlistItem.user_id == user_id))).scalars().all():
+        await db.delete(item)
+
+    await db.flush()
+
+
+async def approve_deletion_request(request_id: str, admin_user: User, db: AsyncSession) -> DataDeletionRequest:
+    req = await _load_deletion_request(request_id, db)
+    if req.status != DeletionRequestStatus.pending:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Request is already {req.status}")
+    if req.user_id:
+        await anonymize_user(req.user_id, db)
+    req.status = DeletionRequestStatus.completed
+    req.reviewed_at = datetime.now(timezone.utc)
+    req.reviewed_by = admin_user.id
+    await db.flush()
+    return req
+
+
+async def reject_deletion_request(request_id: str, admin_notes: str, admin_user: User, db: AsyncSession) -> DataDeletionRequest:
+    req = await _load_deletion_request(request_id, db)
+    if req.status != DeletionRequestStatus.pending:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Request is already {req.status}")
+    req.status = DeletionRequestStatus.rejected
+    req.admin_notes = admin_notes
+    req.reviewed_at = datetime.now(timezone.utc)
+    req.reviewed_by = admin_user.id
+    await db.flush()
+    return req

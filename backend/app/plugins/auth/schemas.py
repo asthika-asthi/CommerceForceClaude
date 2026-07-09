@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
 
@@ -117,3 +118,19 @@ class UpdateUserRequest(BaseModel):
         if v is not None and v not in ("pending", "approved", "rejected"):
             raise ValueError("Invalid trade_status")
         return v
+
+
+class DeletionRequestOut(BaseModel):
+    id: str
+    user_id: Optional[str] = None
+    user_email_snapshot: str
+    status: str
+    reviewed_at: Optional[datetime] = None
+    reviewed_by: Optional[str] = None
+    admin_notes: Optional[str] = None
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
+class RejectDeletionRequest(BaseModel):
+    admin_notes: str = ""

@@ -54,6 +54,23 @@ export const api = {
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PUT", body: body !== undefined ? JSON.stringify(body) : undefined }),
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  /** Fetches an attachment response and triggers a browser download (blob + anchor click). */
+  async download(path: string, filename: string): Promise<void> {
+    const token = getToken()
+    const headers: Record<string, string> = {}
+    if (token) headers["Authorization"] = `Bearer ${token}`
+    const res = await fetch(`${BASE}${path}`, { headers, credentials: "include" })
+    if (!res.ok) throw new Error("Download failed")
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  },
 }
 
 // Server-side fetch (no auth, for SSR/static)

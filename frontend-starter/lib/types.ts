@@ -11,6 +11,18 @@ export interface User {
   is_email_verified?: boolean
 }
 
+// ── GDPR ──────────────────────────────────────────────────────────────────────
+export interface DeletionRequest {
+  id: string
+  user_id?: string
+  user_email_snapshot: string
+  status: "pending" | "approved" | "rejected" | "completed"
+  reviewed_at?: string
+  reviewed_by?: string
+  admin_notes?: string
+  created_at: string
+}
+
 // ── Branding ──────────────────────────────────────────────────────────────────
 export interface BrandingConfig {
   id: string

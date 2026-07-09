@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.base_model import Base
 
 # Import all models so Alembic can detect them
-from app.plugins.auth.models import User, RefreshToken  # noqa: F401
+from app.plugins.auth.models import User, RefreshToken, PasswordResetToken, DataDeletionRequest  # noqa: F401
 from app.plugins.categories.models import Category  # noqa: F401
 from app.plugins.products.models import Product, ProductImage  # noqa: F401
 from app.plugins.cart.models import Cart, CartItem  # noqa: F401

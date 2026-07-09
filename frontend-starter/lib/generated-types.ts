@@ -243,6 +243,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/me/export-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export My Data
+         * @description Self-service GDPR export — everything held against this account, as a
+         *     downloadable JSON file. Non-destructive, so no approval step needed.
+         */
+        get: operations["export_my_data_api_auth_me_export_data_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/me/deletion-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Deletion Request
+         * @description The customer's most recent deletion request, if any — lets the account
+         *     settings page show pending/rejected/completed status.
+         */
+        get: operations["my_deletion_request_api_auth_me_deletion_request_get"];
+        put?: never;
+        /** Request My Deletion */
+        post: operations["request_my_deletion_api_auth_me_deletion_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/deletion-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Deletion Requests */
+        get: operations["list_deletion_requests_api_auth_deletion_requests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/deletion-requests/{request_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Deletion Request */
+        post: operations["approve_deletion_request_api_auth_deletion_requests__request_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/deletion-requests/{request_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Deletion Request */
+        post: operations["reject_deletion_request_api_auth_deletion_requests__request_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users": {
         parameters: {
             query?: never;
@@ -3404,6 +3498,28 @@ export interface components {
             /** Deleted */
             deleted: number;
         };
+        /** DeletionRequestOut */
+        DeletionRequestOut: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id?: string | null;
+            /** User Email Snapshot */
+            user_email_snapshot: string;
+            /** Status */
+            status: string;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Reviewed By */
+            reviewed_by?: string | null;
+            /** Admin Notes */
+            admin_notes?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** DiscountRuleCreate */
         DiscountRuleCreate: {
             /** Name */
@@ -3982,6 +4098,19 @@ export interface components {
             /** Pages */
             pages: number;
         };
+        /** Page[DeletionRequestOut] */
+        Page_DeletionRequestOut_: {
+            /** Items */
+            items: components["schemas"]["DeletionRequestOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Pages */
+            pages: number;
+        };
         /** Page[EnquiryOut] */
         Page_EnquiryOut_: {
             /** Items */
@@ -4551,6 +4680,14 @@ export interface components {
             company_name?: string | null;
             /** Phone */
             phone?: string | null;
+        };
+        /** RejectDeletionRequest */
+        RejectDeletionRequest: {
+            /**
+             * Admin Notes
+             * @default
+             */
+            admin_notes: string;
         };
         /** RescheduleRequest */
         RescheduleRequest: {
@@ -5478,6 +5615,165 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_my_data_api_auth_me_export_data_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    my_deletion_request_api_auth_me_deletion_request_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletionRequestOut"] | null;
+                };
+            };
+        };
+    };
+    request_my_deletion_api_auth_me_deletion_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletionRequestOut"];
+                };
+            };
+        };
+    };
+    list_deletion_requests_api_auth_deletion_requests_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_DeletionRequestOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_deletion_request_api_auth_deletion_requests__request_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletionRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_deletion_request_api_auth_deletion_requests__request_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectDeletionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletionRequestOut"];
+                };
             };
             /** @description Validation Error */
             422: {

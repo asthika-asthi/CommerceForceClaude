@@ -221,6 +221,28 @@ export interface PaginatedRFQs {
   pages: number
 }
 
+// ── GDPR deletion requests ──────────────────────────────────────────────────
+export type DeletionRequestStatus = "pending" | "approved" | "rejected" | "completed"
+
+export interface DeletionRequest {
+  id: string
+  user_id?: string
+  user_email_snapshot: string
+  status: DeletionRequestStatus
+  reviewed_at?: string
+  reviewed_by?: string
+  admin_notes?: string
+  created_at: string
+}
+
+export interface PaginatedDeletionRequests {
+  items: DeletionRequest[]
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
 // ── Credit ────────────────────────────────────────────────────────────────────
 export interface CreditAccount {
   id: string

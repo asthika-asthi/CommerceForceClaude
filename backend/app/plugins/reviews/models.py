@@ -8,7 +8,9 @@ class Review(BaseModel):
     __tablename__ = "reviews"
 
     product_id: Mapped[str] = mapped_column(String(36), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Nullable + SET NULL (not CASCADE): a GDPR account deletion unlinks the
+    # author but keeps the review's public text — see auth/service.py::anonymize_user.
+    user_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     rating: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     body: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

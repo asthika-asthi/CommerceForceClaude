@@ -1,7 +1,9 @@
 import csv
 import io
+import json
 from fastapi import APIRouter, Depends, Response, Request, status, Query
 from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -11,7 +13,7 @@ from app.core.limiter import limiter
 from app.core.security import create_access_token
 from app.core.dependencies import get_current_user, require_admin
 from app.plugins.auth.models import User, UserRole
-from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest, ForgotPasswordRequest, ResetPasswordRequest
+from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest, ForgotPasswordRequest, ResetPasswordRequest, DeletionRequestOut, RejectDeletionRequest
 from app.plugins.auth import service
 from app.shared.pagination import Page, paginate
 
@@ -125,6 +127,70 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
 ):
     await service.change_password(current_user, data, db)
+
+
+@router.get("/me/export-data")
+async def export_my_data(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Self-service GDPR export — everything held against this account, as a
+    downloadable JSON file. Non-destructive, so no approval step needed."""
+    data = jsonable_encoder(await service.export_user_data(current_user, db))
+    payload = json.dumps(data, indent=2)
+    return Response(
+        content=payload,
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="my-data.json"'},
+    )
+
+
+@router.post("/me/deletion-request", response_model=DeletionRequestOut, status_code=status.HTTP_201_CREATED)
+async def request_my_deletion(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await service.request_deletion(current_user, db)
+
+
+@router.get("/me/deletion-request", response_model=DeletionRequestOut | None)
+async def my_deletion_request(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """The customer's most recent deletion request, if any — lets the account
+    settings page show pending/rejected/completed status."""
+    return await service.get_own_deletion_request(current_user, db)
+
+
+@router.get("/deletion-requests", response_model=Page[DeletionRequestOut], dependencies=[Depends(require_admin())])
+async def list_deletion_requests(
+    status_filter: str | None = Query(None, alias="status"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    items, total = await service.list_deletion_requests(db, status_filter=status_filter, page=page, page_size=page_size)
+    return paginate([DeletionRequestOut.model_validate(r) for r in items], total, page, page_size)
+
+
+@router.post("/deletion-requests/{request_id}/approve", response_model=DeletionRequestOut, dependencies=[Depends(require_admin())])
+async def approve_deletion_request(
+    request_id: str,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await service.approve_deletion_request(request_id, current_user, db)
+
+
+@router.post("/deletion-requests/{request_id}/reject", response_model=DeletionRequestOut, dependencies=[Depends(require_admin())])
+async def reject_deletion_request(
+    request_id: str,
+    data: RejectDeletionRequest,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await service.reject_deletion_request(request_id, data.admin_notes, current_user, db)
 
 
 @router.get("/users", response_model=Page[UserOut])
