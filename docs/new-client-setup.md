@@ -21,6 +21,81 @@ Follow every section in order. Do not skip steps.
 
 ---
 
+## Go-Live Checklist
+
+Read this first. These are the items that gate whether a client's store can go
+live in production — pulled together from across this guide, `docs/bugs-log.md`,
+and `docs/gap-analysis-and-roadmap.md` so you don't have to hunt across three
+files before every launch. Everything here is deployment-time configuration —
+no code changes needed.
+
+### Blocking — must complete before the client's site goes live
+
+- [ ] **HTTPS certificate issued and nginx enabled** — Section 12. Needs the
+      client's domain pointed at your VPS via DNS first.
+- [ ] **Stripe live keys set** — `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET`
+      in `backend/.env` (see *Payment setup* below). Cash and store-credit
+      checkout work without this; only card payments are gated.
+- [ ] **SMTP configured** with a real mailbox or transactional service (Brevo/Resend
+      recommended — many VPS providers block outbound port 587) — Section 2.2
+      gotcha, Section 4.3. Without this, password resets still work via the
+      server-log fallback, but that's not something to leave a live client on.
+- [ ] **`SECRET_KEY` generated fresh** for this deployment via
+      `scripts/generate-env.sh` — never reuse the repo's dev key — Section 2.2.
+- [ ] **Default admin password changed** from the `seed.py` default
+      (`admin@commerceforce.dev / Admin1234!`) — Section 4.3.
+- [ ] **`CORS_ORIGINS` / `STOREFRONT_URL` / `ADMIN_URL`** point at the client's
+      real domain, not the `testshop.com` template values — Section 2.2, 12.6.
+- [ ] **`COOKIE_SECURE=true`** once HTTPS is live (only `false` during
+      HTTP-only testing) — Section 12 gotcha.
+
+### Payment setup — Stripe
+
+1. In the client's Stripe dashboard, get the live **Secret Key**.
+2. Set `STRIPE_SECRET_KEY` in `backend/.env`.
+3. Register a webhook endpoint for the `payment_intent.succeeded` event
+   pointing at the live backend URL; copy the signing secret into
+   `STRIPE_WEBHOOK_SECRET`.
+4. `docker compose restart backend`
+5. Test: place a real (or Stripe test-mode) card order and confirm it shows as
+   paid — check `docker compose logs backend` for the webhook firing.
+
+### Known open issues — not launch-blocking, but worth disclosing or tracking
+
+- Coupon "one per customer" can be bypassed by two simultaneous checkouts
+  using the same code (narrow timing window, minor revenue leak).
+- A newly registered customer keeps a working session for up to 7 days before
+  email verification is enforced.
+- `discount_rules` service commits to the database mid-request instead of at
+  the end like the rest of the app (technical debt, not a live bug).
+
+Full detail: `docs/bugs-log.md`.
+
+### Recommended before competing head-on with Shopify/Woo — not blocking
+
+- **Tax/VAT calculation** — the field exists on every order but nothing
+  computes it; blocks any client legally required to show VAT.
+- **Analytics / GA4 / Meta Pixel injection** — no per-client way to add
+  tracking yet; clients ask for this early.
+- **Abandoned-cart recovery emails** — infrastructure (email + background
+  jobs) already exists, just not wired up.
+- **Guest order tracking page** — guests get a confirmation email but no
+  "check my order status" link.
+- **GDPR data export/delete** — consent banner exists; the actual
+  download/delete-my-data flow doesn't.
+
+Full detail: `docs/gap-analysis-and-roadmap.md` Part B.
+
+### Final verification before sending credentials to the client
+
+Section 10 has the full handoff checklist. At minimum: all three containers
+running, storefront and admin load over HTTPS with a valid padlock, the
+client can log in with their own password, at least one category and product
+are visible, and a test order has been placed successfully (cash, and card
+too if Stripe is enabled).
+
+---
+
 ## Section 1 — Server provisioning
 
 ### 1.1 What you need
