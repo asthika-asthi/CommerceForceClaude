@@ -9,6 +9,7 @@ import { CategoriesNav } from "@/components/layout/categories-nav"
 import { ChatWidget } from "@/components/chat-widget"
 import { BottomNav } from "@/components/layout/bottom-nav"
 import { CookieConsent } from "@/components/cookie-consent"
+import { AnalyticsScripts } from "@/components/analytics-scripts"
 import { serverFetch } from "@/lib/api"
 import { deriveTheme } from "@/lib/theme-colors"
 import type { BrandingConfig, Category } from "@/lib/types"
@@ -54,6 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {branding?.custom_css && <style>{branding.custom_css}</style>}
       </head>
       <body className="min-h-full flex flex-col antialiased">
+        <AnalyticsScripts ga4MeasurementId={branding?.ga4_measurement_id} metaPixelId={branding?.meta_pixel_id} />
         <Providers enabledPlugins={enabledPlugins}>
           <Topbar branding={branding} />
           <Navbar branding={branding} enabledPlugins={enabledPlugins} />
@@ -62,7 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Footer branding={branding} categories={activeCategories} />
           <ChatWidget />
           <BottomNav />
-          <CookieConsent />
+          <CookieConsent analyticsEnabled={!!(branding?.ga4_measurement_id || branding?.meta_pixel_id)} />
         </Providers>
       </body>
     </html>

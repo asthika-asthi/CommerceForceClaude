@@ -278,6 +278,8 @@ export interface BrandingConfig {
   contact_phone?: string
   social_links?: string
   stripe_publishable_key?: string
+  ga4_measurement_id?: string | null
+  meta_pixel_id?: string | null
   theme_colors?: { core?: Record<string, string>; overrides?: Record<string, string> }
 }
 

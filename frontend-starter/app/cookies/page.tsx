@@ -31,7 +31,8 @@ export default function CookiesPage() {
                 {[
                   { name: "refresh_token", purpose: "Keeps you logged in between sessions", duration: "7 days", type: "Essential" },
                   { name: "cart_session", purpose: "Maintains your shopping cart as a guest", duration: "Session", type: "Essential" },
-                  { name: "_ga, _gid", purpose: "Google Analytics — measures site traffic and usage", duration: "2 years / 24h", type: "Analytics" },
+                  { name: "_ga, _gid", purpose: "Google Analytics — measures site traffic and usage (only if enabled and you accept)", duration: "2 years / 24h", type: "Analytics" },
+                  { name: "_fbp", purpose: "Meta Pixel — measures ad performance (only if enabled and you accept)", duration: "3 months", type: "Analytics" },
                 ].map(row => (
                   <tr key={row.name} className="hover:bg-surface-alt">
                     <td className="px-4 py-3 font-mono text-[13px] text-brand-dark">{row.name}</td>
@@ -58,7 +59,7 @@ export default function CookiesPage() {
 
         <section>
           <h2 className="text-[20px] font-bold text-brand-dark mb-3">Analytics cookies</h2>
-          <p>We use Google Analytics to understand how visitors interact with our site. This helps us improve the experience for all users. Analytics data is anonymised where possible. You can opt out of Google Analytics by installing the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Google Analytics Opt-out Browser Add-on</a>.</p>
+          <p>If enabled for this store, we may use Google Analytics and/or Meta Pixel to understand how visitors interact with our site. These only load after you accept non-essential cookies in the banner shown on your first visit — declining or dismissing the banner keeps them switched off. You can opt out of Google Analytics at any time by installing the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Google Analytics Opt-out Browser Add-on</a>.</p>
         </section>
 
         <section>

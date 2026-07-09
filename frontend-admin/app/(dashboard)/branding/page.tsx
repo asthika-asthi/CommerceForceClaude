@@ -29,6 +29,9 @@ const IMAGE_FIELDS = [
   { key: "favicon_url", label: "Favicon", hint: "32×32 or 64×64 ICO/PNG" },
 ]
 
+const GA4_ID_RE = /^G-[A-Z0-9]+$/
+const PIXEL_ID_RE = /^\d{5,20}$/
+
 type FormState = Partial<Record<string, string>>
 type CoreState = Partial<Record<CoreKey, string>>
 type OverrideState = Record<string, string>
@@ -151,6 +154,8 @@ export default function BrandingPage() {
       TEXT_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       IMAGE_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       f.custom_css = config.custom_css ?? ""
+      f.ga4_measurement_id = config.ga4_measurement_id ?? ""
+      f.meta_pixel_id = config.meta_pixel_id ?? ""
       const sl = (config as unknown as Record<string, unknown>).social_links
       f.social_links = sl && typeof sl === "object" ? JSON.stringify(sl) : (sl as string | null) ?? ""
       setForm(f)
@@ -320,6 +325,36 @@ export default function BrandingPage() {
             onChange={(e) => setForm((f) => ({ ...f, social_links: e.target.value }))}
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder='{"twitter": "https://...", "instagram": "https://..."}' />
+        </div>
+
+        {/* ── Analytics ───────────────────────────────────────────── */}
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Analytics</h3>
+          <p className="text-xs text-slate-500 mb-4">
+            Optional. Loaded on the storefront only after a visitor accepts cookies in the consent banner.
+          </p>
+          <div className="grid grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">GA4 Measurement ID</label>
+              <input value={form.ga4_measurement_id || ""}
+                onChange={(e) => setForm((f) => ({ ...f, ga4_measurement_id: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="G-ABC1234567" />
+              {form.ga4_measurement_id && !GA4_ID_RE.test(form.ga4_measurement_id.trim()) && (
+                <p className="text-xs text-red-600 mt-1">Expected format: G- followed by letters/numbers (e.g. G-ABC1234567)</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Meta Pixel ID</label>
+              <input value={form.meta_pixel_id || ""}
+                onChange={(e) => setForm((f) => ({ ...f, meta_pixel_id: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="1234567890123" />
+              {form.meta_pixel_id && !PIXEL_ID_RE.test(form.meta_pixel_id.trim()) && (
+                <p className="text-xs text-red-600 mt-1">Expected format: numbers only (5–20 digits)</p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div>

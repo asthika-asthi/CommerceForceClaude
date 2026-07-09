@@ -162,6 +162,58 @@ async def test_branding_blank_store_name_roundtrips(client: AsyncClient, db):
     assert r2.json()["store_name"] == ""
 
 
+async def test_admin_sets_valid_analytics_ids(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    r = await client.put(
+        "/api/branding",
+        json={"ga4_measurement_id": "G-ABC1234567", "meta_pixel_id": "1234567890123"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["ga4_measurement_id"] == "G-ABC1234567"
+    assert body["meta_pixel_id"] == "1234567890123"
+
+    r2 = await client.get("/api/branding")
+    body2 = r2.json()
+    assert body2["ga4_measurement_id"] == "G-ABC1234567"
+    assert body2["meta_pixel_id"] == "1234567890123"
+
+
+async def test_analytics_ids_reject_garbage(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    bad_ga4 = await client.put("/api/branding", json={"ga4_measurement_id": "<script>alert(1)</script>"}, headers=headers)
+    assert bad_ga4.status_code == 422
+
+    bad_ga4_2 = await client.put("/api/branding", json={"ga4_measurement_id": "not-a-ga4-id"}, headers=headers)
+    assert bad_ga4_2.status_code == 422
+
+    bad_pixel = await client.put("/api/branding", json={"meta_pixel_id": "abc123\"onload=alert(1)"}, headers=headers)
+    assert bad_pixel.status_code == 422
+
+    bad_pixel_2 = await client.put("/api/branding", json={"meta_pixel_id": "12"}, headers=headers)
+    assert bad_pixel_2.status_code == 422
+
+
+async def test_analytics_ids_can_be_cleared(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    await client.put("/api/branding", json={"ga4_measurement_id": "G-ABC1234567"}, headers=headers)
+
+    r = await client.put("/api/branding", json={"ga4_measurement_id": ""}, headers=headers)
+    assert r.status_code == 200
+    assert r.json()["ga4_measurement_id"] is None
+
+
+async def test_analytics_ids_default_none(client: AsyncClient, db):
+    r = await client.get("/api/branding")
+    body = r.json()
+    assert body["ga4_measurement_id"] is None
+    assert body["meta_pixel_id"] is None
+
+
 # ── LANDING PAGE ──────────────────────────────────────────────────────────────
 
 async def test_create_hero_section(client: AsyncClient, db):

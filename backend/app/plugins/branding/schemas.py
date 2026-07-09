@@ -1,6 +1,25 @@
 import json
+import re
 from typing import Optional
 from pydantic import BaseModel, field_validator, field_serializer
+
+# GA4 measurement IDs look like "G-XXXXXXXXXX"; Meta Pixel IDs are numeric.
+# These render into a <script> tag on the storefront (see analytics-scripts.tsx),
+# a materially higher-severity injection surface than custom_css's <style> tag,
+# so — unlike custom_css — free text is not accepted here.
+_GA4_ID_RE = re.compile(r"^G-[A-Z0-9]+$")
+_PIXEL_ID_RE = re.compile(r"^\d{5,20}$")
+
+
+def _validate_tracking_id(value: Optional[str], pattern: re.Pattern, label: str) -> Optional[str]:
+    if value is None:
+        return None
+    trimmed = value.strip()
+    if not trimmed:
+        return None
+    if not pattern.match(trimmed):
+        raise ValueError(f"Invalid {label} format")
+    return trimmed
 
 
 class BrandingConfigOut(BaseModel):
@@ -17,6 +36,8 @@ class BrandingConfigOut(BaseModel):
     contact_phone: Optional[str] = None
     social_links: Optional[dict] = None
     stripe_publishable_key: Optional[str] = None
+    ga4_measurement_id: Optional[str] = None
+    meta_pixel_id: Optional[str] = None
     theme_colors: dict = {}
     model_config = {"from_attributes": True}
 
@@ -44,7 +65,19 @@ class BrandingConfigUpdate(BaseModel):
     contact_phone: Optional[str] = None
     social_links: Optional[dict] = None
     stripe_publishable_key: Optional[str] = None
+    ga4_measurement_id: Optional[str] = None
+    meta_pixel_id: Optional[str] = None
     theme_colors: Optional[dict] = None
+
+    @field_validator("ga4_measurement_id")
+    @classmethod
+    def validate_ga4_id(cls, v: Optional[str]) -> Optional[str]:
+        return _validate_tracking_id(v, _GA4_ID_RE, "GA4 measurement ID (expected e.g. G-ABC1234567)")
+
+    @field_validator("meta_pixel_id")
+    @classmethod
+    def validate_meta_pixel_id(cls, v: Optional[str]) -> Optional[str]:
+        return _validate_tracking_id(v, _PIXEL_ID_RE, "Meta Pixel ID (expected a numeric ID)")
 
     @field_validator("social_links", mode="before")
     @classmethod

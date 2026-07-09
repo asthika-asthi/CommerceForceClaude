@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { X } from "lucide-react"
 
 const CONSENT_KEY = "cf_cookie_consent"
+export const CONSENT_CHANGED_EVENT = "cf:consent-changed"
 
 export type ConsentStatus = "accepted" | "declined" | null
 
@@ -11,22 +12,26 @@ export function getConsentStatus(): ConsentStatus {
   return (localStorage.getItem(CONSENT_KEY) as ConsentStatus) ?? null
 }
 
-export function CookieConsent() {
+interface Props {
+  /** True when this deployment has a GA4/Meta Pixel ID configured — changes the disclosure copy. */
+  analyticsEnabled?: boolean
+}
+
+export function CookieConsent({ analyticsEnabled = false }: Props) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     if (!localStorage.getItem(CONSENT_KEY)) setVisible(true)
   }, [])
 
-  function accept() {
-    localStorage.setItem(CONSENT_KEY, "accepted")
+  function setStatus(status: Exclude<ConsentStatus, null>) {
+    localStorage.setItem(CONSENT_KEY, status)
+    window.dispatchEvent(new CustomEvent(CONSENT_CHANGED_EVENT, { detail: status }))
     setVisible(false)
   }
 
-  function decline() {
-    localStorage.setItem(CONSENT_KEY, "declined")
-    setVisible(false)
-  }
+  function accept() { setStatus("accepted") }
+  function decline() { setStatus("declined") }
 
   if (!visible) return null
 
@@ -38,7 +43,9 @@ export function CookieConsent() {
             <p className="text-sm text-slate-700 font-medium mb-1">This site uses cookies</p>
             <p className="text-xs text-slate-500 leading-relaxed">
               We use essential cookies to keep your shopping cart working across page visits.
-              No tracking or advertising cookies are used.{" "}
+              {analyticsEnabled
+                ? " With your consent, we also use analytics cookies to understand site usage."
+                : " No tracking or advertising cookies are used."}{" "}
               <a href="/cookies" className="underline hover:text-slate-700">Cookie policy</a>
             </p>
           </div>

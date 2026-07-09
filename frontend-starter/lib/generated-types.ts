@@ -1897,6 +1897,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tax/zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Zones */
+        get: operations["list_zones_api_tax_zones_get"];
+        put?: never;
+        /** Create Zone */
+        post: operations["create_zone_api_tax_zones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tax/zones/{zone_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Zone */
+        put: operations["update_zone_api_tax_zones__zone_id__put"];
+        post?: never;
+        /** Delete Zone */
+        delete: operations["delete_zone_api_tax_zones__zone_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tax/rate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Rate */
+        get: operations["get_rate_api_tax_rate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/announcements/active": {
         parameters: {
             query?: never;
@@ -2818,6 +2871,10 @@ export interface components {
             } | null;
             /** Stripe Publishable Key */
             stripe_publishable_key?: string | null;
+            /** Ga4 Measurement Id */
+            ga4_measurement_id?: string | null;
+            /** Meta Pixel Id */
+            meta_pixel_id?: string | null;
             /**
              * Theme Colors
              * @default {}
@@ -2854,6 +2911,10 @@ export interface components {
             } | null;
             /** Stripe Publishable Key */
             stripe_publishable_key?: string | null;
+            /** Ga4 Measurement Id */
+            ga4_measurement_id?: string | null;
+            /** Meta Pixel Id */
+            meta_pixel_id?: string | null;
             /** Theme Colors */
             theme_colors?: {
                 [key: string]: unknown;
@@ -4639,6 +4700,53 @@ export interface components {
         SubscriberUpdate: {
             /** First Name */
             first_name?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
+        /** TaxRateOut */
+        TaxRateOut: {
+            /** Zone Name */
+            zone_name: string | null;
+            /** Rate Percent */
+            rate_percent: string;
+            /** Country */
+            country: string;
+        };
+        /** TaxZoneCreate */
+        TaxZoneCreate: {
+            /** Name */
+            name: string;
+            /** Countries */
+            countries: string;
+            /** Rate Percent */
+            rate_percent: number | string;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** TaxZoneOut */
+        TaxZoneOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Countries */
+            countries: string;
+            /** Rate Percent */
+            rate_percent: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** TaxZoneUpdate */
+        TaxZoneUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Countries */
+            countries?: string | null;
+            /** Rate Percent */
+            rate_percent?: number | string | null;
             /** Is Active */
             is_active?: boolean | null;
         };
@@ -9224,6 +9332,154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShippingRateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_zones_api_tax_zones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxZoneOut"][];
+                };
+            };
+        };
+    };
+    create_zone_api_tax_zones_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxZoneCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxZoneOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_zone_api_tax_zones__zone_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                zone_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxZoneUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxZoneOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_zone_api_tax_zones__zone_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                zone_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rate_api_tax_rate_get: {
+        parameters: {
+            query: {
+                country: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRateOut"];
                 };
             };
             /** @description Validation Error */
