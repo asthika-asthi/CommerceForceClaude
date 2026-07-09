@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Response, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import get_current_user_optional
-from app.plugins.cart.schemas import CartOut, AddItemRequest, UpdateItemRequest
+from app.core.limiter import limiter
+from app.plugins.cart.schemas import CartOut, AddItemRequest, UpdateItemRequest, RecoveryEmailRequest
 from app.plugins.cart import service
 
 GUEST_SESSION_COOKIE = "guest_session"
@@ -79,6 +80,21 @@ async def clear_cart(
         session_id = request.cookies.get(GUEST_SESSION_COOKIE)
         if session_id:
             await service.clear_cart(db, session_id=session_id)
+
+
+@router.post("/recovery-email", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("3/minute")
+async def set_recovery_email(
+    data: RecoveryEmailRequest, request: Request, response: Response,
+    current_user=Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db),
+):
+    """Guest-only: capture an email for an abandoned-cart reminder. Logged-in
+    customers already have their account email — this is a no-op for them."""
+    if current_user:
+        return
+    session_id = _get_session_id(request, response)
+    await service.set_recovery_email(session_id, str(data.email), db)
 
 
 @router.post("/merge", response_model=CartOut)

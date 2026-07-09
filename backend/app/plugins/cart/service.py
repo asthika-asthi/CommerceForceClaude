@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +9,19 @@ from app.plugins.cart.models import Cart, CartItem
 from app.plugins.cart.schemas import CartOut, CartItemOut
 from app.plugins.products.models import Product, ProductVariant, ProductVariantOption, ProductOptionValue
 from app.plugins.products import variant_service as vs
+
+
+def _touch_cart(cart: Cart) -> None:
+    """Mark the cart row itself as modified.
+
+    Adding/updating a CartItem only writes the CartItem row — the parent Cart
+    row (and its onupdate-triggered updated_at) is untouched unless we assign
+    to it directly. Abandoned-cart detection keys off Cart.updated_at, so every
+    item mutation must call this. Also clears reminder_sent_at so a cart that
+    was already reminded becomes eligible again after a fresh change.
+    """
+    cart.updated_at = datetime.now(timezone.utc)
+    cart.reminder_sent_at = None
 
 
 async def _load_cart(cart_id: str, db: AsyncSession) -> Cart:
@@ -162,6 +176,7 @@ async def add_item(
     else:
         item = CartItem(cart_id=cart.id, variant_id=variant_id, quantity=quantity)
         db.add(item)
+    _touch_cart(cart)
     await db.flush()
     # Reload cart so items collection reflects the new item
     cart_id = cart.id
@@ -204,6 +219,7 @@ async def update_item(
         await db.delete(item)
     else:
         item.quantity = quantity
+    _touch_cart(cart)
     await db.flush()
     cart_id = cart.id
     db.expire(cart)
@@ -226,6 +242,15 @@ async def clear_cart(
     cart = await _get_or_create_cart(db, user_id=user_id, session_id=session_id)
     for item in list(cart.items):
         await db.delete(item)
+    await db.flush()
+
+
+async def set_recovery_email(session_id: Optional[str], email: str, db: AsyncSession) -> None:
+    """Capture a guest's email against their cart so an abandoned-cart
+    reminder has somewhere to send. A guest typing this in is the consent
+    for that one reminder — no separate opt-in needed."""
+    cart = await _get_or_create_cart(db, session_id=session_id)
+    cart.recovery_email = email
     await db.flush()
 
 

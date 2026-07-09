@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.plugin_registry import register_plugins, get_manifests
 from app.shared.exceptions import AppException, app_exception_handler
+from app.shared.abandoned_cart import send_reminders as send_abandoned_cart_reminders
 from app.routers.media import router as media_router
 
 
@@ -15,8 +16,28 @@ from app.routers.media import router as media_router
 async def lifespan(app: FastAPI):
     print(f"\nCommerceForce — environment: {settings.ENVIRONMENT}")
     print(f"Plugins active: {settings.enabled_plugins}")
+
+    scheduler = None
+    if settings.ABANDONED_CART_ENABLED:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        scheduler = AsyncIOScheduler()
+        scheduler.add_job(
+            send_abandoned_cart_reminders, "interval",
+            minutes=settings.ABANDONED_CART_CHECK_INTERVAL_MINUTES,
+            id="abandoned_cart_reminders",
+        )
+        scheduler.start()
+        print(
+            f"Abandoned-cart reminders: checking every "
+            f"{settings.ABANDONED_CART_CHECK_INTERVAL_MINUTES}min "
+            f"(idle threshold {settings.ABANDONED_CART_DELAY_HOURS}h)"
+        )
+
     print("Ready.\n")
     yield
+
+    if scheduler:
+        scheduler.shutdown()
 
 
 app = FastAPI(

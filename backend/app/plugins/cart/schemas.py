@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import Optional, List
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, EmailStr, model_validator
 
 
 class CartItemOut(BaseModel):
@@ -43,3 +43,7 @@ class AddItemRequest(BaseModel):
 
 class UpdateItemRequest(BaseModel):
     quantity: int
+
+
+class RecoveryEmailRequest(BaseModel):
+    email: EmailStr

@@ -6,6 +6,7 @@ os.environ["ANTHROPIC_API_KEY"] = "test-key"
 os.environ["ENVIRONMENT"] = "development"  # keep refresh cookies non-secure for HTTP test client
 os.environ["COOKIE_SECURE"] = "false"  # HTTP test client — refresh cookie must be sendable
 os.environ["REQUIRE_EMAIL_VERIFICATION"] = "false"  # existing suite runs gate-off; B7 tests flip it on
+os.environ["ABANDONED_CART_ENABLED"] = "false"  # tests call send_reminders() directly; no background scheduler needed
 
 import pytest  # noqa: E402
 from httpx import AsyncClient, ASGITransport  # noqa: E402

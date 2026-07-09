@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     # Redis / Celery
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # Abandoned-cart recovery — an in-process scheduler (no separate worker/broker)
+    # periodically emails carts that have been idle for ABANDONED_CART_DELAY_HOURS.
+    ABANDONED_CART_ENABLED: bool = True
+    ABANDONED_CART_DELAY_HOURS: int = 2
+    ABANDONED_CART_CHECK_INTERVAL_MINUTES: int = 60
+
     # SMTP
     SMTP_HOST: str = "localhost"
     SMTP_PORT: int = 587

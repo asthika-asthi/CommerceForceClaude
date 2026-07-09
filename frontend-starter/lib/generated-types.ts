@@ -731,6 +731,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cart/recovery-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Recovery Email
+         * @description Guest-only: capture an email for an abandoned-cart reminder. Logged-in
+         *     customers already have their account email — this is a no-op for them.
+         */
+        post: operations["set_recovery_email_api_cart_recovery_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/cart/merge": {
         parameters: {
             query?: never;
@@ -779,6 +800,23 @@ export interface paths {
         get: operations["get_analytics_api_orders_analytics_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/track": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Track Order */
+        post: operations["track_order_api_orders_track_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3882,6 +3920,8 @@ export interface components {
             discount_amount: string;
             /** Tax Amount */
             tax_amount: string;
+            /** Shipping Cost */
+            shipping_cost: string;
             /** Total */
             total: string;
             /** Shipping Address */
@@ -4486,6 +4526,14 @@ export interface components {
             /** Item Quotes */
             item_quotes: components["schemas"]["RFQItemQuote"][];
         };
+        /** RecoveryEmailRequest */
+        RecoveryEmailRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
         /** RegisterRequest */
         RegisterRequest: {
             /**
@@ -4759,6 +4807,13 @@ export interface components {
              * @default bearer
              */
             token_type: string;
+        };
+        /** TrackOrderRequest */
+        TrackOrderRequest: {
+            /** Order Number */
+            order_number: string;
+            /** Email */
+            email: string;
         };
         /** TradeRegisterRequest */
         TradeRegisterRequest: {
@@ -6669,6 +6724,37 @@ export interface operations {
             };
         };
     };
+    set_recovery_email_api_cart_recovery_email_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecoveryEmailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     merge_cart_api_cart_merge_post: {
         parameters: {
             query?: never;
@@ -6725,6 +6811,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    track_order_api_orders_track_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrackOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

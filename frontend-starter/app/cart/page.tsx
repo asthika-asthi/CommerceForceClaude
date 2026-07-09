@@ -1,12 +1,59 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useCartStore } from "@/store/cart"
+import { useAuthStore } from "@/store/auth"
+import { api } from "@/lib/api"
 import Link from "next/link"
-import { Trash2, Plus, Minus } from "lucide-react"
+import { Trash2, Plus, Minus, X } from "lucide-react"
 import { formatMoney } from "@/lib/currency"
+
+function RecoveryEmailPrompt() {
+  const [dismissed, setDismissed] = useState(false)
+  const [email, setEmail] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  if (dismissed || saved) return null
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await api.post("/api/cart/recovery-email", { email })
+      setSaved(true)
+    } catch {
+      // Non-critical — just let them dismiss and keep shopping.
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="bg-surface-alt border border-border rounded-xl p-4 mb-6 flex items-start gap-3">
+      <div className="flex-1">
+        <p className="text-sm font-medium text-slate-800 mb-2">
+          Want us to save your cart? We&apos;ll email you a reminder if you don&apos;t check out.
+        </p>
+        <form onSubmit={handleSave} className="flex gap-2">
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
+          <button type="submit" disabled={saving}
+            className="bg-brand hover:bg-brand-hover text-on-brand text-sm font-medium px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+            {saving ? "Saving…" : "Save cart"}
+          </button>
+        </form>
+      </div>
+      <button onClick={() => setDismissed(true)} aria-label="Dismiss" className="text-slate-400 hover:text-slate-600 flex-shrink-0">
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  )
+}
 
 export default function CartPage() {
   const { cart, fetch, updateItem, removeItem, isLoading } = useCartStore()
+  const user = useAuthStore((s) => s.user)
   const [busyItems, setBusyItems] = useState<Set<string>>(new Set())
 
   useEffect(() => { fetch() }, [fetch])
@@ -48,6 +95,8 @@ export default function CartPage() {
           </Link>
         </div>
       ) : (
+        <>
+        {!user && <RecoveryEmailPrompt />}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-3">
             {items.map((item) => {
@@ -120,6 +169,7 @@ export default function CartPage() {
             </Link>
           </div>
         </div>
+        </>
       )}
     </div>
   )

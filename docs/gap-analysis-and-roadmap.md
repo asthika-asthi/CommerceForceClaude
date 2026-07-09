@@ -59,10 +59,10 @@ completeness, and a few capability gaps that block specific profiles.
 | Gap | Status | Detail | Priority |
 |---|---|---|---|
 | **SEO essentials** | **Largely built** | `sitemap.ts`, `robots.ts`, and `generateMetadata` (layout + product/category pages) all exist; product pages carry OpenGraph/JSON-LD. **Remaining:** site-wide OG defaults in `layout.tsx`, and confirm JSON-LD coverage on all templates. Downgraded from a High gap to polish. | Low–Med |
-| **Abandoned-cart recovery** | Not built | Celery/Redis and email already exist. Abandoned-cart emails are one of the highest-ROI commerce features and a common "why not Shopify?" question. | High |
-| **Analytics / GA4 / pixel hooks** | Not built | No standard way to inject Google Analytics / Meta Pixel per client (only mentioned in the cookie/privacy policy text). Clients expect it. | High |
-| **Tax / VAT calculation** | Partial | `tax_amount` exists on the order model and flows through checkout, but nothing ever computes it — there's no tax rate config or calculation. Blocks any client who must show VAT. | High |
-| **Guest order tracking / status page** | Not built | Guests get a confirmation email but no link to view status without an account. | Medium |
+| **Abandoned-cart recovery** | **Built (2026-07-09)** | An in-process APScheduler job (not Celery/Redis — those were unused dependencies with zero wiring, corrected from this table's earlier claim) periodically emails idle carts once. Guest carts now capture a recovery email via a cart-page prompt; logged-in carts use the account email. | — |
+| **Analytics / GA4 / pixel hooks** | **Built (2026-07-09)** | `BrandingConfig.ga4_measurement_id`/`meta_pixel_id`, injected via `next/script`, consent-gated behind the cookie banner. | — |
+| **Tax / VAT calculation** | **Built (2026-07-09)** | New `tax` plugin (per-country rate zones, mirrors `shipping`) computes VAT on the discounted subtotal at checkout; flows through to the order total, CSV export, confirmation email, and order-detail pages. | — |
+| **Guest order tracking / status page** | **Built (2026-07-09)** | Public `POST /api/orders/track` (order number + email, enumeration-safe) and a `/track-order` page; linked from the confirmation email and checkout success page. | — |
 | **GDPR data export & delete** | Partial | Consent banner + cookie/privacy pages exist, but there's no "download / delete my data" flow. Legal requirement for EU clients. | Medium |
 | **Storefront search & filtering** | Partial | Admin has search; storefront product discovery (search box, facet filters) is thin vs Shopify. | Medium |
 | **Inventory source-of-truth** (backlog U) | Partial | The multi-warehouse system is built but not wired into selling (`deduct_stock_for_variant` unused) — decide single-pool vs multi-warehouse before a client needs real multi-location stock. | Medium |
@@ -163,9 +163,9 @@ Ordered by leverage. Each item already has a home in this doc or the backlog.
 4. **`/api/version` build stamp** (Part A) — cheap; makes every future bug report diagnosable.
 
 ### Phase 2 — Win more clients *(storefront completeness)*
-5. **Abandoned-cart recovery** (reuses Celery/Redis + email).
-6. **Analytics / GA4 / pixel injection hooks** (per-client config).
-7. **Tax / VAT calculation** (populate the existing `tax_amount`).
+5. ~~**Abandoned-cart recovery**~~ — **Done (2026-07-09)**, in-process scheduler + email.
+6. ~~**Analytics / GA4 / pixel injection hooks**~~ — **Done (2026-07-09)**.
+7. ~~**Tax / VAT calculation**~~ — **Done (2026-07-09)**.
 8. **SEO polish** — site-wide OG defaults + confirm JSON-LD coverage.
 
 ### Phase 3 — Fleet at scale *(agency operations)*
