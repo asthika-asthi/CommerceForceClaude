@@ -309,6 +309,8 @@ Plugins control which features are visible to the client in the admin panel and 
 | `wishlist` | Customer wishlists |
 | `reviews` | Product reviews |
 | `discount_rules` | Automatic discounts (e.g. 10% off orders over £100) |
+| `shipping` | Per-country flat-rate shipping costs |
+| `tax` | Per-country VAT/tax rates, applied at checkout |
 | `promotions` | Promotional banners |
 | `announcements` | Site-wide announcement bar |
 

@@ -178,6 +178,7 @@ export interface Order {
   subtotal: string
   discount_amount: string
   tax_amount: string
+  shipping_cost: string
   total: string
   shipping_address?: string
   notes?: string
@@ -191,6 +192,8 @@ export interface CheckoutSummary {
   order_number: string
   subtotal: string
   discount_amount: string
+  tax_amount: string
+  shipping_cost: string
   total: string
   payment_method: string
   payment_status: string

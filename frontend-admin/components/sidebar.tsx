@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Package, Tag, ShoppingCart, Ticket, Star,
   Mail, FileText, CreditCard, Warehouse, Palette, Layout,
   MessageCircle, BarChart2, LogOut, Megaphone, Settings, Truck, Image, FileUp,
-  Calendar,
+  Calendar, Percent,
 } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { useRouter } from "next/navigation"
@@ -31,6 +31,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   "megaphone": <Megaphone size={16} />,
   "truck": <Truck size={16} />,
   "calendar": <Calendar size={16} />,
+  "percent": <Percent size={16} />,
 }
 
 function NavItem({ href, label, icon }: { href: string; label: string; icon?: React.ReactNode }) {

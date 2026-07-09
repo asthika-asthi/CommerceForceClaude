@@ -3044,6 +3044,11 @@ export interface components {
             /** Discount Amount */
             discount_amount: string;
             /**
+             * Tax Amount
+             * @default 0
+             */
+            tax_amount: string;
+            /**
              * Shipping Cost
              * @default 0
              */

@@ -33,6 +33,7 @@ async def checkout(
         order_number=order.order_number,
         subtotal=order.subtotal,
         discount_amount=order.discount_amount,
+        tax_amount=order.tax_amount,
         shipping_cost=order.shipping_cost,
         total=order.total,
         payment_method=order.payment_method,

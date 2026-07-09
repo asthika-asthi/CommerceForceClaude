@@ -62,10 +62,26 @@ export default function OrderDetailPage() {
       </div>
 
       <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-500">Subtotal</span>
+          <span className="text-slate-900">{formatMoney(parseFloat(order.subtotal).toFixed(2))}</span>
+        </div>
         {parseFloat(order.discount_amount) > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-slate-500">Discount</span>
             <span className="text-green-600">−{formatMoney(parseFloat(order.discount_amount).toFixed(2))}</span>
+          </div>
+        )}
+        {parseFloat(order.tax_amount) > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Tax (VAT)</span>
+            <span className="text-slate-900">{formatMoney(parseFloat(order.tax_amount).toFixed(2))}</span>
+          </div>
+        )}
+        {parseFloat(order.shipping_cost) > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Shipping</span>
+            <span className="text-slate-900">{formatMoney(parseFloat(order.shipping_cost).toFixed(2))}</span>
           </div>
         )}
         <div className="flex justify-between font-semibold text-slate-900 pt-2 border-t border-slate-100">

@@ -175,6 +175,12 @@ function OrderDetail({ id }: { id: string }) {
             {parseFloat(order.discount_amount) > 0 && (
               <Row label="Discount" value={`-${CURRENCY_SYMBOL}${order.discount_amount}`} />
             )}
+            {parseFloat(order.tax_amount) > 0 && (
+              <Row label="Tax (VAT)" value={`${CURRENCY_SYMBOL}${order.tax_amount}`} />
+            )}
+            {parseFloat(order.shipping_cost) > 0 && (
+              <Row label="Shipping" value={`${CURRENCY_SYMBOL}${order.shipping_cost}`} />
+            )}
             <Row label="Total" value={`${CURRENCY_SYMBOL}${order.total}`} />
           </dl>
         </div>

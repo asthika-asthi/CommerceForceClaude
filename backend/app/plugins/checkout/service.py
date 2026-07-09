@@ -248,6 +248,15 @@ async def checkout(
         except ImportError:
             pass
 
+    # Resolve tax/VAT (optional tax plugin). Taxable base is subtotal minus
+    # discount — shipping is not taxed.
+    tax_amount = Decimal("0")
+    try:
+        from app.plugins.tax import service as tax_service
+        tax_amount = await tax_service.calculate_tax(subtotal - discount_amount, data.delivery_country, db)
+    except ImportError:
+        pass
+
     order = await order_service.create_order(
         items=items,
         payment_method=data.payment_method,
@@ -257,6 +266,7 @@ async def checkout(
         shipping_address=data.shipping_address,
         notes=data.notes,
         discount_amount=discount_amount,
+        tax_amount=tax_amount,
         shipping_cost=shipping_cost,
     )
 
@@ -440,6 +450,10 @@ async def _send_order_confirmation_email(
     )
     if order.discount_amount > 0:
         body += f"Discount:  -{format_money(order.discount_amount)}\n"
+    if order.tax_amount > 0:
+        body += f"Tax (VAT): {format_money(order.tax_amount)}\n"
+    if order.shipping_cost > 0:
+        body += f"Shipping:  {format_money(order.shipping_cost)}\n"
     body += (
         f"Total:     {format_money(order.total)}\n\n"
         f"Payment:   {payment_label}\n"

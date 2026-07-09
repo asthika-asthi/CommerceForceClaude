@@ -33,6 +33,7 @@ class CheckoutSummary(BaseModel):
     order_number: str
     subtotal: Decimal
     discount_amount: Decimal
+    tax_amount: Decimal = Decimal("0")
     shipping_cost: Decimal = Decimal("0")
     total: Decimal
     payment_method: PaymentMethod

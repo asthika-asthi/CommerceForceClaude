@@ -31,7 +31,7 @@ async def export_orders_csv(db: AsyncSession = Depends(get_db)):
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=[
         "order_number", "status", "payment_method", "payment_status",
-        "subtotal", "discount_amount", "total", "guest_email",
+        "subtotal", "discount_amount", "tax_amount", "shipping_cost", "total", "guest_email",
         "shipping_address", "tracking_number", "created_at",
     ])
     writer.writeheader()
@@ -43,6 +43,8 @@ async def export_orders_csv(db: AsyncSession = Depends(get_db)):
             "payment_status": o.payment_status,
             "subtotal": o.subtotal,
             "discount_amount": o.discount_amount,
+            "tax_amount": o.tax_amount,
+            "shipping_cost": o.shipping_cost,
             "total": o.total,
             "guest_email": _csv_safe(o.guest_email or ""),
             "shipping_address": _csv_safe((o.shipping_address or "").replace("\n", " ")),

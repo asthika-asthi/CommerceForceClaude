@@ -32,6 +32,7 @@ from app.plugins.scheduling.models import (  # noqa: F401
 from app.plugins.reviews.models import Review  # noqa: F401
 from app.plugins.discount_rules.models import DiscountRule  # noqa: F401
 from app.plugins.shipping.models import ShippingZone  # noqa: F401
+from app.plugins.tax.models import TaxZone  # noqa: F401
 from app.plugins.addresses.models import Address  # noqa: F401
 from app.plugins.wishlist.models import WishlistItem  # noqa: F401
 from app.plugins.announcements.models import Announcement  # noqa: F401

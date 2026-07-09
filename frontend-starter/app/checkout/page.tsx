@@ -73,6 +73,8 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [shippingCost, setShippingCost] = useState<number>(0)
   const shippingDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [taxAmount, setTaxAmount] = useState<number>(0)
+  const taxDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [couponApplying, setCouponApplying] = useState(false)
@@ -99,6 +101,23 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
     }, 400)
     return () => { if (shippingDebounce.current) clearTimeout(shippingDebounce.current) }
   }, [form.country])
+
+  useEffect(() => {
+    if (!form.country) { setTaxAmount(0); return }
+    if (taxDebounce.current) clearTimeout(taxDebounce.current)
+    taxDebounce.current = setTimeout(() => {
+      const rawSubtotal = parseFloat(cart?.subtotal ?? "0")
+      const loyaltyDiscountNow =
+        loyaltyRate?.active && form.redeem_points >= loyaltyRate.min
+          ? form.redeem_points * loyaltyRate.rate
+          : 0
+      const taxableBase = Math.max(0, rawSubtotal - Math.min(couponDiscount + loyaltyDiscountNow, rawSubtotal))
+      api.get<{ rate_percent: number }>(`/api/tax/rate?country=${encodeURIComponent(form.country)}`)
+        .then((r) => setTaxAmount(Number((taxableBase * Number(r.rate_percent) / 100).toFixed(2))))
+        .catch(() => setTaxAmount(0))
+    }, 400)
+    return () => { if (taxDebounce.current) clearTimeout(taxDebounce.current) }
+  }, [form.country, form.redeem_points, couponDiscount, cart?.subtotal, loyaltyRate])
 
   useEffect(() => {
     if (!user) return
@@ -158,7 +177,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
       ? form.redeem_points * loyaltyRate.rate
       : 0
   const discountTotal = Math.min(couponDiscount + loyaltyDiscount, subtotal)
-  const orderTotal = subtotal - discountTotal + shippingCost
+  const orderTotal = subtotal - discountTotal + shippingCost + taxAmount
 
   function field(key: keyof CheckoutForm) {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -483,6 +502,12 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
                 <span>Shipping</span>
                 <span>{shippingCost > 0 ? <>{formatMoney(shippingCost.toFixed(2))}</> : "Free"}</span>
               </div>
+              {taxAmount > 0 && (
+                <div className="flex justify-between text-sm text-slate-600">
+                  <span>Tax (VAT)</span>
+                  <span>{formatMoney(taxAmount.toFixed(2))}</span>
+                </div>
+              )}
               <div className="flex justify-between font-semibold text-slate-900 pt-2 border-t border-slate-100">
                 <span>Total</span>
                 <span>{formatMoney(orderTotal.toFixed(2))}</span>

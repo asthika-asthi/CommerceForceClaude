@@ -117,6 +117,8 @@ export interface Order {
   payment_status: PaymentStatus
   subtotal: string
   discount_amount: string
+  tax_amount: string
+  shipping_cost: string
   total: string
   shipping_address?: string
   notes?: string
