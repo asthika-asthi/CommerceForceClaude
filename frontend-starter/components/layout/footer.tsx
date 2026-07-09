@@ -84,6 +84,7 @@ export function Footer({ branding, categories }: Props) {
             {[
               { label: "Delivery information", href: "/contact" },
               { label: "Returns policy", href: "/contact" },
+              { label: "Track your order", href: "/track-order" },
               { label: "FAQs", href: "/faq" },
               { label: "Contact us", href: "/contact" },
             ].map(({ label, href }) => (

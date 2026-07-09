@@ -1,14 +1,15 @@
 import csv
 import io
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_admin
+from app.core.limiter import limiter
 from app.plugins.orders.models import Order, OrderItem
-from app.plugins.orders.schemas import OrderOut, OrderListOut, UpdateStatusRequest, FulfilRequest
+from app.plugins.orders.schemas import OrderOut, OrderListOut, TrackOrderRequest, UpdateStatusRequest, FulfilRequest
 from app.plugins.orders import service
 from app.shared.pagination import Page, paginate
 
@@ -95,6 +96,12 @@ async def get_analytics(db: AsyncSession = Depends(get_db)):
     ]
 
     return {"daily_revenue": daily_revenue, "top_products": top_products}
+
+
+@router.post("/track", response_model=OrderOut)
+@limiter.limit("5/minute")
+async def track_order(request: Request, data: TrackOrderRequest, db: AsyncSession = Depends(get_db)):
+    return await service.track_order(data.order_number, data.email, db)
 
 
 @router.get("", response_model=Page[OrderListOut])

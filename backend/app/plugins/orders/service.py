@@ -28,6 +28,35 @@ async def get_order(order_id: str, db: AsyncSession, user_id: Optional[str] = No
     return order
 
 
+async def track_order(order_number: str, email: str, db: AsyncSession) -> Order:
+    """Public order lookup for guests (and registered customers who'd rather not
+    log in) — matched on order number + the email associated with the order.
+
+    Always raises the same generic 404 on any mismatch, never distinguishing
+    which part was wrong, mirroring forgot-password's enumeration-safe design.
+    """
+    from app.plugins.auth.models import User
+
+    result = await db.execute(
+        select(Order).where(func.lower(Order.order_number) == order_number.strip().lower())
+    )
+    order = result.scalar_one_or_none()
+
+    not_found = HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No matching order found")
+    if not order:
+        raise not_found
+
+    order_email = order.guest_email
+    if not order_email and order.user_id:
+        user_result = await db.execute(select(User.email).where(User.id == order.user_id))
+        order_email = user_result.scalar_one_or_none()
+
+    if not order_email or order_email.strip().lower() != email.strip().lower():
+        raise not_found
+
+    return order
+
+
 async def list_orders(
     db: AsyncSession,
     user_id: Optional[str] = None,

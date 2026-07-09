@@ -50,6 +50,11 @@ class OrderListOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TrackOrderRequest(BaseModel):
+    order_number: str
+    email: str
+
+
 class UpdateStatusRequest(BaseModel):
     status: OrderStatus
 

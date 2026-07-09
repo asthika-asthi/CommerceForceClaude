@@ -460,6 +460,10 @@ async def _send_order_confirmation_email(
     )
     if order.shipping_address:
         body += f"\nShipping address:\n{order.shipping_address}\n"
+    body += (
+        f"\nTrack your order any time: "
+        f"{settings.STOREFRONT_URL}/track-order?order_number={order.order_number}\n"
+    )
     body += "\nWe will keep you updated on your order status. Thank you for shopping with us!"
 
     logger.info("Order confirmation for %s: %s — %s", to, order.order_number, format_money(order.total))

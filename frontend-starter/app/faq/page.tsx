@@ -37,7 +37,7 @@ const FAQS = [
   },
   {
     q: "How do I track my order?",
-    a: "Once dispatched you will receive an email with your tracking number. You can also view order status in your account under My Orders.",
+    a: "Once dispatched you will receive an email with your tracking number. You can view order status in your account under My Orders, or — if you checked out as a guest — use our Track your order page with your order number and email.",
   },
 ]
 
