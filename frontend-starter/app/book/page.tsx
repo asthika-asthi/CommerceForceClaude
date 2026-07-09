@@ -270,7 +270,7 @@ export default function BookPage() {
             <button
               type="button"
               onClick={resetBooking}
-              className="px-5 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-xl text-sm transition-colors"
+              className="px-5 py-2.5 bg-brand hover:bg-brand-hover text-on-brand rounded-xl text-sm transition-colors"
             >
               Book another
             </button>
@@ -308,7 +308,7 @@ export default function BookPage() {
                 <span
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
                     isDone
-                      ? "bg-brand text-white"
+                      ? "bg-brand text-on-brand"
                       : isCurrent
                         ? "bg-brand-dark text-white"
                         : "bg-slate-100 text-slate-400"
@@ -543,7 +543,7 @@ export default function BookPage() {
               type="button"
               disabled={!canBook || booking}
               onClick={handleBook}
-              className="w-full bg-brand hover:bg-brand-hover text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50"
+              className="w-full bg-brand hover:bg-brand-hover text-on-brand font-semibold py-3 rounded-xl transition-colors disabled:opacity-50"
             >
               {booking ? "Booking…" : `Book ${term("appointment_singular", "Appointment").toLowerCase()}`}
             </button>

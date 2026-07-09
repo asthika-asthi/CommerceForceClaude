@@ -5,7 +5,7 @@ const REVIEWS = [
     name: "David W.",
     role: "Painting & decorating contractor, Luton",
     initials: "DW",
-    avatarBg: "#C8102E",
+    avatarBg: "var(--brand)",
   },
   {
     stars: 5,
@@ -13,7 +13,7 @@ const REVIEWS = [
     name: "Kevin S.",
     role: "Scaffolding company owner, Hertfordshire",
     initials: "KS",
-    avatarBg: "#1B2A4A",
+    avatarBg: "var(--brand-dark)",
   },
   {
     stars: 4,
@@ -35,17 +35,17 @@ export function Testimonials() {
           </h2>
           <div className="flex items-center gap-2">
             <span className="text-[#00B67A] text-base">★★★★★</span>
-            <span className="text-[13px] text-[#5C5C5C]">4.7 on Trustpilot</span>
+            <span className="text-[13px] text-muted">4.7 on Trustpilot</span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {REVIEWS.map(({ stars, quote, name, role, initials, avatarBg }) => (
-            <div key={name} className="bg-white border border-[#E0DED8] rounded-xl p-6 flex flex-col">
-              <div className="text-[#D4A017] text-base tracking-[2px] mb-3">
+            <div key={name} className="bg-white border border-border rounded-xl p-6 flex flex-col">
+              <div className="text-accent text-base tracking-[2px] mb-3">
                 {"★".repeat(stars)}{"☆".repeat(5 - stars)}
               </div>
-              <p className="text-[14px] text-[#3a3a3a] leading-[1.65] mb-4 italic flex-1">&ldquo;{quote}&rdquo;</p>
+              <p className="text-[14px] text-fg leading-[1.65] mb-4 italic flex-1">&ldquo;{quote}&rdquo;</p>
               <div className="flex items-center gap-2.5">
                 <div
                   className="w-[38px] h-[38px] rounded-full flex items-center justify-center text-[14px] font-bold text-white flex-shrink-0"
@@ -55,7 +55,7 @@ export function Testimonials() {
                 </div>
                 <div>
                   <div className="text-[13px] font-bold text-brand-dark">{name}</div>
-                  <div className="text-[11px] text-[#5C5C5C]">{role}</div>
+                  <div className="text-[11px] text-muted">{role}</div>
                 </div>
               </div>
             </div>
@@ -63,15 +63,15 @@ export function Testimonials() {
         </div>
 
         {/* Trustpilot bar */}
-        <div className="bg-white border border-[#E0DED8] rounded-xl p-5 flex items-center gap-5 flex-wrap">
+        <div className="bg-white border border-border rounded-xl p-5 flex items-center gap-5 flex-wrap">
           <div className="flex items-center gap-3">
             <span className="text-[28px] font-bold text-brand-dark">4.7</span>
             <div>
               <div className="text-[#00B67A] text-[18px]">★★★★★</div>
-              <div className="text-[12px] text-[#5C5C5C]">Based on 94 reviews</div>
+              <div className="text-[12px] text-muted">Based on 94 reviews</div>
             </div>
           </div>
-          <div className="flex-1 min-w-[180px] text-[13px] text-[#5C5C5C]">
+          <div className="flex-1 min-w-[180px] text-[13px] text-muted">
             Tri Star UK Ltd is rated <strong className="text-brand-dark">Excellent</strong> by our customers on Trustpilot.
           </div>
           <button className="bg-[#00B67A] text-white border-none rounded-lg px-[18px] py-2.5 text-[13px] font-semibold cursor-pointer hover:opacity-90 transition-opacity">

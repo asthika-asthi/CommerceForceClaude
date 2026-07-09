@@ -65,7 +65,7 @@ function LoggedInWidget({ account }: { account: LoyaltyAccount }) {
 
       <Link
         href="/products"
-        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold transition-colors"
+        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold transition-colors"
       >
         Earn more points
         <ArrowRight size={16} />
@@ -116,7 +116,7 @@ function GuestWidget({
 
       <Link
         href={joinCtaUrl}
-        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold transition-colors"
+        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold transition-colors"
       >
         {joinCtaText}
         <ArrowRight size={16} />

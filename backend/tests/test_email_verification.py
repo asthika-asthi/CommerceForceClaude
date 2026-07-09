@@ -10,7 +10,7 @@ from sqlalchemy import select, update
 from app.core.config import settings
 from app.plugins.auth.models import User
 
-from tests.test_commerce import make_admin, register_and_token, CUSTOMER_DATA
+from tests.test_commerce import make_admin, CUSTOMER_DATA
 
 REGISTER_URL = "/api/auth/register"
 LOGIN_URL = "/api/auth/login"

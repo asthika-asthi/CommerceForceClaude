@@ -20,12 +20,12 @@ export function RangeTable({ products, categories = [] }: Props) {
           Full catalogue →
         </a>
       </div>
-      <div className="bg-white border border-[#E0DED8] rounded-xl overflow-hidden">
+      <div className="bg-white border border-border rounded-xl overflow-hidden">
         <table className="w-full border-collapse">
           <thead>
             <tr>
               {["Product", "Category", "Description", "Availability"].map(h => (
-                <th key={h} className="bg-brand-dark text-[#CBD8EE] text-[12px] font-semibold text-left px-5 py-3.5 tracking-[0.4px] uppercase">
+                <th key={h} className="bg-brand-dark text-on-dark-strong text-[12px] font-semibold text-left px-5 py-3.5 tracking-[0.4px] uppercase">
                   {h}
                 </th>
               ))}
@@ -33,19 +33,19 @@ export function RangeTable({ products, categories = [] }: Props) {
           </thead>
           <tbody>
             {products.map((product, i) => (
-              <tr key={product.id} className={`${i % 2 === 1 ? "bg-[#FAFAF8]" : ""} hover:bg-[#FDF0F2] transition-colors`}>
-                <td className="px-5 py-3 text-[13px] text-fg border-b border-[#F0EEEA]">
+              <tr key={product.id} className={`${i % 2 === 1 ? "bg-surface-alt" : ""} hover:bg-brand-tint transition-colors`}>
+                <td className="px-5 py-3 text-[13px] text-fg border-b border-border-subtle">
                   <a href={`/products/${product.slug}`} className="font-semibold hover:text-brand transition-colors">
                     {product.name}
                   </a>
                 </td>
-                <td className="px-5 py-3 text-[13px] text-fg border-b border-[#F0EEEA]">
+                <td className="px-5 py-3 text-[13px] text-fg border-b border-border-subtle">
                   {(product.category_id && categoryNames.get(product.category_id)) ?? "—"}
                 </td>
-                <td className="px-5 py-3 text-[13px] text-fg border-b border-[#F0EEEA] max-w-[280px]">
+                <td className="px-5 py-3 text-[13px] text-fg border-b border-border-subtle max-w-[280px]">
                   {product.description ? product.description.slice(0, 80) + (product.description.length > 80 ? "…" : "") : "—"}
                 </td>
-                <td className="px-5 py-3 text-[13px] border-b border-[#F0EEEA]">
+                <td className="px-5 py-3 text-[13px] border-b border-border-subtle">
                   {product.stock_quantity > 0 ? (
                     <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full text-[#059669] bg-[#D1FAE5]">In stock</span>
                   ) : (

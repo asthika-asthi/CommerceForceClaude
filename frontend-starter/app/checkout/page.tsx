@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
@@ -128,7 +128,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
         <div className="space-y-3">
           <Link
             href="/login?redirect=/checkout"
-            className="flex items-center justify-between w-full bg-brand hover:bg-brand-hover text-white font-semibold px-5 py-3.5 rounded-xl transition-colors"
+            className="flex items-center justify-between w-full bg-brand hover:bg-brand-hover text-on-brand font-semibold px-5 py-3.5 rounded-xl transition-colors"
           >
             <span>Sign in to your account</span>
             <span className="text-sm opacity-80">Faster checkout</span>
@@ -244,7 +244,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
         <p className="text-slate-600 mb-4">Your cart is empty</p>
-        <Link href="/products" className="inline-block bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-lg">Browse products</Link>
+        <Link href="/products" className="inline-block bg-brand hover:bg-brand-hover text-on-brand px-6 py-2.5 rounded-lg">Browse products</Link>
       </div>
     )
   }
@@ -490,7 +490,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
             </div>
             {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-4">{error}</div>}
             <button type="submit" disabled={loading || (form.payment_method === "stripe" && !stripe)}
-              className="w-full bg-brand hover:bg-brand-hover text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
+              className="w-full bg-brand hover:bg-brand-hover text-on-brand font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
               {loading
                 ? form.payment_method === "stripe" ? "Processing payment..." : "Placing order..."
                 : form.payment_method === "stripe" ? "Pay now" : "Place order"}

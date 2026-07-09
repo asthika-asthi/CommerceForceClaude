@@ -8,16 +8,16 @@ const TRUST_ITEMS = [
 
 export function TrustStrip() {
   return (
-    <div className="bg-white border-b border-[#E0DED8]">
+    <div className="bg-white border-b border-border">
       <div className="max-w-[1280px] mx-auto px-10 py-[18px] flex justify-between items-center flex-wrap gap-3">
         {TRUST_ITEMS.map(({ icon, strong, sub }) => (
           <div key={strong} className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-[#FDF0F2] flex items-center justify-center text-base flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-brand-tint flex items-center justify-center text-base flex-shrink-0">
               {icon}
             </div>
             <div>
               <strong className="block text-[13px] font-semibold text-brand-dark">{strong}</strong>
-              <span className="text-[11px] text-[#5C5C5C]">{sub}</span>
+              <span className="text-[11px] text-muted">{sub}</span>
             </div>
           </div>
         ))}

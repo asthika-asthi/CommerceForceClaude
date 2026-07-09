@@ -10,7 +10,7 @@ export default function PriceListPage() {
         <h1 className="text-[32px] font-bold text-brand-dark mb-4">
           Tri Star UK Ltd Price List
         </h1>
-        <p className="text-[15px] text-[#5C5C5C] leading-[1.7] mb-8">
+        <p className="text-[15px] text-muted leading-[1.7] mb-8">
           Download our full product price list covering tarpaulins, cotton dust sheets,
           rubble sacks, tonne bags, paint brushes and rollers. Updated regularly to
           reflect current stock and pricing.
@@ -19,7 +19,7 @@ export default function PriceListPage() {
         <a
           href="/price-list.pdf"
           download
-          className="inline-flex items-center gap-3 bg-brand hover:bg-brand-hover text-white font-bold text-[16px] px-8 py-4 rounded-xl transition-colors shadow-md"
+          className="inline-flex items-center gap-3 bg-brand hover:bg-brand-hover text-on-brand font-bold text-[16px] px-8 py-4 rounded-xl transition-colors shadow-md"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
@@ -29,14 +29,14 @@ export default function PriceListPage() {
           Download Price List (PDF)
         </a>
 
-        <p className="text-[12px] text-[#9a9a9a] mt-4">
+        <p className="text-[12px] text-text-placeholder mt-4">
           For trade pricing and volume discounts,{" "}
           <Link href="/trade" className="text-brand hover:underline">register for a trade account</Link>.
         </p>
 
-        <div className="mt-12 bg-white border border-[#E0DED8] rounded-xl p-6 text-left">
+        <div className="mt-12 bg-white border border-border rounded-xl p-6 text-left">
           <h2 className="text-[15px] font-bold text-brand-dark mb-3">What&apos;s included</h2>
-          <ul className="space-y-2 text-[14px] text-[#5C5C5C]">
+          <ul className="space-y-2 text-[14px] text-muted">
             {[
               "All-purpose and extra-strong tarpaulins (6×4ft to 30×20ft)",
               "Calico cotton dust sheets (various sizes, single and bale pricing)",
@@ -46,7 +46,7 @@ export default function PriceListPage() {
               "Trade account and volume discount tiers",
             ].map(item => (
               <li key={item} className="flex items-start gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8102E" strokeWidth="2.5" className="flex-shrink-0 mt-0.5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2.5" className="flex-shrink-0 mt-0.5">
                   <path d="M20 6L9 17l-5-5"/>
                 </svg>
                 {item}
@@ -55,7 +55,7 @@ export default function PriceListPage() {
           </ul>
         </div>
 
-        <p className="text-[13px] text-[#9a9a9a] mt-6">
+        <p className="text-[13px] text-text-placeholder mt-6">
           Need a specific quote?{" "}
           <Link href="/contact" className="text-brand hover:underline">Contact us</Link> or{" "}
           <Link href="/bespoke" className="text-brand hover:underline">submit a bespoke enquiry</Link>.

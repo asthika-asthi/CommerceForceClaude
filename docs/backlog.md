@@ -258,6 +258,30 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 
 ---
 
+### Configurable theme colours + best-seller switch + optional store name (2026-07-09)
+
+**Branch:** `feat/theme-colors`. Background: investigation showed the admin panel's old
+Primary/Secondary colour pickers saved to the DB but the storefront never applied them,
+and ~80 raw colour values were hardcoded across storefront components — colours could
+only be changed by editing code. This sprint makes colours admin-configurable end-to-end.
+
+**Built + Tested (automated):**
+- **`theme_colors` on branding** — native JSON column + migration `f4a5b6c7d8e9`; PUT/GET round-trip, defaults-empty, non-admin 403, blank-store-name round-trip all covered. (`tests/test_content.py`)
+- **Migration chain** — `alembic upgrade head` runs clean end-to-end on a fresh DB and is idempotent on re-run.
+
+**Built, NOT tested — needs manual browser verification:**
+- **Hybrid Colours panel** (admin → Branding): 5 core pickers (brand / dark / accent / background / text) with auto-derived shades shown as swatches; "Advanced" expandable overrides any individual shade; contrast warnings; reset-per-colour and reset-all. Old Primary/Secondary fields removed. *tsc-clean; verify picking a colour, overriding a shade, and both resets in the browser.*
+- **Storefront applies DB colours** — layout injects derived CSS variables as inline style on `<html>`, overriding `themes/default/globals.css` defaults; empty `theme_colors` = site unchanged. *Verify: change brand colour to yellow in admin → storefront buttons/tints follow with dark button text (`--on-brand` guardrail), no red leftovers on home/products/cart/footer.*
+- **De-hardcode sweep** — ~80 raw hex values across 40+ storefront files converted to ~24 named tokens (new: brand-tint, brand-highlight, brand-shadow, on-brand, dark-deep, dark-border, on-dark ×4 tiers, accent, accent-hover, surface-alt, text-placeholder, border-subtle). Deliberate exceptions kept hardcoded: status greens/ambers/reds, Trustpilot green, pastel image-placeholder gradients, Stripe input theme, decorative shiny-button gradients. Also fixed a latent bug: `text-muted` was mapped to card-bg (near-white text on white). *Verify the site is pixel-equivalent to before while no colour is set.*
+- **Best-seller card switch** — `homepage.showBestSellersCard` in `landing-page.config.json` (superadmin, per client branch); hero re-flows full-width when off. First real wiring of the config file.
+- **Optional store name** — blank name now fully supported: navbar logo-only (no fake "ST" monogram), footer hides badge/name and cleans the copyright, tab title falls back to tagline. (Note: the live DB already had `store_name: " "` — the client had tried to blank it.)
+
+**Shared logic note:** colour derivation lives in `frontend-starter/lib/theme-colors.ts` with a synced copy at `frontend-admin/lib/theme-colors.ts` (apps share no package — same discipline as type-sync).
+
+**Deploy note:** run `docker compose exec backend alembic upgrade head` after pulling; no seed changes needed (empty `theme_colors` keeps current appearance).
+
+---
+
 ## Not built — Priority 4 (medium, plan before building)
 
 | ID | Feature | Notes |
@@ -268,6 +292,7 @@ Full-codebase bug review documented in `docs/bugs-log.md` (13 findings + verifie
 | V | ~~Repair the Alembic migration chain~~ — **DONE** | New migration `a0b1c2d3e4f5` backfills the product-variant tables (`product_variants`, `product_option_types`, `product_option_values`, `product_variant_options`) and reshapes `cart_items`/`order_items`/`warehouse_stock` to use `variant_id`; wired in as the mergepoint immediately before `c8d9e0f1a2b3`. `alembic upgrade head` on a fresh DB now completes end-to-end and verified to produce a schema matching `create_all`. Follow-up (2026-07-07) closed the remaining drift: `alembic/env.py` was missing model imports for `reviews`, `discount_rules`, `shipping`, `addresses`, `wishlist`, `announcements` (caused autogenerate to propose spurious `DROP TABLE`s); `announcements.created_at`/`updated_at` are now `NOT NULL` in migration `d1e2f3a4b5c6` to match the model; `chat_sessions.session_key` now gets a single unique index (`ix_chat_sessions_session_key`, set unique in `d2e3f4a5b6c7`) instead of a non-unique index plus a redundant unique constraint — `e3f4a5b6c7d8` is now a no-op kept only for chain/merge-point integrity. Verified: empty `alembic revision --autogenerate` on a fresh DB, and byte-for-byte schema match (columns + indexes) between `alembic upgrade head` and `init_db.py`'s `create_all`. |
 | U | Consolidate stock to one source of truth (B3) | Checkout uses only `Product.stock_quantity`; the per-variant `WarehouseStock` system is built but never wired into selling (`deduct_stock_for_variant`/`get_variant_stock_total` are unused). Decide based on need: single pool → keep product-level authoritative and retire/relabel the warehouse feature; multi-warehouse → make warehouse authoritative and derive the shop's stock. Deferred pending the multi-warehouse decision. |
 | T | Eliminate frontend/backend type duplication | The frontends keep hand-written type mirrors (`frontend-starter/lib/types.ts`, `frontend-admin/lib/types.ts`) that silently drift from the backend Pydantic schemas — the cause of several 2026-07-04 bugs (`primary_image` vs `images[]`, missing `description`/`is_featured`). Fix: add an automated drift-check (CI/pre-commit runs `gen:types` and fails if `types.ts` is stale) and/or true codegen so frontend types are derived, not hand-kept; also add a `gen:types` script to the admin app (it currently has none). Process documented in `docs/type-sync.md`. |
+| W | Landing-page sections wiring (Phase 2 of the 2026-07-09 theme work) | Make the homepage render from `landing-page.config.json` (structure, superadmin) + a DB content layer (admin edits) instead of hardcoded components. Replace the current dead admin "Landing Page Sections" screen (writes to a `landing_sections` table the storefront never reads) with a "Page Content" editor: admins edit each config-defined section's text/images/CTAs and can hide/show sections, but cannot add/delete/reorder (structure stays superadmin per the role split). Pre-seed Tri Star's current content so the live site is unchanged on day one; retire the orphaned table. **Needs a design session first** (scheduling-plugin scale): per-section editable fields, image handling, overlap with announcements/promotions plugins, how config changes reach the VPS. |
 
 ---
 

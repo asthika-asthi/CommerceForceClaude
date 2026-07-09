@@ -91,7 +91,7 @@ export function AddToCartButton({
             status === "added" ? "bg-green-600 text-white"
             : status === "error" ? "bg-red-500 text-white"
             : (isVariantRequired || selectedVariantInactive) ? "bg-slate-100 text-slate-400"
-            : "bg-brand hover:bg-brand-hover text-white"
+            : "bg-brand hover:bg-brand-hover text-on-brand"
           }`}
         >
           {status === "added" ? <><Check size={18} /> Added!</>

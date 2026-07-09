@@ -114,7 +114,7 @@ export function NewsletterSection({
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold transition-colors disabled:opacity-60 whitespace-nowrap"
+                className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold transition-colors disabled:opacity-60 whitespace-nowrap"
               >
                 {status === 'loading' ? (
                   <Loader2 size={18} className="animate-spin" />

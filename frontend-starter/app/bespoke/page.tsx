@@ -73,7 +73,7 @@ export default function BespokePage() {
         </p>
       </div>
 
-      <div className="bg-white border border-[#E0DED8] rounded-2xl p-8">
+      <div className="bg-white border border-border rounded-2xl p-8">
         <form onSubmit={handleSubmit} className="space-y-5">
           {status === "error" && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">
@@ -106,7 +106,7 @@ export default function BespokePage() {
             </div>
           </div>
 
-          <div className="border-t border-[#E0DED8] pt-5">
+          <div className="border-t border-border pt-5">
             <h3 className="text-[14px] font-bold text-brand-dark uppercase tracking-wide mb-3">
               Product specification
             </h3>
@@ -171,7 +171,7 @@ export default function BespokePage() {
           <button
             type="submit"
             disabled={status === "loading"}
-            className="w-full bg-brand hover:bg-brand-hover text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 text-[15px]"
+            className="w-full bg-brand hover:bg-brand-hover text-on-brand font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 text-[15px]"
           >
             {status === "loading" ? "Sending enquiry…" : "Submit bespoke enquiry"}
           </button>

@@ -66,7 +66,7 @@ export function ProductGridSection({
             return (
               <div
                 key={product.id}
-                className="bg-white border border-[#E0DED8] rounded-xl overflow-hidden hover:border-brand hover:shadow-[0_4px_20px_rgba(200,16,46,0.1)] hover:-translate-y-0.5 transition-all flex flex-col group"
+                className="bg-white border border-border rounded-xl overflow-hidden hover:border-brand hover:shadow-[0_4px_20px_var(--brand-shadow)] hover:-translate-y-0.5 transition-all flex flex-col group"
               >
                 {/* Image */}
                 <div className="h-[180px] flex items-center justify-center text-[72px] relative flex-shrink-0" style={{ background: imageUrl ? undefined : GRADIENTS[idx] }}>
@@ -75,10 +75,10 @@ export function ProductGridSection({
                   ) : (
                     EMOJIS[idx]
                   )}
-                  <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white ${isOnSale ? "bg-brand" : "bg-brand-dark"}`}>
+                  <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isOnSale ? "bg-brand text-on-brand" : "bg-brand-dark text-white"}`}>
                     {isOnSale ? "Sale" : "In Stock"}
                   </span>
-                  <button className="absolute top-2.5 right-2.5 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-[14px] border border-[#E0DED8] hover:bg-[#FDF0F2] hover:border-brand transition-all">
+                  <button className="absolute top-2.5 right-2.5 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-[14px] border border-border hover:bg-brand-tint hover:border-brand transition-all">
                     🤍
                   </button>
                 </div>
@@ -88,23 +88,23 @@ export function ProductGridSection({
                   <div className="text-[10px] font-bold text-brand uppercase tracking-[0.6px] mb-1">Product</div>
                   <div className="text-[14px] font-semibold text-brand-dark mb-1 leading-[1.35]">{product.name}</div>
                   {product.description && (
-                    <p className="text-[12px] text-[#5C5C5C] leading-[1.5] line-clamp-2 mb-auto pb-3">{product.description}</p>
+                    <p className="text-[12px] text-muted leading-[1.5] line-clamp-2 mb-auto pb-3">{product.description}</p>
                   )}
                 </div>
 
                 {/* Footer */}
-                <div className="p-3.5 pt-3 border-t border-[#F0EEEA] mt-3 flex items-center justify-between">
+                <div className="p-3.5 pt-3 border-t border-border-subtle mt-3 flex items-center justify-between">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-[17px] font-bold text-brand-dark">
                       {formatMoney(isOnSale ? salePrice!.toFixed(2) : price.toFixed(2))}
                     </span>
                     {isOnSale && (
-                      <span className="text-[12px] text-[#9a9a9a] line-through">{formatMoney(price.toFixed(2))}</span>
+                      <span className="text-[12px] text-text-placeholder line-through">{formatMoney(price.toFixed(2))}</span>
                     )}
                   </div>
                   <Link
                     href={`/products/${product.slug}`}
-                    className="bg-brand-dark hover:bg-brand text-white text-[12px] font-semibold px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
+                    className="bg-brand-dark hover:bg-brand text-white hover:text-on-brand text-[12px] font-semibold px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap"
                   >
                     + View
                   </Link>

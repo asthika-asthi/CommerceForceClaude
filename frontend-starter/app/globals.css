@@ -5,11 +5,26 @@
 @theme inline {
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-highlight: var(--brand-highlight);
+  --color-on-brand: var(--on-brand);
   --color-brand-dark: var(--brand-dark);
+  --color-dark-deep: var(--dark-deep);
+  --color-dark-border: var(--dark-border);
+  --color-on-dark-strong: var(--on-dark-strong);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-muted: var(--on-dark-muted);
+  --color-on-dark-faint: var(--on-dark-faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-brand-secondary: var(--brand-secondary);
   --color-alert: var(--alert);
   --color-bg: var(--bg);
+  --color-surface-alt: var(--surface-alt);
   --color-fg: var(--fg);
+  --color-text-placeholder: var(--text-placeholder);
+  --color-border-subtle: var(--border-subtle);
+  --color-card-bg: var(--card-bg);
   --font-sans: var(--font-poppins), system-ui, sans-serif;
 
   /* shadcn-compatible aliases — lets third-party components using
@@ -17,7 +32,7 @@
   --color-background: var(--bg);
   --color-foreground: var(--fg);
   --color-primary: var(--brand-dark);
-  --color-muted: var(--card-bg);
+  --color-muted: var(--muted);
   --color-border: var(--border);
 }
 

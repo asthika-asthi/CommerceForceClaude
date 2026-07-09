@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -100,7 +100,7 @@ export default function AddressesPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Saved addresses</h1>
         {!showForm && (
-          <button onClick={startAdd} className="flex items-center gap-1.5 bg-brand hover:bg-brand-hover text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+          <button onClick={startAdd} className="flex items-center gap-1.5 bg-brand hover:bg-brand-hover text-on-brand text-sm font-medium px-4 py-2 rounded-lg transition-colors">
             <Plus size={14} /> Add address
           </button>
         )}
@@ -148,7 +148,7 @@ export default function AddressesPage() {
           </label>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex gap-3">
-            <button type="submit" disabled={saving} className="bg-brand hover:bg-brand-hover text-white text-sm font-medium px-5 py-2 rounded-lg disabled:opacity-50 transition-colors">
+            <button type="submit" disabled={saving} className="bg-brand hover:bg-brand-hover text-on-brand text-sm font-medium px-5 py-2 rounded-lg disabled:opacity-50 transition-colors">
               {saving ? "Saving..." : "Save"}
             </button>
             <button type="button" onClick={cancel} className="text-sm text-slate-500 hover:text-slate-800 px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50">

@@ -32,7 +32,7 @@ export function GradientTextSection({
         {ctaText && ctaUrl && (
           <a
             href={ctaUrl}
-            className="inline-block px-8 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-hover transition-colors"
+            className="inline-block px-8 py-3 rounded-xl bg-brand text-on-brand font-semibold hover:bg-brand-hover transition-colors"
           >
             {ctaText}
           </a>

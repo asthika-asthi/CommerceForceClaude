@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -102,7 +102,7 @@ export default function WishlistPage() {
                   {p && p.stock_quantity > 0 && (
                     <button
                       onClick={() => moveToCart(item.product_id)}
-                      className="flex items-center gap-1.5 text-xs font-medium bg-brand hover:bg-brand-hover text-white px-3 py-1.5 rounded-lg transition-colors"
+                      className="flex items-center gap-1.5 text-xs font-medium bg-brand hover:bg-brand-hover text-on-brand px-3 py-1.5 rounded-lg transition-colors"
                     >
                       <ShoppingCart size={12} /> Add to cart
                     </button>

@@ -33,7 +33,7 @@ export function NavbarBlock({
         ))}
       </ul>
       {ctaLabel && ctaUrl && (
-        <a href={ctaUrl} className="px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white text-sm font-semibold transition-colors">
+        <a href={ctaUrl} className="px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover text-on-brand text-sm font-semibold transition-colors">
           {ctaLabel}
         </a>
       )}

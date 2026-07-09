@@ -55,7 +55,7 @@ export function NavBar({ items, className, LinkComponent = "a" }: NavBarProps) {
               className={cn(
                 "relative cursor-pointer text-sm font-semibold px-6 py-2 rounded-full transition-colors",
                 "text-foreground/80 hover:text-primary",
-                isActive && "bg-muted text-primary",
+                isActive && "bg-card-bg text-primary",
               )}
             >
               <span className="hidden md:inline">{item.name}</span>

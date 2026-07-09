@@ -6,9 +6,9 @@ export default function PrivacyPage() {
   return (
     <div className="max-w-[860px] mx-auto px-6 py-14">
       <h1 className="text-[32px] font-bold text-brand-dark mb-2">Privacy Policy</h1>
-      <p className="text-[13px] text-[#9a9a9a] mb-10">Last updated: {LAST_UPDATED}</p>
+      <p className="text-[13px] text-text-placeholder mb-10">Last updated: {LAST_UPDATED}</p>
 
-      <div className="prose prose-slate max-w-none space-y-8 text-[15px] leading-[1.75] text-[#3a3a3a]">
+      <div className="prose prose-slate max-w-none space-y-8 text-[15px] leading-[1.75] text-fg">
 
         <section>
           <h2 className="text-[20px] font-bold text-brand-dark mb-3">1. Who we are</h2>
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-[20px] font-bold text-brand-dark mb-3">10. Contact us</h2>
           <p>If you have questions about this Privacy Policy or wish to exercise your rights, please contact us:</p>
-          <div className="mt-3 bg-[#F5F5F3] rounded-lg p-4 text-[14px]">
+          <div className="mt-3 bg-bg rounded-lg p-4 text-[14px]">
             <p><strong>Tri Star UK Ltd</strong><br />
             Stevenage, Hertfordshire<br />
             Email: <a href="mailto:info@tristarukltd.co.uk" className="text-brand hover:underline">info@tristarukltd.co.uk</a><br />

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState } from "react"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
@@ -86,7 +86,7 @@ export function ProductReviews({ productId, initialReviews, summary }: Props) {
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex gap-3">
             <button type="submit" disabled={submitting}
-              className="bg-brand hover:bg-brand-hover text-white text-sm font-medium px-5 py-2 rounded-lg disabled:opacity-50 transition-colors">
+              className="bg-brand hover:bg-brand-hover text-on-brand text-sm font-medium px-5 py-2 rounded-lg disabled:opacity-50 transition-colors">
               {submitting ? "Submitting..." : "Submit review"}
             </button>
             <button type="button" onClick={() => setShowForm(false)}

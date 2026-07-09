@@ -32,7 +32,7 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
             </Link>
           )}
           <Link href="/products"
-            className="px-5 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-xl text-sm transition-colors">
+            className="px-5 py-2.5 bg-brand hover:bg-brand-hover text-on-brand rounded-xl text-sm transition-colors">
             Continue shopping
           </Link>
         </div>

@@ -11,7 +11,7 @@ export async function CategoriesNav() {
     // render without dynamic categories
   }
 
-  const linkCls = "text-[#CBD8EE] text-[13px] font-medium px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all whitespace-nowrap"
+  const linkCls = "text-on-dark-strong text-[13px] font-medium px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all whitespace-nowrap"
 
   return (
     <nav className="bg-brand-dark border-b-[3px] border-brand">
@@ -32,7 +32,7 @@ export async function CategoriesNav() {
         <Link href="/bespoke" className={linkCls}>Bespoke Orders</Link>
         <Link href="/trade" className={linkCls}>Trade Accounts</Link>
         <div className="flex-1" />
-        <Link href="/products?sale=true" className="text-[#D4A017] text-[13px] font-semibold px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-[#f0c040] hover:border-[#f0c040] hover:bg-white/5 transition-all whitespace-nowrap">
+        <Link href="/products?sale=true" className="text-accent text-[13px] font-semibold px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-accent-hover hover:border-accent-hover hover:bg-white/5 transition-all whitespace-nowrap">
           🏷️ Special Offers
         </Link>
       </div>

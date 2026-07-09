@@ -15,9 +15,11 @@ const PRODUCT_ICON_BGS = ["#E8F4FD", "#FFF8E1", "#F3E5F5", "#E8F5E9"]
 
 interface Props {
   bestSellers?: Product[]
+  /** Superadmin switch (landing-page.config.json → homepage.showBestSellersCard) */
+  showBestSellersCard?: boolean
 }
 
-export function Hero({ bestSellers = [] }: Props) {
+export function Hero({ bestSellers = [], showBestSellersCard = true }: Props) {
   const svgBg = `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C%2Fsvg%3E")`
 
   const displayProducts = bestSellers.slice(0, 4).map((p, i) => {
@@ -36,7 +38,7 @@ export function Hero({ bestSellers = [] }: Props) {
   return (
     <div
       className="relative overflow-hidden min-h-[500px] flex items-center"
-      style={{ backgroundColor: "#1B2A4A", backgroundImage: svgBg }}
+      style={{ backgroundColor: "var(--brand-dark)", backgroundImage: svgBg }}
     >
       {/* Diagonal red bar */}
       <div
@@ -44,25 +46,25 @@ export function Hero({ bestSellers = [] }: Props) {
         style={{ clipPath: "polygon(12% 0, 100% 0, 100% 100%, 0 100%)" }}
       />
 
-      <div className="max-w-[1280px] mx-auto px-10 py-[60px] relative z-10 grid grid-cols-[1fr_420px] gap-[60px] items-center w-full">
+      <div className={`max-w-[1280px] mx-auto px-10 py-[60px] relative z-10 grid gap-[60px] items-center w-full ${showBestSellersCard ? "grid-cols-[1fr_420px]" : "grid-cols-1"}`}>
 
         {/* Left: content */}
         <div>
-          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-[14px] py-[5px] text-[11px] text-[#CBD8EE] tracking-[0.8px] uppercase mb-5">
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-[14px] py-[5px] text-[11px] text-on-dark-strong tracking-[0.8px] uppercase mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] inline-block" />
             Sourced from Europe, India &amp; Far East · Est. 1995
           </div>
 
           <h1 className="text-[42px] font-bold text-white leading-[1.18] mb-4">
-            Quality protective<br />covers at <em className="text-[#ffb3bf] not-italic">trade prices</em>
+            Quality protective<br />covers at <em className="text-brand-highlight not-italic">trade prices</em>
           </h1>
 
-          <p className="text-[#A8BDD8] text-base leading-[1.65] mb-8 max-w-[440px]">
+          <p className="text-on-dark text-base leading-[1.65] mb-8 max-w-[440px]">
             Tri Star UK Ltd — Hertfordshire&apos;s leading importer and distributor of tarpaulins, cotton dust sheets, sacks, bags, and decorating supplies. Trade and retail welcome.
           </p>
 
           <div className="flex gap-3 flex-wrap mb-10">
-            <Link href="/products" className="bg-brand hover:bg-brand-hover text-white font-semibold px-7 py-3.5 text-[15px] rounded-lg transition-colors">
+            <Link href="/products" className="bg-brand hover:bg-brand-hover text-on-brand font-semibold px-7 py-3.5 text-[15px] rounded-lg transition-colors">
               Shop all products
             </Link>
             <a href="/price-list" className="bg-transparent text-white border-[1.5px] border-white/40 hover:border-white hover:bg-white/8 font-medium px-7 py-3.5 text-[15px] rounded-lg transition-all">
@@ -72,7 +74,7 @@ export function Hero({ bestSellers = [] }: Props) {
 
           <div className="flex gap-6 flex-wrap">
             {["30 years' experience", "Trade & retail pricing", "UK-wide delivery", "Superior quality sourcing"].map(item => (
-              <div key={item} className="flex items-center gap-2 text-[13px] text-[#A8BDD8]">
+              <div key={item} className="flex items-center gap-2 text-[13px] text-on-dark">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" strokeWidth="2.5" className="flex-shrink-0">
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
@@ -82,9 +84,10 @@ export function Hero({ bestSellers = [] }: Props) {
           </div>
         </div>
 
-        {/* Right: best sellers card */}
+        {/* Right: best sellers card (superadmin switch: homepage.showBestSellersCard) */}
+        {showBestSellersCard && (
         <div className="bg-white rounded-xl p-7 shadow-[0_8px_40px_rgba(0,0,0,0.25)]">
-          <div className="text-[13px] font-bold text-[#5C5C5C] uppercase tracking-[0.6px] mb-4 pb-3 border-b border-[#E0DED8]">
+          <div className="text-[13px] font-bold text-muted uppercase tracking-[0.6px] mb-4 pb-3 border-b border-border">
             🔥 Best selling products
           </div>
 
@@ -93,7 +96,7 @@ export function Hero({ bestSellers = [] }: Props) {
               <Link
                 key={i}
                 href={p.slug ? `/products/${p.slug}` : "/products"}
-                className="flex items-center gap-3 py-2.5 border-b border-[#F0EEEA] last:border-none hover:bg-[#FDF0F2] rounded-md pl-1 transition-colors"
+                className="flex items-center gap-3 py-2.5 border-b border-border-subtle last:border-none hover:bg-brand-tint rounded-md pl-1 transition-colors"
               >
                 <div className="w-11 h-11 rounded-lg flex items-center justify-center text-xl flex-shrink-0 overflow-hidden" style={{ backgroundColor: p.iconBg }}>
                   {p.image ? (
@@ -104,28 +107,29 @@ export function Hero({ bestSellers = [] }: Props) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[14px] font-semibold text-brand-dark leading-tight">{p.name}</div>
-                  {p.meta && <div className="text-[12px] text-[#5C5C5C] truncate">{p.meta}</div>}
+                  {p.meta && <div className="text-[12px] text-muted truncate">{p.meta}</div>}
                 </div>
-                <span className="text-[11px] font-semibold text-brand bg-[#FDF0F2] px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">{p.tag}</span>
+                <span className="text-[11px] font-semibold text-brand bg-brand-tint px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">{p.tag}</span>
               </Link>
             ))
           ) : (
             <div className="py-6 text-center">
               <div className="text-4xl mb-3">🛡️</div>
-              <p className="text-[14px] text-[#5C5C5C] mb-4">Tarpaulins, dust sheets, sacks, bags &amp; more</p>
-              <Link href="/products" className="inline-block bg-brand text-white text-[13px] font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-hover transition-colors">
+              <p className="text-[14px] text-muted mb-4">Tarpaulins, dust sheets, sacks, bags &amp; more</p>
+              <Link href="/products" className="inline-block bg-brand text-on-brand text-[13px] font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-hover transition-colors">
                 Browse full range →
               </Link>
             </div>
           )}
 
-          <div className="mt-4 pt-3.5 border-t border-[#E0DED8] flex justify-between items-center">
-            <span className="text-[12px] text-[#5C5C5C]">Login to see trade prices</span>
+          <div className="mt-4 pt-3.5 border-t border-border flex justify-between items-center">
+            <span className="text-[12px] text-muted">Login to see trade prices</span>
             <Link href="/register" className="text-[13px] font-semibold text-brand hover:text-brand-hover transition-colors">
               Register for trade →
             </Link>
           </div>
         </div>
+        )}
       </div>
     </div>
   )

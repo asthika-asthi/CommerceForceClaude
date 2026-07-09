@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState } from "react"
 import Link from "next/link"
 import { ShoppingCart, Check, X } from "lucide-react"
@@ -76,7 +76,7 @@ export function ProductCard({ product }: { product: Product }) {
               onClick={handleAdd}
               disabled={adding}
               className={`p-2 rounded-lg transition-colors disabled:opacity-60 ${
-                added ? "bg-green-600 text-white" : failed ? "bg-red-600 text-white" : "bg-brand hover:bg-brand-hover text-white"
+                added ? "bg-green-600 text-white" : failed ? "bg-red-600 text-white" : "bg-brand hover:bg-brand-hover text-on-brand"
               }`}
               title={added ? "Added!" : failed ? "Couldn't add — try again" : "Add to cart"}
             >

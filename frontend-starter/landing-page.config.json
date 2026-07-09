@@ -404,6 +404,10 @@
     "trade_accounts", "wishlist", "price_list_download", "bespoke_quote"
   ],
 
+  "homepage": {
+    "showBestSellersCard": true
+  },
+
   "sections": [
 
     {

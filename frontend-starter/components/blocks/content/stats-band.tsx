@@ -11,16 +11,16 @@ interface StatsBandProps {
 
 export function StatsBand({ stats = [] }: StatsBandProps) {
   return (
-    <section className="bg-[#1B2A4A] py-12 px-6">
+    <section className="bg-brand-dark py-12 px-6">
       <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
         {stats.map((stat, i) => (
           <div key={i} className="text-center">
             <p className="text-[40px] font-bold text-white leading-none mb-2">
-              {stat.prefix && <span className="text-[#C8102E]">{stat.prefix}</span>}
+              {stat.prefix && <span className="text-brand">{stat.prefix}</span>}
               <span>{stat.number}</span>
-              {stat.suffix && <span className="text-[#C8102E]">{stat.suffix}</span>}
+              {stat.suffix && <span className="text-brand">{stat.suffix}</span>}
             </p>
-            <p className="text-[13px] text-[#A8BDD8] leading-snug">{stat.label}</p>
+            <p className="text-[13px] text-on-dark leading-snug">{stat.label}</p>
           </div>
         ))}
       </div>

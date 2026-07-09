@@ -59,7 +59,7 @@ export default function RegisterPage() {
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
           </div>
           <button type="submit" disabled={loading}
-            className="w-full bg-brand hover:bg-brand-hover text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50">
+            className="w-full bg-brand hover:bg-brand-hover text-on-brand font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50">
             {loading ? "Creating account…" : "Create account"}
           </button>
         </form>

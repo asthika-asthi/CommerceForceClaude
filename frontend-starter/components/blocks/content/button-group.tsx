@@ -30,7 +30,7 @@ export function ButtonGroup({ buttons = [], alignment = 'center' }: ButtonGroupP
                 ? 'px-6 py-3 rounded-xl border-2 border-brand text-brand font-semibold hover:bg-brand/10 transition-colors'
                 : btn.variant === 'secondary'
                 ? 'px-6 py-3 rounded-xl bg-brand-secondary text-white font-semibold hover:opacity-90 transition-opacity'
-                : 'px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold transition-colors'
+                : 'px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold transition-colors'
             }
           >
             {btn.label}

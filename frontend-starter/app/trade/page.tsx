@@ -80,7 +80,7 @@ export default function TradePage() {
       {/* Benefits grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
         {BENEFITS.map(({ icon, title, desc }) => (
-          <div key={title} className="bg-white border border-[#E0DED8] rounded-2xl p-6">
+          <div key={title} className="bg-white border border-border rounded-2xl p-6">
             <div className="text-3xl mb-3">{icon}</div>
             <h3 className="text-[15px] font-bold text-brand-dark mb-1">{title}</h3>
             <p className="text-[13px] text-slate-500 leading-[1.6]">{desc}</p>
@@ -90,7 +90,7 @@ export default function TradePage() {
 
       {/* Registration form */}
       <div className="max-w-xl mx-auto">
-        <div className="bg-white border border-[#E0DED8] rounded-2xl p-8">
+        <div className="bg-white border border-border rounded-2xl p-8">
           <h2 className="text-[22px] font-bold text-brand-dark mb-1">Apply for a trade account</h2>
           <p className="text-[13px] text-slate-400 mb-6">
             We review all applications within 1–2 business days and email you once approved.
@@ -163,7 +163,7 @@ export default function TradePage() {
               <button
                 type="submit"
                 disabled={status === "loading"}
-                className="w-full bg-brand hover:bg-brand-hover text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 text-[15px] mt-2"
+                className="w-full bg-brand hover:bg-brand-hover text-on-brand font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 text-[15px] mt-2"
               >
                 {status === "loading" ? "Submitting…" : "Apply for trade account"}
               </button>

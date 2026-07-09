@@ -46,7 +46,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      <Link href="/products" className="inline-flex items-center gap-1.5 text-[13px] text-[#5C5C5C] hover:text-brand-dark mb-6 transition-colors">
+      <Link href="/products" className="inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-brand-dark mb-6 transition-colors">
         Back to products
       </Link>
 

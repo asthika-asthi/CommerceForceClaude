@@ -1,4 +1,5 @@
 import { serverFetch } from "@/lib/api"
+import { getHomepageConfig } from "@/lib/landing-config"
 import type { Category, PaginatedResponse, Product } from "@/lib/types"
 import { Hero } from "@/components/landing/hero"
 import { PromoBanner } from "@/components/landing/promo-banner"
@@ -35,11 +36,12 @@ export default async function HomePage() {
 
   const section1Products = products.slice(0, 4)
   const section2Products = products.slice(4, 8)
+  const showBestSellersCard = getHomepageConfig().showBestSellersCard !== false
 
   return (
     <div className="bg-bg">
       <PromoBanner />
-      <Hero bestSellers={products.slice(0, 4)} />
+      <Hero bestSellers={products.slice(0, 4)} showBestSellersCard={showBestSellersCard} />
       <TrustStrip />
       <CategoryGrid categories={activeCategories} />
 

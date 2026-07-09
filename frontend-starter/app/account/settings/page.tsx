@@ -116,7 +116,7 @@ export default function AccountSettingsPage() {
         {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>}
         <button type="submit" disabled={loading}
           className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50 ${
-            saved ? "bg-green-600 text-white" : "bg-brand hover:bg-brand-hover text-white"
+            saved ? "bg-green-600 text-white" : "bg-brand hover:bg-brand-hover text-on-brand"
           }`}>
           {loading ? "Saving…" : saved ? "Saved!" : "Save changes"}
         </button>
@@ -145,7 +145,7 @@ export default function AccountSettingsPage() {
         {pwError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{pwError}</div>}
         <button type="submit" disabled={pwLoading}
           className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50 ${
-            pwSaved ? "bg-green-600 text-white" : "bg-brand hover:bg-brand-hover text-white"
+            pwSaved ? "bg-green-600 text-white" : "bg-brand hover:bg-brand-hover text-on-brand"
           }`}>
           {pwLoading ? "Changing…" : pwSaved ? "Password changed!" : "Change password"}
         </button>

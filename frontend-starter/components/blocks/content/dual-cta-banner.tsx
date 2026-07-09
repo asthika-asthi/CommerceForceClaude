@@ -24,7 +24,7 @@ export function DualCtaBanner({ cards = [] }: DualCtaBannerProps) {
           <div
             key={i}
             className="relative rounded-2xl p-10 overflow-hidden"
-            style={{ backgroundColor: card.bg ?? '#1B2A4A' }}
+            style={{ backgroundColor: card.bg ?? 'var(--brand-dark)' }}
           >
             {/* decorative background circle */}
             <div className="absolute -bottom-10 -right-10 w-48 h-48 rounded-full bg-white opacity-[0.06] pointer-events-none" />
@@ -63,7 +63,7 @@ export function DualCtaBanner({ cards = [] }: DualCtaBannerProps) {
                   className="inline-block text-[14px] font-bold rounded-lg px-6 py-3 transition-colors hover:opacity-90"
                   style={{
                     backgroundColor: card.btnBg ?? '#FFFFFF',
-                    color: card.btnText ?? '#1B2A4A',
+                    color: card.btnText ?? 'var(--brand-dark)',
                   }}
                 >
                   {card.ctaLabel}

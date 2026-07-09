@@ -25,17 +25,17 @@ export function CategoryGrid({
   categories = [],
 }: CategoryGridProps) {
   return (
-    <section className="py-14 px-6 bg-[#F5F5F3]">
+    <section className="py-14 px-6 bg-bg">
       <div className="max-w-6xl mx-auto">
         {(title || seeAllLabel) && (
           <div className="flex items-center justify-between mb-8">
             {title && (
-              <h2 className="text-2xl font-bold text-[#1B2A4A]">{title}</h2>
+              <h2 className="text-2xl font-bold text-brand-dark">{title}</h2>
             )}
             {seeAllLabel && seeAllHref && (
               <Link
                 href={seeAllHref}
-                className="text-[13px] font-semibold text-[#C8102E] hover:underline"
+                className="text-[13px] font-semibold text-brand hover:underline"
               >
                 {seeAllLabel}
               </Link>
@@ -47,8 +47,8 @@ export function CategoryGrid({
             <Link
               key={i}
               href={cat.href ?? '/products'}
-              className="group bg-white border border-[#E0DED8] rounded-xl overflow-hidden
-                         hover:border-[#C8102E] hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+              className="group bg-white border border-border rounded-xl overflow-hidden
+                         hover:border-brand hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
             >
               <div
                 className="h-32 flex items-center justify-center text-5xl"
@@ -58,18 +58,18 @@ export function CategoryGrid({
               </div>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <h3 className="font-bold text-[#1B2A4A] text-[15px] leading-tight">{cat.name}</h3>
+                  <h3 className="font-bold text-brand-dark text-[15px] leading-tight">{cat.name}</h3>
                   {cat.productCount != null && (
-                    <span className="text-[10px] font-semibold text-[#5C5C5C] whitespace-nowrap flex-shrink-0 mt-0.5">
+                    <span className="text-[10px] font-semibold text-muted whitespace-nowrap flex-shrink-0 mt-0.5">
                       {cat.productCount} items
                     </span>
                   )}
                 </div>
                 {cat.description && (
-                  <p className="text-[12px] text-[#5C5C5C] leading-snug mb-3 line-clamp-2">{cat.description}</p>
+                  <p className="text-[12px] text-muted leading-snug mb-3 line-clamp-2">{cat.description}</p>
                 )}
                 {cat.cta && (
-                  <p className="text-[12px] font-semibold text-[#C8102E] group-hover:underline">{cat.cta}</p>
+                  <p className="text-[12px] font-semibold text-brand group-hover:underline">{cat.cta}</p>
                 )}
               </div>
             </Link>

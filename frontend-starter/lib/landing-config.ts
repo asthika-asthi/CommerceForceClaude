@@ -30,10 +30,15 @@ export interface LandingConfigSection {
   [key: string]: unknown
 }
 
+export interface HomepageConfig {
+  showBestSellersCard?: boolean
+}
+
 export interface LandingConfig {
   brand?: BrandConfig
   store?: StoreConfig
   plugins?: string[]
+  homepage?: HomepageConfig
   sections: LandingConfigSection[]
 }
 
@@ -99,6 +104,15 @@ export function getBrandCss(): string {
 export function getStoreConfig(): StoreConfig {
   try {
     return getLandingConfig().store ?? {}
+  } catch {
+    return {}
+  }
+}
+
+/** Superadmin homepage switches — structural options a client admin cannot change. */
+export function getHomepageConfig(): HomepageConfig {
+  try {
+    return getLandingConfig().homepage ?? {}
   } catch {
     return {}
   }

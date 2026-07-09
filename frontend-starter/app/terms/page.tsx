@@ -6,9 +6,9 @@ export default function TermsPage() {
   return (
     <div className="max-w-[860px] mx-auto px-6 py-14">
       <h1 className="text-[32px] font-bold text-brand-dark mb-2">Terms &amp; Conditions</h1>
-      <p className="text-[13px] text-[#9a9a9a] mb-10">Last updated: {LAST_UPDATED}</p>
+      <p className="text-[13px] text-text-placeholder mb-10">Last updated: {LAST_UPDATED}</p>
 
-      <div className="space-y-8 text-[15px] leading-[1.75] text-[#3a3a3a]">
+      <div className="space-y-8 text-[15px] leading-[1.75] text-fg">
 
         <section>
           <h2 className="text-[20px] font-bold text-brand-dark mb-3">1. About us</h2>
@@ -83,7 +83,7 @@ export default function TermsPage() {
 
         <section>
           <h2 className="text-[20px] font-bold text-brand-dark mb-3">10. Contact</h2>
-          <div className="bg-[#F5F5F3] rounded-lg p-4 text-[14px]">
+          <div className="bg-bg rounded-lg p-4 text-[14px]">
             <p><strong>Tri Star UK Ltd</strong><br />
             Stevenage, Hertfordshire<br />
             Email: <a href="mailto:info@tristarukltd.co.uk" className="text-brand hover:underline">info@tristarukltd.co.uk</a><br />

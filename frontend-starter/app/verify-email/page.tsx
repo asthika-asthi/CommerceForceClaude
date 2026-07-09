@@ -68,7 +68,7 @@ function VerifyEmailContent() {
         <div className="flex gap-3 justify-center">
           <Link
             href="/account"
-            className="inline-block bg-brand hover:bg-brand-hover text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
+            className="inline-block bg-brand hover:bg-brand-hover text-on-brand font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm"
           >
             Go to my account
           </Link>

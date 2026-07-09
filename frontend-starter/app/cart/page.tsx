@@ -43,7 +43,7 @@ export default function CartPage() {
       {items.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-slate-400 mb-4">Your cart is empty</p>
-          <Link href="/products" className="inline-block bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-lg transition-colors">
+          <Link href="/products" className="inline-block bg-brand hover:bg-brand-hover text-on-brand px-6 py-2.5 rounded-lg transition-colors">
             Browse products
           </Link>
         </div>
@@ -115,7 +115,7 @@ export default function CartPage() {
               <span>{formatMoney(subtotal.toFixed(2))}</span>
             </div>
             <Link href="/checkout"
-              className="block w-full text-center bg-brand hover:bg-brand-hover text-white font-semibold py-3 rounded-xl transition-colors">
+              className="block w-full text-center bg-brand hover:bg-brand-hover text-on-brand font-semibold py-3 rounded-xl transition-colors">
               Proceed to checkout
             </Link>
           </div>

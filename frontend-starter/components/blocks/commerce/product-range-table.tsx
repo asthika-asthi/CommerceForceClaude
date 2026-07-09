@@ -34,32 +34,32 @@ export function ProductRangeTable({
   statusLimited = { label: 'Limited qty', color: '#D97706', bg: '#FEF3C7' },
 }: ProductRangeTableProps) {
   return (
-    <section className="py-14 px-6 bg-[#F5F5F3]">
+    <section className="py-14 px-6 bg-bg">
       <div className="max-w-6xl mx-auto">
         {(title || seeAllLabel) && (
           <div className="flex items-center justify-between mb-8">
             {title && (
-              <h2 className="text-2xl font-bold text-[#1B2A4A]">{title}</h2>
+              <h2 className="text-2xl font-bold text-brand-dark">{title}</h2>
             )}
             {seeAllLabel && seeAllHref && (
               <Link
                 href={seeAllHref}
-                className="text-[13px] font-semibold text-[#C8102E] hover:underline"
+                className="text-[13px] font-semibold text-brand hover:underline"
               >
                 {seeAllLabel}
               </Link>
             )}
           </div>
         )}
-        <div className="bg-white border border-[#E0DED8] rounded-xl overflow-hidden">
+        <div className="bg-white border border-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[640px]">
               <thead>
-                <tr className="bg-[#1B2A4A]">
+                <tr className="bg-brand-dark">
                   {columns.map((col, i) => (
                     <th
                       key={i}
-                      className="text-left px-5 py-3.5 text-[12px] font-semibold text-[#CBD8EE] tracking-wide uppercase whitespace-nowrap"
+                      className="text-left px-5 py-3.5 text-[12px] font-semibold text-on-dark-strong tracking-wide uppercase whitespace-nowrap"
                     >
                       {col}
                     </th>
@@ -73,13 +73,13 @@ export function ProductRangeTable({
                   return (
                     <tr
                       key={i}
-                      className="border-b border-[#F0EEEA] hover:bg-[#FDF0F2] transition-colors"
-                      style={{ backgroundColor: i % 2 === 1 ? '#FAFAF8' : '#FFFFFF' }}
+                      className="border-b border-border-subtle hover:bg-brand-tint transition-colors"
+                      style={{ backgroundColor: i % 2 === 1 ? 'var(--surface-alt)' : 'var(--card-bg)' }}
                     >
-                      <td className="px-5 py-3 font-semibold text-[#1B2A4A] whitespace-nowrap">{row.product}</td>
-                      <td className="px-5 py-3 text-[#5C5C5C] whitespace-nowrap">{row.category}</td>
-                      <td className="px-5 py-3 text-[#5C5C5C] whitespace-nowrap">{row.sizes}</td>
-                      <td className="px-5 py-3 text-[#5C5C5C]">{row.useCase}</td>
+                      <td className="px-5 py-3 font-semibold text-brand-dark whitespace-nowrap">{row.product}</td>
+                      <td className="px-5 py-3 text-muted whitespace-nowrap">{row.category}</td>
+                      <td className="px-5 py-3 text-muted whitespace-nowrap">{row.sizes}</td>
+                      <td className="px-5 py-3 text-muted">{row.useCase}</td>
                       <td className="px-5 py-3 whitespace-nowrap">
                         <span
                           className="text-[11px] font-bold px-2.5 py-1 rounded-full"

@@ -17,6 +17,7 @@ class BrandingConfigOut(BaseModel):
     contact_phone: Optional[str] = None
     social_links: Optional[dict] = None
     stripe_publishable_key: Optional[str] = None
+    theme_colors: dict = {}
     model_config = {"from_attributes": True}
 
     @field_validator("social_links", mode="before")
@@ -43,6 +44,7 @@ class BrandingConfigUpdate(BaseModel):
     contact_phone: Optional[str] = None
     social_links: Optional[dict] = None
     stripe_publishable_key: Optional[str] = None
+    theme_colors: Optional[dict] = None
 
     @field_validator("social_links", mode="before")
     @classmethod

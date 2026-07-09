@@ -94,7 +94,7 @@ export function LandingSectionRenderer({ section }: { section: LandingSection })
 
   if (section.section_type === "cta") {
     return (
-      <section style={style} className="py-20 px-4 bg-brand text-white text-center">
+      <section style={style} className="py-20 px-4 bg-brand text-on-brand text-center">
         <div className="max-w-3xl mx-auto">
           {section.title && <h2 className="text-3xl font-bold mb-4">{section.title}</h2>}
           {section.subtitle && <p className="text-white/70 mb-8">{section.subtitle}</p>}

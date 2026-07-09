@@ -49,7 +49,7 @@ export function CategoryGrid({ categories }: Props) {
             <Link
               key={cat.id}
               href={`/products?category=${cat.id}`}
-              className="bg-white border border-[#E0DED8] rounded-xl overflow-hidden hover:border-brand hover:shadow-[0_4px_20px_rgba(200,16,46,0.12)] hover:-translate-y-0.5 transition-all group"
+              className="bg-white border border-border rounded-xl overflow-hidden hover:border-brand hover:shadow-[0_4px_20px_var(--brand-shadow)] hover:-translate-y-0.5 transition-all group"
             >
               <div className="h-40 relative overflow-hidden flex items-center justify-center text-[64px]" style={{ background: style.bg }}>
                 {/* Emoji always rendered as background fallback */}
@@ -63,13 +63,13 @@ export function CategoryGrid({ categories }: Props) {
                     onError={e => { (e.target as HTMLImageElement).style.display = "none" }}
                   />
                 )}
-                <span className="absolute top-2.5 right-2.5 bg-white/90 text-[#5C5C5C] text-[10px] font-semibold px-2 py-0.5 rounded-full border border-[#E0DED8]">
+                <span className="absolute top-2.5 right-2.5 bg-white/90 text-muted text-[10px] font-semibold px-2 py-0.5 rounded-full border border-border">
                   products
                 </span>
               </div>
               <div className="p-4">
                 <div className="text-base font-bold text-brand-dark mb-1">{cat.name}</div>
-                <div className="text-[12px] text-[#5C5C5C] leading-[1.55] mb-3">
+                <div className="text-[12px] text-muted leading-[1.55] mb-3">
                   Quality {cat.name.toLowerCase()} for trade and retail.
                 </div>
                 <div className="text-[12px] font-semibold text-brand flex items-center gap-1 group-hover:gap-2 transition-all">

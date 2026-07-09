@@ -82,7 +82,7 @@ export function PriceRangeFilter({ currentMin, currentMax }: PriceRangeFilterPro
         <button
           type="button"
           onClick={apply}
-          className="flex-1 px-3 py-1.5 bg-brand hover:bg-brand-hover text-white text-sm rounded-lg transition-colors"
+          className="flex-1 px-3 py-1.5 bg-brand hover:bg-brand-hover text-on-brand text-sm rounded-lg transition-colors"
         >
           Apply
         </button>

@@ -14,18 +14,18 @@ export function HowToOrder({ title = 'How to order from us', steps = [] }: HowTo
     <section className="py-14 px-6 bg-white">
       <div className="max-w-6xl mx-auto">
         {title && (
-          <h2 className="text-2xl font-bold text-[#1B2A4A] text-center mb-12">{title}</h2>
+          <h2 className="text-2xl font-bold text-brand-dark text-center mb-12">{title}</h2>
         )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative">
           {/* connector line — hidden on mobile */}
-          <div className="hidden md:block absolute top-8 left-[18%] right-[18%] h-0.5 bg-gradient-to-r from-[#C8102E] to-[#1B2A4A] pointer-events-none" />
+          <div className="hidden md:block absolute top-8 left-[18%] right-[18%] h-0.5 bg-gradient-to-r from-brand to-brand-dark pointer-events-none" />
           {steps.map((step, i) => (
             <div key={i} className="relative flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full border-[3px] border-[#C8102E] bg-white flex items-center justify-center mb-4 relative z-10 shadow-sm">
-                <span className="text-[22px] font-bold text-[#C8102E]">{step.number ?? i + 1}</span>
+              <div className="w-16 h-16 rounded-full border-[3px] border-brand bg-white flex items-center justify-center mb-4 relative z-10 shadow-sm">
+                <span className="text-[22px] font-bold text-brand">{step.number ?? i + 1}</span>
               </div>
-              <h3 className="text-[15px] font-bold text-[#1B2A4A] mb-2">{step.title}</h3>
-              <p className="text-[13px] text-[#5C5C5C] leading-[1.55]">{step.description}</p>
+              <h3 className="text-[15px] font-bold text-brand-dark mb-2">{step.title}</h3>
+              <p className="text-[13px] text-muted leading-[1.55]">{step.description}</p>
             </div>
           ))}
         </div>

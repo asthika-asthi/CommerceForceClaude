@@ -103,6 +103,65 @@ async def test_branding_public_access(client: AsyncClient, db):
     assert r.status_code == 200
 
 
+async def test_branding_theme_colors_default_empty(client: AsyncClient, db):
+    r = await client.get("/api/branding")
+    assert r.status_code == 200
+    assert r.json()["theme_colors"] == {}
+
+
+async def test_admin_update_theme_colors(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    payload = {
+        "core": {"brand": "#D4A017", "dark": "#1B2A4A"},
+        "overrides": {"brand-tint": "#FFF8E1"},
+    }
+    r = await client.put(
+        "/api/branding",
+        json={"theme_colors": payload},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200
+    assert r.json()["theme_colors"] == payload
+
+    # Round-trips on public GET
+    r2 = await client.get("/api/branding")
+    assert r2.json()["theme_colors"] == payload
+
+    # Clearing back to {} resets to theme defaults
+    r3 = await client.put(
+        "/api/branding",
+        json={"theme_colors": {}},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r3.status_code == 200
+    assert r3.json()["theme_colors"] == {}
+
+
+async def test_non_admin_cannot_update_theme_colors(client: AsyncClient, db):
+    await make_admin(client, db)
+    cust_token = await register_and_token(client, CUSTOMER_DATA)
+    r = await client.put(
+        "/api/branding",
+        json={"theme_colors": {"core": {"brand": "#000000"}}},
+        headers={"Authorization": f"Bearer {cust_token}"},
+    )
+    assert r.status_code == 403
+
+
+async def test_branding_blank_store_name_roundtrips(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    r = await client.put(
+        "/api/branding",
+        json={"store_name": ""},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 200
+    assert r.json()["store_name"] == ""
+
+    r2 = await client.get("/api/branding")
+    assert r2.json()["store_name"] == ""
+
+
 # ── LANDING PAGE ──────────────────────────────────────────────────────────────
 
 async def test_create_hero_section(client: AsyncClient, db):

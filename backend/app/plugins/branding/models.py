@@ -1,5 +1,5 @@
-from typing import Optional
-from sqlalchemy import String, Text
+from typing import Any, Optional
+from sqlalchemy import JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.base_model import BaseModel
 
@@ -19,3 +19,7 @@ class BrandingConfig(BaseModel):
     contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     social_links: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string
     stripe_publishable_key: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    # Theme colour overrides chosen in the admin panel:
+    # {"core": {"brand": "#..", "dark": "#..", ...}, "overrides": {"<token>": "#.."}}
+    # Empty dict = storefront uses its theme-file defaults untouched.
+    theme_colors: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)

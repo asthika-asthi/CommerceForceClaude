@@ -66,7 +66,7 @@ export default function FaqPage() {
         <h2 className="font-semibold text-slate-900 mb-1">Still have questions?</h2>
         <p className="text-sm text-slate-500 mb-4">Our team is happy to help with any enquiry.</p>
         <Link href="/contact"
-          className="inline-block bg-brand hover:bg-brand-hover text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
+          className="inline-block bg-brand hover:bg-brand-hover text-on-brand text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
           Contact us →
         </Link>
       </div>

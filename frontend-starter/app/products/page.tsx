@@ -111,7 +111,7 @@ export default async function ProductsPage({ searchParams }: Props) {
             <div className="flex gap-2">
               <input name="q" defaultValue={params.q ?? ""} placeholder="Search products…"
                 className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
-              <button type="submit" className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-sm rounded-lg transition-colors">
+              <button type="submit" className="px-4 py-2 bg-brand hover:bg-brand-hover text-on-brand text-sm rounded-lg transition-colors">
                 Search
               </button>
             </div>
@@ -136,7 +136,7 @@ export default async function ProductsPage({ searchParams }: Props) {
                 <div className="flex justify-center gap-2 mt-10">
                   {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
                     <a key={p} href={buildUrl({ page: String(p) })}
-                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm border ${p === page ? "bg-brand text-white border-brand" : "border-slate-200 text-slate-600 hover:border-slate-400"}`}>
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm border ${p === page ? "bg-brand text-on-brand border-brand" : "border-slate-200 text-slate-600 hover:border-slate-400"}`}>
                       {p}
                     </a>
                   ))}

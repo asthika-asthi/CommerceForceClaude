@@ -39,7 +39,7 @@ npm run gen:types  # regenerate lib/generated-types.ts from live OpenAPI spec
 | Pages | Next.js 16 App Router (server components by default) | Routing and page rendering |
 | Data fetching | `lib/api.ts` → `serverFetch` (server) / `api.get/post` (client) | All API calls go through these helpers |
 | State | Zustand stores in `store/` (auth, cart) | Client-side session state |
-| Styling | Tailwind v4 + CSS custom properties | Design tokens in `app/globals.css` |
+| Styling | Tailwind v4 + CSS custom properties | Token defaults in `themes/default/globals.css`, Tailwind mapping in `app/globals.css`, DB overrides via `lib/theme-colors.ts` |
 | Types | `lib/types.ts` | Shared TypeScript interfaces |
 
 The backend API runs at `http://localhost:8000` in development. All API calls are proxied via `next.config.ts`.
@@ -48,36 +48,25 @@ The backend API runs at `http://localhost:8000` in development. All API calls ar
 
 ## Design Token System
 
-All client-specific colours and the font are defined as CSS custom properties in `app/globals.css`. Tailwind utilities (`bg-brand`, `text-brand-dark`, etc.) are generated from them via the `@theme inline` block — **do not add Tailwind config files**.
+Client colours live in **two layers**:
 
-### Current tokens (Tarpaulins To Go)
+1. **Theme-file defaults (superadmin, per client branch):** `themes/default/globals.css` defines every token as a CSS custom property. `app/globals.css` imports it and maps the tokens to Tailwind utilities via the `@theme inline` block — **do not add Tailwind config files**.
+2. **Database overrides (admin, no code change):** the admin panel's Branding → Colours section stores `theme_colors` on `/api/branding` (5 core colours + optional per-shade overrides). `app/layout.tsx` derives the full shade set via `lib/theme-colors.ts` and injects the CSS variables as an **inline `style` on `<html>`**, which beats the stylesheet `:root` defaults. Empty `theme_colors` = theme-file defaults apply unchanged.
 
-```css
-:root {
-  --brand: #B6C1A1;          /* primary buttons, badges */
-  --brand-hover: #A3AE8E;    /* primary button hover */
-  --brand-dark: #0D3328;     /* links, active nav, emphasis */
-  --brand-secondary: #555555;/* secondary buttons */
-  --alert: #FF0000;          /* errors, destructive */
-  --bg: #ffffff;             /* page background */
-  --fg: #000000;             /* body text */
-  --muted: #64748b;          /* secondary text */
-  --border: #e2e8f0;         /* dividers */
-  --card-bg: #f8fafc;        /* card backgrounds */
-}
-```
+`lib/theme-colors.ts` (derivation rules, contrast helpers) is **duplicated** at `frontend-admin/lib/theme-colors.ts` — the storefront copy is the source of truth; when editing it, re-copy to the admin app (same discipline as type-sync).
 
-### Available Tailwind utilities (generated from tokens)
+### Token vocabulary (Tri Star values shown; full list in `themes/default/globals.css`)
 
-| CSS token | Tailwind class | Example use |
-|-----------|---------------|-------------|
-| `--brand` | `bg-brand`, `text-brand`, `border-brand` | Primary buttons |
-| `--brand-hover` | `bg-brand-hover` | Primary button `:hover` |
-| `--brand-dark` | `bg-brand-dark`, `text-brand-dark` | Links, active states, focus rings |
-| `--brand-secondary` | `bg-brand-secondary` | Secondary buttons |
-| `--alert` | `bg-alert`, `text-alert` | Error badges, delete buttons |
-| `--bg` | `bg-bg` | Page/card backgrounds |
-| `--fg` | `text-fg` | Body text |
+| Family | Tokens | Role |
+|---|---|---|
+| brand | `--brand` #C8102E, `--brand-hover`, `--brand-tint` (light hover bgs/pills), `--brand-highlight` (on dark), `--brand-shadow`, `--on-brand` (button text — auto white/dark for contrast) | Primary buttons, links, badges |
+| dark | `--brand-dark` #1B2A4A, `--dark-deep` (footer), `--dark-border`, `--on-dark-strong/-on-dark/-muted/-faint` (text tiers on dark) | Headings, dark sections |
+| accent | `--accent` #D4A017, `--accent-hover` | Special Offers, review stars |
+| neutrals | `--bg`, `--surface-alt` (zebra rows), `--fg`, `--muted`, `--text-placeholder`, `--border`, `--border-subtle`, `--card-bg`, `--brand-secondary`, `--alert` | Backgrounds, text, dividers |
+
+Every token has a Tailwind utility (`bg-brand-tint`, `text-on-dark-muted`, `border-border-subtle`, …). **Never hardcode hex colours in components** — the only allowed exceptions are: status greens/ambers/reds (stock/availability badges), Trustpilot green, pastel image-placeholder gradients, the Stripe Elements input theme, and decorative gradients in `components/blocks/*/shiny-button.tsx`.
+
+Buttons with `bg-brand` must use `text-on-brand` (not `text-white`) so light brand colours (e.g. yellow) automatically get dark text.
 
 ---
 
@@ -114,19 +103,24 @@ All `/images/...` paths are relative to the Next.js `public/` directory and work
 
 Given a `design.md` file with the client's brand, follow these steps in order.
 
-### Step 1 — Update CSS tokens in `app/globals.css`
+### Step 1 — Update CSS tokens in `themes/default/globals.css`
 
-Map the client's colours to the token names. The token names are semantic (what the colour IS used for), not descriptive (what the colour looks like):
+Map the client's colours to the token names (full vocabulary in the Design Token System section above — set at minimum the family bases and let the shades follow the same relationships as the Tri Star values). The token names are semantic (what the colour IS used for), not descriptive (what the colour looks like):
 
 | Token | Maps to |
 |-------|---------|
 | `--brand` | Primary action colour (main CTA, primary button background) |
 | `--brand-hover` | Primary button hover — typically `--brand` darkened by ~10% |
-| `--brand-dark` | Emphasis / link colour — the darkest brand colour |
+| `--brand-tint` / `--brand-highlight` / `--brand-shadow` | Very light / light / translucent variants of `--brand` |
+| `--on-brand` | Button text on `--brand` — white for dark brands, near-black for light ones |
+| `--brand-dark` | Emphasis / link colour — the darkest brand colour (plus `--dark-deep`, `--dark-border`, `--on-dark-*` tiers) |
+| `--accent` | Highlight colour (offers, stars) + `--accent-hover` |
 | `--brand-secondary` | Secondary button background |
 | `--alert` | Error / destructive action colour |
-| `--fg` | Primary body text colour |
-| `--bg` | Page background |
+| `--fg` | Primary body text colour (plus `--muted`, `--text-placeholder`) |
+| `--bg` | Page background (plus `--surface-alt`, `--border`, `--border-subtle`, `--card-bg`) |
+
+Alternatively, skip the code edit entirely: set the colours through the admin panel's Branding → Colours section (stored in the DB, overrides these defaults at render time).
 
 **Example** — converting a client's design.md entry to tokens:
 ```
@@ -209,7 +203,9 @@ Update `backend/seed.py`'s `_CATEGORIES` list and `_products()` function with th
 
 | File | What it does |
 |------|-------------|
-| `app/globals.css` | **Design tokens** — change colours/font here first |
+| `themes/default/globals.css` | **Design token defaults** — per-client colours live here |
+| `app/globals.css` | Tailwind `@theme` mapping from tokens to utility classes |
+| `lib/theme-colors.ts` | Colour derivation + contrast helpers (copy synced to frontend-admin) |
 | `app/layout.tsx` | Root layout — font import, Navbar/Footer, custom CSS injection |
 | `app/page.tsx` | Home page — landing sections from `/api/landing_page` |
 | `app/products/page.tsx` | Product listing with search + filters |

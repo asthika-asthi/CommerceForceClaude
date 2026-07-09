@@ -50,7 +50,7 @@ function ResetPasswordForm() {
           <p className="text-sm text-slate-500 mb-6">You can now sign in with your new password.</p>
           <Link
             href="/login"
-            className="inline-block bg-brand hover:bg-brand-hover text-white font-semibold px-6 py-2.5 rounded-lg transition-colors"
+            className="inline-block bg-brand hover:bg-brand-hover text-on-brand font-semibold px-6 py-2.5 rounded-lg transition-colors"
           >
             Sign in
           </Link>
@@ -106,7 +106,7 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand hover:bg-brand-hover text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50"
+            className="w-full bg-brand hover:bg-brand-hover text-on-brand font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50"
           >
             {loading ? "Updating…" : "Update password"}
           </button>

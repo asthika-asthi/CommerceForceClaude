@@ -117,7 +117,7 @@ export default function ContactPage() {
         </div>
 
         {/* Form */}
-        <div className="lg:col-span-3 bg-white border border-[#E0DED8] rounded-2xl p-8">
+        <div className="lg:col-span-3 bg-white border border-border rounded-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {status === "error" && (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">
@@ -160,7 +160,7 @@ export default function ContactPage() {
             <button
               type="submit"
               disabled={status === "loading"}
-              className="w-full bg-brand hover:bg-brand-hover text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 text-[15px]"
+              className="w-full bg-brand hover:bg-brand-hover text-on-brand font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 text-[15px]"
             >
               {status === "loading" ? "Sending…" : "Send message"}
             </button>

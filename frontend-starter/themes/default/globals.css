@@ -1,15 +1,42 @@
 /* Theme: Tri Star UK Ltd
-   Primary: Red (#C8102E), Emphasis: Navy (#1B2A4A), Font: Poppins */
+   Primary: Red (#C8102E), Emphasis: Navy (#1B2A4A), Font: Poppins
+
+   These are the per-client DEFAULTS (superadmin-owned). At runtime the
+   storefront may override any of them with admin-chosen colours stored in
+   the backend branding config (theme_colors) — see lib/theme-colors.ts
+   and app/layout.tsx. Empty theme_colors = these values apply unchanged. */
 
 :root {
+  /* brand family */
   --brand: #C8102E;
   --brand-hover: #A50D24;
+  --brand-tint: #FDF0F2;
+  --brand-highlight: #ffb3bf;
+  --brand-shadow: rgba(200, 16, 46, 0.10);
+  --on-brand: #FFFFFF;
+
+  /* dark/emphasis family */
   --brand-dark: #1B2A4A;
+  --dark-deep: #0F1E38;
+  --dark-border: #253A58;
+  --on-dark-strong: #CBD8EE;
+  --on-dark: #A8BDD8;
+  --on-dark-muted: #7A92B0;
+  --on-dark-faint: #4A6280;
+
+  /* accent family */
+  --accent: #D4A017;
+  --accent-hover: #f0c040;
+
+  /* neutrals */
   --brand-secondary: #5C5C5C;
   --alert: #FF0000;
   --bg: #F5F5F3;
+  --surface-alt: #FAFAF8;
   --fg: #1a1a1a;
   --muted: #5C5C5C;
+  --text-placeholder: #9a9a9a;
   --border: #E0DED8;
+  --border-subtle: #F0EEEA;
   --card-bg: #FFFFFF;
 }

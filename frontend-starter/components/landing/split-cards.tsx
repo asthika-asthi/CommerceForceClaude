@@ -18,7 +18,7 @@ export function SplitCards() {
               <span key={f} className="bg-white/12 text-white/90 text-[12px] font-medium px-[11px] py-[5px] rounded-full border border-white/15">{f}</span>
             ))}
           </div>
-          <Link href="/register" className="inline-block bg-white text-brand-dark hover:bg-brand hover:text-white font-bold text-[14px] px-6 py-3 rounded-lg transition-all">
+          <Link href="/register" className="inline-block bg-white text-brand-dark hover:bg-brand hover:text-on-brand font-bold text-[14px] px-6 py-3 rounded-lg transition-all">
             Register for trade →
           </Link>
         </div>

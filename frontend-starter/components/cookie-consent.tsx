@@ -48,7 +48,7 @@ export function CookieConsent() {
         </div>
         <div className="flex gap-2 mt-3">
           <button onClick={accept}
-            className="px-4 py-1.5 text-xs font-medium bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors">
+            className="px-4 py-1.5 text-xs font-medium bg-brand text-on-brand rounded-lg hover:bg-brand-hover transition-colors">
             Accept
           </button>
           <button onClick={decline}

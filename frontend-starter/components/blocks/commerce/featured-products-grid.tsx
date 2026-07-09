@@ -105,7 +105,7 @@ function ProductGridCard({ product }: { product: Product }) {
                   ? 'bg-green-600 text-white'
                   : failed
                   ? 'bg-red-600 text-white'
-                  : 'bg-brand hover:bg-brand-hover text-white'
+                  : 'bg-brand hover:bg-brand-hover text-on-brand'
               }`}
             >
               {added ? (

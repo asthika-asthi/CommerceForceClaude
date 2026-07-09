@@ -73,7 +73,7 @@ export function ChatWidget() {
       {/* Toggle button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-brand hover:bg-brand-hover text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-brand hover:bg-brand-hover text-on-brand rounded-full shadow-lg flex items-center justify-center transition-colors"
         aria-label="Chat with us"
       >
         {open ? <X size={22} /> : <MessageCircle size={22} />}
@@ -83,7 +83,7 @@ export function ChatWidget() {
       {open && (
         <div className="fixed bottom-24 right-6 z-50 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden" style={{ height: "480px" }}>
           {/* Header */}
-          <div className="bg-brand text-white px-4 py-3 flex-shrink-0">
+          <div className="bg-brand text-on-brand px-4 py-3 flex-shrink-0">
             <p className="font-semibold text-sm">Chat with us</p>
             <p className="text-xs text-white/70">Ask anything about our products</p>
           </div>
@@ -100,7 +100,7 @@ export function ChatWidget() {
                 <div
                   className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
                     msg.role === "user"
-                      ? "bg-brand text-white rounded-br-sm"
+                      ? "bg-brand text-on-brand rounded-br-sm"
                       : "bg-slate-100 text-slate-800 rounded-bl-sm"
                   }`}
                 >
@@ -133,7 +133,7 @@ export function ChatWidget() {
               className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-dark"
             />
             <button onClick={send} disabled={!input.trim() || loading}
-              className="p-2 bg-brand hover:bg-brand-hover text-white rounded-lg disabled:opacity-40 transition-colors">
+              className="p-2 bg-brand hover:bg-brand-hover text-on-brand rounded-lg disabled:opacity-40 transition-colors">
               <Send size={15} />
             </button>
           </div>

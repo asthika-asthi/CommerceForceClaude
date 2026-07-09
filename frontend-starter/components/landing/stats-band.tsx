@@ -14,7 +14,7 @@ export function StatsBand() {
             <div className="text-[40px] font-bold text-white leading-none">
               {num}<em className="text-brand not-italic">{suffix}</em>
             </div>
-            <div className="text-[13px] text-[#A8BDD8] mt-2">{label}</div>
+            <div className="text-[13px] text-on-dark mt-2">{label}</div>
           </div>
         ))}
       </div>

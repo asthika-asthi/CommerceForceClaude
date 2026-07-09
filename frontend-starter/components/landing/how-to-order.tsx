@@ -34,7 +34,7 @@ export function HowToOrder() {
           {/* Connecting line */}
           <div
             className="absolute top-8 hidden md:block h-0.5 rounded"
-            style={{ left: "12%", right: "12%", background: "linear-gradient(90deg, #C8102E, #1B2A4A)" }}
+            style={{ left: "12%", right: "12%", background: "linear-gradient(90deg, var(--brand), var(--brand-dark))" }}
           />
           {STEPS.map(({ n, title, desc }) => (
             <div key={n} className="text-center px-4 relative">
@@ -42,7 +42,7 @@ export function HowToOrder() {
                 {n}
               </div>
               <div className="text-[15px] font-bold text-brand-dark mb-2">{title}</div>
-              <div className="text-[13px] text-[#5C5C5C] leading-[1.55]">{desc}</div>
+              <div className="text-[13px] text-muted leading-[1.55]">{desc}</div>
             </div>
           ))}
         </div>
