@@ -1,5 +1,6 @@
 import traceback
 from datetime import datetime, timezone
+from email.message import EmailMessage
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import String, Text, DateTime, Boolean
@@ -30,10 +31,13 @@ async def send_email(
 
     try:
         import aiosmtplib
-        await aiosmtplib.send(  # type: ignore[call-arg]
-            message=body,
-            sender=settings.SMTP_FROM,
-            recipients=[recipient],
+        message = EmailMessage()
+        message["From"] = settings.SMTP_FROM
+        message["To"] = recipient
+        message["Subject"] = subject
+        message.set_content(body)
+        await aiosmtplib.send(
+            message,
             hostname=settings.SMTP_HOST,
             port=settings.SMTP_PORT,
             username=settings.SMTP_USER or None,
