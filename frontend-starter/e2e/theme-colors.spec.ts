@@ -15,6 +15,11 @@ const TEST_BRAND = '#d4a017'
 
 test.describe('Theme colours', () => {
   test('admin-set brand colour is applied as CSS variables on <html>', async ({ page, request }) => {
+    // The global default (playwright.config.ts) is 30s, but the poll below alone
+    // allows 90s (branding is cached server-side for 60s) — without this override
+    // the framework kills the test mid-poll regardless of the poll's own timeout.
+    test.setTimeout(150_000)
+
     const login = await request.post(`${API}/api/auth/login`, { data: ADMIN })
     test.skip(!login.ok(), 'seeded admin login unavailable')
     const { access_token } = await login.json()

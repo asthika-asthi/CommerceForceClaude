@@ -36,25 +36,32 @@ async function apiCtx(token: string): Promise<APIRequestContext> {
   })
 }
 
-async function loginAsAdmin(page: import('@playwright/test').Page) {
-  await page.goto('/login')
-  await page.fill('input[type="email"]', ADMIN_EMAIL)
-  await page.fill('input[type="password"]', ADMIN_PASSWORD)
-  await page.click('button[type="submit"]')
-  // Admin lands on /products after login (app/login/page.tsx). Wait for any authenticated
-  // page rather than a specific route, so this doesn't break if the landing changes.
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
+// POST /api/auth/login is rate-limited to 5/minute per IP. This file used to call
+// it 18 times (15 UI logins + 3 API token fetches for seeding) — enough on its own
+// to trip the limit. Fetch the admin token exactly ONCE for the whole file (a
+// root-level beforeAll runs once per file, before any nested describe's own
+// beforeAll) and inject it into each test's localStorage instead of driving the
+// real /login form.
+let sharedToken: string
+
+test.beforeAll(async () => {
+  sharedToken = await getAdminToken()
+})
+
+async function loginViaToken(page: import('@playwright/test').Page, token: string) {
+  // No navigation here — every test below does its own page.goto(path) right
+  // after this call (and they target different paths), so that becomes the
+  // first navigation and picks up the injected token.
+  await page.addInitScript((t) => localStorage.setItem('cf_access_token', t), token)
 }
 
 // ── Products: search input ────────────────────────────────────────────────────
 
 test.describe('Products page — search', () => {
-  let token: string
   let createdIds: string[] = []
 
   test.beforeAll(async () => {
-    token = await getAdminToken()
-    const ctx = await apiCtx(token)
+    const ctx = await apiCtx(sharedToken)
     // Create 3 products with distinct names for search testing
     for (const name of ['Pagination Widget Alpha', 'Pagination Widget Beta', 'Totally Different Gadget']) {
       const res = await ctx.post(`${API}/api/products`, {
@@ -67,7 +74,7 @@ test.describe('Products page — search', () => {
   })
 
   test.afterAll(async () => {
-    const ctx = await apiCtx(token)
+    const ctx = await apiCtx(sharedToken)
     for (const id of createdIds) {
       await ctx.delete(`${API}/api/products/${id}`)
     }
@@ -75,13 +82,13 @@ test.describe('Products page — search', () => {
   })
 
   test('search input is visible on products page', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/products')
     await expect(page.locator('input[placeholder*="Search"]')).toBeVisible()
   })
 
   test('typing in search filters products', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/products')
 
     const searchInput = page.locator('input[placeholder*="Search"]')
@@ -96,7 +103,7 @@ test.describe('Products page — search', () => {
   })
 
   test('clearing search restores full list', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/products')
 
     const searchInput = page.locator('input[placeholder*="Search"]')
@@ -111,7 +118,7 @@ test.describe('Products page — search', () => {
   })
 
   test('searching with no match shows empty table', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/products')
 
     const searchInput = page.locator('input[placeholder*="Search"]')
@@ -186,12 +193,10 @@ async function testPaginationOnPage(opts: {
 // ── Products: pagination ──────────────────────────────────────────────────────
 
 test.describe('Products page — pagination', () => {
-  let token: string
   let ids: string[] = []
 
   test.beforeAll(async () => {
-    token = await getAdminToken()
-    const ctx = await apiCtx(token)
+    const ctx = await apiCtx(sharedToken)
     // 22 products to exceed the page_size=20 default
     for (let i = 0; i < 22; i++) {
       const res = await ctx.post(`${API}/api/products`, {
@@ -203,13 +208,13 @@ test.describe('Products page — pagination', () => {
   })
 
   test.afterAll(async () => {
-    const ctx = await apiCtx(token)
+    const ctx = await apiCtx(sharedToken)
     for (const id of ids) await ctx.delete(`${API}/api/products/${id}`)
     await ctx.dispose()
   })
 
   test('pagination row appears when > 20 products', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/products')
     await page.waitForLoadState('networkidle')
     await expect(page.locator('button', { hasText: 'Next →' })).toBeVisible()
@@ -217,14 +222,14 @@ test.describe('Products page — pagination', () => {
   })
 
   test('Prev button disabled on page 1', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/products')
     await page.waitForLoadState('networkidle')
     await expect(page.locator('button', { hasText: '← Prev' })).toBeDisabled()
   })
 
   test('Next navigates to page 2 and Prev becomes enabled', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/products')
     await page.waitForLoadState('networkidle')
     await page.locator('button', { hasText: 'Next →' }).click()
@@ -234,7 +239,7 @@ test.describe('Products page — pagination', () => {
   })
 
   test('Prev returns to page 1', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/products')
     await page.waitForLoadState('networkidle')
     await page.locator('button', { hasText: 'Next →' }).click()
@@ -245,7 +250,7 @@ test.describe('Products page — pagination', () => {
   })
 
   test('search resets to page 1', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/products')
     await page.waitForLoadState('networkidle')
     // Go to page 2
@@ -262,11 +267,7 @@ test.describe('Products page — pagination', () => {
 // ── Enquiries: pagination ─────────────────────────────────────────────────────
 
 test.describe('Enquiries page — pagination', () => {
-  let token: string
-
   test.beforeAll(async () => {
-    token = await getAdminToken()
-    const ctx = await apiCtx(token)
     // 22 enquiries via the public contact endpoint (no auth needed)
     const pubCtx = await request.newContext()
     for (let i = 0; i < 22; i++) {
@@ -275,18 +276,17 @@ test.describe('Enquiries page — pagination', () => {
       })
     }
     await pubCtx.dispose()
-    await ctx.dispose()
   })
 
   test('pagination row appears when > 20 enquiries', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/enquiries')
     await page.waitForLoadState('networkidle')
     await expect(page.locator('button', { hasText: 'Next →' })).toBeVisible()
   })
 
   test('Prev disabled on page 1, Next navigates to page 2', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/enquiries')
     await page.waitForLoadState('networkidle')
     await expect(page.locator('button', { hasText: '← Prev' })).toBeDisabled()
@@ -310,14 +310,14 @@ test.describe('Newsletter page — pagination', () => {
   })
 
   test('pagination row appears when > 20 subscribers', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/newsletter')
     await page.waitForLoadState('networkidle')
     await expect(page.locator('button', { hasText: 'Next →' })).toBeVisible()
   })
 
   test('Next navigates to page 2', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/newsletter')
     await page.waitForLoadState('networkidle')
     await page.locator('button', { hasText: 'Next →' }).click()
@@ -326,7 +326,7 @@ test.describe('Newsletter page — pagination', () => {
   })
 
   test('toggling active-only filter resets to page 1', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/newsletter')
     await page.waitForLoadState('networkidle')
     await page.locator('button', { hasText: 'Next →' }).click()
@@ -342,7 +342,7 @@ test.describe('Newsletter page — pagination', () => {
 
 test.describe('Pagination hidden when not needed', () => {
   test('no pagination on reviews page with < 20 reviews', async ({ page }) => {
-    await loginAsAdmin(page)
+    await loginViaToken(page, sharedToken)
     await page.goto('/reviews')
     await page.waitForLoadState('networkidle')
     // With a fresh/small DB the Pagination component should not render
