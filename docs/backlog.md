@@ -302,9 +302,14 @@ none blocked launch, but all five are standard Shopify/Woo-parity asks.
 - **`addresses` and `wishlist` plugins had zero test coverage** — neither was in the test suite's `ENABLED_PLUGINS`, so their tables were never created in the test DB and their endpoints were never exercised by any test, until the GDPR tests (which call both) exposed it.
 - **Reviews INNER JOIN would have hidden anonymized reviews** — `reviews.user_id` had to become nullable for GDPR unlinking; the two admin/storefront review-listing queries used `INNER JOIN` on that column, which would have silently dropped an anonymized review from listings instead of just losing its author name. Changed to `LEFT JOIN` with a "Former customer" fallback.
 
-**Built, NOT tested — needs manual browser verification:**
-- Analytics script actually loading/not-loading in a real browser tied to cookie accept/decline (automated tests cover only the backend ID validators and the consent-copy text — no Playwright coverage for third-party script injection).
-- Admin Tax Zones and Data Requests pages, and the storefront cart recovery-email prompt and account Privacy section — tsc/build-clean, exercised via direct API calls during development, not clicked through in a browser.
+**Built + Tested (Playwright E2E, added 2026-07-10) — closes the five "needs manual browser verification" items above:**
+- `frontend-starter/e2e/analytics.spec.ts` — GA4/Meta Pixel script tags actually appear/don't appear in the DOM tied to cookie accept/decline/no-decision, and persist across a reload. Had to poll for the homepage's cached branding fetch (`revalidate: 60`) to pick up admin-set IDs, same pattern as `theme-colors.spec.ts`.
+- `frontend-starter/e2e/cart-recovery.spec.ts` — guest cart shows the save-your-cart prompt, submitting an email hides it, dismiss works, empty cart shows no prompt.
+- `frontend-starter/e2e/gdpr-account.spec.ts` — account Settings Privacy section: download-my-data triggers a real file download, delete-account confirm dialog cancel/submit, pending-status copy.
+- `frontend-admin/e2e/tax-zones.spec.ts` — Settings → Tax Zones create/edit/delete through the actual table UI.
+- `frontend-admin/e2e/deletion-requests.spec.ts` — Data Requests page reject-with-notes and approve-and-anonymize flows.
+
+Two rate limits on the backend (`/api/auth/register` 3/min, `/api/auth/login` 5/min) mean these specs retry-with-backoff on 429 and can take longer when run back-to-back with other specs that also register/log in — this is a pre-existing characteristic of the auth endpoints, not a bug in the new tests. Also surfaced two **pre-existing, unrelated** E2E flakes while verifying (not fixed, out of scope of this batch): `theme-colors.spec.ts` uses a 90s `expect.poll` inside a test with no `test.setTimeout` override, so the global 30s default can kill it before the poll finishes; `pagination.spec.ts` logs in as admin 15 times in one file, which alone brushes up against the 5/min login limit on a slow run.
 
 **Deploy note:** run `docker compose exec backend alembic upgrade head` after pulling (4 new migrations: `tax_zones` table, `branding_config` analytics columns, `carts` recovery fields, `data_deletion_requests` table + `reviews.user_id` relaxed to nullable). Add `tax` to `ENABLED_PLUGINS` if the client needs VAT. New Python dependency: `apscheduler`.
 
