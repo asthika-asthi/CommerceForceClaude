@@ -19,18 +19,23 @@ if (Test-Path $pidsFile) {
     }
     Remove-Item $pidsFile -Force
 } else {
-    Write-Host "  No PID file found -- falling back to port scan..." -ForegroundColor Yellow
-    foreach ($port in 8000, 3000, 3001) {
-        $lines = netstat -ano | Select-String ":$port\s"
-        foreach ($line in $lines) {
-            if ($line.Line -match 'LISTENING') {
-                $procId = ($line.Line.Trim() -split '\s+')[-1]
-                if ($procId -match '^\d+$' -and [int]$procId -gt 0) {
-                    taskkill /PID $procId /T /F 2>&1 | Out-Null
-                    Write-Host "  Killed PID $procId (port $port)" -ForegroundColor Green
-                }
-            }
-        }
+    Write-Host "  No PID file found." -ForegroundColor Yellow
+}
+
+# Always follow up with a port scan, regardless of whether the PID file existed or
+# the taskkill above reported success. A tracked PID's real listener can end up
+# outside the process tree taskkill /T walks (e.g. a detached/re-parented Next.js
+# server process), or a server may have been started outside start.ps1 entirely —
+# either way it silently squats the port forever unless we check by port directly,
+# not just by the PIDs we happen to remember.
+Write-Host "  Verifying ports are free..." -ForegroundColor Gray
+foreach ($port in 8000, 3000, 3001) {
+    $lines = netstat -ano | Select-String ":$port\s" | Where-Object { $_.Line -match 'LISTENING' }
+    $procIds = $lines | ForEach-Object { ($_.Line.Trim() -split '\s+')[-1] } |
+        Where-Object { $_ -match '^\d+$' -and [int]$_ -gt 0 } | Select-Object -Unique
+    foreach ($procId in $procIds) {
+        taskkill /PID $procId /T /F 2>&1 | Out-Null
+        Write-Host "  Killed orphaned PID $procId (port $port)" -ForegroundColor Green
     }
 }
 
