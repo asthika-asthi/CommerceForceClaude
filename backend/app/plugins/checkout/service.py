@@ -93,6 +93,9 @@ async def _items_from_explicit(checkout_items: list[CheckoutItem], db: AsyncSess
 
         # Resolve the variant: an explicit variant_id if given, otherwise the product's
         # default variant — so pricing and variant_id match the cart checkout path.
+        # Mirrors the same guard as cart add_item: once a product has real option
+        # types, its default/no-option variant is a system row, not a valid purchase
+        # — whether reached implicitly (no variant_id) or by an explicit ghost id.
         if ci.variant_id:
             variant_result = await db.execute(
                 select(ProductVariant).where(
@@ -102,7 +105,20 @@ async def _items_from_explicit(checkout_items: list[CheckoutItem], db: AsyncSess
             variant = variant_result.scalar_one_or_none()
             if not variant or not variant.is_active:
                 raise HTTPException(status_code=409, detail=f"Variant '{ci.variant_id}' is not available")
+            if variant.is_default and not variant.option_links:
+                option_types = await vs.list_option_types(product.id, db)
+                if option_types:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Product '{product.name}' has variants — select one to check out",
+                    )
         else:
+            option_types = await vs.list_option_types(product.id, db)
+            if option_types:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Product '{product.name}' has variants — select one to check out",
+                )
             variant = await vs.get_or_create_default_variant(product.id, db)
 
         if product.stock_quantity < ci.quantity:
