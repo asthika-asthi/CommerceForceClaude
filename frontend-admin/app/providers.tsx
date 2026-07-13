@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { useAuthStore } from "@/store/auth"
+import { useChunkErrorReload } from "@/lib/chunk-error-reload"
 
 function AuthInit({ children }: { children: React.ReactNode }) {
   const init = useAuthStore((s) => s.init)
@@ -29,6 +30,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
       }),
   )
+
+  useChunkErrorReload()
 
   return (
     <QueryClientProvider client={queryClient}>
