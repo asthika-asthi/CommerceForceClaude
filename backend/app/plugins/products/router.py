@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.dependencies import require_admin
-from app.plugins.products.models import Product
+from app.plugins.products.models import Product, ProductOptionType
 from app.plugins.products.schemas import (
     ProductCreate, ProductUpdate, ProductOut, ProductListOut, ProductImageCreate, ProductImageOut,
     ProductImageUpdate, CsvImportResult, ImageSortItem, DuplicateGroup, DeleteDuplicatesRequest,
@@ -95,6 +95,16 @@ async def list_products(
         page=page, page_size=page_size,
         min_price=min_price, max_price=max_price,
     )
+    product_ids = [p.id for p in items]
+    variant_product_ids: set[str] = set()
+    if product_ids:
+        option_type_result = await db.execute(
+            select(ProductOptionType.product_id)
+            .where(ProductOptionType.product_id.in_(product_ids))
+            .distinct()
+        )
+        variant_product_ids = set(option_type_result.scalars().all())
+
     list_items = []
     for p in items:
         primary = next((img.url for img in p.images if img.is_primary), None)
@@ -106,6 +116,7 @@ async def list_products(
             is_on_sale=p.is_on_sale, effective_price=p.effective_price,
             stock_quantity=p.stock_quantity, in_stock=p.in_stock,
             is_active=p.is_active, is_featured=p.is_featured, primary_image=primary,
+            has_variants=p.id in variant_product_ids,
         ))
     return paginate(list_items, total, page, page_size)
 

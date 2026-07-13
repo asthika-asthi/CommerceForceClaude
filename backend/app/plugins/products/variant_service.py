@@ -225,6 +225,18 @@ async def update_variant(product_id: str, variant_id: str, data: VariantUpdate, 
     if variant.product_id != product_id:
         raise HTTPException(status_code=404, detail="Variant not found for this product")
     updates = data.model_dump(exclude_unset=True)
+    if "price_adjustment" in updates and updates["price_adjustment"] is not None \
+            and variant.is_default and not variant.option_links:
+        # A default/no-option variant is only a "ghost" system row when the product
+        # also has real option-linked variants to choose between. A genuinely simple
+        # product (no options at all) legitimately prices its one default variant.
+        option_types = await list_option_types(product_id, db)
+        if option_types:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot set a price adjustment on the default/no-option variant "
+                       "— it isn't selectable once the product has real option types",
+            )
     if "sku" in updates:
         check = await db.execute(
             select(ProductVariant).where(

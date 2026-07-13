@@ -114,6 +114,7 @@ class ProductListOut(BaseModel):
     is_active: bool
     is_featured: bool
     primary_image: Optional[str] = None
+    has_variants: bool = False
     model_config = {"from_attributes": True}
 
 

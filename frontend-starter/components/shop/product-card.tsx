@@ -72,16 +72,26 @@ export function ProductCard({ product }: { product: Product }) {
             )}
           </div>
           {product.stock_quantity > 0 ? (
-            <button
-              onClick={handleAdd}
-              disabled={adding}
-              className={`p-2 rounded-lg transition-colors disabled:opacity-60 ${
-                added ? "bg-green-600 text-white" : failed ? "bg-red-600 text-white" : "bg-brand hover:bg-brand-hover text-on-brand"
-              }`}
-              title={added ? "Added!" : failed ? "Couldn't add — try again" : "Add to cart"}
-            >
-              {added ? <Check size={15} /> : failed ? <X size={15} /> : <ShoppingCart size={15} />}
-            </button>
+            product.has_variants ? (
+              <Link
+                href={`/products/${product.slug}`}
+                className="p-2 rounded-lg transition-colors bg-brand hover:bg-brand-hover text-on-brand"
+                title="Select options"
+              >
+                <ShoppingCart size={15} />
+              </Link>
+            ) : (
+              <button
+                onClick={handleAdd}
+                disabled={adding}
+                className={`p-2 rounded-lg transition-colors disabled:opacity-60 ${
+                  added ? "bg-green-600 text-white" : failed ? "bg-red-600 text-white" : "bg-brand hover:bg-brand-hover text-on-brand"
+                }`}
+                title={added ? "Added!" : failed ? "Couldn't add — try again" : "Add to cart"}
+              >
+                {added ? <Check size={15} /> : failed ? <X size={15} /> : <ShoppingCart size={15} />}
+              </button>
+            )
           ) : (
             <span className="text-xs text-slate-400 font-medium">Out of stock</span>
           )}

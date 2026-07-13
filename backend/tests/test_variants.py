@@ -352,6 +352,63 @@ async def test_cart_unit_price_null_adjustment_uses_base(client: AsyncClient, db
 
 
 @pytest.mark.asyncio
+async def test_add_item_product_id_only_rejected_when_variants_exist(client: AsyncClient, db: AsyncSession):
+    """product_id-only add-to-cart must not silently resolve to the default variant
+    once the product has real option-linked variants — the customer never chose one."""
+    token = await _admin_token(client, db)
+    product, _xl = await _setup_product_with_adjusted_variant(client, token)
+
+    r = await client.post(
+        "/api/cart/items",
+        json={"product_id": product["id"], "quantity": 1},
+        headers={"X-Session-Id": "test-session-ambiguous"},
+    )
+    assert r.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_add_item_product_id_only_still_works_for_simple_product(client: AsyncClient, db: AsyncSession):
+    """A product with no option types has only its default variant — product_id-only
+    add-to-cart is unambiguous and must keep working."""
+    token = await _admin_token(client, db)
+    r = await client.post(
+        "/api/products",
+        json={"name": "Simple Product", "price": "10.00", "stock_quantity": 5},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 201
+    product = r.json()
+
+    r = await client.post(
+        "/api/cart/items",
+        json={"product_id": product["id"], "quantity": 1},
+        headers={"X-Session-Id": "test-session-simple"},
+    )
+    assert r.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_update_variant_rejects_price_on_default_when_options_exist(client: AsyncClient, db: AsyncSession):
+    """The auto-created default variant becomes a 'ghost' row once real option-linked
+    variants exist — it must not be assignable a price adjustment."""
+    token = await _admin_token(client, db)
+    product, _xl = await _setup_product_with_adjusted_variant(client, token)
+
+    r = await client.get(
+        f"/api/products/{product['id']}/variants",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    default_variant = next(v for v in r.json() if v["is_default"])
+
+    r = await client.patch(
+        f"/api/products/{product['id']}/variants/{default_variant['id']}",
+        json={"price_adjustment": "15.00"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_checkout_order_item_uses_variant_adjustment(client: AsyncClient, db: AsyncSession):
     """Checkout order item unit_price = product.effective_price + variant.price_adjustment."""
     token = await _admin_token(client, db)

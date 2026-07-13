@@ -341,6 +341,11 @@ function EditProduct({ id }: { id: string }) {
   // real product id passed from the server component, so variants tab is always shown.
   const isNewProduct = id === "new"
 
+  // The default/no-option variant (auto-created for bare add-to-cart requests) is a
+  // system row, not a real purchasable variant — hide it here so it can't be mistaken
+  // for one and given a price adjustment.
+  const visibleVariants = variants.filter((v) => !(v.is_default && !v.label))
+
   return (
     <div className="max-w-2xl">
       <PageHeader title="Edit Product" />
@@ -650,7 +655,7 @@ function EditProduct({ id }: { id: string }) {
                   <p className="text-sm text-slate-500">
                     No option types defined. Add an option above to create variants.
                   </p>
-                ) : variants.length === 0 ? (
+                ) : visibleVariants.length === 0 ? (
                   <p className="text-sm text-slate-500">
                     No variants yet. Click &ldquo;Generate combinations&rdquo; to create them from your options.
                   </p>
@@ -666,7 +671,7 @@ function EditProduct({ id }: { id: string }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {variants.map((variant) => (
+                        {visibleVariants.map((variant) => (
                           <tr key={variant.id}>
                             <td className="py-2 pr-4 text-slate-700">{variant.label}</td>
                             <td className="py-2 pr-4">

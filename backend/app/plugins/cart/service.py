@@ -139,9 +139,17 @@ async def add_item(
     product_id: Optional[str] = None,
 ) -> CartOut:
     # Quick-add from a listing passes product_id only — resolve its default variant.
+    # Only safe for products with no real option types; a product with variants
+    # must have one explicitly chosen rather than silently defaulting.
     if not variant_id:
         if not product_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="variant_id or product_id required")
+        option_types = await vs.list_option_types(product_id, db)
+        if option_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This product has variants — select one before adding to cart",
+            )
         default_variant = await vs.get_or_create_default_variant(product_id, db)
         variant_id = default_variant.id
 

@@ -125,6 +125,7 @@ export interface Product {
   primary_image?: string
   option_types?: ProductOptionType[]
   variants?: ProductVariant[]
+  has_variants?: boolean
 }
 
 export interface ProductsResponse {
