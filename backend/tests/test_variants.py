@@ -214,6 +214,43 @@ async def test_product_detail_includes_variants(client: AsyncClient, db: AsyncSe
     assert "option_types" in data
 
 
+# ── product list exposes has_variants ─────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_product_list_has_variants_flag(client: AsyncClient, db: AsyncSession):
+    """The /products list endpoint must expose has_variants so the storefront can
+    tell simple products from multi-variant ones without a full product fetch —
+    this is what product-card.tsx relies on to route quick-add correctly."""
+    token = await _admin_token(client, db)
+
+    simple = await _make_product(client, token)
+
+    r = await client.post(
+        "/api/products",
+        json={"name": "Multi Variant Product", "price": "25.00", "stock_quantity": 10},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    multi = r.json()
+    opt_r = await client.post(
+        f"/api/products/{multi['id']}/options",
+        json={"name": "Size", "sort_order": 0},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    opt_id = opt_r.json()["id"]
+    await client.post(
+        f"/api/products/{multi['id']}/options/{opt_id}/values",
+        json={"label": "M"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    r = await client.get("/api/products", params={"page_size": 50})
+    assert r.status_code == 200
+    items_by_id = {item["id"]: item for item in r.json()["items"]}
+
+    assert items_by_id[simple["id"]]["has_variants"] is False
+    assert items_by_id[multi["id"]]["has_variants"] is True
+
+
 # ── price adjustment ──────────────────────────────────────────────────────────
 
 async def _setup_product_with_adjusted_variant(
