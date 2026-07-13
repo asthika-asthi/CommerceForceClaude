@@ -161,6 +161,18 @@ async def add_item(
     if not variant or not variant.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
 
+    # A default/no-option variant is a system row, not a real purchasable choice —
+    # block it even when explicitly requested by ID once the product has real
+    # options, closing the same hole as the product_id-only guard above for
+    # callers that pass variant_id directly (e.g. a hand-crafted API request).
+    if variant.is_default and not variant.option_links:
+        option_types = await vs.list_option_types(variant.product_id, db)
+        if option_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This product has variants — select one before adding to cart",
+            )
+
     # Load product
     product_row = await db.execute(
         select(Product).where(Product.id == variant.product_id, Product.is_active == True)

@@ -367,6 +367,42 @@ async def test_add_item_product_id_only_rejected_when_variants_exist(client: Asy
 
 
 @pytest.mark.asyncio
+async def test_add_item_explicit_ghost_variant_id_rejected(client: AsyncClient, db: AsyncSession):
+    """A hand-crafted request that passes the default/no-option variant's id directly
+    (bypassing the product_id-only guard) must still be rejected once the product has
+    real option-linked variants — the ghost row is never a valid explicit choice.
+
+    generate_variants() deactivates any pre-existing default variant, so under normal
+    flows the ghost row here would already be caught by the is_active/404 check. To
+    prove this new guard independently (and to cover legacy data from before this fix
+    existed, where the ghost variant was reactivated by a since-blocked cart add), the
+    ghost variant is flipped back to active directly via the DB, mirroring real broken
+    data rather than a flow the API can still produce today."""
+    token = await _admin_token(client, db)
+    product, _xl = await _setup_product_with_adjusted_variant(client, token)
+
+    r = await client.get(
+        f"/api/products/{product['id']}/variants",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    ghost_variant = next(v for v in r.json() if v["is_default"])
+
+    from sqlalchemy import update
+    from app.plugins.products.models import ProductVariant
+    await db.execute(
+        update(ProductVariant).where(ProductVariant.id == ghost_variant["id"]).values(is_active=True)
+    )
+    await db.flush()
+
+    r = await client.post(
+        "/api/cart/items",
+        json={"variant_id": ghost_variant["id"], "quantity": 1},
+        headers={"X-Session-Id": "test-session-explicit-ghost"},
+    )
+    assert r.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_add_item_product_id_only_still_works_for_simple_product(client: AsyncClient, db: AsyncSession):
     """A product with no option types has only its default variant — product_id-only
     add-to-cart is unambiguous and must keep working."""
