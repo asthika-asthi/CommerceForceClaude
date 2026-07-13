@@ -507,3 +507,55 @@ async def test_concurrent_credit_no_double_spend(concurrent_client: AsyncClient)
         f"used_credit should be 0 after a failed checkout, got {used}"
     )
     assert used <= 100.00, f"used_credit {used} must not exceed limit of 100.00"
+
+
+# ── Test 5: concurrent default-variant creation — no duplicate/crash ──────────
+
+async def test_concurrent_default_variant_creation_no_duplicate():
+    """get_or_create_default_variant does a SELECT then INSERT with no locking; two
+    concurrent callers that both see "no existing default" could otherwise both try
+    to insert a variant with the same sku (product.sku), and the loser would crash
+    with an IntegrityError instead of transparently getting the winner's row.
+
+    every current API path that creates a product (POST /api/products, CSV import)
+    creates its default variant eagerly in the same transaction, so this window
+    isn't reachable through those flows today — but it is reachable for legacy/
+    seeded products inserted directly (bypassing create_product), which is what
+    this test constructs, calling the service function directly with two
+    independent sessions rather than going through the HTTP API.
+    """
+    from tests.conftest import TestSessionLocal
+    from app.plugins.products.models import Product, ProductVariant
+    from app.plugins.products import variant_service
+    from sqlalchemy import select
+
+    async with TestSessionLocal() as session:
+        product = Product(
+            name="Race Widget", sku="RACE-WIDGET", slug="race-widget",
+            price=10, stock_quantity=5,
+        )
+        session.add(product)
+        await session.commit()
+        product_id = product.id
+
+    async def call_once() -> str:
+        async with TestSessionLocal() as session:
+            variant = await variant_service.get_or_create_default_variant(product_id, session)
+            await session.commit()
+            return variant.id
+
+    variant_id_1, variant_id_2 = await asyncio.gather(call_once(), call_once())
+
+    assert variant_id_1 == variant_id_2, (
+        "both concurrent calls must resolve to the same single default variant, "
+        f"got {variant_id_1} and {variant_id_2}"
+    )
+
+    async with TestSessionLocal() as session:
+        result = await session.execute(
+            select(ProductVariant).where(
+                ProductVariant.product_id == product_id, ProductVariant.is_default == True
+            )
+        )
+        defaults = result.scalars().all()
+    assert len(defaults) == 1, f"expected exactly 1 default variant, found {len(defaults)}"

@@ -1,6 +1,7 @@
 from itertools import product as itertools_product
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from app.plugins.products.models import (
@@ -44,18 +45,31 @@ async def _load_variant(variant_id: str, db: AsyncSession) -> ProductVariant:
 
 
 async def get_or_create_default_variant(product_id: str, db: AsyncSession) -> ProductVariant:
-    result = await db.execute(
-        select(ProductVariant).where(
-            ProductVariant.product_id == product_id, ProductVariant.is_default == True
+    async def _find_existing() -> ProductVariant | None:
+        result = await db.execute(
+            select(ProductVariant).where(
+                ProductVariant.product_id == product_id, ProductVariant.is_default == True
+            )
         )
-    )
-    existing = result.scalar_one_or_none()
+        return result.scalar_one_or_none()
+
+    existing = await _find_existing()
     if existing:
         return existing
     product = await _load_product(product_id, db)
     variant = ProductVariant(product_id=product_id, sku=product.sku, is_default=True, is_active=True)
-    db.add(variant)
-    await db.flush()
+    try:
+        # A SAVEPOINT so a unique-constraint conflict only rolls back this insert,
+        # not the whole request's transaction, if a concurrent request created the
+        # same default variant (same product.sku) between our SELECT and INSERT.
+        async with db.begin_nested():
+            db.add(variant)
+            await db.flush()
+    except IntegrityError:
+        winner = await _find_existing()
+        if winner is None:
+            raise
+        return winner
     return variant
 
 
