@@ -95,6 +95,7 @@ export interface ProductVariant {
   option_values: VariantOptionValue[]
   label: string
   price_adjustment?: string | null
+  stock_quantity: number
 }
 
 export interface ProductOptionTypeValue {

@@ -23,6 +23,7 @@ interface Variant {
   is_active: boolean
   option_values: Array<{ option_type_name: string; option_value_label: string }>
   label: string
+  stock_quantity: number
 }
 
 interface AddToCartButtonProps {
@@ -50,9 +51,11 @@ export function AddToCartButton({
 
   const hasOptions = optionTypes.length > 0
   const isVariantRequired = hasOptions && !selectedVariantId
-  const selectedVariantInactive =
-    !!selectedVariantId &&
-    variants.find(v => v.id === selectedVariantId)?.is_active === false
+  const selectedVariant = variants.find(v => v.id === selectedVariantId)
+  const selectedVariantInactive = !!selectedVariantId && selectedVariant?.is_active === false
+  const selectedVariantOutOfStock =
+    !!selectedVariantId && selectedVariant?.is_active !== false && (selectedVariant?.stock_quantity ?? 0) <= 0
+  const selectedVariantUnavailable = selectedVariantInactive || selectedVariantOutOfStock
 
   async function handleAdd() {
     const variantId = selectedVariantId ?? defaultVariantId
@@ -86,17 +89,17 @@ export function AddToCartButton({
         </div>
         <button
           onClick={handleAdd}
-          disabled={status !== "idle" || isVariantRequired || selectedVariantInactive}
+          disabled={status !== "idle" || isVariantRequired || selectedVariantUnavailable}
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors disabled:cursor-not-allowed ${
             status === "added" ? "bg-green-600 text-white"
             : status === "error" ? "bg-red-500 text-white"
-            : (isVariantRequired || selectedVariantInactive) ? "bg-slate-100 text-slate-400"
+            : (isVariantRequired || selectedVariantUnavailable) ? "bg-slate-100 text-slate-400"
             : "bg-brand hover:bg-brand-hover text-on-brand"
           }`}
         >
           {status === "added" ? <><Check size={18} /> Added!</>
            : status === "error" ? <><X size={18} /> Failed — try again</>
-           : selectedVariantInactive ? <>Out of stock</>
+           : selectedVariantUnavailable ? <>Out of stock</>
            : isVariantRequired ? <>Select options above</>
            : <><ShoppingCart size={18} /> Add to cart</>}
         </button>

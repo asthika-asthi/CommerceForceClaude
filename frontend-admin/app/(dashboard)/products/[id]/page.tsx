@@ -30,6 +30,7 @@ interface ProductVariant {
   is_active: boolean
   is_default: boolean
   price_adjustment: string | null
+  stock_quantity: number
 }
 
 // ── Page entry (async server component wrapper) ───────────────────────────────
@@ -178,6 +179,10 @@ function EditProduct({ id }: { id: string }) {
   // Per-variant SKU editing state
   const [variantSkus, setVariantSkus] = useState<Record<string, string>>({})
   const [variantAdjustments, setVariantAdjustments] = useState<Record<string, string>>({})
+  const [variantStocks, setVariantStocks] = useState<Record<string, string>>({})
+  // Stock the product had *before* variants were generated — captured right before
+  // calling generate so the migration banner can tell the admin what happened to it.
+  const [preGenerateStock, setPreGenerateStock] = useState<number | null>(null)
 
   const loadVariantData = useCallback(async () => {
     setVariantsLoading(true)
@@ -200,6 +205,11 @@ function EditProduct({ id }: { id: string }) {
         adjMap[v.id] = v.price_adjustment ?? ""
       }
       setVariantAdjustments(adjMap)
+      const stockMap: Record<string, string> = {}
+      for (const v of vars) {
+        stockMap[v.id] = String(v.stock_quantity)
+      }
+      setVariantStocks(stockMap)
     } catch (err) {
       setVariantsError(err instanceof Error ? err.message : "Failed to load variant data")
     } finally {
@@ -267,9 +277,14 @@ function EditProduct({ id }: { id: string }) {
   async function handleGenerate() {
     setGenerateLoading(true)
     setVariantsError("")
+    // Capture the product's stock *before* generating — it becomes a derived sum of
+    // variant stock afterward (starting at 0), so this is the last chance to show the
+    // admin what happened to the number that used to be there.
+    setPreGenerateStock(product?.stock_quantity ?? 0)
     try {
       await api.post(`/api/products/${id}/variants/generate`)
       await loadVariantData()
+      qc.invalidateQueries({ queryKey: ["product", id] })
     } catch (err) {
       setVariantsError(err instanceof Error ? err.message : "Failed to generate variants")
     } finally {
@@ -316,6 +331,27 @@ function EditProduct({ id }: { id: string }) {
     }
   }
 
+  async function handleVariantStockBlur(variantId: string) {
+    const raw = variantStocks[variantId] ?? ""
+    const current = variants.find((v) => v.id === variantId)
+    if (!current) return
+    const parsed = raw === "" ? 0 : parseInt(raw, 10)
+    if (isNaN(parsed) || parsed < 0) return
+    if (parsed === current.stock_quantity) return
+    setVariantsError("")
+    try {
+      await api.patch(`/api/products/${id}/variants/${variantId}`, { stock_quantity: parsed })
+      setVariants((prev) =>
+        prev.map((v) => (v.id === variantId ? { ...v, stock_quantity: parsed } : v)),
+      )
+      // The product-level total is a derived sum recomputed server-side — refresh it
+      // so the (read-only) Details tab reflects the new number.
+      qc.invalidateQueries({ queryKey: ["product", id] })
+    } catch (err) {
+      setVariantsError(err instanceof Error ? err.message : "Failed to update variant")
+    }
+  }
+
   async function handleVariantActiveChange(variantId: string, checked: boolean) {
     setVariantsError("")
     try {
@@ -345,6 +381,11 @@ function EditProduct({ id }: { id: string }) {
   // system row, not a real purchasable variant — hide it here so it can't be mistaken
   // for one and given a price adjustment.
   const visibleVariants = variants.filter((v) => !(v.is_default && !v.label))
+
+  // Whether this product has any real (option-linked) variant — derived from the
+  // product's own fetch (product.variants) so it's known even before the Variants
+  // tab's own data has loaded, e.g. while still on the Details tab.
+  const hasRealVariants = (product?.variants ?? []).some((v) => !(v.is_default && !v.label))
 
   return (
     <div className="max-w-2xl">
@@ -503,9 +544,28 @@ function EditProduct({ id }: { id: string }) {
               <input value={form.sale_price} onChange={(e) => set("sale_price", e.target.value)}
                 className={input} type="number" step="0.01" min="0" />
             </Field>
-            <Field label="Stock">
-              <input value={form.stock_quantity} onChange={(e) => set("stock_quantity", e.target.value)}
-                className={input} type="number" min="0" />
+            <Field label={hasRealVariants ? "Stock (sum of variants)" : "Stock"}>
+              {hasRealVariants ? (
+                <>
+                  <input
+                    value={form.stock_quantity}
+                    readOnly
+                    disabled
+                    className={`${input} bg-slate-50 text-slate-500 cursor-not-allowed`}
+                    type="number"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("variants")}
+                    className="mt-1 text-xs text-blue-600 hover:text-blue-700 underline"
+                  >
+                    Set stock per variant →
+                  </button>
+                </>
+              ) : (
+                <input value={form.stock_quantity} onChange={(e) => set("stock_quantity", e.target.value)}
+                  className={input} type="number" min="0" />
+              )}
             </Field>
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
@@ -656,61 +716,89 @@ function EditProduct({ id }: { id: string }) {
                     No option types defined. Add an option above to create variants.
                   </p>
                 ) : visibleVariants.length === 0 ? (
-                  <p className="text-sm text-slate-500">
-                    No variants yet. Click &ldquo;Generate combinations&rdquo; to create them from your options.
+                  <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                    You&rsquo;ve defined options but haven&rsquo;t generated variants yet — click
+                    &ldquo;Generate combinations&rdquo; above. <strong>Until you do, this product can&rsquo;t be bought.</strong>
                   </p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200">
-                          <th className="text-left py-2 pr-4 font-medium text-slate-600">Variant</th>
-                          <th className="text-left py-2 pr-4 font-medium text-slate-600">SKU</th>
-                          <th className="text-left py-2 pr-4 font-medium text-slate-600">Price adj. ({CURRENCY_SYMBOL})</th>
-                          <th className="text-left py-2 font-medium text-slate-600">Active</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {visibleVariants.map((variant) => (
-                          <tr key={variant.id}>
-                            <td className="py-2 pr-4 text-slate-700">{variant.label}</td>
-                            <td className="py-2 pr-4">
-                              <input
-                                value={variantSkus[variant.id] ?? ""}
-                                onChange={(e) =>
-                                  setVariantSkus((prev) => ({ ...prev, [variant.id]: e.target.value }))
-                                }
-                                onBlur={() => handleVariantSkuBlur(variant.id)}
-                                placeholder="SKU"
-                                className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-40"
-                              />
-                            </td>
-                            <td className="py-2 pr-4">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={variantAdjustments[variant.id] ?? ""}
-                                onChange={(e) =>
-                                  setVariantAdjustments((prev) => ({ ...prev, [variant.id]: e.target.value }))
-                                }
-                                onBlur={() => handleVariantAdjustmentBlur(variant.id)}
-                                placeholder="0.00"
-                                className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-28"
-                              />
-                            </td>
-                            <td className="py-2">
-                              <input
-                                type="checkbox"
-                                checked={variant.is_active}
-                                onChange={(e) => handleVariantActiveChange(variant.id, e.target.checked)}
-                                className="rounded"
-                              />
-                            </td>
+                  <>
+                    {preGenerateStock !== null && preGenerateStock > 0 && (
+                      <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                        Stock is now managed per variant. This product had <strong>{preGenerateStock}</strong> units;
+                        that number can&rsquo;t be split automatically. Enter stock for each variant below —
+                        until you do, this product is out of stock.
+                      </p>
+                    )}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200">
+                            <th className="text-left py-2 pr-4 font-medium text-slate-600">Variant</th>
+                            <th className="text-left py-2 pr-4 font-medium text-slate-600">SKU</th>
+                            <th className="text-left py-2 pr-4 font-medium text-slate-600">Price adj. ({CURRENCY_SYMBOL})</th>
+                            <th className="text-left py-2 pr-4 font-medium text-slate-600">Stock</th>
+                            <th className="text-left py-2 font-medium text-slate-600">Active</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {visibleVariants.map((variant) => (
+                            <tr key={variant.id}>
+                              <td className="py-2 pr-4 text-slate-700">{variant.label}</td>
+                              <td className="py-2 pr-4">
+                                <input
+                                  value={variantSkus[variant.id] ?? ""}
+                                  onChange={(e) =>
+                                    setVariantSkus((prev) => ({ ...prev, [variant.id]: e.target.value }))
+                                  }
+                                  onBlur={() => handleVariantSkuBlur(variant.id)}
+                                  placeholder="SKU"
+                                  className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-40"
+                                />
+                              </td>
+                              <td className="py-2 pr-4">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={variantAdjustments[variant.id] ?? ""}
+                                  onChange={(e) =>
+                                    setVariantAdjustments((prev) => ({ ...prev, [variant.id]: e.target.value }))
+                                  }
+                                  onBlur={() => handleVariantAdjustmentBlur(variant.id)}
+                                  placeholder="0.00"
+                                  className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-28"
+                                />
+                              </td>
+                              <td className="py-2 pr-4">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={variantStocks[variant.id] ?? ""}
+                                  onChange={(e) =>
+                                    setVariantStocks((prev) => ({ ...prev, [variant.id]: e.target.value }))
+                                  }
+                                  onBlur={() => handleVariantStockBlur(variant.id)}
+                                  placeholder="0"
+                                  className={`border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-24 ${
+                                    variant.stock_quantity === 0
+                                      ? "border-red-300 bg-red-50 text-red-700"
+                                      : "border-slate-300"
+                                  }`}
+                                />
+                              </td>
+                              <td className="py-2">
+                                <input
+                                  type="checkbox"
+                                  checked={variant.is_active}
+                                  onChange={(e) => handleVariantActiveChange(variant.id, e.target.checked)}
+                                  className="rounded"
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             </>

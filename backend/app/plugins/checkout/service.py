@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.plugins.cart.models import Cart
 from app.plugins.products.models import Product, ProductVariant
 from app.plugins.products import service as product_service
+from app.plugins.products import variant_service as vs
 from app.plugins.orders import service as order_service
 from app.plugins.orders.models import Order, OrderStatus, PaymentMethod, PaymentStatus
 from app.plugins.checkout.schemas import CheckoutRequest, CheckoutItem
@@ -63,7 +64,7 @@ async def _items_from_cart(cart: Cart, db: AsyncSession) -> list[dict]:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Product '{variant.product_id}' is no longer available"
             )
-        if product.stock_quantity < cart_item.quantity:
+        if vs.effective_stock_for(variant, product) < cart_item.quantity:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Insufficient stock for '{product.name}'"
@@ -83,7 +84,6 @@ async def _items_from_cart(cart: Cart, db: AsyncSession) -> list[dict]:
 
 
 async def _items_from_explicit(checkout_items: list[CheckoutItem], db: AsyncSession) -> list[dict]:
-    from app.plugins.products import variant_service as vs
     items = []
     for ci in checkout_items:
         result = await db.execute(select(Product).where(Product.id == ci.product_id, Product.is_active == True))
@@ -121,7 +121,7 @@ async def _items_from_explicit(checkout_items: list[CheckoutItem], db: AsyncSess
                 )
             variant = await vs.get_or_create_default_variant(product.id, db)
 
-        if product.stock_quantity < ci.quantity:
+        if vs.effective_stock_for(variant, product) < ci.quantity:
             raise HTTPException(status_code=409, detail=f"Insufficient stock for '{product.name}'")
 
         variant_label = variant.label if hasattr(variant, "label") and variant.label else variant.sku
@@ -142,7 +142,7 @@ async def _items_from_explicit(checkout_items: list[CheckoutItem], db: AsyncSess
 
 async def _apply_paid_order_effects(
     order: Order,
-    stock_items: list[tuple[Optional[str], int]],
+    stock_items: list[tuple[Optional[str], Optional[str], int]],
     coupon_code: Optional[str],
     points_to_redeem: int,
     db: AsyncSession,
@@ -154,9 +154,20 @@ async def _apply_paid_order_effects(
     ``payment_intent.succeeded`` fires — so an abandoned or failed card checkout never
     consumes stock, coupon uses, or loyalty points.
     """
-    # 1. Deduct stock (product-level; raises 409 if insufficient).
-    for product_id, quantity in stock_items:
-        if product_id:
+    # 1. Deduct stock — from the variant when it's a real (option-linked) variant,
+    # else product-level, mirroring effective_stock_for's choice of which number
+    # actually gates the purchase. Raises 409 if insufficient.
+    for product_id, variant_id, quantity in stock_items:
+        deducted_from_variant = False
+        if variant_id:
+            variant_result = await db.execute(
+                select(ProductVariant).where(ProductVariant.id == variant_id)
+            )
+            variant = variant_result.scalar_one_or_none()
+            if variant and variant.option_links:
+                await vs.deduct_variant_stock(variant_id, quantity, db)
+                deducted_from_variant = True
+        if not deducted_from_variant and product_id:
             await product_service.deduct_stock(product_id, quantity, db)
 
     # 2. Record coupon usage (recompute the coupon's discount portion for the record).
@@ -289,7 +300,7 @@ async def checkout(
     # Stock, coupon usage, and loyalty are applied only once the order is PAID —
     # synchronously here for cash/credit, or from the Stripe webhook on payment success.
     # This prevents an abandoned/failed card checkout from consuming them.
-    stock_items = [(i["product_id"], i["quantity"]) for i in items]
+    stock_items = [(i["product_id"], i["variant_id"], i["quantity"]) for i in items]
 
     client_secret: Optional[str] = None
     if data.payment_method == PaymentMethod.cash:
@@ -398,7 +409,7 @@ async def handle_stripe_webhook(payload: bytes, sig_header: str, db: AsyncSessio
                     points_to_redeem = int(md.get("redeem_points") or 0)
                 except (TypeError, ValueError):
                     points_to_redeem = 0
-                stock_items = [(oi.product_id, oi.quantity) for oi in order.items]
+                stock_items = [(oi.product_id, oi.variant_id, oi.quantity) for oi in order.items]
                 try:
                     await _apply_paid_order_effects(order, stock_items, coupon_code, points_to_redeem, db)
                     await db.flush()

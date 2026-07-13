@@ -154,6 +154,13 @@ async def list_products(
 async def update_product(product_id: str, data: ProductUpdate, db: AsyncSession) -> Product:
     product = await _load(product_id, db, for_update=True)
     updates = data.model_dump(exclude_unset=True)
+    if "stock_quantity" in updates:
+        from app.plugins.products import variant_service
+        # Once a product has real variants, stock_quantity is a derived cache (the sum
+        # of variant stock) — it must not be hand-editable behind the UI's back, or it
+        # silently drifts from the numbers set per variant.
+        if await variant_service.has_real_variants(product_id, db):
+            del updates["stock_quantity"]
     if "name" in updates:
         existing = await _get_existing_slugs(db)
         existing.discard(product.slug)
@@ -308,6 +315,7 @@ async def import_from_csv(
     created = 0
     updated = 0
     errors = []
+    warnings = []
 
     for i, row in enumerate(reader, start=2):
         name = (row.get("name") or "").strip()
@@ -369,7 +377,16 @@ async def import_from_csv(
             if row.get("description"):
                 existing.description = row["description"]
             if stock_raw != "0" or row.get("stock_quantity"):
-                existing.stock_quantity = stock_quantity
+                from app.plugins.products import variant_service
+                # A product with real variants derives its stock_quantity from the
+                # sum of its variants — a CSV-provided value would silently drift it.
+                if await variant_service.has_real_variants(existing.id, db):
+                    warnings.append(
+                        f"Row {i}: '{existing.name}' has variants — stock_quantity column "
+                        "ignored, set stock per variant on the product page instead"
+                    )
+                else:
+                    existing.stock_quantity = stock_quantity
             if weight is not None:
                 existing.weight = weight
             if row.get("tags"):
@@ -438,7 +455,7 @@ async def import_from_csv(
             except Exception as exc:
                 errors.append({"row": i, "error": str(exc)})
 
-    return {"created": created, "updated": updated, "errors": errors}
+    return {"created": created, "updated": updated, "errors": errors, "warnings": warnings}
 
 
 async def find_duplicate_groups(db: AsyncSession) -> list[dict]:

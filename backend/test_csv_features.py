@@ -22,7 +22,7 @@ from sqlalchemy import select
 from app.core.base_model import Base
 from app.core.database import async_engine, AsyncSessionLocal
 from app.plugins.categories.models import Category
-from app.plugins.products.models import Product
+from app.plugins.products.models import Product, ProductVariant
 
 # Import all models so Base.metadata includes them all
 import app.plugins.auth.models  # noqa
@@ -46,6 +46,8 @@ import app.shared.email  # noqa
 
 import app.plugins.categories.service as cat_svc
 import app.plugins.products.service as prod_svc
+import app.plugins.products.variant_service as variant_svc
+from app.plugins.products.schemas import OptionTypeCreate, OptionValueCreate, ProductCreate
 
 PASS = "PASS"
 FAIL = "FAIL"
@@ -202,6 +204,64 @@ async def run_tests() -> None:
           prod_a is not None and tarp_row is not None and prod_a.category_id == tarp_row.id)
     check("Product B linked to auto-created category",
           prod_b is not None and new_cat is not None and prod_b.category_id == new_cat.id)
+
+    # ──────────────────────────────────────────────────────────
+    # TEST 7: Product CSV import ignores stock_quantity for a variant product
+    # ──────────────────────────────────────────────────────────
+    print("\n[7] Product CSV import ignores stock_quantity when real variants exist")
+    # Separate session per step (matching this file's convention elsewhere) — reusing one
+    # session across create_option_type / add_option_value / generate_variants without an
+    # expire in between leaves the option type's `.values` collection stale in the identity
+    # map, silently yielding zero combinations. The pytest HTTP-based tests avoid this only
+    # because conftest.py's client fixture calls db.expire_all() before every request.
+    async with AsyncSessionLocal() as db:
+        product = await prod_svc.create_product(
+            ProductCreate(name="Variant Widget", price="15.00", stock_quantity=0), db,
+        )
+        product_id = product.id
+        await db.commit()
+    async with AsyncSessionLocal() as db:
+        opt = await variant_svc.create_option_type(product_id, OptionTypeCreate(name="Size"), db)
+        opt_id = opt.id
+        await db.commit()
+    async with AsyncSessionLocal() as db:
+        await variant_svc.add_option_value(product_id, opt_id, OptionValueCreate(label="S"), db)
+        await db.commit()
+    async with AsyncSessionLocal() as db:
+        await variant_svc.add_option_value(product_id, opt_id, OptionValueCreate(label="M"), db)
+        await db.commit()
+    async with AsyncSessionLocal() as db:
+        variants = await variant_svc.generate_variants(product_id, db)
+        variant_ids = [v.id for v in variants]
+        await db.commit()
+    async with AsyncSessionLocal() as db:
+        for vid in variant_ids:
+            v = (await db.execute(select(ProductVariant).where(ProductVariant.id == vid))).scalar_one()
+            v.stock_quantity = 4
+        await db.flush()
+        await variant_svc.recalc_product_stock(product_id, db)
+        await db.commit()
+
+    async with AsyncSessionLocal() as db:
+        before = (await db.execute(select(Product).where(Product.id == product_id))).scalar_one()
+        stock_before = before.stock_quantity
+    check("Derived stock is sum of variants before CSV re-import", stock_before == 8, f"stock={stock_before}")
+
+    variant_product_csv = "\n".join([
+        "name,price,stock_quantity",
+        "Variant Widget,15.00,999",
+    ])
+    async with AsyncSessionLocal() as db:
+        pr2 = await prod_svc.import_from_csv(variant_product_csv, db)
+        await db.commit()
+
+    check("CSV import produced a warning, not a silent overwrite",
+          len(pr2["warnings"]) == 1, str(pr2))
+
+    async with AsyncSessionLocal() as db:
+        after = (await db.execute(select(Product).where(Product.id == product_id))).scalar_one()
+    check("stock_quantity unchanged by CSV (still the derived sum, not 999)",
+          after.stock_quantity == 8, f"stock={after.stock_quantity}")
 
     # ──────────────────────────────────────────────────────────
     # SUMMARY

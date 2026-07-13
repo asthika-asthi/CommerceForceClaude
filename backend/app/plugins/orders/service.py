@@ -153,8 +153,19 @@ async def _apply_cancellation_effects(order: Order, db: AsyncSession) -> None:
     if paid:
         try:
             from app.plugins.products import service as product_service
+            from app.plugins.products import variant_service as vs
+            from app.plugins.products.models import ProductVariant
             for item in order.items:
-                if item.product_id:
+                restored_to_variant = False
+                if item.variant_id:
+                    variant_result = await db.execute(
+                        select(ProductVariant).where(ProductVariant.id == item.variant_id)
+                    )
+                    variant = variant_result.scalar_one_or_none()
+                    if variant and variant.option_links:
+                        await vs.restore_variant_stock(item.variant_id, item.quantity, db)
+                        restored_to_variant = True
+                if not restored_to_variant and item.product_id:
                     await product_service.restore_stock(item.product_id, item.quantity, db)
         except ImportError:
             pass

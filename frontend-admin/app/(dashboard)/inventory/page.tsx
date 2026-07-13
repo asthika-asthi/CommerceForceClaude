@@ -59,6 +59,11 @@ function VariantPicker({
             <option key={v.id} value={v.id}>{variantLabel(v)}</option>
           ))}
         </select>
+        {productId && variants.length === 0 && (
+          <p className="text-[11px] text-amber-600 mt-1 max-w-48">
+            This product has no variants — generate them on the product page.
+          </p>
+        )}
       </div>
     </>
   )
@@ -189,6 +194,11 @@ export default function InventoryPage() {
         description="Multi-location stock management"
         action={{ label: showCreateForm ? "Cancel" : "+ New Warehouse", onClick: () => { setShowCreateForm((v) => !v); setCreateError("") } }}
       />
+
+      <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 mb-6">
+        Warehouse stock here tracks physical location only — it isn&rsquo;t what limits what a
+        customer can buy. Sellable stock is set per variant on each product&rsquo;s own page.
+      </p>
 
       {showCreateForm && (
         <form onSubmit={(e) => { e.preventDefault(); createWH.mutate(createForm) }}
@@ -425,6 +435,11 @@ export default function InventoryPage() {
               <option value="">Select…</option>
               {xferVariants.filter(v => !v.is_default).map(v => <option key={v.id} value={v.id}>{v.label} ({v.sku})</option>)}
             </select>
+            {xferProduct && xferVariants.filter(v => !v.is_default).length === 0 && (
+              <p className="text-[11px] text-amber-600 mt-1">
+                This product has no variants — generate them on the product page.
+              </p>
+            )}
           </div>
 
           {/* Quantity */}

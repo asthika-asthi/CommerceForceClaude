@@ -110,6 +110,7 @@ async def delete_option_type(product_id: str, option_type_id: str, db: AsyncSess
                 variant.is_active = False
     await db.delete(opt)
     await db.flush()
+    await recalc_product_stock(product_id, db)
 
 
 async def add_option_value(product_id: str, option_type_id: str, data: OptionValueCreate, db: AsyncSession) -> ProductOptionValue:
@@ -145,6 +146,7 @@ async def delete_option_value(product_id: str, option_type_id: str, value_id: st
             variant.is_active = False
     await db.delete(val)
     await db.flush()
+    await recalc_product_stock(product_id, db)
 
 
 async def generate_variants(product_id: str, db: AsyncSession) -> list[ProductVariant]:
@@ -218,6 +220,7 @@ async def generate_variants(product_id: str, db: AsyncSession) -> list[ProductVa
             result_variants.append(reloaded.scalar_one())
 
     await db.flush()
+    await recalc_product_stock(product_id, db)
     return result_variants
 
 
@@ -239,18 +242,22 @@ async def update_variant(product_id: str, variant_id: str, data: VariantUpdate, 
     if variant.product_id != product_id:
         raise HTTPException(status_code=404, detail="Variant not found for this product")
     updates = data.model_dump(exclude_unset=True)
-    if "price_adjustment" in updates and updates["price_adjustment"] is not None \
-            and variant.is_default and not variant.option_links:
+
+    sets_price = "price_adjustment" in updates and updates["price_adjustment"] is not None
+    sets_stock = "stock_quantity" in updates and updates["stock_quantity"] is not None
+    if (sets_price or sets_stock) and variant.is_default and not variant.option_links:
         # A default/no-option variant is only a "ghost" system row when the product
         # also has real option-linked variants to choose between. A genuinely simple
-        # product (no options at all) legitimately prices its one default variant.
+        # product (no options at all) legitimately prices/stocks its one default variant.
         option_types = await list_option_types(product_id, db)
         if option_types:
+            field = "price adjustment" if sets_price else "stock"
             raise HTTPException(
                 status_code=400,
-                detail="Cannot set a price adjustment on the default/no-option variant "
+                detail=f"Cannot set a {field} on the default/no-option variant "
                        "— it isn't selectable once the product has real option types",
             )
+
     if "sku" in updates:
         check = await db.execute(
             select(ProductVariant).where(
@@ -260,10 +267,84 @@ async def update_variant(product_id: str, variant_id: str, data: VariantUpdate, 
         )
         if check.scalar_one_or_none():
             raise HTTPException(status_code=409, detail=f"SKU '{updates['sku']}' already in use")
+
     for k, v in updates.items():
         setattr(variant, k, v)
     await db.flush()
+
+    # Recompute the roll-up whenever a change could affect the sum: the variant's own
+    # stock, or its is_active state (recalc_product_stock only sums active variants).
+    if sets_stock or "is_active" in updates:
+        await recalc_product_stock(product_id, db)
+
     return await _load_variant(variant_id, db)
+
+
+async def has_real_variants(product_id: str, db: AsyncSession) -> bool:
+    """Whether this product has at least one option-linked variant — i.e. whether its
+    stock_quantity is a derived cache (see recalc_product_stock) rather than a directly
+    editable field."""
+    result = await db.execute(
+        select(ProductVariant).where(ProductVariant.product_id == product_id)
+        .options(selectinload(ProductVariant.option_links))
+    )
+    return any(v.option_links for v in result.scalars().all())
+
+
+async def recalc_product_stock(product_id: str, db: AsyncSession) -> None:
+    """Recompute Product.stock_quantity as the sum of active, option-linked variants'
+    stock_quantity. A product with no real (option-linked) variants is left untouched —
+    its stock_quantity stays a directly-editable, independent field as it always has been.
+    """
+    result = await db.execute(
+        select(ProductVariant).where(ProductVariant.product_id == product_id)
+        .options(selectinload(ProductVariant.option_links))
+    )
+    variants = list(result.scalars().all())
+    real_variants = [v for v in variants if v.option_links]
+    if not real_variants:
+        return
+    product = await _load_product(product_id, db)
+    product.stock_quantity = sum(v.stock_quantity for v in real_variants if v.is_active)
+    await db.flush()
+
+
+async def deduct_variant_stock(variant_id: str, quantity: int, db: AsyncSession) -> None:
+    result = await db.execute(
+        select(ProductVariant).where(ProductVariant.id == variant_id).with_for_update()
+    )
+    variant = result.scalar_one_or_none()
+    if not variant:
+        raise HTTPException(status_code=404, detail="Variant not found")
+    if variant.stock_quantity < quantity:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Insufficient stock for variant '{variant.sku}': {variant.stock_quantity} available",
+        )
+    variant.stock_quantity -= quantity
+    await db.flush()
+    await recalc_product_stock(variant.product_id, db)
+
+
+async def restore_variant_stock(variant_id: str, quantity: int, db: AsyncSession) -> None:
+    result = await db.execute(
+        select(ProductVariant).where(ProductVariant.id == variant_id).with_for_update()
+    )
+    variant = result.scalar_one_or_none()
+    if not variant:
+        raise HTTPException(status_code=404, detail="Variant not found")
+    variant.stock_quantity += quantity
+    await db.flush()
+    await recalc_product_stock(variant.product_id, db)
+
+
+def effective_stock_for(variant: ProductVariant, product: Product) -> int:
+    """The stock number that actually gates a purchase: the variant's own stock if it's
+    a real (option-linked) variant, else the product-level number (simple products, and
+    the ghost default variant while it's still the only thing on the product)."""
+    if variant.option_links:
+        return variant.stock_quantity
+    return product.stock_quantity
 
 
 def build_variant_out(variant: ProductVariant) -> dict:
@@ -288,4 +369,5 @@ def build_variant_out(variant: ProductVariant) -> dict:
         "option_values": option_values,
         "label": ", ".join(label_parts),
         "price_adjustment": str(variant.price_adjustment) if variant.price_adjustment is not None else None,
+        "stock_quantity": variant.stock_quantity,
     }

@@ -297,10 +297,13 @@ async def _setup_product_with_adjusted_variant(
     variants = r.json()
     xl = next(v for v in variants if "XL" in v["label"])
 
-    # Set XL price_adjustment = 5.00
+    # Set XL price_adjustment = 5.00 and give it stock — generating variants starts
+    # every variant at 0 stock (by design: no product-level number is carried over
+    # or split), so tests using this fixture need stock set explicitly to be able
+    # to add XL to cart / check out.
     r = await client.patch(
         f"/api/products/{product['id']}/variants/{xl['id']}",
-        json={"price_adjustment": "5.00"},
+        json={"price_adjustment": "5.00", "stock_quantity": 10},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200
@@ -521,3 +524,227 @@ async def test_checkout_order_item_uses_variant_adjustment(client: AsyncClient, 
     item = order["items"][0]
     assert float(item["unit_price"]) == 25.00  # £20 + £5
     assert float(item["subtotal"]) == 50.00    # 2 × £25
+
+
+# ── per-variant stock ───────────────────────────────────────────────────────
+
+async def _get_product(client: AsyncClient, token: str, product_id: str) -> dict:
+    r = await client.get(f"/api/products/{product_id}", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
+    return r.json()
+
+
+async def _get_variants(client: AsyncClient, token: str, product_id: str) -> list[dict]:
+    r = await client.get(f"/api/products/{product_id}/variants", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
+    return r.json()
+
+
+async def _set_variant_stock(client: AsyncClient, token: str, product_id: str, variant_id: str, qty: int) -> dict:
+    r = await client.patch(
+        f"/api/products/{product_id}/variants/{variant_id}",
+        json={"stock_quantity": qty},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+@pytest.mark.asyncio
+async def test_generate_variants_starts_stock_at_zero(client: AsyncClient, db: AsyncSession):
+    """Generating variants must never split or carry over a pre-existing product-level
+    stock number — new variants start at 0, and the product total (now a derived sum)
+    reflects that."""
+    token = await _admin_token(client, db)
+    r = await client.post(
+        "/api/products",
+        json={"name": "Zero Start Widget", "price": "10.00", "stock_quantity": 11},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    product = r.json()
+    assert product["stock_quantity"] == 11
+
+    opt_r = await client.post(
+        f"/api/products/{product['id']}/options",
+        json={"name": "Size"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    opt_id = opt_r.json()["id"]
+    for label in ("S", "M"):
+        await client.post(
+            f"/api/products/{product['id']}/options/{opt_id}/values",
+            json={"label": label},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    r = await client.post(
+        f"/api/products/{product['id']}/variants/generate",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    variants = r.json()
+    assert all(v["stock_quantity"] == 0 for v in variants)
+
+    reloaded = await _get_product(client, token, product["id"])
+    assert reloaded["stock_quantity"] == 0, "old product-level stock must not be carried over or split"
+
+
+@pytest.mark.asyncio
+async def test_product_stock_equals_sum_of_variant_stock(client: AsyncClient, db: AsyncSession):
+    """The sync invariant: product.stock_quantity == sum(active variant stock)."""
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+    # Fixture already sets XL stock to 10; S starts at 0 (generate_variants default).
+    reloaded = await _get_product(client, token, product["id"])
+    assert reloaded["stock_quantity"] == 10
+
+    variants = await _get_variants(client, token, product["id"])
+    s_variant = next(v for v in variants if v["label"] == "Size: S")
+    await _set_variant_stock(client, token, product["id"], s_variant["id"], 5)
+
+    reloaded = await _get_product(client, token, product["id"])
+    assert reloaded["stock_quantity"] == 15  # 5 (S) + 10 (XL)
+
+
+@pytest.mark.asyncio
+async def test_product_stock_excludes_deactivated_variant(client: AsyncClient, db: AsyncSession):
+    """Deactivating a variant must drop it out of the product-level sum."""
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+
+    variants = await _get_variants(client, token, product["id"])
+    s_variant = next(v for v in variants if v["label"] == "Size: S")
+    await _set_variant_stock(client, token, product["id"], s_variant["id"], 3)
+
+    reloaded = await _get_product(client, token, product["id"])
+    assert reloaded["stock_quantity"] == 13  # 3 (S) + 10 (XL)
+
+    r = await client.patch(
+        f"/api/products/{product['id']}/variants/{xl['id']}",
+        json={"is_active": False},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+
+    reloaded = await _get_product(client, token, product["id"])
+    assert reloaded["stock_quantity"] == 3  # XL's 10 no longer counted
+
+
+@pytest.mark.asyncio
+async def test_patch_product_stock_ignored_when_real_variants_exist(client: AsyncClient, db: AsyncSession):
+    """PATCH /api/products/{id} with stock_quantity must not drift the derived total —
+    otherwise the API silently reintroduces the exact sync bug this feature closes."""
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+    before = (await _get_product(client, token, product["id"]))["stock_quantity"]
+    assert before == 10
+
+    r = await client.put(
+        f"/api/products/{product['id']}",
+        json={"name": product["name"], "price": product["price"], "stock_quantity": 999},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+
+    reloaded = await _get_product(client, token, product["id"])
+    assert reloaded["stock_quantity"] == before, "stock_quantity must stay the derived sum, not 999"
+
+
+@pytest.mark.asyncio
+async def test_cart_409_uses_variant_stock_not_product_stock(client: AsyncClient, db: AsyncSession):
+    """A variant with insufficient stock must 409 even though the product-level (summed)
+    total would otherwise appear to cover the request — proves the variant's own number
+    is what's actually enforced, not the roll-up."""
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+
+    variants = await _get_variants(client, token, product["id"])
+    s_variant = next(v for v in variants if v["label"] == "Size: S")
+    await _set_variant_stock(client, token, product["id"], s_variant["id"], 5)
+    # Product total is now 5 (S) + 10 (XL) = 15, comfortably enough for a qty=2 request —
+    # but S itself only has 5, so requesting 6 of S specifically must still fail.
+
+    r = await client.post(
+        "/api/cart/items",
+        json={"variant_id": s_variant["id"], "quantity": 6},
+        headers={"X-Session-Id": "test-session-variant-stock-409"},
+    )
+    assert r.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_checkout_deducts_variant_stock(client: AsyncClient, db: AsyncSession):
+    """Checkout must deduct from the variant's own stock, and the product-level total
+    must reflect that (via recalculation), not an independent product-level deduction."""
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+
+    r = await client.post(
+        "/api/auth/register",
+        json={"email": "stockbuyer@test.com", "password": "Buyer1234!", "first_name": "B", "last_name": "U"},
+    )
+    r = await client.post("/api/auth/login", json={"email": "stockbuyer@test.com", "password": "Buyer1234!"})
+    customer_token = r.json()["access_token"]
+
+    await client.post(
+        "/api/cart/items",
+        json={"variant_id": xl["id"], "quantity": 3},
+        headers={"Authorization": f"Bearer {customer_token}"},
+    )
+    r = await client.post(
+        "/api/checkout",
+        json={"use_cart": True, "payment_method": "cash", "shipping_address": "1 Test St"},
+        headers={"Authorization": f"Bearer {customer_token}"},
+    )
+    assert r.status_code == 201, r.text
+
+    variants = await _get_variants(client, token, product["id"])
+    xl_after = next(v for v in variants if v["id"] == xl["id"])
+    assert xl_after["stock_quantity"] == 7  # 10 - 3
+
+    reloaded = await _get_product(client, token, product["id"])
+    assert reloaded["stock_quantity"] == 7  # S(0) + XL(7)
+
+
+@pytest.mark.asyncio
+async def test_order_cancellation_restores_variant_stock(client: AsyncClient, db: AsyncSession):
+    """Cancelling a paid order must restore stock to the variant, not the product."""
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+
+    r = await client.post(
+        "/api/auth/register",
+        json={"email": "cancelbuyer@test.com", "password": "Buyer1234!", "first_name": "B", "last_name": "U"},
+    )
+    r = await client.post("/api/auth/login", json={"email": "cancelbuyer@test.com", "password": "Buyer1234!"})
+    customer_token = r.json()["access_token"]
+
+    await client.post(
+        "/api/cart/items",
+        json={"variant_id": xl["id"], "quantity": 4},
+        headers={"Authorization": f"Bearer {customer_token}"},
+    )
+    r = await client.post(
+        "/api/checkout",
+        json={"use_cart": True, "payment_method": "cash", "shipping_address": "1 Test St"},
+        headers={"Authorization": f"Bearer {customer_token}"},
+    )
+    assert r.status_code == 201
+    order_id = r.json()["order_id"]
+
+    variants = await _get_variants(client, token, product["id"])
+    xl_after_purchase = next(v for v in variants if v["id"] == xl["id"])
+    assert xl_after_purchase["stock_quantity"] == 6  # 10 - 4
+
+    r = await client.post(
+        f"/api/orders/{order_id}/cancel",
+        headers={"Authorization": f"Bearer {customer_token}"},
+    )
+    assert r.status_code == 200, r.text
+
+    variants = await _get_variants(client, token, product["id"])
+    xl_after_cancel = next(v for v in variants if v["id"] == xl["id"])
+    assert xl_after_cancel["stock_quantity"] == 10  # restored
+
+    reloaded = await _get_product(client, token, product["id"])
+    assert reloaded["stock_quantity"] == 10  # S(0) + XL(10)

@@ -21,6 +21,7 @@ interface Variant {
   is_active: boolean
   option_values: Array<{ option_type_name: string; option_value_label: string }>
   label: string
+  stock_quantity: number
 }
 
 interface VariantPickerProps {
@@ -41,7 +42,7 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
       const available = new Set<string>()
       for (const val of ot.values) {
         const hasMatch = variants.some(v => {
-          if (!v.is_active) return false
+          if (!v.is_active || v.stock_quantity <= 0) return false
           // Must have this value for the current option type
           const hasThisValue = v.option_values.some(
             ov => ov.option_type_name === ot.name && ov.option_value_label === val.label
@@ -71,6 +72,7 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
       return
     }
     const matched = variants.find(v =>
+      v.option_values.length > 0 &&
       v.option_values.every(ov => selections[ov.option_type_name] === ov.option_value_label)
     )
     // Pass the variant ID whether active or not.

@@ -79,6 +79,7 @@ export interface Product {
   category_id?: string
   primary_image?: string | null
   images: ProductImage[]
+  variants?: ProductVariantSummary[]
 }
 
 export interface ProductCreate {
@@ -273,6 +274,7 @@ export interface ProductVariantSummary {
   is_default: boolean
   is_active: boolean
   label: string
+  stock_quantity: number
 }
 
 export interface Warehouse {

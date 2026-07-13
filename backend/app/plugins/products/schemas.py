@@ -127,6 +127,7 @@ class CsvImportResult(BaseModel):
     created: int
     updated: int = 0
     errors: list[CsvImportError]
+    warnings: list[str] = []
 
 
 class DuplicateProductEntry(BaseModel):
@@ -191,6 +192,7 @@ class ProductVariantOut(BaseModel):
     option_values: list[VariantOptionLink] = []
     label: str = ""
     price_adjustment: Optional[Decimal] = None
+    stock_quantity: int = 0
     model_config = {"from_attributes": True}
 
 
@@ -198,6 +200,7 @@ class VariantUpdate(BaseModel):
     sku: Optional[str] = None
     is_active: Optional[bool] = None
     price_adjustment: Optional[Decimal] = None
+    stock_quantity: Optional[int] = None
 
 
 class VariantCsvImportError(BaseModel):

@@ -111,7 +111,7 @@ async def _build_cart_out(cart: Cart, db: AsyncSession) -> CartOut:
             line_total=line_total,
             primary_image=primary,
             in_stock=product.in_stock,
-            stock_quantity=product.stock_quantity,
+            stock_quantity=vs.effective_stock_for(variant, product),
         ))
 
     return CartOut(
@@ -181,8 +181,9 @@ async def add_item(
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
 
-    # Stock check against product.stock_quantity (warehouse stock check added in Task 6)
-    if product.stock_quantity < quantity:
+    # Stock check: variant's own stock if it's a real (option-linked) variant,
+    # else the product-level number (warehouse stock check added in Task 6).
+    if vs.effective_stock_for(variant, product) < quantity:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient stock")
 
     cart = await _get_or_create_cart(db, user_id=user_id, session_id=session_id)
@@ -230,11 +231,13 @@ async def update_item(
                 select(Product).where(Product.id == variant.product_id, Product.is_active == True)
             )
             product = result2.scalar_one_or_none()
-            if product and product.stock_quantity < quantity:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Only {product.stock_quantity} units available",
-                )
+            if product:
+                effective = vs.effective_stock_for(variant, product)
+                if effective < quantity:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=f"Only {effective} units available",
+                    )
     if quantity <= 0:
         await db.delete(item)
     else:
