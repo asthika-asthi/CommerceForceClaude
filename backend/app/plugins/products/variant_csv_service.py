@@ -179,12 +179,23 @@ async def import_variants_from_csv(
         p.sku: p for p in prod_result.scalars().all()
     }
 
+    # Existing non-default variant SKUs per product, used below to decide whether a
+    # blank-option row would leave a variant unselectable on a multi-variant product.
+    existing_variant_result = await db.execute(
+        select(ProductVariant.product_id, ProductVariant.sku)
+        .where(ProductVariant.is_default == False)
+    )
+    existing_variant_skus_by_product: dict[str, set[str]] = {}
+    for product_id, sku in existing_variant_result.all():
+        existing_variant_skus_by_product.setdefault(product_id, set()).add(sku)
+
     # Phase 2 — Pre-scan (single pass, no DB writes)
 
     seen_variant_skus: dict[str, int] = {}  # sku -> first row number (rows start at 2)
     dup_skus: set[str] = set()
     product_option_fingerprints: dict[str, set] = {}  # product_sku -> set of frozensets
     bad_product_skus: set[str] = set()
+    file_variant_skus_by_product: dict[str, set[str]] = {}  # product_sku -> variant skus in this file
 
     for idx, row in enumerate(rows):
         row_num = idx + 2
@@ -210,6 +221,21 @@ async def import_variants_from_csv(
             product_option_fingerprints[p_sku].add(opt_names)
             if len(product_option_fingerprints[p_sku]) > 1:
                 bad_product_skus.add(p_sku)
+
+            file_variant_skus_by_product.setdefault(p_sku, set()).add(v_sku)
+
+    # A product needs real option linkage on every variant once it will end up with
+    # more than one variant total (existing DB variants ∪ variants touched by this
+    # file) — otherwise a blank-option variant becomes an unreachable "orphan" that
+    # can still carry a price_adjustment but is never selectable on the storefront.
+    products_requiring_options: set[str] = set()
+    for p_sku, file_skus in file_variant_skus_by_product.items():
+        product = products_by_sku.get(p_sku)
+        if not product:
+            continue
+        existing_skus = existing_variant_skus_by_product.get(product.id, set())
+        if len(existing_skus | file_skus) > 1:
+            products_requiring_options.add(p_sku)
 
     # Phase 3 — Row loop
 
@@ -300,6 +326,20 @@ async def import_variants_from_csv(
                 break  # Both blank — no more options
 
         if row_error:
+            continue
+
+        # e2. Blank options are only safe when the product will still have at most
+        # one variant after this import — otherwise this row would create/leave a
+        # variant with no way to be selected on the storefront.
+        if not options and p_sku in products_requiring_options:
+            errors.append(VariantCsvImportError(
+                row=row_num,
+                field="options",
+                message=(
+                    f"Variant '{v_sku}' has no option1_name/option1_value — required because "
+                    f"product '{p_sku}' will have more than one variant after this import"
+                ),
+            ))
             continue
 
         # f. Parse price_adjustment

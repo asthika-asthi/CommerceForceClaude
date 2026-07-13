@@ -366,6 +366,83 @@ async def run_tests() -> None:
     check("variants_created == 0 (row skipped)", r12.variants_created == 0, str(r12))
 
     # ──────────────────────────────────────────────────────────
+    # [17] Orphan variants rejected: two blank-option rows for a brand-new
+    # product (uniform empty fingerprint, so the pre-existing "inconsistent
+    # option names" guard doesn't fire first) → both rows error, nothing created
+    # ──────────────────────────────────────────────────────────
+    print("\n[17] Orphan variants rejected (new product, both rows blank options)")
+    async with AsyncSessionLocal() as db:
+        await create_product(db, "New Product", "NEWPROD1")
+        await db.commit()
+
+    csv_orphan = "\n".join([
+        "product_sku,variant_sku,price_adjustment,is_active",
+        "NEWPROD1,NEWPROD1-A,,true",
+        "NEWPROD1,NEWPROD1-B,15.00,true",
+    ])
+    async with AsyncSessionLocal() as db:
+        r13 = await svc.import_variants_from_csv(csv_orphan, db, "set")
+        await db.commit()
+    check("2 errors, one per orphan row", len(r13.errors) == 2, str(r13.errors))
+    check("Both errors are field=options", all(e.field == "options" for e in r13.errors), str(r13.errors))
+    check("Errors mention the respective SKUs",
+          any("NEWPROD1-A" in e.message for e in r13.errors) and any("NEWPROD1-B" in e.message for e in r13.errors),
+          str(r13.errors))
+    check("Nothing created", r13.variants_created == 0, str(r13))
+
+    async with AsyncSessionLocal() as db:
+        orphans = (await db.execute(
+            select(ProductVariant).where(ProductVariant.sku.in_(["NEWPROD1-A", "NEWPROD1-B"]))
+        )).scalars().all()
+    check("Neither orphan variant was created", len(orphans) == 0, f"found {len(orphans)}")
+
+    # ──────────────────────────────────────────────────────────
+    # [18] Regression guard: a product with exactly one variant, blank
+    # options, re-imported touching only that same SKU → still allowed
+    # ──────────────────────────────────────────────────────────
+    print("\n[18] Single-variant product with blank options — no false positive")
+    async with AsyncSessionLocal() as db:
+        await create_product(db, "Solo Product", "SOLOPROD")
+        await db.commit()
+
+    csv_solo = "\n".join([
+        "product_sku,variant_sku,price_adjustment,is_active",
+        "SOLOPROD,SOLOPROD-V1,,true",
+    ])
+    async with AsyncSessionLocal() as db:
+        r14 = await svc.import_variants_from_csv(csv_solo, db, "set")
+        await db.commit()
+    check("First import: no errors", r14.errors == [], str(r14.errors))
+    check("First import: variant created", r14.variants_created == 1, str(r14))
+
+    async with AsyncSessionLocal() as db:
+        r15 = await svc.import_variants_from_csv(csv_solo, db, "set")
+        await db.commit()
+    check("Re-import same lone variant: no errors", r15.errors == [], str(r15.errors))
+    check("Re-import same lone variant: updated not created", r15.variants_updated == 1, str(r15))
+
+    # ──────────────────────────────────────────────────────────
+    # [19] Adding a second blank-option variant to a previously-single-
+    # variant product → the new row is rejected (multiplicity introduced)
+    # ──────────────────────────────────────────────────────────
+    print("\n[19] Second variant added to single-variant product — rejected")
+    csv_second = "\n".join([
+        "product_sku,variant_sku,price_adjustment,is_active",
+        "SOLOPROD,SOLOPROD-V2,,true",
+    ])
+    async with AsyncSessionLocal() as db:
+        r16 = await svc.import_variants_from_csv(csv_second, db, "set")
+        await db.commit()
+    check("1 error for newly-introduced multiplicity", len(r16.errors) == 1, str(r16.errors))
+    check("Error field is options", r16.errors[0].field == "options", str(r16.errors))
+
+    async with AsyncSessionLocal() as db:
+        v2 = (await db.execute(
+            select(ProductVariant).where(ProductVariant.sku == "SOLOPROD-V2")
+        )).scalar_one_or_none()
+    check("Second variant was not created", v2 is None)
+
+    # ──────────────────────────────────────────────────────────
     # SUMMARY
     # ──────────────────────────────────────────────────────────
     print("\n" + "=" * 54)
