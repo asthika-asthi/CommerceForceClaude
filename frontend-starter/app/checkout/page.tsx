@@ -33,7 +33,7 @@ interface CheckoutForm {
 
 const PAYMENT_METHODS: { value: PaymentMethodKey; label: string; description: string }[] = [
   { value: "cash", label: "Cash on Delivery", description: "Pay when your order arrives" },
-  { value: "credit_limit", label: "Credit Account", description: "Charge to your business credit account" },
+  { value: "credit_limit", label: "Trade Credit Account", description: "Charge to your pre-approved business credit account" },
   { value: "stripe", label: "Pay by Card", description: "Pay securely with credit or debit card" },
 ]
 
@@ -79,11 +79,21 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
   const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [couponApplying, setCouponApplying] = useState(false)
   const [loyaltyRate, setLoyaltyRate] = useState<{ rate: number; min: number; active: boolean } | null>(null)
+  const [hasCreditAccount, setHasCreditAccount] = useState(false)
 
   const stripe = useStripe()
   const elements = useElements()
 
   useEffect(() => { fetch() }, [fetch])
+
+  useEffect(() => {
+    if (!user) { setHasCreditAccount(false); return }
+    // Only trade/business customers have a credit account (set up by an admin) —
+    // a 404 here just means this customer doesn't have one, not an error.
+    api.get("/api/credit/me")
+      .then(() => setHasCreditAccount(true))
+      .catch(() => setHasCreditAccount(false))
+  }, [user])
 
   useEffect(() => {
     api.get<{ redemption_rate: string; min_redemption: number; is_active: boolean }>("/api/loyalty/config")
@@ -269,7 +279,11 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
   }
 
   const availablePaymentMethods = PAYMENT_METHODS.filter((m) => {
-    if (m.value === "credit_limit" && !user) return false
+    // Trade credit is a pre-approved business account an admin sets up — not
+    // something every logged-in customer has, and not a card. Hide it entirely
+    // for guests and for regular (B2C) customers who don't have one; it stays
+    // visible for the B2B customers who do.
+    if (m.value === "credit_limit" && !hasCreditAccount) return false
     if (m.value === "stripe" && !stripeEnabled) return false
     return true
   })
