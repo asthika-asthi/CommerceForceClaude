@@ -1,4 +1,4 @@
-# CommerceForce — New Client Setup Guide
+﻿# CommerceForce — New Client Setup Guide
 
 This is the complete guide for delivering a CommerceForce store to a new client.
 Follow every section in order. Do not skip steps.
@@ -10,14 +10,18 @@ Follow every section in order. Do not skip steps.
 1. Server provisioning and firewall
 2. Clone and configure environment files
 3. Build and start the application
-4. Create database tables and seed accounts
-5. Client first login
-6. Branding and visual identity
-7. Plugin selection (which features to enable)
-8. Categories
-9. Product catalog (CSV import)
-10. Landing page setup
-11. Hand off to client
+4. Create database tables and seed accounts (includes client first login)
+5. Branding and visual identity
+6. Plugin selection (which features to enable)
+7. Categories and product catalog (CSV import)
+8. Landing page setup
+9. Hand off to client
+10. Backups and recovery
+11. HTTPS + nginx + custom domain
+
+Section numbers below match this list exactly (1–11). Payment setup (Stripe)
+is inside the Go-Live Checklist just below, since it's deployment-time
+configuration rather than a one-time setup step.
 
 ---
 
@@ -31,7 +35,7 @@ no code changes needed.
 
 ### Blocking — must complete before the client's site goes live
 
-- [ ] **HTTPS certificate issued and nginx enabled** — Section 12. Needs the
+- [ ] **HTTPS certificate issued and nginx enabled** — Section 11. Needs the
       client's domain pointed at your VPS via DNS first.
 - [ ] **Stripe live keys set** — `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET`
       in `backend/.env` (see *Payment setup* below). Cash and store-credit
@@ -45,20 +49,45 @@ no code changes needed.
 - [ ] **Default admin password changed** from the `seed.py` default
       (`admin@commerceforce.dev / Admin1234!`) — Section 4.3.
 - [ ] **`CORS_ORIGINS` / `STOREFRONT_URL` / `ADMIN_URL`** point at the client's
-      real domain, not the `testshop.com` template values — Section 2.2, 12.6.
+      real domain, not the `testshop.com` template values — Section 2.2, 11.6.
 - [ ] **`COOKIE_SECURE=true`** once HTTPS is live (only `false` during
-      HTTP-only testing) — Section 12 gotcha.
+      HTTP-only testing) — Section 11 gotcha.
 
 ### Payment setup — Stripe
 
-1. In the client's Stripe dashboard, get the live **Secret Key**.
-2. Set `STRIPE_SECRET_KEY` in `backend/.env`.
+Card payments need **two separate keys in two separate places** — missing the
+second one is the single most common reason "Pay by Card" never appears on
+the storefront even though the client swears they "configured Stripe":
+
+1. In the client's Stripe dashboard, get the live **Secret Key** (`sk_live_...`).
+2. Set `STRIPE_SECRET_KEY` in `backend/.env`. This key alone is *not* enough —
+   it only lets the backend create/confirm payments; it does not make the
+   card option appear.
 3. Register a webhook endpoint for the `payment_intent.succeeded` event
    pointing at the live backend URL; copy the signing secret into
-   `STRIPE_WEBHOOK_SECRET`.
+   `STRIPE_WEBHOOK_SECRET` in `backend/.env`.
 4. `docker compose restart backend`
-5. Test: place a real (or Stripe test-mode) card order and confirm it shows as
-   paid — check `docker compose logs backend` for the webhook firing.
+5. **Also set the live Publishable Key (`pk_live_...`)** — but *not* in
+   `.env`. Log in to the admin panel → **Branding** → **Stripe Publishable
+   Key** field → paste it there → **Save Branding**. The storefront reads
+   this from the branding API at runtime (not from a build-time env var),
+   specifically so each client's key can differ without rebuilding the
+   frontend. Skip this step and every customer sees only "Cash on Delivery"
+   (and "Trade Credit Account" for B2B customers who have one) — no card
+   option, with no error anywhere to explain why.
+6. Test: place a real (or Stripe test-mode) card order and confirm it shows
+   as paid — check `docker compose logs backend` for the webhook firing.
+
+**Local/dev testing without a public URL:** use the Stripe CLI to forward
+webhook events to your machine — `stripe listen --forward-to
+localhost:8000/api/checkout/stripe-webhook` — then put the `whsec_...` it
+prints into `STRIPE_WEBHOOK_SECRET`. Use Stripe's test card `4242 4242 4242
+4242` (any future expiry, any CVC).
+
+**Trade Credit Account is not a card and needs no Stripe setup.** It's a
+separate, pre-approved business credit line — see *Trade credit accounts* in
+Section 6 below. The storefront only shows it to a customer an admin has
+explicitly granted one to; everyone else sees Cash and Card only.
 
 ### Known open issues — not launch-blocking, but worth disclosing or tracking
 
@@ -88,7 +117,7 @@ Full detail: `docs/gap-analysis-and-roadmap.md` Part B.
 
 ### Final verification before sending credentials to the client
 
-Section 10 has the full handoff checklist. At minimum: all three containers
+Section 9 has the full handoff checklist. At minimum: all three containers
 running, storefront and admin load over HTTPS with a valid padlock, the
 client can log in with their own password, at least one category and product
 are visible, and a test order has been placed successfully (cash, and card
@@ -166,7 +195,7 @@ openssl rand -hex 32
 > **Running on plain HTTP (no domain/HTTPS yet)?** Add `COOKIE_SECURE=false` to `backend/.env`.
 > The login refresh cookie is marked *Secure* by default (correct for HTTPS), which the browser
 > **won't send over HTTP** — causing constant logouts and "new tab drops to login". Set it back
-> to `COOKIE_SECURE=true` once HTTPS is enabled (Section 12).
+> to `COOKIE_SECURE=true` once HTTPS is enabled (Section 11).
 
 > **Currency:** the store currency defaults to GBP (£). To use another currency, set
 > `CURRENCY_CODE` in the **root** `.env` (next to `docker-compose.yml`), e.g. `CURRENCY_CODE=USD`.
@@ -302,8 +331,8 @@ Plugins control which features are visible to the client in the admin panel and 
 | `newsletter` | Email subscription capture |
 | `ai_chat` | AI-powered customer chat widget |
 | `rfq` | Request for Quote (B2B enquiries) |
-| `credit` | Store credit / account credit |
-| `inventory` | Stock management and low-stock alerts |
+| `credit` | Trade credit accounts for approved B2B customers (see below) |
+| `inventory` | Multi-warehouse *location* tracking (see below) — not what limits what a customer can buy |
 | `contact` | Contact form |
 | `addresses` | Saved delivery addresses |
 | `wishlist` | Customer wishlists |
@@ -313,6 +342,28 @@ Plugins control which features are visible to the client in the admin panel and 
 | `tax` | Per-country VAT/tax rates, applied at checkout |
 | `promotions` | Promotional banners |
 | `announcements` | Site-wide announcement bar |
+
+**Trade credit accounts (B2B customers):** the `credit` plugin lets an admin
+grant an approved trade customer a pre-approved spending limit they can
+charge orders against instead of paying immediately — a net-terms account,
+not a credit card. It is **not** shown to customers by default; an admin
+must set one up first via **Admin → Credit Accounts → New Account**, picking
+the customer and setting their limit. Only customers with an active account
+ever see "Trade Credit Account" as a payment option at checkout — regular
+retail (B2C) customers, and guests, never see it. If a client doesn't do
+trade/wholesale sales, leave `credit` out of `ENABLED_PLUGINS` entirely.
+
+**Stock is set per product variant, not on a warehouse.** The `inventory`
+plugin's Warehouses page tracks *where* stock physically sits across
+multiple locations — it does **not** gate checkout. The number that actually
+stops a customer from over-ordering is set on the product itself: **Admin →
+Products → [product] → Variants tab**, per variant. For a product with
+variants (e.g. sizes/colours), you must click **Generate combinations**
+first — defining option values alone does not create purchasable variants —
+then enter a stock number for each one. A product's total stock shown
+elsewhere in the admin is automatically the sum of its variants' stock; it
+becomes read-only once real variants exist. A product with no variants keeps
+a single, directly-editable stock field as before.
 
 **To change enabled plugins:**
 1. Edit `backend/.env` on the server — update the `ENABLED_PLUGINS` line
@@ -375,7 +426,7 @@ Copy `docs/templates/products_template.csv` from the project, rename it to `prod
 | `name` | Yes | Text | Product name |
 | `price` | Yes | Number | No currency symbol (`29.99` not `£29.99`) |
 | `description` | No | Text | Plain text |
-| `stock_quantity` | No | Whole number | Defaults to 0 |
+| `stock_quantity` | No | Whole number | Defaults to 0. **Ignored** for a product that already has real variants — see gotcha below |
 | `category` | No | Text | Category name — auto-created if it doesn't exist |
 | `sale_price` | No | Number | Only if on sale |
 | `is_on_sale` | No | `true` or `false` | |
@@ -389,11 +440,20 @@ In the admin panel → **Products** → **Import CSV** → select your file.
 
 **Gotcha — re-importing:** Products are not de-duplicated on name — importing the same file twice creates duplicates. Only import a file once. To fix mistakes, delete the products and re-import.
 
+**Gotcha — this CSV only creates simple, single-SKU products.** It cannot
+create size/colour-style variants or set stock per variant. If a product
+needs variants, import it via this CSV first (for the base name, price,
+description, category, images), then in the admin go to that product →
+**Variants tab** → add option types and values → **Generate combinations**
+→ enter stock per variant. See *Stock is set per product variant* under
+Section 6 above — until you do this, a variant product shows as out of
+stock, and the flat `stock_quantity` column above has no effect on it.
+
 **Gotcha — categories ARE de-duplicated:** Re-importing a categories CSV is safe — existing categories are updated, not duplicated.
 
 ---
 
-## Section 9 — Landing page
+## Section 8 — Landing page
 
 The landing page is the client's homepage at `http://IP:3000`. It is built from sections you add in the admin panel.
 
@@ -419,7 +479,7 @@ The landing page is the client's homepage at `http://IP:3000`. It is built from 
 
 ---
 
-## Section 10 — Handoff checklist
+## Section 9 — Handoff checklist
 
 Before giving the client access, verify each item:
 
@@ -504,9 +564,9 @@ docker compose down -v
 
 ---
 
-## Section 11 — Backups and recovery
+## Section 10 — Backups and recovery
 
-### 11.1 Daily automated backup
+### 10.1 Daily automated backup
 
 The backup runs automatically via the `backup` service in `docker-compose.yml`. It starts with the rest of the application — no manual setup required. The backup service:
 - Runs `scripts/docker-backup.sh` inside an Alpine container at 02:00 UTC every day
@@ -525,7 +585,7 @@ Add this line:
 0 3 * * * docker compose -f /opt/commerceforce/CommerceForceClaude/docker-compose.yml exec -T backup /usr/local/bin/run-backup >> /var/log/commerceforce-backup.log 2>&1
 ```
 
-### 11.2 On-demand backup
+### 10.2 On-demand backup
 
 Run at any time:
 ```bash
@@ -533,14 +593,14 @@ cd /opt/commerceforce/CommerceForceClaude
 bash scripts/backup.sh
 ```
 
-### 11.3 Verify a backup
+### 10.3 Verify a backup
 
 ```bash
 sqlite3 backups/YYYY-MM-DD.db "SELECT COUNT(*) FROM users;"
 ```
 Should return a number. If it prints an error, the backup is corrupt — check logs and re-run.
 
-### 11.4 Restore from backup
+### 10.4 Restore from backup
 
 ```bash
 # 1. Stop the backend
@@ -561,7 +621,7 @@ curl http://YOUR_SERVER_IP:8000/api/health
 
 ---
 
-## Section 12 — HTTPS + nginx + custom domain
+## Section 11 — HTTPS + nginx + custom domain
 
 ### Prerequisites before this section
 
@@ -569,7 +629,7 @@ curl http://YOUR_SERVER_IP:8000/api/health
 - Port 80 and 443 are open in your firewall: `ufw allow 80 && ufw allow 443`
 - The site is already running on HTTP (Section 3 complete)
 
-### 12.1 Add DOMAIN to root .env
+### 11.1 Add DOMAIN to root .env
 
 Edit `.env` (next to `docker-compose.yml`) and add your domain:
 
@@ -583,7 +643,7 @@ Or re-run the env generator and supply the domain when prompted:
 bash scripts/generate-env.sh
 ```
 
-### 12.2 Issue the SSL certificate with certbot
+### 11.2 Issue the SSL certificate with certbot
 
 Run certbot in standalone mode (before enabling the nginx service). This temporarily binds to port 80:
 
@@ -603,7 +663,7 @@ Successfully received certificate.
 Certificate is saved at: /etc/letsencrypt/live/yourdomain.com/fullchain.pem
 ```
 
-### 12.3 Enable the nginx service in docker-compose.yml
+### 11.3 Enable the nginx service in docker-compose.yml
 
 Open `docker-compose.yml` and uncomment the `nginx:` and `certbot:` service blocks (lines starting with `#`), and uncomment the two volumes at the bottom (`cf_letsencrypt`, `cf_certbot_www`).
 
@@ -612,7 +672,7 @@ Then rebuild and restart:
 docker compose up --build -d
 ```
 
-### 12.4 Verify HTTPS is working
+### 11.4 Verify HTTPS is working
 
 ```bash
 # Should return 301 redirect to https://
@@ -627,7 +687,7 @@ curl -vI https://yourdomain.com 2>&1 | grep "SSL certificate"
 
 Open your browser and visit `https://yourdomain.com` — padlock should show.
 
-### 12.5 Set up automatic certificate renewal
+### 11.5 Set up automatic certificate renewal
 
 Certbot certificates expire after 90 days. Add a weekly renewal cron:
 
@@ -646,7 +706,7 @@ docker compose run --rm certbot renew --dry-run
 ```
 Should print: `Congratulations, all simulated renewals succeeded.`
 
-### 12.6 Update backend/.env for HTTPS URLs
+### 11.6 Update backend/.env for HTTPS URLs
 
 The env generator already wrote HTTPS URLs when you provided a domain. If you're adding the domain to an existing deployment, update `backend/.env`:
 
