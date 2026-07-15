@@ -25,9 +25,10 @@ Internet ──▶ shared nginx (80/443) ──▶ 127.0.0.1:8000/3000/3001   (c
                                    └──▶ 127.0.0.1:8001/3002/3003   (client B)
 ```
 
-**Before you start:** every client needs its own domain (or subdomain) with DNS already
-pointing at the VPS's IP — same as Section 11's prerequisites in `new-client-setup.md`, just
-×2 per client (`clienta.com` + `admin.clienta.com`, `clientb.com` + `admin.clientb.com`, ...).
+DNS only gets every client's traffic to the same VPS IP on the same port (443) — it has no
+idea which client that traffic is for. It's the shared nginx that then splits it back out by
+which hostname was requested. See Section 2 for exactly what DNS records that requires, and
+Section 4 for how nginx does the splitting.
 
 ---
 
@@ -42,17 +43,44 @@ one per client:
 | B (second) | 8001 | 3002 | 3003 | clientb.com, admin.clientb.com |
 | C (third) | 8002 | 3004 | 3005 | clientc.com, admin.clientc.com |
 
-Write these down — you'll need them in Section 2 (when generating each client's `.env`) and
-Section 3 (when writing that client's nginx config block).
+Write these down — you'll need them in Section 3 (when generating each client's `.env`) and
+Section 4 (when writing that client's nginx config block).
 
 ---
 
-## Section 2 — Deploy each client
+## Section 2 — Point DNS at the VPS
+
+Every client needs **two A records**, and both point to the exact same VPS IP — there's no way
+to encode a port in a DNS record, and no need to: nginx (Section 4) is what tells clients apart,
+not DNS.
+
+| Type | Host / Name | Points to |
+|---|---|---|
+| A | `clienta.com` (root/`@`) | VPS IP |
+| A | `admin.clienta.com` (`admin`) | VPS IP |
+| A | `clientb.com` (root/`@`) | VPS IP |
+| A | `admin.clientb.com` (`admin`) | VPS IP |
+
+Repeat the pair for every additional client.
+
+**Where to add these:** `clienta.com` and `clientb.com` are almost always separate domains
+registered with separate registrars/DNS providers, so this is usually done in **two different
+DNS control panels**, not one shared one. The `admin.` record is a subdomain of its parent
+domain, so it goes in that same domain's DNS zone (e.g. `admin.clienta.com` is added alongside
+`clienta.com`, not `clientb.com`).
+
+All four records above are identical in *what* they point to (the VPS IP) — only the hostname
+differs. DNS propagation can take anywhere from a few minutes to a few hours; you can move on to
+Section 3 while waiting, but certbot (Section 4.3) will fail until it's actually resolving.
+
+---
+
+## Section 3 — Deploy each client
 
 Follow `docs/new-client-setup.md` **Sections 1–10** for each client, cloning into its own
 directory, with two differences:
 
-### 2.1 Clone into a per-client directory
+### 3.1 Clone into a per-client directory
 
 ```bash
 cd /opt/commerceforce
@@ -62,7 +90,7 @@ git clone https://github.com/asthika-asthi/CommerceForceClaude.git .
 
 (Repeat under `clientb/`, `clientc/`, etc. for each additional client.)
 
-### 2.2 Answer the port prompts with this client's ports
+### 3.2 Answer the port prompts with this client's ports
 
 When you run `bash scripts/generate-env.sh` (Section 2.2 of `new-client-setup.md`), answer the
 new port prompts with the values you planned in Section 1 above — e.g. for client B:
@@ -77,7 +105,7 @@ Domain name (e.g. myshop.com, or leave as IP) [SERVER_IP]: clientb.com
 This writes `BACKEND_PORT=8001`, `STOREFRONT_PORT=3002`, `ADMIN_PORT=3003`, and the correct
 `NEXT_PUBLIC_API_URL_*` build args for `clientb.com` into that client's root `.env`.
 
-### 2.3 Bind the ports to localhost only
+### 3.3 Bind the ports to localhost only
 
 Edit **this client's** `docker-compose.yml` and prefix each port mapping with `127.0.0.1:` so
 it's only reachable from the VPS itself (the shared nginx will reach it over loopback):
@@ -97,9 +125,9 @@ it's only reachable from the VPS itself (the shared nginx will reach it over loo
 ```
 
 **Do not** uncomment this client's `nginx`/`certbot` service block — leave Section 11 of
-`new-client-setup.md` unused for every client. The shared nginx (Section 3) replaces it.
+`new-client-setup.md` unused for every client. The shared nginx (Section 4) replaces it.
 
-### 2.4 Build and continue as normal
+### 3.4 Build and continue as normal
 
 ```bash
 docker compose up --build -d
@@ -109,20 +137,20 @@ docker compose exec backend python seed.py
 
 Continue through `new-client-setup.md` Sections 4–10 (accounts, branding, plugins, products,
 backups) as usual — all of it is per-client and unaffected by sharing the VPS. **Skip Section
-11** — HTTPS is handled once, centrally, in Section 3 below.
+11** — HTTPS is handled once, centrally, in Section 4 below.
 
 At this point `curl http://127.0.0.1:8001/api/health` (client B's backend) should work from the
-VPS itself, but nothing is reachable from the internet yet — that's expected until Section 3.
+VPS itself, but nothing is reachable from the internet yet — that's expected until Section 4.
 
-Repeat Sections 2.1–2.4 for every client.
+Repeat Sections 3.1–3.4 for every client.
 
 ---
 
-## Section 3 — Set up the shared nginx (one-time)
+## Section 4 — Set up the shared nginx (one-time)
 
-Do this once, after at least one client is deployed per Section 2.
+Do this once, after at least one client is deployed per Section 3.
 
-### 3.1 Create the shared nginx directory
+### 4.1 Create the shared nginx directory
 
 ```bash
 cd /opt/commerceforce
@@ -130,7 +158,7 @@ mkdir -p shared-nginx/conf.d shared-nginx/certbot-www shared-nginx/letsencrypt
 cd shared-nginx
 ```
 
-### 3.2 Write `docker-compose.yml`
+### 4.2 Write `docker-compose.yml`
 
 ```yaml
 # /opt/commerceforce/shared-nginx/docker-compose.yml
@@ -153,14 +181,15 @@ services:
 ```
 
 `network_mode: host` is what lets this container reach each client's backend/frontends at
-`127.0.0.1:<port>` — those ports are only bound to loopback (Section 2.3), and this is the one
+`127.0.0.1:<port>` — those ports are only bound to loopback (Section 3.3), and this is the one
 container allowed to see loopback directly.
 
-### 3.3 Bootstrap each client's certificate (HTTP-only first)
+### 4.3 Bootstrap each client's certificate (HTTP-only first)
 
 nginx will refuse to start if a config references a certificate file that doesn't exist yet, so
 each **new** client needs a plain-HTTP config first, just to serve the ACME challenge, before
-its real config can reference a cert.
+its real config can reference a cert. This step needs the DNS records from Section 2 to have
+already propagated — `certbot` will fail if `clienta.com` doesn't yet resolve to this VPS.
 
 For client A, create `conf.d/clienta.conf`:
 
@@ -192,11 +221,13 @@ docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
 You should see `Successfully received certificate.` — it's written to
 `./letsencrypt/live/clienta.com/`.
 
-### 3.4 Replace with the full config
+### 4.4 Replace with the full config
 
 Now that the cert exists, overwrite `conf.d/clienta.conf` with the full HTTP+HTTPS routing
 config. This is the same routing logic as the single-client `nginx/default.conf` in the repo,
-just pointed at `127.0.0.1:<client's ports>` instead of Docker service names:
+just pointed at `127.0.0.1:<client's ports>` instead of Docker service names. The `server_name`
+directives in each block are what let nginx tell clients apart on the shared 80/443 — a request
+for `clienta.com` only ever matches this block, never client B's:
 
 ```nginx
 # /opt/commerceforce/shared-nginx/conf.d/clienta.conf
@@ -326,7 +357,7 @@ curl -I https://clienta.com          # 200
 curl -I https://admin.clienta.com    # 200
 ```
 
-### 3.5 Set up renewal (once, covers every client)
+### 4.5 Set up renewal (once, covers every client)
 
 `certbot renew` automatically renews **every** certificate under `/etc/letsencrypt/live/`,
 regardless of how many clients you've added — one cron entry is enough for the whole VPS:
@@ -346,10 +377,11 @@ docker compose run --rm certbot renew --dry-run
 
 ---
 
-## Section 4 — Adding another client later
+## Section 5 — Adding another client later
 
-1. Deploy the new client per Section 2 (its own directory, its own next-available ports).
-2. Bootstrap its certificate per Section 3.3 (HTTP-only config → certbot → full config →
+1. Point DNS at the VPS for the new client's two hostnames (Section 2).
+2. Deploy the new client per Section 3 (its own directory, its own next-available ports).
+3. Bootstrap its certificate per Section 4.3 (HTTP-only config → certbot → full config →
    reload), using its own domain and ports. Existing clients keep running throughout — nginx
    reload does not drop other server blocks' connections.
 
@@ -361,14 +393,18 @@ docker compose run --rm certbot renew --dry-run
   with `port is already allocated` if you forget to change `BACKEND_PORT`/`STOREFRONT_PORT`/
   `ADMIN_PORT` in its `.env`.
 - **Don't enable any client's bundled nginx/certbot service.** Only the shared nginx in
-  Section 3 should ever bind 80/443 — uncommenting a client's own nginx service will
+  Section 4 should ever bind 80/443 — uncommenting a client's own nginx service will
   crash-loop fighting over the same ports.
 - **Mixed-content / wrong-URL bug this doc assumes is fixed:** `generate-env.sh` and
   `docker-compose.yml` now bake the frontend's API calls to the **domain** you give at Section
-  2.2, not the VPS's raw IP (see `docs/new-client-setup.md` Section 2.2's "Domain-aware build"
+  3.2, not the VPS's raw IP (see `docs/new-client-setup.md` Section 2.2's "Domain-aware build"
   note). If a client's frontend appears to call `http://SERVER_IP:PORT` instead of its own
   domain, its `.env` most likely still has the old defaults — re-run `generate-env.sh` for that
   client with the correct domain, then `docker compose up --build -d`.
+- **DNS not propagated yet:** if `certbot` (Section 4.3) fails with a timeout or "Connection
+  refused" while validating the domain, DNS for that client likely hasn't finished propagating.
+  Check with `dig clienta.com +short` (or `nslookup clienta.com`) — it should return the VPS IP
+  before certbot will succeed.
 - **Resource sizing:** each client is a full backend + two Next.js frontends + SQLite DB +
   its own nightly backup cron. A small VPS (e.g. 2 vCPU / 4 GB RAM) comfortably runs 2–3
   low-traffic clients; watch `docker stats` and RAM headroom before adding more.

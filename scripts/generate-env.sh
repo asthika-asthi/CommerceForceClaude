@@ -31,7 +31,7 @@ ask_secret() {
         eval "$var_name=\"$default\""
         return
     fi
-    printf "${CYAN}%s${RESET} [press Enter to leave blank]: "
+    printf "${CYAN}%s${RESET} [press Enter to leave blank]: " "$prompt"
     read -rs input
     echo
     eval "$var_name=\"${input:-$default}\""
