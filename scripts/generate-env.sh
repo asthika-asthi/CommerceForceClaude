@@ -7,6 +7,8 @@
 #   bash scripts/generate-env.sh             # interactive mode
 #   bash scripts/generate-env.sh --test      # non-interactive (CI / testing)
 #   bash scripts/generate-env.sh --domain myshop.com --server-ip 1.2.3.4  # partial overrides
+#   bash scripts/generate-env.sh --domain clientb.com --server-ip 1.2.3.4 \
+#     --backend-port 8001 --storefront-port 3002 --admin-port 3003  # multi-client on one VPS
 
 set -euo pipefail
 
@@ -61,12 +63,18 @@ check_placeholder() {
 TEST_MODE=false
 OVERRIDE_DOMAIN=""
 OVERRIDE_IP=""
+OVERRIDE_BACKEND_PORT=""
+OVERRIDE_STOREFRONT_PORT=""
+OVERRIDE_ADMIN_PORT=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --test)         TEST_MODE=true; shift ;;
-        --domain)       OVERRIDE_DOMAIN="$2"; shift 2 ;;
-        --server-ip)    OVERRIDE_IP="$2"; shift 2 ;;
+        --test)             TEST_MODE=true; shift ;;
+        --domain)           OVERRIDE_DOMAIN="$2"; shift 2 ;;
+        --server-ip)        OVERRIDE_IP="$2"; shift 2 ;;
+        --backend-port)     OVERRIDE_BACKEND_PORT="$2"; shift 2 ;;
+        --storefront-port)  OVERRIDE_STOREFRONT_PORT="$2"; shift 2 ;;
+        --admin-port)       OVERRIDE_ADMIN_PORT="$2"; shift 2 ;;
         *)              echo "Unknown arg: $1"; exit 1 ;;
     esac
 done
@@ -98,9 +106,14 @@ else ask "Domain name (e.g. myshop.com, or leave as IP)" "$SERVER_IP" DOMAIN; fi
 
 # Ports (only matters when running more than one client on the same VPS —
 # see docs/multi-client-vps-setup.md. First client on a box: just accept the defaults.)
-ask "Backend host port" "8000" BACKEND_PORT
-ask "Storefront host port" "3000" STOREFRONT_PORT
-ask "Admin panel host port" "3001" ADMIN_PORT
+if [[ -n "$OVERRIDE_BACKEND_PORT" ]]; then BACKEND_PORT="$OVERRIDE_BACKEND_PORT"
+else ask "Backend host port" "8000" BACKEND_PORT; fi
+
+if [[ -n "$OVERRIDE_STOREFRONT_PORT" ]]; then STOREFRONT_PORT="$OVERRIDE_STOREFRONT_PORT"
+else ask "Storefront host port" "3000" STOREFRONT_PORT; fi
+
+if [[ -n "$OVERRIDE_ADMIN_PORT" ]]; then ADMIN_PORT="$OVERRIDE_ADMIN_PORT"
+else ask "Admin panel host port" "3001" ADMIN_PORT; fi
 
 # Client identity
 ask "Store name" "My CommerceForce Store" STORE_NAME

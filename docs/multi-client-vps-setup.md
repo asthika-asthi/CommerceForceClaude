@@ -30,6 +30,37 @@ idea which client that traffic is for. It's the shared nginx that then splits it
 which hostname was requested. See Section 2 for exactly what DNS records that requires, and
 Section 4 for how nginx does the splitting.
 
+## Automated setup (recommended)
+
+Sections 1–5 below can be done by hand, or automated with two scripts:
+
+```bash
+# Once per VPS, before the first client:
+bash scripts/multiclient-init-nginx.sh
+
+# For each client (repeat for every additional one — this is Section 5):
+bash scripts/multiclient-add-client.sh \
+  --client acme --domain clienta.com --server-ip 1.2.3.4 \
+  --backend-port 8000 --storefront-port 3000 --admin-port 3001 \
+  --admin-email owner@clienta.com --store-name "Acme Store" \
+  --email you@youragency.com
+```
+
+`multiclient-init-nginx.sh` does Section 4.1/4.2/4.5 (creates the shared
+nginx directory, writes its `docker-compose.yml`, starts it, installs the
+renewal cron). `multiclient-add-client.sh` does Sections 3 and 4.3/4.4 for one
+client: checks for port collisions, verifies DNS actually resolves here first
+(same fail-fast-before-certbot check as the single-client `setup-https.sh`),
+clones/generates its `.env`, binds its ports to `127.0.0.1`, builds/migrates/
+seeds, bootstraps and issues its certificate via the shared nginx's webroot,
+writes its full HTTPS server block, and — critically — validates the new
+config with `nginx -t` **before** reloading, so a mistake in one client's
+config can't take down every other client's already-working site. Both
+scripts are safe to re-run.
+
+Sections 1–5 below remain as the manual fallback and as a reference for what
+the scripts are doing.
+
 ---
 
 ## Section 1 — Plan your ports
@@ -177,12 +208,19 @@ services:
     volumes:
       - ./letsencrypt:/etc/letsencrypt
       - ./certbot-www:/var/www/certbot
-    entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; done"
 ```
 
 `network_mode: host` is what lets this container reach each client's backend/frontends at
 `127.0.0.1:<port>` — those ports are only bound to loopback (Section 3.3), and this is the one
 container allowed to see loopback directly.
+
+**Don't add an `entrypoint:`/`command:` override to the `certbot` service.** `docker compose
+run --rm certbot <args>` (Section 4.3/4.5 below) only works because there's no fixed override —
+it lets the image's own certbot entrypoint run with whatever args you pass. A fixed override
+like a `sleep`-loop shell command silently swallows those args instead: the container just
+starts the loop and hangs until killed, and `renew`/`certonly` never actually runs. `docker
+compose up` leaving this container in an "Exited (0)" state between manual/cron `run`
+invocations is expected for a one-shot utility service like this, not a bug.
 
 ### 4.3 Bootstrap each client's certificate (HTTP-only first)
 
@@ -394,7 +432,10 @@ docker compose run --rm certbot renew --dry-run
   `ADMIN_PORT` in its `.env`.
 - **Don't enable any client's bundled nginx/certbot service.** Only the shared nginx in
   Section 4 should ever bind 80/443 — uncommenting a client's own nginx service will
-  crash-loop fighting over the same ports.
+  crash-loop fighting over the same ports. The single-client helper
+  `scripts/setup-https.sh` knows this and **refuses to run** on a multi-client box (it
+  detects a sibling `shared-nginx/` directory and `127.0.0.1:`-bound ports) — use
+  `scripts/multiclient-add-client.sh` here instead.
 - **Mixed-content / wrong-URL bug this doc assumes is fixed:** `generate-env.sh` and
   `docker-compose.yml` now bake the frontend's API calls to the **domain** you give at Section
   3.2, not the VPS's raw IP (see `docs/new-client-setup.md` Section 2.2's "Domain-aware build"

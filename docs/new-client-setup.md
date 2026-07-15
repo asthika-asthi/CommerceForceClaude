@@ -1,7 +1,10 @@
 ﻿# CommerceForce — New Client Setup Guide
 
 This is the complete guide for delivering a CommerceForce store to a new client.
-Follow every section in order. Do not skip steps.
+Read **"Which order should you follow?"** below before you start Section 2 — it
+determines whether you enter a real domain early or leave it as the IP, which
+changes where Section 11 falls in your run. Otherwise, follow sections in order
+and don't skip steps.
 
 ---
 
@@ -19,9 +22,38 @@ Follow every section in order. Do not skip steps.
 10. Backups and recovery
 11. HTTPS + nginx + custom domain
 
-Section numbers below match this list exactly (1–11). Payment setup (Stripe)
-is inside the Go-Live Checklist just below, since it's deployment-time
-configuration rather than a one-time setup step.
+Section numbers below match this list exactly (1–11) and don't change between
+the two paths below — only the order you visit them in changes.
+
+---
+
+## Which order should you follow?
+
+Everything from Section 4 onward (accounts, branding, plugins, catalog,
+handoff) depends on being able to actually reach the site. Whether that's
+over the IP or over the real domain determines where Section 11 belongs in
+your run. Pick one **before** you do Section 2.2:
+
+**Path A — DNS is already pointed at this VPS.** Do Sections 1, 2, 3, then
+**jump straight to Section 11**, then come back and do Sections 4–10. Answer
+Section 2.2's domain prompt with the **real domain** right away. Because
+Section 11 completes before any accounts exist, `backend/.env`'s
+`STOREFRONT_URL`/`ADMIN_URL`/`CORS_ORIGINS` are correct from the very first
+`seed.py` run — password-reset links work on the first try, no IP-to-domain
+migration needed later. This is the better path whenever it's available.
+
+**Path B — DNS isn't mapped yet (or you just want to get the store running
+first).** Follow Sections 1–10 in numeric order, answering Section 2.2 with
+the **IP**, and do Section 11 last once DNS is ready. This is the fallback
+path — it works, but you'll rebuild the frontends and re-point
+`STOREFRONT_URL`/`ADMIN_URL`/`CORS_ORIGINS` at the domain when you get to
+Section 11 (see 11.7).
+
+Don't split the difference — entering the real domain in Section 2.2 while
+planning to do Section 11 "later" (i.e. after Section 4) is what breaks
+logins and reset links with "Failed to fetch" / certificate errors. Either
+commit to the domain and do Section 11 immediately (Path A), or stay on the
+IP until Section 11 (Path B).
 
 ---
 
@@ -49,7 +81,7 @@ no code changes needed.
 - [ ] **Default admin password changed** from the `seed.py` default
       (`admin@commerceforce.dev / Admin1234!`) — Section 4.3.
 - [ ] **`CORS_ORIGINS` / `STOREFRONT_URL` / `ADMIN_URL`** point at the client's
-      real domain, not the `testshop.com` template values — Section 2.2, 11.6.
+      real domain, not the `testshop.com` template values — Section 2.2, 11.7.
 - [ ] **`COOKIE_SECURE=true`** once HTTPS is live (only `false` during
       HTTP-only testing) — Section 11 gotcha.
 
@@ -178,6 +210,19 @@ Answer the prompts (press Enter to accept the default shown in brackets). The sc
 **Ports:** the script asks for backend/storefront/admin host ports, defaulting to `8000`/`3000`/`3001`. Accept the defaults unless you're putting a **second client on the same VPS** — see `docs/multi-client-vps-setup.md`, which needs each client on a distinct set of ports.
 
 **Domain-aware build:** if you answer the "Domain name" prompt with a real domain, the frontends are built to call `https://yourdomain.com` (routed through nginx once you complete Section 11). If you leave it as the IP, they're built to call `http://SERVER_IP:PORT` directly. This choice is baked in at build time — changing your mind later means re-running this script and then `docker compose up --build -d` to rebuild the frontends.
+
+> **This choice must match the path you picked in "Which order should you
+> follow?" above.** Entering a real domain here only works if you go straight
+> to Section 11 next (Path A) — every generated URL
+> (`NEXT_PUBLIC_API_URL_*`, `CORS_ORIGINS`, `STOREFRONT_URL`, `ADMIN_URL`)
+> becomes `https://yourdomain.com`, which resolves to nothing until DNS +
+> certbot + nginx are actually in place. If you're not doing Section 11
+> immediately after Section 3 — e.g. DNS isn't mapped yet — answer this with
+> the **IP** instead (Path B) and revisit it with the real domain when you
+> reach Section 11 (11.7 covers the domain-aware rebuild). Splitting the
+> difference — real domain now, Section 11 "later" after Section 4 — is what
+> breaks logins with "Failed to fetch" and gives password-reset links a
+> certificate error.
 
 > **If you don't have bash** (e.g. Windows without Git Bash), use the manual method below instead.
 
@@ -541,6 +586,13 @@ docker compose down
 
 # Stop and DELETE all data — only use to start fresh
 docker compose down -v
+
+# Enable HTTPS for a real domain (Section 11) — safe to re-run
+bash scripts/setup-https.sh --staging   # dry-run-ish: test with an untrusted cert first
+bash scripts/setup-https.sh             # then the real certificate
+
+# Recovery commands (check/reset accounts, etc.)
+# See docs/accounts-and-passwords.md
 ```
 
 ---
@@ -565,6 +617,8 @@ docker compose down -v
 | CSV import: "invalid price" error | Price uses comma instead of period | Change `29,99` to `29.99` in the CSV |
 | Category CSV: "parent not found" error | Parent row appears after child in the file | Move parent rows above child rows in the CSV |
 | Products duplicated after re-import | Products CSV was imported twice | Re-importing a CSV now updates existing products instead of duplicating. If duplicates already exist, use **Admin → Products → Find duplicates** to clean them up. |
+| Login fails with "Failed to fetch", or a password-reset link shows a certificate warning | Real domain was entered in Section 2.2 before Section 11 (DNS + certbot) was done — every URL was baked as `https://yourdomain.com`, which isn't reachable yet | Re-run `scripts/generate-env.sh` with the **IP** instead, or manually fix `NEXT_PUBLIC_API_URL_*` (root `.env`) and `CORS_ORIGINS`/`STOREFRONT_URL`/`ADMIN_URL` (`backend/.env`) to `http://SERVER_IP:PORT`, then `docker compose build frontend-starter frontend-admin && docker compose up -d --force-recreate frontend-starter frontend-admin backend`. Also set `COOKIE_SECURE=false` in `backend/.env` while on plain HTTP. Revisit with the real domain at Section 11. |
+| `scripts/setup-https.sh` dies with "No A record resolves for 'admin.yourdomain.com'" | Only the root domain's A record was added — the `admin.` subdomain is a *separate* record in your registrar and is easy to forget | Add a second `A` record: host name `admin`, pointing at the same VPS IP. Then just re-run `bash scripts/setup-https.sh` — nothing else needs to change, it picks up right where it left off. |
 
 ---
 
@@ -627,11 +681,82 @@ curl http://YOUR_SERVER_IP:8000/api/health
 
 ## Section 11 — HTTPS + nginx + custom domain
 
+**When to do this section:** see "Which order should you follow?" near the
+top of this guide. If DNS is already mapped (Path A), do this section now,
+immediately after Section 3, before Section 4 — don't wait until the end.
+If DNS wasn't ready earlier (Path B), do it here, last, as originally
+numbered.
+
+### 11.0 Automated setup (recommended)
+
+Once the prerequisites below are met, run:
+
+```bash
+bash scripts/setup-https.sh
+```
+
+This does everything in 11.1–11.7 for you: checks DNS actually resolves to
+this VPS (and tells you exactly what's wrong if not — e.g. the wrong record
+type), uncomments the nginx/certbot services in `docker-compose.yml`, issues
+the certificate into the volume nginx actually mounts, rebuilds and starts
+everything (including the frontends, so they call the domain not the IP),
+verifies HTTPS is actually working, switches renewal to webroot mode, and
+installs the renewal cron. It's safe to re-run.
+
+**Recommended first run — test with a staging cert before the real one:**
+```bash
+bash scripts/setup-https.sh --staging
+```
+Let's Encrypt rate-limits failed real-certificate attempts, so if DNS turns
+out to be wrong, you want to find that out on a `--staging` run (unlimited
+retries) rather than burn your real-cert attempts. `--staging` issues a
+cert that browsers won't trust (expected — it's just proving the flow
+works), but the script's own verification step will still report success.
+Once a `--staging` run completes cleanly, re-run for real:
+```bash
+bash scripts/setup-https.sh
+```
+
+**Useful flags:**
+
+| Flag | What it does |
+|------|---------------|
+| `--staging` | Issue a Let's Encrypt *staging* cert (untrusted by browsers, no rate limit) — use for a dry run before the real cert |
+| `--skip-dns-check` | Skip the DNS preflight (e.g. Cloudflare-proxied DNS, where a direct A-record check would look "wrong" even though it's fine) |
+| `--dry-run` | Print what would happen without changing anything |
+| `--yes` | Don't pause for confirmation (e.g. before fixing `backend/.env` domain drift) — use for non-interactive/scripted runs |
+| `--domain` / `--email` / `--server-ip` | Override values instead of reading them from `.env`/`backend/.env` |
+
+This is **single-client only** — it refuses to run if it detects a
+multi-client VPS (a sibling `shared-nginx/` directory, or ports already bound
+to `127.0.0.1`). For multiple clients on one VPS, see
+`docs/multi-client-vps-setup.md`'s own automated path
+(`scripts/multiclient-init-nginx.sh` + `scripts/multiclient-add-client.sh`)
+instead.
+
+11.1–11.7 below remain as a manual fallback and as a reference for what the
+script is doing under the hood.
+
 ### Prerequisites before this section
 
-- DNS is already configured: `yourdomain.com` and `admin.yourdomain.com` both point to your VPS IP
+- DNS is already configured — and this means **two separate `A` records**,
+  not one:
+  | Type | Host name | Points to |
+  |------|-----------|-----------|
+  | A | `yourdomain.com` (root/`@`) | your VPS IP |
+  | A | `admin.yourdomain.com` (`admin`) | your VPS IP |
+
+  It's easy to add the root record, confirm it resolves, and stop there —
+  the `admin.` subdomain is a *separate* record in most registrar UIs and
+  won't exist until you add it too. `setup-https.sh`'s DNS preflight checks
+  both and will tell you specifically which one is missing.
+
+  **This must be an `A` record** (IPv4 address), not `NS`, `CNAME`, or `AAAA` —
+  a raw IP is only valid in an `A`/`AAAA` record. Most registrar UIs will
+  reject an IP typed into an `NS` record's value with a "not a valid hostname"
+  error; if you see that, you picked the wrong record type, not the wrong value.
 - Port 80 and 443 are open in your firewall: `ufw allow 80 && ufw allow 443`
-- The site is already running on HTTP (Section 3 complete)
+- The site is already running on HTTP (Section 3 complete — containers built and up, even if no accounts exist yet)
 
 ### 11.1 Add DOMAIN to root .env
 
@@ -647,36 +772,35 @@ Or re-run the env generator and supply the domain when prompted:
 bash scripts/generate-env.sh
 ```
 
-### 11.2 Issue the SSL certificate with certbot
+### 11.2 Enable the nginx/certbot services in docker-compose.yml
 
-Run certbot in standalone mode (before enabling the nginx service). This temporarily binds to port 80:
+Open `docker-compose.yml` and uncomment the `nginx:` and `certbot:` service blocks (lines starting with `#`), and uncomment the two volumes at the bottom (`cf_letsencrypt`, `cf_certbot_www`). **Don't run `docker compose up` yet** — do this first, before issuing the certificate, so the next step's `docker compose run` resolves the *same* project-managed volumes that nginx will mount. (Running certbot as a bare `docker run -v cf_letsencrypt:...` before this step is a common mistake — Compose auto-prefixes the volume name it actually creates, e.g. `myproject_cf_letsencrypt`, so a bare `docker run` writes the cert into a volume nginx can never see, and nginx then fails to start with "cannot load certificate ... No such file or directory".)
+
+### 11.3 Issue the SSL certificate with certbot
+
+Run certbot in standalone mode. This temporarily binds to port 80 — nginx isn't running yet at this point, so there's no conflict:
 
 ```bash
-docker run --rm -it \
-  -v cf_letsencrypt:/etc/letsencrypt \
-  -v cf_certbot_www:/var/www/certbot \
-  -p 80:80 \
-  certbot/certbot certonly --standalone \
+docker compose run --rm -p 80:80 certbot certonly --standalone \
   -d yourdomain.com -d admin.yourdomain.com \
   --email info@yourdomain.com --agree-tos --no-eff-email
 ```
 
-This writes the certificates to the Docker volume `cf_letsencrypt`. You should see:
+Using `docker compose run` (not bare `docker run`) is what makes this write into the same volume Compose will mount into nginx in the next step. You should see:
 ```
 Successfully received certificate.
 Certificate is saved at: /etc/letsencrypt/live/yourdomain.com/fullchain.pem
 ```
 
-### 11.3 Enable the nginx service in docker-compose.yml
+### 11.4 Build and start
 
-Open `docker-compose.yml` and uncomment the `nginx:` and `certbot:` service blocks (lines starting with `#`), and uncomment the two volumes at the bottom (`cf_letsencrypt`, `cf_certbot_www`).
-
-Then rebuild and restart:
 ```bash
 docker compose up --build -d
 ```
 
-### 11.4 Verify HTTPS is working
+nginx can now start successfully, since the certificate already exists in the volume it mounts.
+
+### 11.5 Verify HTTPS is working
 
 ```bash
 # Should return 301 redirect to https://
@@ -691,17 +815,36 @@ curl -vI https://yourdomain.com 2>&1 | grep "SSL certificate"
 
 Open your browser and visit `https://yourdomain.com` — padlock should show.
 
-### 11.5 Set up automatic certificate renewal
+### 11.6 Switch renewal to webroot mode, then set up the cron
 
-Certbot certificates expire after 90 days. Add a weekly renewal cron:
+The certificate was issued with `--standalone` (11.3), which needs port 80 free — but nginx is now running and holding port 80. A plain `certbot renew` later would try to replay `--standalone` and fail (or have to stop nginx first). Re-issue once via `--webroot` so future renewals work with nginx left running:
+
+```bash
+docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
+  -d yourdomain.com -d admin.yourdomain.com --cert-name yourdomain.com \
+  --email info@yourdomain.com --agree-tos --no-eff-email --force-renewal
+```
+
+**Then reload nginx** — it only reads certificate files at its own startup/reload,
+so it has no idea the files on disk just changed above. Skip this and nginx
+keeps serving whatever certificate it loaded last (e.g. this exact command is
+also what a real renewal does — if you forget the reload after a renewal,
+nothing visibly breaks until the old cert actually expires):
+
+```bash
+docker compose exec nginx nginx -s reload
+```
+
+Then add the weekly renewal cron:
 
 ```bash
 crontab -e
 ```
 
-Add:
+Add (the reload after `renew` matters — nginx won't pick up a renewed
+certificate on its own; see the callout above):
 ```
-0 3 * * 1 docker compose -f /opt/commerceforce/CommerceForceClaude/docker-compose.yml run --rm certbot renew --quiet >> /var/log/certbot-renew.log 2>&1
+0 3 * * 1 ( docker compose -f /opt/commerceforce/CommerceForceClaude/docker-compose.yml run --rm certbot renew --quiet && docker compose -f /opt/commerceforce/CommerceForceClaude/docker-compose.yml exec nginx nginx -s reload ) >> /var/log/certbot-renew.log 2>&1
 ```
 
 Test renewal:
@@ -710,11 +853,13 @@ docker compose run --rm certbot renew --dry-run
 ```
 Should print: `Congratulations, all simulated renewals succeeded.`
 
-### 11.6 Rebuild the frontends for the domain
+**Why the certbot service in `docker-compose.yml` has no `entrypoint:`/`command:` of its own:** `docker compose run --rm certbot <args>` only works as shown above because the service has no fixed entrypoint override. If you ever see a `certbot:` service block with something like `entrypoint: /bin/sh -c "... sleep 12h ..."`, remove it — a fixed entrypoint like that silently swallows whatever command you pass to `docker compose run`, so `renew`/`certonly` never actually executes; the container just starts the sleep loop and hangs until killed.
+
+### 11.7 Rebuild the frontends for the domain
 
 `backend/.env`'s `CORS_ORIGINS`/`STOREFRONT_URL`/`ADMIN_URL` were already written with the HTTPS domain by `generate-env.sh` in Section 11.1 — nothing to edit there.
 
-But the **frontends** need their own rebuild: `NEXT_PUBLIC_API_URL` is baked into the storefront/admin JavaScript at build time (it's not read from the environment at runtime), so simply restarting the containers is not enough — the browser bundle would still be calling `http://SERVER_IP:PORT` from before you had a domain. Section 11.3's `docker compose up --build -d` already rebuilds the images, so as long as you ran Section 11.1 (`generate-env.sh` with the domain) **before** Section 11.3, this is handled automatically. If you added the domain after already completing Section 11.3, rebuild now:
+But the **frontends** need their own rebuild: `NEXT_PUBLIC_API_URL` is baked into the storefront/admin JavaScript at build time (it's not read from the environment at runtime), so simply restarting the containers is not enough — the browser bundle would still be calling `http://SERVER_IP:PORT` from before you had a domain. Section 11.4's `docker compose up --build -d` already rebuilds the images, so as long as you ran Section 11.1 (`generate-env.sh` with the domain) **before** Section 11.4, this is handled automatically. If you added the domain after already completing Section 11.4, rebuild now:
 
 ```bash
 docker compose up --build -d frontend-starter frontend-admin

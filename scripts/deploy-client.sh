@@ -286,29 +286,22 @@ ssh_run "cd '${DEPLOY_DIR}' && docker compose exec -T backend python seed.py"
 ok "Database seeded"
 
 # ─── Step 9: SSL certificate ─────────────────────────────────────────────────
-step "9 / 10  Obtain SSL certificate"
+step "9 / 10  Enable HTTPS (nginx + certbot)"
 
-# Stop nginx if running (certbot standalone needs port 80)
-ssh_run "cd '${DEPLOY_DIR}' && docker compose stop nginx 2>/dev/null || true"
-
-CERTBOT_INSTALLED=$(ssh_run_quiet "command -v certbot 2>/dev/null || echo missing")
-if echo "$CERTBOT_INSTALLED" | grep -q "missing"; then
-    info "Installing certbot…"
-    ssh_run "apt-get install -y -qq certbot"
-fi
-
-info "Obtaining cert for ${DOMAIN} and admin.${DOMAIN}…"
-ssh_run "certbot certonly --standalone \
-    -d '${DOMAIN}' \
-    -d 'admin.${DOMAIN}' \
-    --non-interactive \
-    --agree-tos \
+# Delegates to scripts/setup-https.sh, which issues the cert into the
+# cf_letsencrypt *named Docker volume* that the nginx/certbot services in
+# docker-compose.yml actually mount. The previous approach here installed
+# certbot on the host and wrote certs to the host's /etc/letsencrypt — a
+# location the nginx container's cf_letsencrypt volume mount can never see,
+# so uncommenting that service never actually got a working cert. setup-https.sh
+# also handles the DNS preflight, uncommenting the compose blocks, verification,
+# and renewal cron in one place instead of duplicating that logic here.
+ssh_run "cd '${DEPLOY_DIR}' && bash scripts/setup-https.sh \
+    --domain '${DOMAIN}' \
     --email '${ADMIN_EMAIL}' \
-    --keep-until-expiring"
-ok "SSL certificate obtained"
-
-# Restart nginx with cert in place
-ssh_run "cd '${DEPLOY_DIR}' && docker compose up -d nginx 2>/dev/null || true"
+    --server-ip '${SERVER_IP}' \
+    --yes"
+ok "HTTPS enabled (cert in cf_letsencrypt volume, nginx up, renewal cron installed)"
 
 # ─── Step 10: Summary ────────────────────────────────────────────────────────
 step "10 / 10  Deployment complete"

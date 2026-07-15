@@ -61,7 +61,8 @@ services:
 
   # ── nginx: SSL termination + reverse proxy ─────────────────────────────────
   # Uncomment this service once DNS is pointing to the VPS and you have run certbot.
-  # See docs/new-client-setup.md Section 12 for step-by-step instructions.
+  # See docs/new-client-setup.md Section 11 — or just run scripts/setup-https.sh,
+  # which does this uncommenting (and the rest of Section 11) for you.
   #
   # nginx:
   #   image: nginx:1.27-alpine
@@ -86,8 +87,13 @@ services:
   #   volumes:
   #     - cf_letsencrypt:/etc/letsencrypt
   #     - cf_certbot_www:/var/www/certbot
-  #   # Run manually to issue/renew: docker compose run --rm certbot renew
-  #   entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; done"
+  #   # No entrypoint/command override on purpose — `docker compose run --rm
+  #   # certbot <args>` (e.g. `renew`, or `certonly --webroot ...`) then runs
+  #   # certbot's own image entrypoint directly with your args. A fixed custom
+  #   # entrypoint here (e.g. a sleep loop) would silently swallow `run`'s
+  #   # arguments instead of executing them — `docker compose up` just leaves
+  #   # this container exited (code 0) between manual/cron `run` invocations,
+  #   # which is expected for a one-shot utility service, not a bug.
 
 volumes:
   cf_data:
