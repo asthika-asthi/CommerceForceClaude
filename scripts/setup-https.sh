@@ -256,7 +256,7 @@ fi
 
 step "7  Issue SSL certificate"
 if [[ "$TEST_MODE" == "true" || "$DRY_RUN" == "true" ]]; then
-    info "[dry-run/test] Would run: docker compose run --rm -p 80:80 certbot certonly --standalone -d ${DOMAIN} -d admin.${DOMAIN} --email ${EMAIL} --agree-tos --no-eff-email --non-interactive --keep-until-expiring ${STAGING_FLAG}"
+    info "[dry-run/test] Would run: docker compose run --rm -p 80:80 certbot certonly --standalone -d ${DOMAIN} -d admin.${DOMAIN} [-d www.${DOMAIN} if it resolves here] --email ${EMAIL} --agree-tos --no-eff-email --non-interactive --keep-until-expiring ${STAGING_FLAG}"
 else
     ALREADY_ISSUED=false
     if (cd "$PROJECT_ROOT" && docker compose run --rm certbot certificates 2>/dev/null) | grep -q "$DOMAIN"; then
@@ -265,10 +265,11 @@ else
     if [[ "$ALREADY_ISSUED" == "true" ]]; then
         info "Certificate for ${DOMAIN} already exists — skipping issuance."
     else
+        WWW_CERT_ARG="$(www_cert_arg "$DOMAIN" "$SERVER_IP")"
         (cd "$PROJECT_ROOT" && docker compose stop nginx 2>/dev/null) || true
         # shellcheck disable=SC2086
         (cd "$PROJECT_ROOT" && docker compose run --rm -p 80:80 certbot certonly --standalone \
-            -d "$DOMAIN" -d "admin.$DOMAIN" \
+            -d "$DOMAIN" -d "admin.$DOMAIN" $WWW_CERT_ARG \
             --email "$EMAIL" --agree-tos --no-eff-email \
             --non-interactive --keep-until-expiring $STAGING_FLAG) \
             || die "Certificate issuance failed. Common causes: DNS not fully propagated yet, or port 80 blocked (ufw allow 80)."
@@ -310,9 +311,10 @@ if [[ "$DRY_RUN" == "true" || "$TEST_MODE" == "true" ]]; then
     info "[dry-run/test] Would re-issue via --webroot to switch the renewal authenticator"
 else
     sleep 5   # give nginx a moment to come up
+    WWW_CERT_ARG="$(www_cert_arg "$DOMAIN" "$SERVER_IP")"
     # shellcheck disable=SC2086
     if (cd "$PROJECT_ROOT" && docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
-        -d "$DOMAIN" -d "admin.$DOMAIN" --cert-name "$DOMAIN" \
+        -d "$DOMAIN" -d "admin.$DOMAIN" $WWW_CERT_ARG --cert-name "$DOMAIN" \
         --email "$EMAIL" --agree-tos --no-eff-email \
         --non-interactive --force-renewal $STAGING_FLAG); then
         # nginx only reads certificate files at its own startup/reload — it has

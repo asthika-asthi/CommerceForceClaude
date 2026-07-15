@@ -54,6 +54,30 @@ dns_preflight() {
     done
 }
 
+# www_cert_arg DOMAIN SERVER_IP — prints "-d www.DOMAIN" (for splicing into a
+# certbot command) if www.DOMAIN already resolves to SERVER_IP, otherwise
+# prints nothing. Deliberately NOT part of dns_preflight (which dies on a
+# missing record): unlike the apex/admin records this guide asks for, `www`
+# is optional — most clients never set it up, and requiring it would break
+# cert issuance for every one of them. But when a registrar HAS auto-created
+# a `www` record (common default behaviour), the certificate must cover it or
+# browsers show "connection not private" the moment anyone visits it — even
+# though nginx only ever redirects it to the apex domain. All info/warn/ok
+# output here goes to stderr so `$(www_cert_arg ...)` only captures the -d flag.
+www_cert_arg() {
+    local domain="$1" server_ip="$2" got
+    got="$(resolve_a "www.$domain")" || true
+    if [[ -z "$got" ]]; then
+        info "www.$domain has no A record yet — skipping it (site works fine without it; add the record and re-run this script later if you want it covered)." >&2
+        return 0
+    elif [[ "$got" != "$server_ip" ]]; then
+        warn "www.$domain resolves to ${got}, not this server (${server_ip}) — skipping it from the certificate." >&2
+        return 0
+    fi
+    ok "www.$domain → $server_ip (including it in the certificate)" >&2
+    echo "-d www.$domain"
+}
+
 # ── HTTP verification with retry ─────────────────────────────────────────────
 
 # check_url URL EXPECTED_CODE ATTEMPTS SLEEP_S [EXTRA_CURL_ARGS] — retrying

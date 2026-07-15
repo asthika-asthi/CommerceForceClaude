@@ -230,11 +230,11 @@ fi
 # ── Step 9: bootstrap cert (HTTP-only conf, then webroot certbot) ───────────
 
 write_bootstrap_conf() {
-    cat > "$CONF_FILE" <<'NGINXEOF'
+    cat > "$CONF_FILE" <<NGINXEOF
 server {
     listen 80;
     listen [::]:80;
-    server_name __DOMAIN__ admin.__DOMAIN__;
+    server_name __DOMAIN__ admin.__DOMAIN__${WWW_SERVER_NAME:+ $WWW_SERVER_NAME};
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -249,6 +249,17 @@ NGINXEOF
 }
 
 step "9  Bootstrapping certificate for ${DOMAIN}"
+# www is optional — most clients never set up that A record, and requiring it
+# would break issuance for all of them. Only fold it into the cert/nginx config
+# when it already resolves here (common when a registrar auto-adds it). See
+# https-common.sh's www_cert_arg for why this check is non-fatal, unlike
+# dns_preflight above for the apex/admin records.
+WWW_CERT_ARG=""
+WWW_SERVER_NAME=""
+if [[ "$DRY_RUN" != "true" && "$TEST_MODE" != "true" ]]; then
+    WWW_CERT_ARG="$(www_cert_arg "$DOMAIN" "$SERVER_IP")"
+    [[ -n "$WWW_CERT_ARG" ]] && WWW_SERVER_NAME="www.${DOMAIN}"
+fi
 if [[ "$DRY_RUN" == "true" || "$TEST_MODE" == "true" ]]; then
     info "[dry-run/test] Would write bootstrap conf.d/${CLIENT}.conf, reload shared nginx, and run certbot --webroot"
 else
@@ -266,7 +277,7 @@ else
 
         # shellcheck disable=SC2086
         docker compose -f "$SHARED_COMPOSE" run --rm certbot certonly --webroot -w /var/www/certbot \
-            -d "$DOMAIN" -d "admin.$DOMAIN" \
+            -d "$DOMAIN" -d "admin.$DOMAIN" $WWW_CERT_ARG \
             --email "$CERT_EMAIL" --agree-tos --no-eff-email \
             --non-interactive $STAGING_FLAG \
             || die "Certificate issuance failed. Common causes: DNS not fully propagated, or the shared nginx isn't reachable on port 80 yet."
@@ -285,7 +296,7 @@ upstream __CLIENT___admin      { server 127.0.0.1:__ADMIN_PORT__; }
 server {
     listen 80;
     listen [::]:80;
-    server_name __DOMAIN__ admin.__DOMAIN__;
+    server_name __DOMAIN__ admin.__DOMAIN__ __WWW_SERVER_NAME__;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -295,6 +306,7 @@ server {
         return 301 https://$host$request_uri;
     }
 }
+__WWW_HTTPS_BLOCK__
 
 server {
     listen 443 ssl;
@@ -395,7 +407,36 @@ NGINXEOF
         -e "s|__BACKEND_PORT__|${BACKEND_PORT}|g" \
         -e "s|__STOREFRONT_PORT__|${STOREFRONT_PORT}|g" \
         -e "s|__ADMIN_PORT__|${ADMIN_PORT}|g" \
+        -e "s|__WWW_SERVER_NAME__|${WWW_SERVER_NAME}|g" \
         "${CONF_FILE}.new"
+
+    # __WWW_HTTPS_BLOCK__ is only filled in when www.$DOMAIN already resolved
+    # here (see step 9 above) — the cert only covers www when that happened,
+    # so this block must stay in lockstep with WWW_CERT_ARG or nginx would
+    # serve a cert missing the SAN for whatever server_name this block claims.
+    if [[ -n "$WWW_SERVER_NAME" ]]; then
+        WWW_BLOCK_TMP="$(mktemp)"
+        cat > "$WWW_BLOCK_TMP" <<NGINXEOF2
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${WWW_SERVER_NAME};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+
+    return 301 https://${DOMAIN}\$request_uri;
+}
+NGINXEOF2
+        sed -i -e "/__WWW_HTTPS_BLOCK__/r ${WWW_BLOCK_TMP}" -e "/__WWW_HTTPS_BLOCK__/d" "${CONF_FILE}.new"
+        rm -f "$WWW_BLOCK_TMP"
+    else
+        sed -i "/__WWW_HTTPS_BLOCK__/d" "${CONF_FILE}.new"
+    fi
 }
 
 step "10  Writing full HTTPS config and reloading shared nginx"

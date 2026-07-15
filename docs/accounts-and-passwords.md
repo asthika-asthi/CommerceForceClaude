@@ -58,6 +58,12 @@ Handles both cases (missing account **or** wrong password). Uses `run --rm` so i
 **current** `backend/.env`:
 
 ```bash
+bash scripts/reset-superadmin-password.sh
+```
+
+Or run the equivalent inline (same thing, if you don't have the script handy):
+
+```bash
 docker compose run --rm -T backend python - <<'PY'
 import os, asyncio
 from sqlalchemy import select
