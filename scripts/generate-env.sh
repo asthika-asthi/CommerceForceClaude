@@ -96,6 +96,12 @@ else ask "Server IP address" "YOUR.SERVER.IP.HERE" SERVER_IP; fi
 if [[ -n "$OVERRIDE_DOMAIN" ]]; then DOMAIN="$OVERRIDE_DOMAIN"
 else ask "Domain name (e.g. myshop.com, or leave as IP)" "$SERVER_IP" DOMAIN; fi
 
+# Ports (only matters when running more than one client on the same VPS —
+# see docs/multi-client-vps-setup.md. First client on a box: just accept the defaults.)
+ask "Backend host port" "8000" BACKEND_PORT
+ask "Storefront host port" "3000" STOREFRONT_PORT
+ask "Admin panel host port" "3001" ADMIN_PORT
+
 # Client identity
 ask "Store name" "My CommerceForce Store" STORE_NAME
 ask "Store tagline" "Quality products, fast delivery" STORE_TAGLINE
@@ -133,13 +139,39 @@ if [[ "$TEST_MODE" == "false" ]]; then
     echo "(Keep this secret — it signs all JWT tokens)"
 fi
 
+# ── Compute public URLs (domain if one was given, IP:port otherwise) ──────────
+#
+# A "real" domain was given if DOMAIN differs from SERVER_IP (the default when
+# left blank). This decides whether the frontends are built to call the site
+# over HTTPS-by-domain (routed through nginx, Section 11) or HTTP-by-IP:port
+# directly (no nginx yet / testing). Getting this wrong is what silently broke
+# API calls on every HTTPS deployment before — see docs/new-client-setup.md
+# Section 11.6.
+if [[ "$DOMAIN" != "$SERVER_IP" ]]; then
+    NEXT_PUBLIC_API_URL_STOREFRONT="https://${DOMAIN}"
+    NEXT_PUBLIC_API_URL_ADMIN="https://admin.${DOMAIN}"
+    NEXT_PUBLIC_STOREFRONT_URL="https://${DOMAIN}"
+    CORS_ORIGINS_VALUE="https://${DOMAIN},https://admin.${DOMAIN},http://${SERVER_IP}:${STOREFRONT_PORT},http://${SERVER_IP}:${ADMIN_PORT}"
+else
+    NEXT_PUBLIC_API_URL_STOREFRONT="http://${SERVER_IP}:${BACKEND_PORT}"
+    NEXT_PUBLIC_API_URL_ADMIN="http://${SERVER_IP}:${BACKEND_PORT}"
+    NEXT_PUBLIC_STOREFRONT_URL="http://${SERVER_IP}:${STOREFRONT_PORT}"
+    CORS_ORIGINS_VALUE="http://${SERVER_IP}:${STOREFRONT_PORT},http://${SERVER_IP}:${ADMIN_PORT}"
+fi
+
 # ── Write root .env ───────────────────────────────────────────────────────────
 
 ROOT_ENV="${PROJECT_ROOT}/.env"
 cat > "$ROOT_ENV" <<EOF
 SERVER_IP=${SERVER_IP}
 DOMAIN=${DOMAIN}
+BACKEND_PORT=${BACKEND_PORT}
+STOREFRONT_PORT=${STOREFRONT_PORT}
+ADMIN_PORT=${ADMIN_PORT}
 STOREFRONT_URL=https://${DOMAIN}
+NEXT_PUBLIC_API_URL_STOREFRONT=${NEXT_PUBLIC_API_URL_STOREFRONT}
+NEXT_PUBLIC_API_URL_ADMIN=${NEXT_PUBLIC_API_URL_ADMIN}
+NEXT_PUBLIC_STOREFRONT_URL=${NEXT_PUBLIC_STOREFRONT_URL}
 EOF
 echo -e "${GREEN}✓${RESET} Written: ${ROOT_ENV}"
 
@@ -165,7 +197,7 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 REDIS_URL=redis://localhost:6379/0
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-CORS_ORIGINS=https://${DOMAIN},https://admin.${DOMAIN}
+CORS_ORIGINS=${CORS_ORIGINS_VALUE}
 
 # ── Storefront / Admin URLs (used in email links) ─────────────────────────────
 STOREFRONT_URL=https://${DOMAIN}

@@ -172,8 +172,12 @@ bash scripts/generate-env.sh
 ```
 
 Answer the prompts (press Enter to accept the default shown in brackets). The script writes:
-- `.env` — root file (just `SERVER_IP`, used by Docker Compose)
+- `.env` — root file: `SERVER_IP`, `DOMAIN`, host ports, and the frontend build URLs, used by Docker Compose
 - `backend/.env` — all secrets and per-client config
+
+**Ports:** the script asks for backend/storefront/admin host ports, defaulting to `8000`/`3000`/`3001`. Accept the defaults unless you're putting a **second client on the same VPS** — see `docs/multi-client-vps-setup.md`, which needs each client on a distinct set of ports.
+
+**Domain-aware build:** if you answer the "Domain name" prompt with a real domain, the frontends are built to call `https://yourdomain.com` (routed through nginx once you complete Section 11). If you leave it as the IP, they're built to call `http://SERVER_IP:PORT` directly. This choice is baked in at build time — changing your mind later means re-running this script and then `docker compose up --build -d` to rebuild the frontends.
 
 > **If you don't have bash** (e.g. Windows without Git Bash), use the manual method below instead.
 
@@ -706,19 +710,16 @@ docker compose run --rm certbot renew --dry-run
 ```
 Should print: `Congratulations, all simulated renewals succeeded.`
 
-### 11.6 Update backend/.env for HTTPS URLs
+### 11.6 Rebuild the frontends for the domain
 
-The env generator already wrote HTTPS URLs when you provided a domain. If you're adding the domain to an existing deployment, update `backend/.env`:
+`backend/.env`'s `CORS_ORIGINS`/`STOREFRONT_URL`/`ADMIN_URL` were already written with the HTTPS domain by `generate-env.sh` in Section 11.1 — nothing to edit there.
 
-```
-CORS_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com
-STOREFRONT_URL=https://yourdomain.com
-ADMIN_URL=https://admin.yourdomain.com
-```
+But the **frontends** need their own rebuild: `NEXT_PUBLIC_API_URL` is baked into the storefront/admin JavaScript at build time (it's not read from the environment at runtime), so simply restarting the containers is not enough — the browser bundle would still be calling `http://SERVER_IP:PORT` from before you had a domain. Section 11.3's `docker compose up --build -d` already rebuilds the images, so as long as you ran Section 11.1 (`generate-env.sh` with the domain) **before** Section 11.3, this is handled automatically. If you added the domain after already completing Section 11.3, rebuild now:
 
-Then restart the backend:
 ```bash
-docker compose restart backend
+docker compose up --build -d frontend-starter frontend-admin
 ```
 
-**Gotcha — port exposure after enabling nginx:** Once nginx is set up and verified, remove the direct port mappings (`- "3000:3000"`, `- "3001:3001"`, `- "8000:8000"`) from `docker-compose.yml` and restart. This prevents bypassing nginx via the raw ports.
+Verify it worked — open the storefront in a browser, open DevTools → Network, and confirm API calls go to `https://yourdomain.com/api/...`, not `http://SERVER_IP:8000/...`.
+
+**Gotcha — port exposure after enabling nginx:** Once nginx is set up and verified, and you've confirmed the frontends are calling the domain (not the IP), you can remove the direct port mappings (`- "3000:3000"`, `- "3001:3001"`, `- "8000:8000"`) from `docker-compose.yml` and restart, so the raw ports can't be used to bypass nginx. `generate-env.sh` also added the IP-based origins to `CORS_ORIGINS` as a fallback — if you remove the ports, those fallback origins become unreachable anyway, which is fine.

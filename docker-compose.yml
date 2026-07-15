@@ -9,9 +9,11 @@ services:
       CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
       # CORS and URL values are set in backend/.env by generate-env.sh
     # In production, ports are NOT exposed directly — nginx handles external traffic.
-    # Remove the port mapping below once nginx is set up and verified.
+    # Remove the port mapping below once nginx is set up and verified (single-client
+    # setups only — on a shared multi-client VPS, leave it bound to 127.0.0.1, see
+    # docs/multi-client-vps-setup.md).
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - cf_data:/app/data
       - ./uploads:/app/uploads
@@ -20,13 +22,14 @@ services:
     build:
       context: ./frontend-starter
       args:
-        # In production these are set to the HTTPS domain by generate-env.sh
-        NEXT_PUBLIC_API_URL: "http://${SERVER_IP}:8000"
-        NEXT_PUBLIC_STOREFRONT_URL: "http://${SERVER_IP}:3000"
+        # Set by generate-env.sh: the HTTPS domain once one is configured
+        # (Section 11), otherwise http://SERVER_IP:BACKEND_PORT for IP-only testing.
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL_STOREFRONT}"
+        NEXT_PUBLIC_STOREFRONT_URL: "${NEXT_PUBLIC_STOREFRONT_URL}"
         NEXT_PUBLIC_CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
     # Port 3000 is accessed via nginx in production; exposed here for dev/fallback only
     ports:
-      - "3000:3000"
+      - "${STOREFRONT_PORT:-3000}:3000"
     depends_on:
       - backend
 
@@ -34,10 +37,10 @@ services:
     build:
       context: ./frontend-admin
       args:
-        NEXT_PUBLIC_API_URL: "http://${SERVER_IP}:8000"
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL_ADMIN}"
         NEXT_PUBLIC_CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
     ports:
-      - "3001:3001"
+      - "${ADMIN_PORT:-3001}:3001"
     depends_on:
       - backend
 
