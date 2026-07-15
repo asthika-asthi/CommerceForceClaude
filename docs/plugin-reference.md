@@ -1,6 +1,6 @@
 # CommerceForce Plugin Reference
 
-> Last updated: 2026-06-14
+> Last updated: 2026-07-15
 
 This document covers every plugin available in CommerceForce: what it contributes to the admin panel, what customers see on the storefront, what breaks when it is disabled, and which ideal customer profiles rely on it most.
 
@@ -20,10 +20,11 @@ This document covers every plugin available in CommerceForce: what it contribute
    - [Credit Accounts](#8-credit-accounts-b2b)
    - [Inventory](#9-inventory-warehouse--stock)
 3. [Plugin Dependency Map](#plugin-dependency-map)
-4. [Ideal Customer Profiles](#ideal-customer-profiles)
+4. [Validated ENABLED_PLUGINS Combinations](#validated-enabled_plugins-combinations)
+5. [Ideal Customer Profiles](#ideal-customer-profiles)
    - [Profile Matrix](#profile-plugin-matrix)
-5. [Scenario: Non-E-commerce Site](#scenario-non-e-commerce-site)
-6. [Platform Gap: Booking & Scheduling](#platform-gap-booking--scheduling)
+6. [Scenario: Non-E-commerce Site](#scenario-non-e-commerce-site)
+7. [Booking & Scheduling](#booking--scheduling)
 
 ---
 
@@ -311,26 +312,52 @@ No stock checks. Customers can add unlimited quantity of any product. Risk of ov
 
 ## Plugin Dependency Map
 
-```
-Cart ──────────────────► Orders (checkout creates order)
-                              │
-                              ├──► Coupons      (discount applied at checkout)
-                              ├──► Loyalty       (points earned on order completion)
-                              └──► Credit        (payment method at checkout)
+The backend enforces plugin dependencies at startup (`app/core/plugin_registry.py`) — if a plugin's `depends_on` isn't also present in `ENABLED_PLUGINS`, the app refuses to boot with a `RuntimeError` naming the missing dependency. This is the authoritative, code-derived dependency graph for every plugin (read from each plugin's `manifest.py`):
 
-Products + Categories ──► Cart               (to purchase)
-                      └──► RFQ               (to request a quote instead of buying)
-                      └──► Newsletter         (standalone, no purchase needed)
-                      └──► AI Chat            (standalone, no purchase needed)
+| Plugin | Depends on |
+|---|---|
+| `auth`, `branding`, `categories`, `landing_page`, `ai_chat`, `announcements`, `coupons`, `credit`, `discount_rules`, `loyalty`, `newsletter`, `promotions`, `shipping`, `tax` | *(none)* |
+| `products` | `categories` |
+| `cart` | `products` |
+| `orders` | `products` |
+| `inventory` | `products` |
+| `contact` | `branding` |
+| `addresses` | `auth` |
+| `scheduling` | `auth` |
+| `wishlist` | `auth`, `products` |
+| `rfq` | `orders` |
+| `checkout` | `cart`, `orders` |
+| `reviews` | `auth`, `products`, `orders` |
 
-Orders ────────────────► Inventory           (reserved qty tracked per order)
-```
+Dependencies are transitive — e.g. enabling `checkout` requires `cart` + `orders`, which in turn require `products`, which requires `categories`.
 
-**Minimum configuration for a selling e-commerce site:** Products + Categories + Cart + Orders
+**Minimum configuration for a selling e-commerce site:** `auth,categories,products,cart,orders,checkout`
 
-**Minimum for a B2B quoting site:** Products + Categories + RFQ
+**Minimum for a B2B quoting site:** `auth,categories,products,orders,rfq`
 
-**Minimum for a brochure / catalogue site:** Products + Categories *(optionally + Newsletter + AI Chat)*
+**Minimum for a brochure / catalogue site:** `auth,categories,products` *(optionally + `newsletter`, `ai_chat`, `landing_page`, `branding`)*
+
+---
+
+## Validated ENABLED_PLUGINS Combinations
+
+Each combination below was booted for real against the plugin registry (`register_plugins()` succeeds — no missing-dependency errors) and every enabled plugin's primary route was probed and confirmed reachable (non-404). Verified 2026-07-15 against `master` (commit `cd28e47`).
+
+| Combination | `ENABLED_PLUGINS` | Use case |
+|---|---|---|
+| **Minimum viable** | `auth` | Admin-only / pre-launch staging, no storefront content yet |
+| **Catalogue only** | `auth,branding,categories,products,landing_page` | Browsable catalogue, no selling — see [Scenario: Non-E-commerce Site](#scenario-non-e-commerce-site) |
+| **Catalogue + engagement** | `auth,branding,categories,products,landing_page,newsletter,ai_chat,contact` | Catalogue site that also captures leads and answers questions |
+| **Standard B2C** | `auth,branding,categories,products,cart,orders,checkout,addresses,newsletter,coupons` | Full transactional storefront — Profile 1/7/11 (standard e-commerce, local retailer, print-on-demand) |
+| **Full retail + loyalty/AI** | `auth,branding,categories,products,cart,orders,checkout,addresses,wishlist,loyalty,reviews,coupons,newsletter,ai_chat,landing_page` | Retailer investing in retention and repeat purchase — Profile 6/8/9 |
+| **B2B wholesale** | `auth,branding,categories,products,orders,rfq,credit,inventory,contact` | Quote-driven B2B sales with credit terms and multi-warehouse stock — Profile 3/4 |
+| **Service business with booking** | `auth,branding,categories,products,scheduling,contact,landing_page` | Appointment-based service (salons, consultants, photographers) using the `scheduling` plugin instead of the old RFQ workaround — Profile 5 |
+| **Multi-location retailer** | `auth,branding,categories,products,cart,orders,checkout,addresses,inventory,loyalty,newsletter,coupons,shipping,tax` | Regional chain needing per-warehouse stock, shipping zones, tax zones — Profile 12 |
+| **Kitchen sink (all plugins)** | `auth,branding,categories,products,landing_page,cart,orders,checkout,addresses,wishlist,loyalty,reviews,coupons,newsletter,ai_chat,rfq,credit,inventory,contact,scheduling,shipping,tax,promotions,announcements,discount_rules` | Sanity check that every plugin can be enabled simultaneously with no conflicts |
+
+> **Note:** plugin names in `ENABLED_PLUGINS` are case-sensitive and must exactly match the directory name under `backend/app/plugins/` (e.g. `categories`, not `Categories`) — a mismatch fails startup with `RuntimeError: Plugin '<name>' listed in ENABLED_PLUGINS but not found`.
+
+> **Note:** the live `backend/.env` (as of this writing) enables 20 plugins but predates `scheduling`, `shipping`, `tax`, `promotions`, and `announcements` — none of those five are currently on in production. Add them to `ENABLED_PLUGINS` there if/when a deployment needs them.
 
 ---
 
@@ -391,27 +418,28 @@ This is a valid and complete use case: a **digital catalogue with email list bui
 
 ---
 
-## Platform Gap: Booking & Scheduling
+## Booking & Scheduling
 
-The current plugin set has no native concept of:
+> Previously documented here as a platform gap. The `scheduling` plugin (developed on `feat/scheduling-plugin`) has since been merged into `master` and is available today — this section is updated to reflect that.
 
-- Date/time slots (event sessions, appointment booking)
-- Duration-based pricing (daily/weekly rental rates)
-- Availability calendars
+The `scheduling` plugin covers:
 
-This gap affects:
+- Providers, appointment types, and provider-scoped availability (with exception windows for time off)
+- Open-slot computation and public availability lookup
+- Appointment booking with a double-booking guard and DB-enforced slot uniqueness
+- Booking confirmation emails, reschedule/cancel lifecycle
+- Client records (with customer self-service record access)
+- Provider-scoped visit journals + access audit log (medical/consulting note-taking, SOAP-template by default — see `SCHEDULING_NOTE_TEMPLATE`)
 
-- Rental / hire businesses (equipment, furniture, venues)
-- Event ticketing with multiple time slots
-- Appointment-based services (salons, consultants, photographers)
+It only depends on `auth` (see [Plugin Dependency Map](#plugin-dependency-map)), so it can be combined with a full storefront (cart/checkout) or run standalone alongside just `branding` + `categories` + `products` for a pure booking site — see the **Service business with booking** combination in [Validated ENABLED_PLUGINS Combinations](#validated-enabled_plugins-combinations).
 
-These profiles can partially work using RFQ (customer requests a date, admin confirms manually), but a dedicated **Booking plugin** would unlock them properly.
+This unlocks the profiles that previously had to fake booking through RFQ:
 
-**Potential Booking plugin scope:**
-- Products can have "slots" with capacity limits
-- Customer selects date/time at checkout
-- Admin manages availability calendar
-- Orders confirm the booking slot
+- Appointment-based services (salons, consultants, photographers) — Profile 5
+- Rental / hire businesses can use `scheduling` for date/time slot availability alongside RFQ for large/custom bookings — Profile 10
+- Event ticketing with multiple time slots — Profile 8
+
+**Not yet covered:** duration-based / rate pricing (daily or weekly rental rates) — `scheduling` models appointments, not priced rental durations, so rental businesses still need RFQ or manual pricing for that part of the flow.
 
 ---
 
