@@ -27,6 +27,11 @@
 #   cd /opt/commerceforce/<client>/CommerceForceClaude
 #   bash scripts/reset-superadmin-password.sh
 #
+# LOCAL DEV (no Docker): use backend/reset_superadmin_password.py instead —
+#   cd backend && .venv\Scripts\python.exe reset_superadmin_password.py
+#   (it also guards against the relative-DATABASE_URL trap where starting the
+#   backend from the wrong directory creates a fresh empty commerceforce.db)
+#
 # This reads backend/.env fresh via `docker compose run --rm`, so it always
 # uses whatever SUPERADMIN_EMAIL / SUPERADMIN_PASSWORD is in the file right
 # now — safe to re-run every time you change that value.
