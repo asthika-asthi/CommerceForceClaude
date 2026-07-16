@@ -150,35 +150,30 @@ Client design.md:   "Primary: #E67E22 (orange)"
 
 If the client uses a custom/self-hosted font, place it in `public/fonts/` and add an `@font-face` rule in `globals.css` instead of using `next/font/google`.
 
-### Step 3 — Run the bulk class-replace script (first time only)
+### Step 3 — Author the homepage `sections[]`
 
-If starting from a fresh template clone (which uses `blue-*` placeholder classes), run this PowerShell script once to update all components. After this, all colour changes are made only in `globals.css`.
+The homepage is assembled from `landing-page.config.json` → `sections[]`,
+rendered through `LandingSectionRenderer` + `BLOCK_REGISTRY`
+(`lib/block-registry.ts`). **Never hand-edit `app/page.tsx` for a client
+design** — it is a thin data-fetch + loop and stays identical across clients.
 
-```powershell
-$root = "D:\Projects\<project>\frontend-starter"
-$files = Get-ChildItem -Path $root -Recurse -Include "*.tsx","*.ts" |
-         Where-Object { $_.FullName -notlike "*node_modules*" }
+Each entry is `{ "__block": "<registry-key>", ...props }`. Optional keys:
+- `requiredPlugin` — section is dropped unless the plugin is enabled.
+- Blocks flagged `acceptsData` in the registry receive live products/categories
+  fetched by the page; all other props come from the config entry.
 
-foreach ($file in $files) {
-    $content = [System.IO.File]::ReadAllText($file.FullName, [System.Text.Encoding]::UTF8)
-    $updated = $content `
-        -replace 'bg-blue-600',           'bg-brand' `
-        -replace 'bg-blue-700',           'bg-brand-hover' `
-        -replace 'hover:bg-blue-700',     'hover:bg-brand-hover' `
-        -replace 'hover:bg-blue-600',     'hover:bg-brand' `
-        -replace 'text-blue-600',         'text-brand-dark' `
-        -replace 'hover:text-blue-600',   'hover:text-brand-dark' `
-        -replace 'border-blue-600',       'border-brand' `
-        -replace 'ring-blue-500',         'ring-brand-dark' `
-        -replace 'focus:ring-blue-500',   'focus:ring-brand-dark' `
-        -replace 'focus:border-blue-500', 'focus:border-brand'
-    if ($updated -ne $content) {
-        [System.IO.File]::WriteAllText($file.FullName, $updated, (New-Object System.Text.UTF8Encoding $false))
-    }
-}
-```
+To give a client a section that has no matching block, follow the page-intake
+procedure in
+`docs/superpowers/specs/2026-07-16-per-client-ui-pipeline-design.md`:
+slice → match against the registry → wrap or build new blocks (in
+`components/blocks/**`, registered in `lib/block-registry.ts`) → naturalise
+(theme tokens, shared spacing/radius/motion) → assemble the config.
+New blocks must use named theme tokens — never raw hex values.
 
-After running, grep for any remaining `blue-[67]` and fix manually — gradients and tinted status badges need human judgment.
+Old configs are archived in `config-archive/` (nothing there is read by any
+build). The `landing-*` registry keys are coarse wraps of the original Tri
+Star sections in `components/landing/` — reuse them where a client wants the
+same layout with different branding.
 
 ### Step 4 — Update runtime branding via the admin panel
 
@@ -207,7 +202,8 @@ Update `backend/seed.py`'s `_CATEGORIES` list and `_products()` function with th
 | `app/globals.css` | Tailwind `@theme` mapping from tokens to utility classes |
 | `lib/theme-colors.ts` | Colour derivation + contrast helpers (copy synced to frontend-admin) |
 | `app/layout.tsx` | Root layout — font import, Navbar/Footer, custom CSS injection |
-| `app/page.tsx` | Home page — landing sections from `/api/landing_page` |
+| `app/page.tsx` | Home page — renders `sections[]` from `landing-page.config.json` via `LandingSectionRenderer`; do not hand-edit per client |
+| `lib/block-registry.ts` | Block registry — every homepage section type; add new blocks here |
 | `app/products/page.tsx` | Product listing with search + filters |
 | `app/products/[slug]/page.tsx` | Product detail page |
 | `app/cart/page.tsx` | Cart with quantity controls |
@@ -229,7 +225,7 @@ Update `backend/seed.py`'s `_CATEGORIES` list and `_products()` function with th
 - [ ] Copy `frontend-starter/` to the client's project directory (or create a git branch)
 - [ ] Edit `landing-page.config.json`: set `brand` colours + font, `store` name/tagline/contact, `plugins` list
 - [ ] Add client image files to `public/images/`: `logo.png`, `favicon.ico`, `hero.jpg`, `hero-bg.jpg`, `cta-bg.jpg`, `newsletter-bg.jpg`
-- [ ] Run bulk class-replace script (Step 3 in Applying a New Client's Design) if starting from template
+- [ ] Author the homepage `sections[]` in `landing-page.config.json` (Step 3 in Applying a New Client's Design)
 - [ ] Update product categories and demo products in `backend/seed.py`
 - [ ] Run `python seed.py` to populate the database
 - [ ] Run `npm run build` to verify no TypeScript errors
