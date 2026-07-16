@@ -437,7 +437,7 @@
     { "__block": "landing-how-to-order" },
     { "__block": "landing-range-table" },
     { "__block": "landing-testimonials" },
-    { "__block": "landing-newsletter" }
+    { "__block": "landing-newsletter", "requiredPlugin": "newsletter" }
   ],
 
   "_meta": {
