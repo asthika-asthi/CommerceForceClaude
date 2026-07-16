@@ -1,6 +1,6 @@
 # Design sources
 
-Client design references salvaged from a leftover agent worktree (2026-07-16).
+Client design references, moved here from the repo root (2026-07-16) when the leftover agent worktree was cleaned up.
 
 - `Design_Competitor.md` — Tarpaulins To Go design source (referenced by
   `frontend-starter/CLAUDE.md`); pairs with the archived TTG config at
