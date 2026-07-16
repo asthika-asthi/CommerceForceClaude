@@ -14,5 +14,9 @@ The single active config is `frontend-starter/landing-page.config.json`.
   valid version exists to recover.)
 - `tarpaulins-to-go/landing-page.config.json` — the prepared Tarpaulins To Go
   config (sage green, Poppins, scroll-expand-hero first). Candidate input for
-  a future client pilot. Pairs with `tarpaulins-to-go/globals.css` (token file)
-  and `docs/design-sources/Design_Competitor.md`.
+  a future client pilot. The palette lives in this config's `brand` block;
+  the design source is `docs/design-sources/Design_Competitor.md`. (A stray
+  root-level token file carrying the same palette — `--brand: #B6C1A1`,
+  `--brand-hover: #A3AE8E`, `--brand-dark: #0D3328` — was lost to an
+  untracked-file cleanup during the 2026-07-16 sprint; recreate from the
+  `brand` block if a token file is needed.)
