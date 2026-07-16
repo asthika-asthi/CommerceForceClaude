@@ -22,6 +22,7 @@ const SECTION_ANCHORS = [
   'Shop by',                              // CategoryGrid h2
   'Featured',                             // ProductGridSection 1 h2
   'More from',                            // ProductGridSection 2 h2
+  'Open a trade account',                 // SplitCards
   'Years supplying UK trade & retail',    // StatsBand
   'How to',                               // HowToOrder h2
   'Product range',                        // RangeTable h2 ("Product range quick reference")
@@ -44,7 +45,7 @@ test.describe('Homepage sections (characterization)', () => {
     }
   })
 
-  test('product grids show real products with add buttons', async ({ page }) => {
+  test('product grids show real products with links to product pages', async ({ page }) => {
     await page.goto('/')
     await page.waitForSelector('a[href^="/products/"]', { timeout: 15_000 })
     const productLinks = page.locator('a[href^="/products/"]')
@@ -53,6 +54,7 @@ test.describe('Homepage sections (characterization)', () => {
 })
 
 test.describe('Config pipeline', () => {
+  // Intentionally RED until Task 6 rewires app/page.tsx — do not weaken this assertion
   test('homepage renders via the config pipeline', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('[data-landing-source="config-pipeline"]')).toHaveCount(1)
