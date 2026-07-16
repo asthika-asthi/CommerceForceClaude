@@ -30,6 +30,9 @@ export function LandingSectionRenderer({ section, data }: { section: LandingSect
       if (style) {
         return <section style={style}><BlockComponent {...props} /></section>
       }
+      // NOTE: acceptsData is only honored for config-sourced sections above; this
+      // DB-sourced path does not forward runtime data. Wire it up if this path
+      // ever becomes reachable (backlog item W's admin content layer).
       return <BlockComponent {...props} />
     } catch {
       return null
