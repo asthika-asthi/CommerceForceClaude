@@ -369,7 +369,8 @@ Two rate limits on the backend (`/api/auth/register` 3/min, `/api/auth/login` 5/
   between suites. Needs its own investigation session.
 - Follow-up (minor): the renderer's `section as unknown as LandingSection`
   cast at the config/DB type boundary would be cleaner as a discriminated
-  union; and 17 pre-existing lint errors in untouched files remain.
+  union; and 17 pre-existing lint errors remain on untouched lines (5 of
+  them in the otherwise-touched landing-section.tsx).
 
 **Next:** Phase 2 pilot (new client via design-capture) → Phase 3 component
 library session (backlog item Q). Item W's config-vs-DB content layering

@@ -90,6 +90,8 @@ There are two distinct image stores with different owners and URL patterns:
 | `public/images/cta-bg.jpg` | `sections[cta-banner].backgroundImage` | CTA section background |
 | `public/images/newsletter-bg.jpg` | `sections[newsletter-section].backgroundImage` | Newsletter section background |
 
+The `sections[...]` config keys above apply to configs built from library blocks (e.g. the archived Tarpaulins To Go config); the current Tri Star homepage uses coarse-wrapped `landing-*` sections whose imagery lives inside `components/landing/*` and `public/images/`.
+
 All `/images/...` paths are relative to the Next.js `public/` directory and work on any host without URL changes. Place image files in `public/images/` and commit them to the client's branch.
 
 **Admin-managed images** (uploaded through the admin panel, stored in the backend):
@@ -251,10 +253,10 @@ npm run lint                              # ESLint
 
 ---
 
-## Current Client: Tarpaulins To Go
+## Current Client: Tri Star UK Ltd
 
-- **Brand:** Sage Green (`#B6C1A1`) primary, Deep Green (`#0D3328`) emphasis, Poppins font
-- **Design source:** `Design_Competitor.md` at project root
+- **Brand:** Red (`#C8102E`) primary, Navy (`#1B2A4A`) emphasis (see active `landing-page.config.json` brand block)
+- **Prepared next client:** Tarpaulins To Go — sage green (`#B6C1A1`), Poppins; config archived at `config-archive/tarpaulins-to-go/`, design source `docs/design-sources/Design_Competitor.md`
 - **Admin credentials:** `admin@commerceforce.dev / Admin1234!`
 - **Superadmin credentials:** `superadmin@commerceforce.dev / SuperAdmin1234!`
 - **Backend API:** `http://localhost:8000`
