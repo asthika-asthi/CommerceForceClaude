@@ -119,6 +119,40 @@ old chaos, so they are non-negotiable):
    use the same block with different content.
 4. It degrades gracefully: gesture/scroll effects must not break keyboard access,
    slow devices, or users with reduced-motion settings.
+5. **It must be coherent with the rest of the page, not just colour-matched.**
+   A block imported from elsewhere arrives with its own fonts, spacing, corner
+   roundness, shadows, and animation feel — if those are kept, the page looks
+   like a patchwork even when the colours match. Every incoming block is
+   therefore *naturalised*: its typography, spacing scale, corner radius, shadow
+   style, and motion timing are converted to the storefront's shared design
+   language before it is registered. Naturalisation is a standard part of
+   bringing any block in — never an optional polish step.
+
+### Bringing in a full page (page intake — you never build "component by component")
+
+Sometimes the input won't be a section or an idea — it will be an **entire
+finished page**: an HTML mockup from a designer, a page built in a Claude Desktop
+session, or a competitor page to emulate. The agency should be able to hand over
+the whole page and be done. The decomposition is the AI session's job, not the
+user's, and it follows a fixed intake procedure:
+
+1. **Slice** — the page is read top to bottom and split at its natural section
+   boundaries (hero, feature strip, gallery, testimonials, footer band, …).
+2. **Match** — each slice is compared against the existing block library. Slices
+   that match an existing block reuse it (config entry only — no new code).
+3. **Wrap or build** — slices with no match become new blocks. If a slice is too
+   intricate to decompose cleanly right away, it is wrapped *whole* as one coarse
+   block — still registered, still in the one render path — and can be split into
+   finer reusable blocks later. No slice is ever wired into a page directly.
+4. **Naturalise** — every new/wrapped block is converted to theme tokens and the
+   shared design language (rule 5 above), so it re-skins per client and sits
+   coherently beside existing blocks.
+5. **Assemble** — the client's config file lists the resulting sequence; the page
+   renders through the standard pipeline.
+
+The outcome: handing over a full page costs the agency one handover, the library
+gains whatever was new in it, and the result is indistinguishable from a page
+built block-by-block. There is no second, "import" rendering path to maintain.
 
 ## 5. Phases
 
@@ -189,3 +223,5 @@ reveals) so the library grows ahead of demand instead of reactively.
 | Config file sprawl returns (five variants again) | One active config per client branch + an explicit archive folder + the documented procedure |
 | Future sessions fall back to hand-editing | The old procedure is deleted from the instructions file, not just deprecated |
 | An artistic client demands an interaction no block supports | That is a new-block job, not an architecture change — the block contract (registered, token-styled, data-driven, graceful degradation) absorbs arbitrarily fancy internals |
+| Imported blocks look "pasted in" next to existing ones | Rule 5 (naturalisation): typography, spacing, radius, shadows, and motion are converted to the shared design language as a mandatory intake step, not optional polish |
+| Full-page imports pile up as unrefined coarse blocks | Coarse-wrapping is allowed for speed but noted at intake; Phase 3 library sessions split the ones worth reusing into finer blocks |
