@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-07-09. This is the single source of truth for build status.
+Last updated: 2026-07-16. This is the single source of truth for build status.
 Bug-review findings and their fix status live in `docs/bugs-log.md`.
 Forward-looking gaps, per-profile coverage, and the multi-tenant question live in
 `docs/gap-analysis-and-roadmap.md`.
@@ -315,6 +315,68 @@ Two rate limits on the backend (`/api/auth/register` 3/min, `/api/auth/login` 5/
 
 ---
 
+### Per-client UI pipeline — Phase 1 wiring (2026-07-16)
+
+**Branch:** `feat/ui-pipeline` (NOT merged — awaiting test session).
+**Spec:** `docs/superpowers/specs/2026-07-16-per-client-ui-pipeline-design.md`.
+**Plan:** `docs/superpowers/plans/2026-07-16-ui-pipeline-phase1.md`.
+
+**Built + Tested (automated):**
+- Homepage now renders via `landing-page.config.json` `sections[]` →
+  `LandingSectionRenderer` → `BLOCK_REGISTRY` instead of hardcoded imports.
+  Pixel-identity guarded by a characterization E2E
+  (`frontend-starter/e2e/landing-pipeline.spec.ts`, 12 content anchors in
+  order): frozen before the rewire, re-verified after (3/3 pass), plus a
+  pipeline-proof assertion on a `data-landing-source` attribute.
+- 11 original landing components registered as coarse-wrapped `landing-*`
+  blocks; live product/category data flows via a new `acceptsData` registry
+  flag + `data` prop on the renderer. Existing blocks untouched.
+  Production build re-verified: homepage still prerenders Static with 60s
+  revalidate — no SSR/caching regression.
+- Config consolidation: the active config's never-rendered 19-section mockup
+  `sections[]` replaced with the real 12-entry list; snapshot + surviving
+  variants archived under `frontend-starter/config-archive/` (tracked).
+  `landing-newsletter` entry declares `requiredPlugin: "newsletter"`.
+- Clutter: leftover agent worktree removed (design docs moved to
+  `docs/design-sources/`), root dev DB + local Claude settings gitignored,
+  stale gitignore entries for the moved config variants dropped, invalid
+  `gc.pruneexpire` entry removed from `.git/config` (was erroring on every
+  commit).
+- `frontend-starter/CLAUDE.md`: bulk find/replace + hand-edit procedure
+  replaced with the block/config authoring procedure (Step 3 rewritten,
+  Key Files + checklist updated).
+
+**Data-loss notes (honest record):**
+- Two of the four archived config variants (`_1`, `_2`) turned out to be
+  identical, already-corrupted (invalid JSON) duplicates predating this work
+  and were dropped; they were never git-tracked, so no valid version exists.
+- The stray root `themes/default/globals.css` (a 12-line TTG token file) was
+  deleted by an untracked-file cleanup mid-sprint before it could be
+  archived; its palette (`#B6C1A1` / `#A3AE8E` / `#0D3328`) survives in the
+  archived TTG config's `brand` block. `config-archive/README.md` documents
+  both losses.
+
+**Built, NOT tested — needs manual browser verification:**
+- Side-by-side visual pass of the homepage vs. production during the next
+  big test session — the E2E freezes content/order, not pixels.
+
+**Known issues logged (pre-existing, NOT from this work):**
+- The full storefront E2E sweep currently has ~15 pre-existing failures
+  beyond the two flakes previously documented (booking, cart, cart-recovery,
+  checkout-payment-methods, currency, gdpr-account, order-tracking,
+  product-card-variant-guard) — all reproduced identically on the
+  pre-rewire commit; looks like rate-limit/shared-state interference
+  between suites. Needs its own investigation session.
+- Follow-up (minor): the renderer's `section as unknown as LandingSection`
+  cast at the config/DB type boundary would be cleaner as a discriminated
+  union; and 17 pre-existing lint errors in untouched files remain.
+
+**Next:** Phase 2 pilot (new client via design-capture) → Phase 3 component
+library session (backlog item Q). Item W's config-vs-DB content layering
+decision is still deferred.
+
+---
+
 ## Not built — Priority 4 (medium, plan before building)
 
 | ID | Feature | Notes |
@@ -325,7 +387,7 @@ Two rate limits on the backend (`/api/auth/register` 3/min, `/api/auth/login` 5/
 | V | ~~Repair the Alembic migration chain~~ — **DONE** | New migration `a0b1c2d3e4f5` backfills the product-variant tables (`product_variants`, `product_option_types`, `product_option_values`, `product_variant_options`) and reshapes `cart_items`/`order_items`/`warehouse_stock` to use `variant_id`; wired in as the mergepoint immediately before `c8d9e0f1a2b3`. `alembic upgrade head` on a fresh DB now completes end-to-end and verified to produce a schema matching `create_all`. Follow-up (2026-07-07) closed the remaining drift: `alembic/env.py` was missing model imports for `reviews`, `discount_rules`, `shipping`, `addresses`, `wishlist`, `announcements` (caused autogenerate to propose spurious `DROP TABLE`s); `announcements.created_at`/`updated_at` are now `NOT NULL` in migration `d1e2f3a4b5c6` to match the model; `chat_sessions.session_key` now gets a single unique index (`ix_chat_sessions_session_key`, set unique in `d2e3f4a5b6c7`) instead of a non-unique index plus a redundant unique constraint — `e3f4a5b6c7d8` is now a no-op kept only for chain/merge-point integrity. Verified: empty `alembic revision --autogenerate` on a fresh DB, and byte-for-byte schema match (columns + indexes) between `alembic upgrade head` and `init_db.py`'s `create_all`. |
 | U | Consolidate stock to one source of truth (B3) | Checkout uses only `Product.stock_quantity`; the per-variant `WarehouseStock` system is built but never wired into selling (`deduct_stock_for_variant`/`get_variant_stock_total` are unused). Decide based on need: single pool → keep product-level authoritative and retire/relabel the warehouse feature; multi-warehouse → make warehouse authoritative and derive the shop's stock. Deferred pending the multi-warehouse decision. |
 | T | Eliminate frontend/backend type duplication | The frontends keep hand-written type mirrors (`frontend-starter/lib/types.ts`, `frontend-admin/lib/types.ts`) that silently drift from the backend Pydantic schemas — the cause of several 2026-07-04 bugs (`primary_image` vs `images[]`, missing `description`/`is_featured`). Fix: add an automated drift-check (CI/pre-commit runs `gen:types` and fails if `types.ts` is stale) and/or true codegen so frontend types are derived, not hand-kept; also add a `gen:types` script to the admin app (it currently has none). Process documented in `docs/type-sync.md`. |
-| W | Landing-page sections wiring (Phase 2 of the 2026-07-09 theme work) | Make the homepage render from `landing-page.config.json` (structure, superadmin) + a DB content layer (admin edits) instead of hardcoded components. Replace the current dead admin "Landing Page Sections" screen (writes to a `landing_sections` table the storefront never reads) with a "Page Content" editor: admins edit each config-defined section's text/images/CTAs and can hide/show sections, but cannot add/delete/reorder (structure stays superadmin per the role split). Pre-seed Tri Star's current content so the live site is unchanged on day one; retire the orphaned table. **Needs a design session first** (scheduling-plugin scale): per-section editable fields, image handling, overlap with announcements/promotions plugins, how config changes reach the VPS. |
+| W | Landing-page sections wiring (Phase 2 of the 2026-07-09 theme work) | **Engineering half DONE 2026-07-16** (homepage wired to config pipeline, see "Per-client UI pipeline — Phase 1 wiring"). Remaining: the admin "Page Content" editor / DB content-layer decision — still needs its own short design session. Make the homepage render from `landing-page.config.json` (structure, superadmin) + a DB content layer (admin edits) instead of hardcoded components. Replace the current dead admin "Landing Page Sections" screen (writes to a `landing_sections` table the storefront never reads) with a "Page Content" editor: admins edit each config-defined section's text/images/CTAs and can hide/show sections, but cannot add/delete/reorder (structure stays superadmin per the role split). Pre-seed Tri Star's current content so the live site is unchanged on day one; retire the orphaned table. **Needs a design session first** (scheduling-plugin scale): per-section editable fields, image handling, overlap with announcements/promotions plugins, how config changes reach the VPS. |
 
 ---
 
