@@ -364,3 +364,10 @@ export interface MyAppointmentDetail extends MyAppointment {
   reason?: string
   cancellation_reason?: string
 }
+
+/** Server-fetched data the homepage passes to blocks flagged acceptsData in BLOCK_REGISTRY. */
+export interface LandingRuntimeData {
+  products: Product[]
+  categories: Category[]
+  showBestSellersCard: boolean
+}

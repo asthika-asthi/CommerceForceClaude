@@ -34,6 +34,8 @@ export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: ComponentType<any>
   requiredPlugin?: string
+  /** When true, LandingSectionRenderer passes the page's LandingRuntimeData as a `data` prop. */
+  acceptsData?: boolean
 }
 
 export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
