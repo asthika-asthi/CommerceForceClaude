@@ -87,6 +87,39 @@ theme system) → agreed section list (chosen from the block library, with gaps
 identified). Then the config file is written and any missing blocks are built.
 No design document is required up front — the capture step produces it.
 
+A ready-made input for this step: **styles.refero.design** — a library of 2,000+
+design systems extracted from real product websites, published as machine-readable
+design files intended for AI coding tools. A client (or the agency) picks a style
+there; its file is handed to the AI session, which maps it onto our theme tokens,
+fonts, and block styling. This turns "I want it to feel like X" into a concrete,
+repeatable input rather than a guessing game.
+
+### Artistic clients and advanced interactions (no ceiling by design)
+
+Some clients will push for high-end, "very modern" experiences: pinch-to-expand
+images on mobile, scroll-driven hero storytelling, parallax, animated reveals,
+glassmorphism, and whatever next year's trend is. **These are all block-internal
+concerns — the architecture places no ceiling on them.** A block is a
+self-contained component; how sophisticated its internals are (gestures, scroll
+choreography, animation) is invisible to the pipeline that assembles the page.
+
+Evidence this already works, in this repo today: a scroll-driven expanding hero,
+a parallax banner, and a glassmorphism hero already exist as registered blocks,
+and the storefront already ships a professional animation library (framer-motion).
+A pinch-to-zoom product/image block is the same class of work — one new block,
+built once, available to every client afterwards.
+
+The only rules even the fanciest block must follow (these are what prevent the
+old chaos, so they are non-negotiable):
+1. It lives in the block library and is registered — never inlined into a page.
+2. Where brand colours apply, it uses the named theme tokens so it re-skins per
+   client automatically. (Deliberate decorative exceptions are allowed, as the
+   existing library already does for special-effect gradients.)
+3. Its content (text, images, links) comes in as data, so different clients can
+   use the same block with different content.
+4. It degrades gracefully: gesture/scroll effects must not break keyboard access,
+   slow devices, or users with reduced-motion settings.
+
 ## 5. Phases
 
 ### Phase 1 — Finish the wiring (one-time, benefits every future client)
@@ -132,7 +165,11 @@ that client's build; the procedure document exists.
 After the pipeline is proven: a dedicated design session to curate and expand the
 block library deliberately — informed by the gaps Phase 2 exposed, the existing
 unused blocks (bento grid, marquee ticker, parallax banner, glassmorphism hero,
-tubelight navbar), and the kinds of looks target clients will ask for.
+tubelight navbar), and the kinds of looks target clients will ask for. Sourcing
+inputs for this session: styles.refero.design's design-system files, plus a
+shortlist of interaction capabilities artistic clients are likely to demand
+(mobile pinch-to-expand imagery, scroll-driven storytelling sections, animated
+reveals) so the library grows ahead of demand instead of reactively.
 
 ## 6. Verification approach
 
@@ -151,3 +188,4 @@ tubelight navbar), and the kinds of looks target clients will ask for.
 | Pixel-identical rebuild is hard for a few complex sections | Old hardcoded components can be wrapped as blocks one-for-one initially; decomposition into finer blocks can come later |
 | Config file sprawl returns (five variants again) | One active config per client branch + an explicit archive folder + the documented procedure |
 | Future sessions fall back to hand-editing | The old procedure is deleted from the instructions file, not just deprecated |
+| An artistic client demands an interaction no block supports | That is a new-block job, not an architecture change — the block contract (registered, token-styled, data-driven, graceful degradation) absorbs arbitrarily fancy internals |
