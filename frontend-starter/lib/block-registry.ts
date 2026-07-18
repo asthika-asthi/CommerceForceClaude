@@ -29,6 +29,13 @@ import { ImageMosaic } from '@/components/blocks/visual/image-mosaic'
 import { SplitImageText } from '@/components/blocks/content/split-image-text'
 import { AnimatedCounter } from '@/components/blocks/content/animated-counter'
 import { BentoGrid } from '@/components/blocks/content/bento-grid'
+import { SpotlightHero } from '@/components/blocks/visual/spotlight-hero'
+import { PricingTiers } from '@/components/blocks/commerce/pricing-tiers'
+import { ShowcaseGallery } from '@/components/blocks/content/showcase-gallery'
+import { VideoShowcase } from '@/components/blocks/content/video-showcase'
+import { StreamSpotlight } from '@/components/blocks/content/stream-spotlight'
+import { FaqAccordion } from '@/components/blocks/content/faq-accordion'
+import { EnquiryForm } from '@/components/blocks/commerce/enquiry-form'
 import {
   LandingPromoBannerBlock, LandingHeroBlock, LandingTrustStripBlock,
   LandingCategoryGridBlock, LandingProductGridBlock, LandingSplitCardsBlock,
@@ -75,6 +82,15 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'split-image-text': { component: SplitImageText },
   'animated-counter': { component: AnimatedCounter },
   'bento-grid': { component: BentoGrid },
+
+  // Phase 2 generic blocks (added for the Surkut pilot; reusable by any client)
+  'spotlight-hero': { component: SpotlightHero },
+  'pricing-tiers': { component: PricingTiers },
+  'showcase-gallery': { component: ShowcaseGallery },
+  'video-showcase': { component: VideoShowcase },
+  'stream-spotlight': { component: StreamSpotlight },
+  'faq-accordion': { component: FaqAccordion },
+  'enquiry-form': { component: EnquiryForm, requiredPlugin: 'contact' },
 
   // Coarse-wrapped originals of the hardcoded Tri Star landing sections
   'landing-promo-banner': { component: LandingPromoBannerBlock },
