@@ -1,17 +1,7 @@
 import { serverFetch } from "@/lib/api"
-import { getHomepageConfig } from "@/lib/landing-config"
-import type { Category, PaginatedResponse, Product } from "@/lib/types"
-import { Hero } from "@/components/landing/hero"
-import { PromoBanner } from "@/components/landing/promo-banner"
-import { TrustStrip } from "@/components/landing/trust-strip"
-import { CategoryGrid } from "@/components/landing/category-grid"
-import { ProductGridSection } from "@/components/landing/product-grid-section"
-import { SplitCards } from "@/components/landing/split-cards"
-import { StatsBand } from "@/components/landing/stats-band"
-import { HowToOrder } from "@/components/landing/how-to-order"
-import { RangeTable } from "@/components/landing/range-table"
-import { Testimonials } from "@/components/landing/testimonials"
-import { Newsletter } from "@/components/landing/newsletter"
+import { getFilteredSections, getHomepageConfig } from "@/lib/landing-config"
+import type { Category, LandingRuntimeData, LandingSection, PaginatedResponse, Product } from "@/lib/types"
+import { LandingSectionRenderer } from "@/components/shop/landing-section"
 
 export default async function HomePage() {
   const [featuredRes, categories] = await Promise.all([
@@ -32,49 +22,23 @@ export default async function HomePage() {
     }
   }
 
-  const activeCategories = (categories ?? []).filter(c => c.is_active)
+  const data: LandingRuntimeData = {
+    products,
+    categories: (categories ?? []).filter(c => c.is_active),
+    showBestSellersCard: getHomepageConfig().showBestSellersCard !== false,
+  }
 
-  const section1Products = products.slice(0, 4)
-  const section2Products = products.slice(4, 8)
-  const showBestSellersCard = getHomepageConfig().showBestSellersCard !== false
+  const sections = getFilteredSections()
 
   return (
-    <div className="bg-bg">
-      <PromoBanner />
-      <Hero bestSellers={products.slice(0, 4)} showBestSellersCard={showBestSellersCard} />
-      <TrustStrip />
-      <CategoryGrid categories={activeCategories} />
-
-      {section1Products.length > 0 && (
-        <div className="bg-white">
-          <ProductGridSection
-            title="Featured"
-            titleHighlight="products"
-            products={section1Products}
-            viewAllHref="/products"
-            viewAllLabel="View all products →"
-            sectionOffset={0}
-          />
-        </div>
-      )}
-
-      {section2Products.length > 0 && (
-        <ProductGridSection
-          title="More from"
-          titleHighlight="our range"
-          products={section2Products}
-          viewAllHref="/products"
-          viewAllLabel="See all products →"
-          sectionOffset={4}
+    <div className="bg-bg" data-landing-source="config-pipeline">
+      {sections.map((section, i) => (
+        <LandingSectionRenderer
+          key={`${section.__block}-${i}`}
+          section={section as unknown as LandingSection}
+          data={data}
         />
-      )}
-
-      <SplitCards />
-      <StatsBand />
-      <HowToOrder />
-      <RangeTable products={products} categories={activeCategories} />
-      <Testimonials />
-      <Newsletter />
+      ))}
     </div>
   )
 }

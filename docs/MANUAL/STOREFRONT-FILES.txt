@@ -1,0 +1,67 @@
+ the full map of what builds your storefront homepage and site, organized by role.
+
+The pipeline that builds your homepage (what we just wired up)
+
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────┐
+│                                                       File                                                        │                                     What it does                                      │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ frontend-starter/landing-page.config.json                                                                         │ The source of truth — a JSON file listing which sections appear on the homepage, in   │
+│                                                                                                                   │ order, with their settings. Editing this file changes the homepage.                   │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                   │ The homepage route. Reads the config's sections[] list, fetches live                  │
+│ frontend-starter/app/page.tsx                                                                                     │ products/categories from the backend, and loops through the list rendering each       │
+│                                                                                                                   │ section. You never hand-edit this per client anymore.                                 │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ frontend-starter/lib/landing-config.ts                                                                            │ Loads and parses landing-page.config.json, filters out any section whose required     │
+│                                                                                                                   │ plugin is disabled.                                                                   │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ frontend-starter/components/shop/landing-section.tsx                                                              │ The "renderer" — for each entry in the config, looks up the matching component and    │
+│                                                                                                                   │ draws it, passing it live data if it needs it.                                        │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                   │ The catalogue — a list mapping each config entry's name (e.g. "landing-hero") to the  │
+│ frontend-starter/lib/block-registry.ts                                                                            │ actual React component that draws it. Adding a new type of section means adding one   │
+│                                                                                                                   │ line here.                                                                            │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ frontend-starter/components/blocks/landing/legacy-landing-blocks.tsx                                              │ Wrapper functions around your original 11 homepage sections, so they can be looked up │
+│                                                                                                                   │  by the registry above.                                                               │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ frontend-starter/components/landing/*.tsx (11 files: hero, promo-banner, trust-strip, category-grid,              │ The actual visual sections themselves — what you'd think of as "the homepage." These  │
+│ product-grid-section, split-cards, stats-band, how-to-order, range-table, testimonials, newsletter)               │ haven't changed at all; they're just now reached through the config instead of being  │
+│                                                                                                                   │ hardcoded into page.tsx.                                                              │
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────┘
+
+In plain terms: before, page.tsx was a fixed list of 11 components bolted directly into the page — changing the homepage meant editing code. Now page.tsx is a generic loop, and landing-page.config.json is the list it loops over. Changing the homepage for a new client means writing a new config file, not editing page code.
+
+Everything else that makes up the storefront
+
+┌───────────────────────┬──────────────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────┐
+│         Area          │                                      Files                                       │                                            Purpose                                            │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Other pages           │ app/products/page.tsx, app/products/[slug]/page.tsx, app/cart/page.tsx,          │ Product listing, product detail, cart, checkout — untouched by any of this, shared across     │
+│                       │ app/checkout/page.tsx                                                            │ every client                                                                                  │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Layout                │ app/layout.tsx                                                                   │ Wraps every page — sets the font, injects the Navbar/Footer, injects brand colours            │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Navigation            │ components/layout/navbar.tsx, components/layout/footer.tsx                       │ Top nav and footer — read store name/contact info from the admin panel automatically          │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Colours/branding      │ themes/default/globals.css                                                       │ Default colour tokens per client (edited by you when onboarding a client)                     │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│                       │ lib/theme-colors.ts                                                              │ Lets the admin panel override colours from the database without a code change                 │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Data fetching         │ lib/api.ts                                                                       │ Every API call to the backend goes through here                                               │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│                       │ lib/types.ts                                                                     │ TypeScript shapes matching what the backend returns                                           │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│ State                 │ store/auth.ts, store/cart.ts                                                     │ Login session and shopping cart, kept in the browser                                          │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Config for a new      │ frontend-starter/CLAUDE.md                                                       │ The step-by-step guide (now updated) for onboarding a new client: tokens → font → sections[]  │
+│ client                │                                                                                  │ → branding → products                                                                         │
+├───────────────────────┼──────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Old/reference configs │ frontend-starter/config-archive/                                                 │ Past config files kept for reference, not used by the running site                            │
+└───────────────────────┴──────────────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────┘
+
+The two other apps in the project (not the storefront, but related)
+
+- backend/ — the Python API everything talks to (products, orders, auth, plugins). One shared backend serves every client.
+- frontend-admin/ — the admin panel (port 3001) where you set branding, manage products/orders, and now would reset the superadmin if needed.
+

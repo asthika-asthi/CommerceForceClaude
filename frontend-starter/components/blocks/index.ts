@@ -24,3 +24,10 @@ export { DualCtaBanner } from './content/dual-cta-banner'
 export { StatsBand } from './content/stats-band'
 export { HowToOrder } from './content/how-to-order'
 export { ButtonGroup } from './content/button-group'
+
+export {
+  LandingPromoBannerBlock, LandingHeroBlock, LandingTrustStripBlock,
+  LandingCategoryGridBlock, LandingProductGridBlock, LandingSplitCardsBlock,
+  LandingStatsBandBlock, LandingHowToOrderBlock, LandingRangeTableBlock,
+  LandingTestimonialsBlock, LandingNewsletterBlock,
+} from './landing/legacy-landing-blocks'

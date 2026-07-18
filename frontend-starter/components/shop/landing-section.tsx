@@ -1,9 +1,9 @@
-import type { LandingSection } from "@/lib/types"
+import type { LandingSection, LandingRuntimeData } from "@/lib/types"
 import Link from "next/link"
 import { BLOCK_REGISTRY } from '@/lib/block-registry'
 import { GlowButton } from '@/components/ui/shiny-button'
 
-export function LandingSectionRenderer({ section }: { section: LandingSection }) {
+export function LandingSectionRenderer({ section, data }: { section: LandingSection; data?: LandingRuntimeData }) {
   const style = section.background_color ? { backgroundColor: section.background_color } : undefined
 
   // Config-sourced section: __block is top-level, not inside section.content
@@ -13,6 +13,9 @@ export function LandingSectionRenderer({ section }: { section: LandingSection })
     if (!entry) return null
     const { __block: _, requiredPlugin: __, ...props } = asConfig
     const BlockComponent = entry.component
+    if (entry.acceptsData) {
+      return <BlockComponent {...props} data={data} />
+    }
     return <BlockComponent {...props} />
   }
 
@@ -27,6 +30,9 @@ export function LandingSectionRenderer({ section }: { section: LandingSection })
       if (style) {
         return <section style={style}><BlockComponent {...props} /></section>
       }
+      // NOTE: acceptsData is only honored for config-sourced sections above; this
+      // DB-sourced path does not forward runtime data. Wire it up if this path
+      // ever becomes reachable (backlog item W's admin content layer).
       return <BlockComponent {...props} />
     } catch {
       return null

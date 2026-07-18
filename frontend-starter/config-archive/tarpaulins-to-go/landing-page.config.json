@@ -1,0 +1,67 @@
+{
+  "store": {
+    "name": "Tarpaulins To Go",
+    "tagline": "The UK's trusted tarpaulin specialists",
+    "logo_url": "/images/logo.png",
+    "favicon_url": "/images/favicon.ico",
+    "contact_email": "info@tarpaulinstogo.co.uk"
+  },
+  "brand": {
+    "primary": "#B6C1A1",
+    "primaryHover": "#A3AE8E",
+    "dark": "#0D3328",
+    "secondary": "#555555",
+    "background": "#ffffff",
+    "text": "#000000",
+    "font": "Poppins"
+  },
+  "plugins": [
+    "products", "orders", "cart", "checkout", "categories",
+    "coupons", "newsletter", "promotions", "announcements",
+    "loyalty", "branding", "landing_page", "auth"
+  ],
+  "sections": [
+    {
+      "__block": "scroll-expand-hero",
+      "title": "Premium Tarpaulins & Covers",
+      "subtitle": "Heavy-duty protection for industrial, agricultural, and commercial use",
+      "mediaSrc": "/images/hero.jpg",
+      "bgImageSrc": "/images/hero-bg.jpg",
+      "mediaType": "image"
+    },
+    {
+      "__block": "featured-products-grid",
+      "title": "Best Sellers",
+      "subtitle": "Our most popular tarpaulins and covers",
+      "maxProducts": 8,
+      "cardStyle": "rounded-shadow"
+    },
+    {
+      "__block": "promotions-banner",
+      "requiredPlugin": "promotions"
+    },
+    {
+      "__block": "announcement-bar",
+      "requiredPlugin": "announcements"
+    },
+    {
+      "__block": "coupon-spotlight",
+      "requiredPlugin": "coupons"
+    },
+    {
+      "__block": "cta-banner",
+      "title": "Need a Custom Size?",
+      "subtitle": "We cut to measure — any shape, any size.",
+      "ctaText": "Get a Quote",
+      "ctaUrl": "/contact",
+      "backgroundImage": "/images/cta-bg.jpg"
+    },
+    {
+      "__block": "newsletter-section",
+      "requiredPlugin": "newsletter",
+      "title": "Trade Deals & New Stock Alerts",
+      "subtitle": "Join 5,000+ trade customers getting weekly deals",
+      "backgroundImage": "/images/newsletter-bg.jpg"
+    }
+  ]
+}

@@ -29,11 +29,19 @@ import { ImageMosaic } from '@/components/blocks/visual/image-mosaic'
 import { SplitImageText } from '@/components/blocks/content/split-image-text'
 import { AnimatedCounter } from '@/components/blocks/content/animated-counter'
 import { BentoGrid } from '@/components/blocks/content/bento-grid'
+import {
+  LandingPromoBannerBlock, LandingHeroBlock, LandingTrustStripBlock,
+  LandingCategoryGridBlock, LandingProductGridBlock, LandingSplitCardsBlock,
+  LandingStatsBandBlock, LandingHowToOrderBlock, LandingRangeTableBlock,
+  LandingTestimonialsBlock, LandingNewsletterBlock,
+} from '@/components/blocks/landing/legacy-landing-blocks'
 
 export interface BlockRegistryEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: ComponentType<any>
   requiredPlugin?: string
+  /** When true, LandingSectionRenderer passes the page's LandingRuntimeData as a `data` prop. */
+  acceptsData?: boolean
 }
 
 export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
@@ -67,4 +75,17 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'split-image-text': { component: SplitImageText },
   'animated-counter': { component: AnimatedCounter },
   'bento-grid': { component: BentoGrid },
+
+  // Coarse-wrapped originals of the hardcoded Tri Star landing sections
+  'landing-promo-banner': { component: LandingPromoBannerBlock },
+  'landing-hero': { component: LandingHeroBlock, acceptsData: true },
+  'landing-trust-strip': { component: LandingTrustStripBlock },
+  'landing-category-grid': { component: LandingCategoryGridBlock, acceptsData: true },
+  'landing-product-grid': { component: LandingProductGridBlock, acceptsData: true },
+  'landing-split-cards': { component: LandingSplitCardsBlock },
+  'landing-stats-band': { component: LandingStatsBandBlock },
+  'landing-how-to-order': { component: LandingHowToOrderBlock },
+  'landing-range-table': { component: LandingRangeTableBlock, acceptsData: true },
+  'landing-testimonials': { component: LandingTestimonialsBlock },
+  'landing-newsletter': { component: LandingNewsletterBlock },
 }
