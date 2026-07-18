@@ -26,6 +26,8 @@
   --color-border-subtle: var(--border-subtle);
   --color-card-bg: var(--card-bg);
   --font-sans: var(--font-poppins), system-ui, sans-serif;
+  --font-heading: var(--heading-family, var(--font-sans));
+  --color-emphasis-surface: var(--emphasis-surface, var(--brand-dark));
 
   /* shadcn-compatible aliases — lets third-party components using
      bg-background / text-primary / border-border etc. work out of the box */
