@@ -17,7 +17,7 @@ export function BentoGrid({ cards, title }: BentoGridProps) {
   return (
     <section className="py-16 px-4 bg-bg">
       {title && (
-        <h2 className="text-3xl font-bold text-fg text-center mb-10">{title}</h2>
+        <h2 className="font-heading text-3xl font-bold text-fg text-center mb-10">{title}</h2>
       )}
       <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[180px]">
         {display.map((card, i) => (
@@ -33,7 +33,7 @@ export function BentoGrid({ cards, title }: BentoGridProps) {
               </div>
             )}
             <div className="flex-1">
-              <h3 className={`font-bold text-fg mb-2 ${card.size === 'large' ? 'text-2xl' : 'text-base'}`}>
+              <h3 className={`font-heading font-bold text-fg mb-2 ${card.size === 'large' ? 'text-2xl' : 'text-base'}`}>
                 {card.title}
               </h3>
               <p className="text-muted text-sm leading-relaxed line-clamp-3">{card.body}</p>
