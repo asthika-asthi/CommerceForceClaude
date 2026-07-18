@@ -46,7 +46,7 @@ export default function FaqPage() {
     <div className="max-w-3xl mx-auto px-4 py-16">
       <h1 className="text-3xl font-bold text-brand-dark mb-2">Frequently Asked Questions</h1>
       <p className="text-slate-500 mb-10">
-        Can't find the answer you need?{" "}
+        Can&apos;t find the answer you need?{" "}
         <Link href="/contact" className="text-brand-dark hover:underline font-medium">Get in touch</Link>.
       </p>
 

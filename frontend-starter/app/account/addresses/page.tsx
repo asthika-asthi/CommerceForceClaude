@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import type { Address } from "@/lib/types"
-import { ArrowLeft, Plus, Star, Trash2, Pencil, Check, X } from "lucide-react"
+import { ArrowLeft, Plus, Star, Trash2, Pencil } from "lucide-react"
 
 const blank = { label: "", line1: "", line2: "", city: "", county: "", postcode: "", country: "GB", is_default: false }
 

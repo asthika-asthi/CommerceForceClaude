@@ -20,23 +20,27 @@ export function LandingSectionRenderer({ section, data }: { section: LandingSect
   }
 
   if (section.section_type === 'block') {
+    // Parse the DB-sourced config inside try/catch, but construct the JSX
+    // outside it (an error thrown while rendering a child must reach an error
+    // boundary, not be swallowed here — see react-hooks/error-boundaries).
+    let config: Record<string, unknown> | null = null
     try {
-      const config = JSON.parse(section.content ?? '{}') as Record<string, unknown>
-      const { __block, ...props } = config
-      if (typeof __block !== 'string') return null
-      const entry = BLOCK_REGISTRY[__block]
-      if (!entry) return null
-      const BlockComponent = entry.component
-      if (style) {
-        return <section style={style}><BlockComponent {...props} /></section>
-      }
-      // NOTE: acceptsData is only honored for config-sourced sections above; this
-      // DB-sourced path does not forward runtime data. Wire it up if this path
-      // ever becomes reachable (backlog item W's admin content layer).
-      return <BlockComponent {...props} />
+      config = JSON.parse(section.content ?? '{}') as Record<string, unknown>
     } catch {
       return null
     }
+    const { __block, ...props } = config
+    if (typeof __block !== 'string') return null
+    const entry = BLOCK_REGISTRY[__block]
+    if (!entry) return null
+    const BlockComponent = entry.component
+    if (style) {
+      return <section style={style}><BlockComponent {...props} /></section>
+    }
+    // NOTE: acceptsData is only honored for config-sourced sections above; this
+    // DB-sourced path does not forward runtime data. Wire it up if this path
+    // ever becomes reachable (backlog item W's admin content layer).
+    return <BlockComponent {...props} />
   }
 
   if (section.section_type === "hero") {
@@ -87,7 +91,7 @@ export function LandingSectionRenderer({ section, data }: { section: LandingSect
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
               <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <p className="text-slate-600 italic mb-4">"{t.quote}"</p>
+                <p className="text-slate-600 italic mb-4">&ldquo;{t.quote}&rdquo;</p>
                 <p className="font-semibold text-slate-900 text-sm">{t.name}</p>
                 {t.role && <p className="text-slate-400 text-xs">{t.role}</p>}
               </div>

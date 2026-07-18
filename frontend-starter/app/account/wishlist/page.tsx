@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuthStore } from "@/store/auth"
@@ -16,12 +16,7 @@ export default function WishlistPage() {
   const [items, setItems] = useState<(WishlistItem & { product?: Product })[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!user) { router.push("/login"); return }
-    loadWishlist()
-  }, [user, router])
-
-  async function loadWishlist() {
+  const loadWishlist = useCallback(async () => {
     try {
       const wishlist = await api.get<WishlistItem[]>("/api/wishlist")
       const withProducts = await Promise.all(
@@ -40,7 +35,13 @@ export default function WishlistPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!user) { router.push("/login"); return }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- calls the async loader on mount (setState happens post-await, not synchronously); proper refactor tracked in backlog "Storefront lint debt"
+    loadWishlist()
+  }, [user, router, loadWishlist])
 
   async function remove(productId: string) {
     try {

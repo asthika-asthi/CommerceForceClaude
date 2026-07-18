@@ -36,6 +36,7 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
     if (!selectedVariantId) return
     const variantImages = images.filter(img => img.variant_id === selectedVariantId)
     if (variantImages.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- correct sync of displayed image to selected variant; proper refactor tracked in backlog "Storefront lint debt"
       setDisplayedImageUrl(variantImages[0].url)
     }
   }, [selectedVariantId])

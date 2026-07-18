@@ -486,6 +486,36 @@ HTTPS is not blocking development but IS required before any client goes live.
 
 ---
 
+## Tech debt — needs a focused session
+
+### Storefront lint debt (2026-07-18)
+
+`frontend-starter` had a **pre-existing** red `npm run lint` on master (17 errors,
+31 warnings) — surfaced when Phase 2 of the UI pipeline began. A low-risk pass
+(branch `fix/storefront-lint`) made lint **green** (0 errors) so Phase 2 could
+build on a meaningful gate, but three things were **deliberately deferred** to a
+dedicated session:
+
+- **7 `react-hooks/set-state-in-effect` sites are suppressed, not fixed.** These
+  are correct, intentional patterns (mount-time `localStorage`/API reads, guard
+  resets, an async loader on mount), several in **untested** flows (checkout,
+  account settings, cookie-consent, analytics, loyalty widget, product-detail
+  variant image, wishlist). Each has an inline `// eslint-disable-next-line
+  react-hooks/set-state-in-effect -- … backlog "Storefront lint debt"`. Proper
+  fix = refactor to derive-during-render / `useSyncExternalStore` / restructured
+  guards, then remove the suppressions — needs a careful golden-path re-test.
+- **17 `@next/next/no-img-element` warnings left as-is.** Deliberate use of
+  `<img>` for dynamic backend/product image URLs. Decide: convert to
+  `next/image` (needs sizing + image-domain config, risks Tri Star layout) vs.
+  formally disable the rule as an accepted project choice.
+- **2 `react-hooks/exhaustive-deps` warnings** (`app/account/settings/page.tsx`,
+  `app/products/[slug]/product-detail-client.tsx`) — adding deps can cause
+  render loops, so each needs individual judgement.
+
+Also noted while in the files (not fixed): `app/products/[slug]/reviews.tsx`
+never updates its `reviews` list in-place after a submit (no state setter used) —
+possible latent UX gap.
+
 ## Intentionally deferred (not planned for now)
 
 ### Security / Infrastructure (ops responsibility)

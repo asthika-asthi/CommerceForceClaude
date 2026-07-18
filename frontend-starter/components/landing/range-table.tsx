@@ -1,3 +1,4 @@
+import Link from "next/link"
 import type { Product, Category } from "@/lib/types"
 
 interface Props {
@@ -16,9 +17,9 @@ export function RangeTable({ products, categories = [] }: Props) {
         <h2 className="text-[26px] font-bold text-brand-dark">
           Product range <span className="text-brand">quick reference</span>
         </h2>
-        <a href="/products" className="text-[13px] font-semibold text-brand flex items-center gap-1 hover:text-brand-hover transition-colors">
+        <Link href="/products" className="text-[13px] font-semibold text-brand flex items-center gap-1 hover:text-brand-hover transition-colors">
           Full catalogue →
-        </a>
+        </Link>
       </div>
       <div className="bg-white border border-border rounded-xl overflow-hidden">
         <table className="w-full border-collapse">
@@ -35,9 +36,9 @@ export function RangeTable({ products, categories = [] }: Props) {
             {products.map((product, i) => (
               <tr key={product.id} className={`${i % 2 === 1 ? "bg-surface-alt" : ""} hover:bg-brand-tint transition-colors`}>
                 <td className="px-5 py-3 text-[13px] text-fg border-b border-border-subtle">
-                  <a href={`/products/${product.slug}`} className="font-semibold hover:text-brand transition-colors">
+                  <Link href={`/products/${product.slug}`} className="font-semibold hover:text-brand transition-colors">
                     {product.name}
-                  </a>
+                  </Link>
                 </td>
                 <td className="px-5 py-3 text-[13px] text-fg border-b border-border-subtle">
                   {(product.category_id && categoryNames.get(product.category_id)) ?? "—"}

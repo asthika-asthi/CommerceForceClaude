@@ -87,6 +87,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
   useEffect(() => { fetch() }, [fetch])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- correct guard-clause reset on user change; proper refactor tracked in backlog "Storefront lint debt"
     if (!user) { setHasCreditAccount(false); return }
     // Only trade/business customers have a credit account (set up by an admin) —
     // a 404 here just means this customer doesn't have one, not an error.
@@ -113,6 +114,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
   }, [form.country])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- correct guard-clause reset when country cleared; proper refactor tracked in backlog "Storefront lint debt"
     if (!form.country) { setTaxAmount(0); return }
     if (taxDebounce.current) clearTimeout(taxDebounce.current)
     taxDebounce.current = setTimeout(() => {

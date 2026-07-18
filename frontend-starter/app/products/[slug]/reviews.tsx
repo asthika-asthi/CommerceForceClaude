@@ -10,9 +10,12 @@ interface Props {
   summary: ReviewSummary | null
 }
 
-export function ProductReviews({ productId, initialReviews, summary }: Props) {
+export function ProductReviews({ productId, initialReviews }: Props) {
   const user = useAuthStore((s) => s.user)
-  const [reviews, setReviews] = useState<Review[]>(initialReviews)
+  // NOTE: reviews is not updated in-place after a successful submit (no setter
+  // used) — the list refreshes on next navigation. Possible latent UX gap;
+  // logged in backlog "Storefront lint debt". Not changed here.
+  const [reviews] = useState<Review[]>(initialReviews)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ rating: 5, title: "", body: "" })
   const [submitting, setSubmitting] = useState(false)

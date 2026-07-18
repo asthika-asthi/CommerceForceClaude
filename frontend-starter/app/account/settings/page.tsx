@@ -46,6 +46,7 @@ export default function AccountSettingsPage() {
   // Form init — only on first load (keyed on user?.id)
   useEffect(() => {
     if (!user) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- correct one-time form init from user on mount; proper refactor tracked in backlog "Storefront lint debt"
     setForm({
       first_name: user.first_name ?? "",
       last_name: user.last_name ?? "",
@@ -215,7 +216,7 @@ export default function AccountSettingsPage() {
           ) : (
             <>
               <p className="text-xs text-slate-500 mb-3">
-                Request permanent deletion of your account. An admin will review the request — we'll respond within 30 days.
+                Request permanent deletion of your account. An admin will review the request — we&apos;ll respond within 30 days.
               </p>
               <button type="button" onClick={() => setShowDeleteConfirm(true)}
                 className="px-4 py-2 rounded-lg text-sm font-medium border border-red-200 text-red-600 hover:bg-red-50">

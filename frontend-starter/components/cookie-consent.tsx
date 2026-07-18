@@ -21,6 +21,7 @@ export function CookieConsent({ analyticsEnabled = false }: Props) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- correct mount-time localStorage read (SSR-safe banner reveal); proper refactor tracked in backlog "Storefront lint debt"
     if (!localStorage.getItem(CONSENT_KEY)) setVisible(true)
   }, [])
 

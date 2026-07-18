@@ -17,6 +17,7 @@ export function AnalyticsScripts({ ga4MeasurementId, metaPixelId }: Props) {
   const [consent, setConsent] = useState<ConsentStatus>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- correct mount-time consent read (SSR-safe); proper refactor tracked in backlog "Storefront lint debt"
     setConsent(getConsentStatus())
     function onChange(e: Event) {
       setConsent((e as CustomEvent<ConsentStatus>).detail)

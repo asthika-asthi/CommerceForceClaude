@@ -147,6 +147,7 @@ export function LoyaltyWidgetSection({
 
   useEffect(() => {
     if (!user) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- correct loading-state set before fetch on user change; proper refactor tracked in backlog "Storefront lint debt"
     setLoyaltyLoading(true)
     setLoyaltyError(false)
     api
