@@ -9,3 +9,5 @@ Client design references, moved here from the repo root (2026-07-16) when the le
 - `Tristart_design.md` — Tri Star design notes.
 - `CommerceForceClaude_feature_bug_report.md` — bug/feature notes captured
   during an earlier redesign attempt; review before the Phase 2 pilot.
+- `Surkut_design.md` — Surkut Miniatures design capture (from the client's
+  GitHub repo); pairs with the `client/surkut` branch.
