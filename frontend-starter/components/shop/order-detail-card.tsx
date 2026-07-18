@@ -25,7 +25,7 @@ export function OrderDetailCard({ order }: { order: Order }) {
         <span className={`text-sm px-3 py-1 rounded-full font-medium ${colorClass}`}>{order.status}</span>
       </div>
 
-      <div className="bg-white border border-slate-100 rounded-2xl divide-y divide-slate-50 mb-6">
+      <div className="bg-card-bg border border-slate-100 rounded-2xl divide-y divide-slate-50 mb-6">
         {order.items?.map((item) => (
           <div key={item.id} className="flex justify-between px-6 py-4">
             <div>
@@ -37,7 +37,7 @@ export function OrderDetailCard({ order }: { order: Order }) {
         ))}
       </div>
 
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-3">
+      <div className="bg-card-bg border border-slate-100 rounded-2xl p-6 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-slate-500">Subtotal</span>
           <span className="text-slate-900">{formatMoney(parseFloat(order.subtotal).toFixed(2))}</span>
@@ -67,7 +67,7 @@ export function OrderDetailCard({ order }: { order: Order }) {
       </div>
 
       {order.shipping_address && (
-        <div className="mt-6 bg-white border border-slate-100 rounded-2xl p-6">
+        <div className="mt-6 bg-card-bg border border-slate-100 rounded-2xl p-6">
           <h2 className="font-semibold text-slate-900 mb-3">Shipping address</h2>
           <p className="text-sm text-slate-600 whitespace-pre-line">{order.shipping_address}</p>
         </div>

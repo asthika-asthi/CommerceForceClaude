@@ -67,7 +67,7 @@ export function LandingProductGridBlock({
       sectionOffset={sliceStart}
     />
   )
-  return whiteBackground ? <div className="bg-white">{grid}</div> : grid
+  return whiteBackground ? <div className="bg-card-bg">{grid}</div> : grid
 }
 
 export function LandingSplitCardsBlock() {

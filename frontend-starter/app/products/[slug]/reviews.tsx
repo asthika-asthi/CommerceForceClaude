@@ -93,7 +93,7 @@ export function ProductReviews({ productId, initialReviews }: Props) {
               {submitting ? "Submitting..." : "Submit review"}
             </button>
             <button type="button" onClick={() => setShowForm(false)}
-              className="text-sm text-slate-500 hover:text-slate-800 px-4 py-2 rounded-lg border border-slate-200 hover:bg-white">
+              className="text-sm text-slate-500 hover:text-slate-800 px-4 py-2 rounded-lg border border-slate-200 hover:bg-card-bg">
               Cancel
             </button>
           </div>

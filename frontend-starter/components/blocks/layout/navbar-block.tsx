@@ -23,7 +23,7 @@ export function NavbarBlock({
   ctaUrl,
 }: NavbarBlockProps) {
   return (
-    <nav className="w-full px-6 py-4 flex items-center justify-between bg-white border-b border-slate-200">
+    <nav className="w-full px-6 py-4 flex items-center justify-between bg-card-bg border-b border-slate-200">
       <a href={logoUrl} className="text-lg font-bold text-brand-dark">{logoText}</a>
       <ul className="hidden md:flex items-center gap-6">
         {links.map((l, i) => (

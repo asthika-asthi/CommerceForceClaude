@@ -81,7 +81,7 @@ export function ChatWidget() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden" style={{ height: "480px" }}>
+        <div className="fixed bottom-24 right-6 z-50 w-80 md:w-96 bg-card-bg rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden" style={{ height: "480px" }}>
           {/* Header */}
           <div className="bg-brand text-on-brand px-4 py-3 flex-shrink-0">
             <p className="font-semibold text-sm">Chat with us</p>

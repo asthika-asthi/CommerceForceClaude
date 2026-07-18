@@ -47,7 +47,7 @@ export function CategoryGrid({
             <Link
               key={i}
               href={cat.href ?? '/products'}
-              className="group bg-white border border-border rounded-xl overflow-hidden
+              className="group bg-card-bg border border-border rounded-xl overflow-hidden
                          hover:border-brand hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
             >
               <div

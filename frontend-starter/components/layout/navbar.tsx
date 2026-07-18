@@ -44,7 +44,7 @@ export function Navbar({ branding }: Props) {
   }
 
   return (
-    <header className="bg-white border-b border-border sticky top-0 z-50">
+    <header className="bg-card-bg border-b border-border sticky top-0 z-50">
       <div className="max-w-[1280px] mx-auto px-10 flex items-center h-[72px] gap-6">
 
         {/* Logo */}
@@ -72,7 +72,7 @@ export function Navbar({ branding }: Props) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search products…"
-            className="w-full border-[1.5px] border-border rounded-lg px-4 py-[10px] pr-11 text-sm text-fg bg-bg focus:border-brand-dark focus:bg-white outline-none transition-colors placeholder:text-text-placeholder"
+            className="w-full border-[1.5px] border-border rounded-lg px-4 py-[10px] pr-11 text-sm text-fg bg-bg focus:border-brand-dark focus:bg-card-bg outline-none transition-colors placeholder:text-text-placeholder"
           />
           <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-lg bg-transparent border-none cursor-pointer">
             🔍
@@ -127,7 +127,7 @@ export function Navbar({ branding }: Props) {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-border bg-white px-6 py-4 space-y-3">
+        <div className="md:hidden border-t border-border bg-card-bg px-6 py-4 space-y-3">
           <Link href="/products" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-fg py-1">All Products</Link>
           {schedulingEnabled && (
             <Link href="/book" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-fg py-1">Book</Link>

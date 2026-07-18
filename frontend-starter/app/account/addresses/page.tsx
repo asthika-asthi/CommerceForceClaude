@@ -107,7 +107,7 @@ export default function AddressesPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white border border-slate-100 rounded-2xl p-6 mb-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-card-bg border border-slate-100 rounded-2xl p-6 mb-6 space-y-4">
           <h2 className="font-semibold text-slate-900">{editId ? "Edit address" : "New address"}</h2>
           <div>
             <label className="block text-sm text-slate-600 mb-1">Label (optional)</label>
@@ -159,14 +159,14 @@ export default function AddressesPage() {
       )}
 
       {addresses.length === 0 && !showForm ? (
-        <div className="bg-white border border-slate-100 rounded-2xl p-10 text-center text-slate-400">
+        <div className="bg-card-bg border border-slate-100 rounded-2xl p-10 text-center text-slate-400">
           <p className="mb-3">No saved addresses yet.</p>
           <button onClick={startAdd} className="text-brand-dark text-sm hover:underline">Add your first address</button>
         </div>
       ) : (
         <div className="space-y-3">
           {addresses.map((addr) => (
-            <div key={addr.id} className={`bg-white border rounded-2xl p-5 ${addr.is_default ? "border-brand-dark ring-1 ring-brand-dark/20" : "border-slate-100"}`}>
+            <div key={addr.id} className={`bg-card-bg border rounded-2xl p-5 ${addr.is_default ? "border-brand-dark ring-1 ring-brand-dark/20" : "border-slate-100"}`}>
               <div className="flex items-start justify-between">
                 <div>
                   {addr.label && <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{addr.label}</p>}

@@ -296,7 +296,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           {/* Shipping */}
-          <div className="bg-white border border-slate-100 rounded-xl p-6">
+          <div className="bg-card-bg border border-slate-100 rounded-xl p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Shipping address</h2>
             {user && savedAddresses.length > 0 && (
               <div className="mb-4 pb-4 border-b border-slate-100">
@@ -396,7 +396,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
           </div>
 
           {/* Payment method */}
-          <div className="bg-white border border-slate-100 rounded-xl p-6">
+          <div className="bg-card-bg border border-slate-100 rounded-xl p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Payment method</h2>
             <div className="space-y-3">
               {availablePaymentMethods.map((pm) => (
@@ -454,7 +454,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
           </div>
 
           {/* Discounts */}
-          <div className="bg-white border border-slate-100 rounded-xl p-6">
+          <div className="bg-card-bg border border-slate-100 rounded-xl p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Discounts</h2>
             <div className="space-y-3">
               <div>
@@ -487,7 +487,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
 
         {/* Order summary */}
         <div>
-          <div className="bg-white border border-slate-100 rounded-xl p-6 sticky top-20">
+          <div className="bg-card-bg border border-slate-100 rounded-xl p-6 sticky top-20">
             <h2 className="font-semibold text-slate-900 mb-4">Order summary</h2>
             <div className="space-y-2 mb-4">
               {items.map((item) => (

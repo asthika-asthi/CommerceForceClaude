@@ -10,7 +10,7 @@ interface TrustStripProps {
 
 export function TrustStrip({ items = [] }: TrustStripProps) {
   return (
-    <div className="bg-white border-b border-border">
+    <div className="bg-card-bg border-b border-border">
       <div className="max-w-6xl mx-auto px-6 py-4 flex flex-wrap justify-between gap-4">
         {items.map((item, i) => (
           <div key={i} className="flex items-center gap-3 min-w-0">

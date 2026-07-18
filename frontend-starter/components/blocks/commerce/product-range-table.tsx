@@ -51,7 +51,7 @@ export function ProductRangeTable({
             )}
           </div>
         )}
-        <div className="bg-white border border-border rounded-xl overflow-hidden">
+        <div className="bg-card-bg border border-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[640px]">
               <thead>

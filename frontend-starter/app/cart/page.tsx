@@ -102,7 +102,7 @@ export default function CartPage() {
             {items.map((item) => {
               const busy = busyItems.has(item.variant_id)
               return (
-                <div key={item.id} className={`flex gap-4 bg-white border border-slate-100 rounded-xl p-4 transition-opacity ${busy ? "opacity-60" : ""}`}>
+                <div key={item.id} className={`flex gap-4 bg-card-bg border border-slate-100 rounded-xl p-4 transition-opacity ${busy ? "opacity-60" : ""}`}>
                   <div className="w-20 h-20 bg-slate-50 rounded-lg overflow-hidden flex-shrink-0">
                     {item.primary_image ? (
                       <img src={item.primary_image} alt={item.product_name} className="w-full h-full object-cover" />
@@ -149,7 +149,7 @@ export default function CartPage() {
             })}
           </div>
 
-          <div className="bg-white border border-slate-100 rounded-xl p-6 h-fit">
+          <div className="bg-card-bg border border-slate-100 rounded-xl p-6 h-fit">
             <h2 className="font-semibold text-slate-900 mb-4">Order summary</h2>
             <div className="flex justify-between text-sm text-slate-600 mb-2">
               <span>Subtotal ({cart?.item_count ?? 0} items)</span>

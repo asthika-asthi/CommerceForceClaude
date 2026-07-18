@@ -68,7 +68,7 @@ export default function WishlistPage() {
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Wishlist</h1>
 
       {items.length === 0 ? (
-        <div className="bg-white border border-slate-100 rounded-2xl p-10 text-center text-slate-400">
+        <div className="bg-card-bg border border-slate-100 rounded-2xl p-10 text-center text-slate-400">
           <Heart size={32} className="mx-auto mb-3 text-slate-200" />
           <p className="mb-3">Your wishlist is empty.</p>
           <Link href="/products" className="text-brand-dark text-sm hover:underline">Browse products</Link>
@@ -78,7 +78,7 @@ export default function WishlistPage() {
           {items.map((item) => {
             const p = item.product
             return (
-              <div key={item.id} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center gap-4">
+              <div key={item.id} className="bg-card-bg border border-slate-100 rounded-2xl p-4 flex items-center gap-4">
                 {p?.images?.[0]?.url ? (
                   <img src={p.images[0].url} alt={p.name} className="w-16 h-16 object-cover rounded-xl flex-shrink-0" />
                 ) : (
