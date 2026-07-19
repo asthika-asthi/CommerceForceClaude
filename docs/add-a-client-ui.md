@@ -59,10 +59,11 @@ blocks in the shared library — every client enriches it.
    `ENABLED_PLUGINS` that matches the config's `plugins`, and
    `STORE_NAME`/`STORE_TAGLINE`/`CONTACT_EMAIL`.
 
-   **Seeding a fresh local DB** (no Docker): the app reads `.env` via pydantic,
-   but `seed.py` reads identity vars via `os.getenv` and `python-dotenv` is not
-   installed — so export `.env` into the environment first, and a brand-new DB
-   file has no schema until migrations run:
+   **Seeding a fresh local DB** (no Docker): `seed.py` reads identity vars via
+   `os.getenv`, so it needs `.env` in the process environment. In Docker that's
+   automatic (`docker-compose.yml` → `env_file: ./backend/.env`); running
+   `seed.py` directly without Docker, export `.env` into the shell first. A
+   brand-new DB file also has no schema until migrations run:
    ```bash
    cd backend
    set -a; while IFS= read -r l; do case "$l" in ''|\#*) continue;; esac; export "${l%%=*}=${l#*=}"; done < .env; set +a

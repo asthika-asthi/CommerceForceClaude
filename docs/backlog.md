@@ -420,10 +420,11 @@ site, brought in via the page-intake procedure.
 **Pending client input (Surkut):** confirm contact email, Instagram/Patreon
 URLs, real logo/favicon if wanted, Display-tier deposit pricing.
 
-**Note (local-dev gap surfaced):** `python-dotenv` isn't installed in the
-backend venv and `seed.py` reads identity vars via `os.getenv`, so `seed.py`
-run bare can't see `.env` (the app itself reads it via pydantic). Worked around
-by exporting `.env`; worth installing python-dotenv or documenting.
+**Note (no-Docker seeding):** `seed.py` reads identity vars via `os.getenv`, so
+it needs `.env` present in the process environment. In Docker that's automatic —
+`docker-compose.yml` uses `env_file: ./backend/.env`. Running `seed.py` **bare**
+(no Docker) just needs `.env` exported into the shell first (see
+`docs/add-a-client-ui.md`). No dependency needed.
 
 ---
 
