@@ -1,6 +1,4 @@
 'use client'
-// Placeholder — replace with your final footer TSX.
-
 interface FooterLink {
   label: string
   url: string
@@ -25,20 +23,20 @@ export function FooterBlock({
   copyrightText,
 }: FooterBlockProps) {
   return (
-    <footer className="bg-slate-900 text-slate-300 px-6 py-12">
+    <footer className="bg-brand-dark text-on-dark px-6 py-12">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div>
-            <p className="text-white font-bold text-lg mb-2">{logoText}</p>
-            {tagline && <p className="text-sm text-slate-400">{tagline}</p>}
+            <p className="text-on-dark-strong font-bold text-lg mb-2">{logoText}</p>
+            {tagline && <p className="text-sm text-on-dark-muted">{tagline}</p>}
           </div>
           {columns.map((col, i) => (
             <div key={i}>
-              <p className="text-white font-semibold text-sm mb-3">{col.heading}</p>
+              <p className="text-on-dark-strong font-semibold text-sm mb-3">{col.heading}</p>
               <ul className="list-none p-0 m-0 space-y-2">
                 {(col.links ?? []).map((l, j) => (
                   <li key={j}>
-                    <a href={l.url} className="text-sm hover:text-white transition-colors">{l.label}</a>
+                    <a href={l.url} className="text-sm hover:text-on-dark-strong transition-colors">{l.label}</a>
                   </li>
                 ))}
               </ul>
@@ -46,7 +44,7 @@ export function FooterBlock({
           ))}
         </div>
         {copyrightText && (
-          <p className="border-t border-slate-700 pt-6 text-xs text-slate-500">{copyrightText}</p>
+          <p className="border-t border-dark-border pt-6 text-xs text-on-dark-muted">{copyrightText}</p>
         )}
       </div>
     </footer>

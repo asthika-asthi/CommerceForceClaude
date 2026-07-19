@@ -821,12 +821,12 @@ These render structural chrome (nav, footer, menu). In practice the storefront's
 
 ---
 
-## `navbar` ⚠️ Placeholder
-**What it's for:** A basic in-page navbar block (logo, links, one CTA) — explicitly marked in its own source comment as a **placeholder to replace with your final design**, not a finished production component.
+## `navbar`
+**What it's for:** A basic in-page navbar block (logo, links, one CTA) — for building an alternative or supplementary nav directly into a page's `sections[]`. The site's real navbar (`components/layout/navbar.tsx`) is a separate, always-on component and unaffected by this.
 
-**What it looks like:** A plain white bar: bold logo text on the left, a row of grey nav links in the middle (desktop only), and an optional brand-coloured CTA button on the right.
+**What it looks like:** A card-coloured bar: bold logo text on the left, a row of nav links in the middle (desktop only), and an optional brand-coloured CTA button on the right.
 
-**Theme:** ⚠️ Placeholder — hardcodes `border-slate-200`, otherwise uses tokens for its two real surfaces.
+**Theme:** ✅ Fully tokenised.
 
 **Config usage:**
 ```json
@@ -837,12 +837,12 @@ These render structural chrome (nav, footer, menu). In practice the storefront's
 
 ---
 
-## `footer` ⚠️ Placeholder
-**What it's for:** A basic multi-column footer block — same placeholder status as `navbar`. The site's real footer (`components/layout/footer.tsx`) is what actually ships; this registry entry is for building a standalone footer-shaped block inside a page's `sections[]` if ever needed.
+## `footer`
+**What it's for:** A basic multi-column footer block — same use case as `navbar`. The site's real footer (`components/layout/footer.tsx`) is what actually ships; this registry entry is for a standalone footer-shaped block inside a page's `sections[]` if ever needed.
 
-**What it looks like:** A dark slate footer: logo/tagline on the left, up to several link columns to the right, and a thin copyright line along the bottom.
+**What it looks like:** A dark brand-coloured footer: logo/tagline on the left, up to several link columns to the right, and a thin copyright line along the bottom.
 
-**Theme:** ⚠️ Placeholder — entirely hardcoded slate colours, does not use theme tokens at all.
+**Theme:** ✅ Fully tokenised.
 
 **Config usage:**
 ```json
@@ -853,12 +853,12 @@ These render structural chrome (nav, footer, menu). In practice the storefront's
 
 ---
 
-## `menu` ⚠️ Placeholder
-**What it's for:** A simple labelled link list — a sitemap-style menu block, or a small in-page nav section (e.g. "Jump to: Products / Reviews / FAQ"). Same placeholder status as `navbar`/`footer`.
+## `menu`
+**What it's for:** A simple labelled link list — a sitemap-style menu block, or a small in-page nav section (e.g. "Jump to: Products / Reviews / FAQ").
 
 **What it looks like:** An optional small uppercase label, then a list of links in one of three layouts (`horizontal`, `vertical`, or a `grid`); each item can optionally have nested sub-links shown indented underneath it.
 
-**Theme:** ⚠️ Placeholder — uses hardcoded `text-slate-500/700`, which will be low-contrast on a dark client theme (grey text on a dark page).
+**Theme:** ✅ Fully tokenised.
 
 **Config usage:**
 ```json
