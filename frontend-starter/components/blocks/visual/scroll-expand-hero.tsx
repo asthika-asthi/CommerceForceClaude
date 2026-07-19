@@ -1,7 +1,14 @@
 'use client'
 import type { ReactNode } from 'react'
-import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { useRef, useState } from 'react'
+import { motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
+
+interface Chapter {
+  caption: string
+  detail?: string
+  /** CSS colour for a per-chapter wash over the media while this chapter is active. */
+  tint?: string
+}
 
 interface ScrollExpandHeroProps {
   mediaType?: 'video' | 'image'
@@ -15,6 +22,8 @@ interface ScrollExpandHeroProps {
   date?: string
   scrollToExpand?: string
   textBlend?: boolean
+  /** Omit for today's single-stage behaviour (unchanged). Provide 2+ chapters for the multi-stage pinned-narrative mode. */
+  chapters?: Chapter[]
   children?: ReactNode
 }
 
@@ -30,9 +39,12 @@ export function ScrollExpandHero({
   date,
   scrollToExpand = 'Scroll to explore',
   textBlend = false,
+  chapters,
   children,
 }: ScrollExpandHeroProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const hasChapters = !!chapters && chapters.length > 0
+  const [chapterIndex, setChapterIndex] = useState(0)
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -43,12 +55,23 @@ export function ScrollExpandHero({
   const mediaWidth = useTransform(scrollYProgress, [0, 0.6], ['60%', '100%'])
   const mediaBorderRadius = useTransform(scrollYProgress, [0, 0.5], [16, 0])
 
-  // Title: fades/slides up slightly as scroll progresses
+  // Title: fades/slides up slightly as scroll progresses (single-chapter mode only)
   const titleY = useTransform(scrollYProgress, [0, 0.4], [0, -30])
   const titleOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0])
 
   // Hint text fades out early
   const hintOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0])
+
+  // Chaptered mode: which chapter is active, driven directly by scroll progress —
+  // the single-chapter case is this same logic given a list of length one, not a
+  // separate code path.
+  useMotionValueEvent(scrollYProgress, 'change', (progress) => {
+    if (!hasChapters || !chapters) return
+    const index = Math.min(chapters.length - 1, Math.floor(progress * chapters.length))
+    setChapterIndex((current) => (current === index ? current : index))
+  })
+
+  const activeChapter = hasChapters && chapters ? chapters[chapterIndex] : null
 
   return (
     <div
@@ -66,28 +89,46 @@ export function ScrollExpandHero({
         <div className="absolute inset-0 bg-black/40" />
 
         {/* Title block — above media */}
-        <motion.div
-          className="relative z-20 text-center px-6 mb-8 pointer-events-none max-w-3xl"
-          style={{ y: titleY, opacity: titleOpacity }}
-        >
-          {(eyebrow || date) && (
-            <p className="text-white/70 text-xs font-semibold uppercase tracking-[0.8px] mb-4">
-              {typeof eyebrow === 'object' ? eyebrow?.text : (eyebrow ?? date)}
-            </p>
-          )}
-          <h1
-            className={`text-4xl md:text-6xl font-extrabold leading-tight tracking-tight mb-4 ${
-              textBlend ? 'mix-blend-overlay text-white' : 'text-white'
-            }`}
+        {hasChapters ? (
+          <div
+            className="relative z-20 text-center px-6 mb-8 pointer-events-none max-w-3xl"
+            data-testid="chapter-caption"
+            data-chapter-index={chapterIndex}
           >
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="text-white/70 text-base md:text-lg leading-relaxed max-w-xl mx-auto">
-              {subtitle}
-            </p>
-          )}
-        </motion.div>
+            <p className="text-white/70 text-xs font-semibold uppercase tracking-[0.8px] mb-4">{title}</p>
+            <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight mb-4 text-white">
+              {activeChapter?.caption}
+            </h1>
+            {activeChapter?.detail && (
+              <p className="text-white/70 text-base md:text-lg leading-relaxed max-w-xl mx-auto">
+                {activeChapter.detail}
+              </p>
+            )}
+          </div>
+        ) : (
+          <motion.div
+            className="relative z-20 text-center px-6 mb-8 pointer-events-none max-w-3xl"
+            style={{ y: titleY, opacity: titleOpacity }}
+          >
+            {(eyebrow || date) && (
+              <p className="text-white/70 text-xs font-semibold uppercase tracking-[0.8px] mb-4">
+                {typeof eyebrow === 'object' ? eyebrow?.text : (eyebrow ?? date)}
+              </p>
+            )}
+            <h1
+              className={`text-4xl md:text-6xl font-extrabold leading-tight tracking-tight mb-4 ${
+                textBlend ? 'mix-blend-overlay text-white' : 'text-white'
+              }`}
+            >
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="text-white/70 text-base md:text-lg leading-relaxed max-w-xl mx-auto">
+                {subtitle}
+              </p>
+            )}
+          </motion.div>
+        )}
 
         {/* Expanding media container */}
         <motion.div
@@ -113,6 +154,14 @@ export function ScrollExpandHero({
                 src={mediaSrc}
                 alt={title}
                 className="w-full h-full object-cover"
+              />
+            )}
+
+            {/* Per-chapter colour tint — cross-fades on chapterIndex change via CSS transition */}
+            {hasChapters && activeChapter?.tint && (
+              <div
+                className="absolute inset-0 pointer-events-none opacity-40 transition-colors duration-700 motion-reduce:transition-none"
+                style={{ backgroundColor: activeChapter.tint }}
               />
             )}
 

@@ -52,6 +52,19 @@ export default function BlockPreviewPage() {
         />
       </div>
 
+      <div data-testid="preview-scroll-expand-hero-chapters">
+        <ScrollExpandHero
+          mediaType="image"
+          mediaSrc="/images/hero.jpg"
+          title="Preview Story"
+          chapters={[
+            { caption: 'Chapter One', detail: 'The raw material.', tint: '#C8102E' },
+            { caption: 'Chapter Two', detail: 'Shaped by hand.', tint: '#1B2A4A' },
+            { caption: 'Chapter Three', detail: 'Ready to ship.', tint: '#059669' },
+          ]}
+        />
+      </div>
+
       <div data-testid="preview-bento-grid">
         <BentoGrid
           title="Preview Bento"

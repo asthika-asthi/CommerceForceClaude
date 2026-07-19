@@ -102,6 +102,8 @@ is flagged:
 
 **What it looks like:** A tall (1.5 screens) section. While pinned to the viewport: an eyebrow/date line, then a large bold white title and optional subtitle, sitting above a rounded media panel that starts at 60% width and grows to fill the screen (corners squaring off) as you scroll. A "Scroll to explore" hint with an animated pulsing line sits at the bottom, fading out early. Background is either a solid colour (`background`, hex, defaults navy `#0f172a`) or a full-bleed background image (`bgImageSrc`). Supports either an `<img>` or a looping muted `<video>` as the media.
 
+**Chaptered mode (optional):** pass `chapters` — a list of `{caption, detail?, tint?}` — and the same pinned expand motion becomes a multi-stage narrative: the title/subtitle are replaced by whichever chapter is active as you scroll through the section, each optionally washing the media in its own colour tint. Omit `chapters` entirely and the block behaves exactly as it always has — this is the same single component either way, not a second block.
+
 **Theme:** 🌑 Fixed dark by default (background prop is a raw hex, not a token) — set `background` or `bgImageSrc` explicitly per client.
 
 **Config usage:**
@@ -117,7 +119,22 @@ is flagged:
 }
 ```
 
-**Props:** `mediaType?: 'video'|'image'` (default image), `mediaSrc` (required), `posterSrc?` (video poster), `bgImageSrc?`, `background?` (hex, fallback if no bg image), `title` (required), `eyebrow?` (string, or `{text}` object — both accepted), `subtitle?`, `date?` (shown if no eyebrow), `scrollToExpand?` (hint text), `textBlend?` (mix-blend title over media).
+Chaptered variant:
+```json
+{
+  "__block": "scroll-expand-hero",
+  "mediaType": "image",
+  "mediaSrc": "/images/workshop.jpg",
+  "title": "Handmade, Start to Finish",
+  "chapters": [
+    { "caption": "The raw material", "detail": "Sourced from sustainable forestry.", "tint": "#8B5E3C" },
+    { "caption": "Shaped by hand", "detail": "Every joint cut and fitted individually." },
+    { "caption": "Ready to ship", "tint": "#059669" }
+  ]
+}
+```
+
+**Props:** `mediaType?: 'video'|'image'` (default image), `mediaSrc` (required), `posterSrc?` (video poster), `bgImageSrc?`, `background?` (hex, fallback if no bg image), `title` (required — also shown as the small eyebrow line above the caption in chaptered mode), `eyebrow?` (string, or `{text}` object — both accepted, single-stage mode only), `subtitle?` (single-stage mode only), `date?` (shown if no eyebrow, single-stage mode only), `scrollToExpand?` (hint text), `textBlend?` (mix-blend title over media, single-stage mode only), `chapters?: {caption, detail?, tint?}[]` (omit for single-stage mode).
 
 ---
 
