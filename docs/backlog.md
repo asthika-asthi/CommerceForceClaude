@@ -640,4 +640,4 @@ possible latent UX gap.
 - **CI/CD pipeline** — out of scope until product is ready for market
 - **`ENABLED_PLUGINS` / config divergence** — frontend reads config `"plugins"` list; backend reads `.env`; if they diverge, a block appears but its API returns 404 (handled gracefully)
 - **Visual preview tool** — live preview of `landing-page.config.json` without running full dev stack
-- **Component library builder** — systematic process for sourcing new block components; currently ad-hoc
+- ~~**Component library builder** — systematic process for sourcing new block components; currently ad-hoc~~ — done: see `docs/component-sourcing-process.md` (Phase 3, 2026-07-19)

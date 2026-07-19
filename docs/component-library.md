@@ -941,4 +941,4 @@ A few library blocks cover similar ground to a Tri Star original but are **not i
 | Reviews | `testimonials-carousel` (one-at-a-time, auto-advancing) | `landing-testimonials` (static 3-card grid + Trustpilot bar) |
 | Newsletter | `newsletter-section` (generic, not plugin-gated itself) | `landing-newsletter` (Tri Star copy, plugin-gated) |
 
-Reconciling these twins into one canonical implementation each is tracked for the Phase 3 component-library session (backlog item Q) — not done yet, so both currently coexist deliberately.
+Reconciling these twins into one canonical implementation each was explicitly ruled out of the Phase 3 component-library session (backlog item Q) — see that session's design spec, §4 — and remains unscheduled for any specific future phase; both currently coexist deliberately.
