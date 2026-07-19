@@ -1138,7 +1138,7 @@ with:
 ```markdown
 **Theme:** ✅ Fully tokenised (the caption gradient/white text sits directly on a photo — a documented, intentional exception). Items fade up on scroll (`ScrollReveal`).
 
-**Zoomable (optional):** set `zoomable: true` and any item with a real image becomes tappable/clickable — opens full-screen with real two-finger pinch-to-zoom and drag-to-pan (desktop: scroll-wheel-zoom + drag). Dismiss via the close button, `Escape`, or clicking outside the image. Items with no image or `comingSoon: true` are never zoomable.
+**Zoomable (optional):** set `zoomable: true` and any item with a real image becomes tappable/clickable — opens full-screen at a larger fixed size. Dismiss via the close button, `Escape`, or clicking outside the image. Items with no image or `comingSoon: true` are never zoomable. (Task 7 adds real pinch-to-zoom/pan inside this view — see that task's doc update.)
 
 **Config usage:**
 ```json
@@ -1169,7 +1169,7 @@ with:
 ```html
           <div class="specimen-code-row"><span class="specimen-code">CON·01</span><span class="glyph glyph--full" title="Fully tokenised"></span><span class="plugin-tag">zoomable</span></div>
           <h3>showcase-gallery</h3>
-          <p class="purpose">Portfolio grid with per-item badges, "coming soon" slots, and optional real pinch-to-zoom.</p>
+          <p class="purpose">Portfolio grid with per-item badges, "coming soon" slots, and optional tap-to-zoom.</p>
 ```
 
 - [ ] **Step 8: Commit**
@@ -1188,6 +1188,8 @@ git commit -m "feat(blocks): showcase-gallery — ScrollReveal + zoomable Layer 
 - Create: `frontend-starter/components/ui/pinch-zoom-image.tsx`
 - Modify: `frontend-starter/components/blocks/content/showcase-gallery.tsx`
 - Test: `frontend-starter/e2e/showcase-gallery-zoom.spec.ts` (append)
+- Modify: `docs/component-library.md` (showcase-gallery entry — upgrade the Zoomable line now that Layer 2 exists)
+- Modify: `docs/component-library-gallery.html` (CON·01 specimen purpose text)
 
 - [ ] **Step 1: Create the component**
 
@@ -1409,10 +1411,33 @@ Expected: 4/4 pass.
    - Releasing mid-gesture (lift both fingers abruptly while still zoomed/panned) never leaves the image in a stuck or visually distorted state — a subsequent pinch/drag still works normally.
 5. Record the result in `docs/backlog.md`'s Phase 3 entry (Task 10) as "Built, NOT automatically tested — manual pass done on [date]" or "— manual pass still needed," whichever is true when you do this task.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: Upgrade the doc entry now that Layer 2 exists.** Read `docs/component-library.md` first (showcase-gallery entry, updated by Task 6), then:
+
+Replace:
+```markdown
+**Zoomable (optional):** set `zoomable: true` and any item with a real image becomes tappable/clickable — opens full-screen at a larger fixed size. Dismiss via the close button, `Escape`, or clicking outside the image. Items with no image or `comingSoon: true` are never zoomable. (Task 7 adds real pinch-to-zoom/pan inside this view — see that task's doc update.)
+```
+with:
+```markdown
+**Zoomable (optional):** set `zoomable: true` and any item with a real image becomes tappable/clickable — opens full-screen with real two-finger pinch-to-zoom and drag-to-pan (desktop: scroll-wheel-zoom + drag). Dismiss via the close button, `Escape`, or clicking outside the image. Items with no image or `comingSoon: true` are never zoomable.
+```
+
+- [ ] **Step 8: Upgrade the gallery specimen.** Read `docs/component-library-gallery.html` first (CON·01, updated by Task 6), then:
+
+Replace:
+```html
+          <p class="purpose">Portfolio grid with per-item badges, "coming soon" slots, and optional tap-to-zoom.</p>
+```
+with:
+```html
+          <p class="purpose">Portfolio grid with per-item badges, "coming soon" slots, and optional real pinch-to-zoom.</p>
+```
+
+- [ ] **Step 9: Commit**
 
 ```powershell
 git add components/ui/pinch-zoom-image.tsx components/blocks/content/showcase-gallery.tsx e2e/showcase-gallery-zoom.spec.ts
+git add -f ../docs/component-library.md ../docs/component-library-gallery.html
 git commit -m "feat(ui): PinchZoomImage — real pinch-to-zoom + drag-to-pan, wired into showcase-gallery's lightbox"
 ```
 
