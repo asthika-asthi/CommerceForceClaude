@@ -378,6 +378,55 @@ decision is still deferred.
 
 ---
 
+### Per-client UI pipeline — Phase 2 pilot: Surkut Miniatures (2026-07-18/19)
+
+**Branches:** shared `feat/ui-pipeline-phase2` (off master, mergeable), client
+`client/surkut` (off the shared branch, **NEVER** merged — the client's living
+deployment). Phase 1 was merged to master 2026-07-18 (local, not pushed). Plan:
+`docs/superpowers/plans/2026-07-18-ui-pipeline-phase2-surkut.md`. Design source:
+the client's own repo (github.com/asthika-asthi/Surkut) — a finished single-page
+site, brought in via the page-intake procedure.
+
+**Built + tested (automated):**
+- **7 new library blocks** (all token-styled, registered, reusable by any
+  client): `spotlight-hero`, `pricing-tiers`, `showcase-gallery`,
+  `video-showcase`, `stream-spotlight`, `faq-accordion`, `enquiry-form`.
+  `enquiry-form` posts to the existing `contact` plugin (POST /api/contact,
+  verified 201) and is plugin-gated.
+- **Shared theme plumbing**: optional `--heading-family` (→ `font-heading`) and
+  `--emphasis-surface` tokens (both fall back to Tri Star values → no visual
+  change for Tri Star); `how-to-order` handles 5 steps + token bg.
+- **Dark-theme readiness sweep**: hardcoded `bg-white` → `bg-card-bg` and three
+  selected-state `bg-brand-dark` → `bg-emphasis-surface` across shared
+  shop/account/block surfaces (Tri Star `--card-bg` is #FFFFFF, so
+  pixel-identical). Guarded by the landing + cart + product-listing E2E (13/13).
+- **Surkut homepage**: dark gold theme, Cinzel/Raleway fonts, 9 config sections,
+  zero hand-edited page code, real client assets (portfolio images + stream
+  videos). E2E on `surkut.db`: landing anchors, pipeline proof, commission
+  enquiry submission, cart + product-listing (with product images) — all pass.
+- Plugin gating verified **config-driven**: `getFilteredSections()` gates on the
+  config's `plugins` array (not backend `ENABLED_PLUGINS`) — enquiry-form drops
+  cleanly when `contact` is absent (9→8 sections).
+- `docs/add-a-client-ui.md` — the repeatable procedure (Phase 2 step 5), with
+  the real local-dev gotchas (config-driven gating, export-.env + alembic before
+  seed, `git add -f` for images, dev first-compile flake).
+
+**Built, NOT manually tested — needs the big session:**
+- Literal side-by-side visual pass of BOTH clients: Tri Star (must be unchanged
+  after the token sweep) and Surkut (vs the design-source repo).
+- **Real Stripe payment**: `.env` has no Stripe test keys, so a paid order was
+  not placed — cart→checkout reachability is E2E-covered, full order is not.
+
+**Pending client input (Surkut):** confirm contact email, Instagram/Patreon
+URLs, real logo/favicon if wanted, Display-tier deposit pricing.
+
+**Note (local-dev gap surfaced):** `python-dotenv` isn't installed in the
+backend venv and `seed.py` reads identity vars via `os.getenv`, so `seed.py`
+run bare can't see `.env` (the app itself reads it via pydantic). Worked around
+by exporting `.env`; worth installing python-dotenv or documenting.
+
+---
+
 ## Not built — Priority 4 (medium, plan before building)
 
 | ID | Feature | Notes |

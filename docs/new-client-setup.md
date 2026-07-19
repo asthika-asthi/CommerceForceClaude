@@ -504,6 +504,12 @@ stock, and the flat `stock_quantity` column above has no effect on it.
 
 ## Section 8 — Landing page
 
+> **The homepage is now built with the block pipeline, not the admin panel.**
+> Follow `docs/add-a-client-ui.md` (theme tokens + `landing-page.config.json`
+> `sections[]`, never page edits). The admin-panel "Landing Page Sections"
+> screen described below writes to a table the storefront no longer reads and is
+> retained only for legacy reference — skip it for new clients.
+
 The landing page is the client's homepage at `http://IP:3000`. It is built from sections you add in the admin panel.
 
 1. In the admin panel, click **Landing Page**
