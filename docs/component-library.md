@@ -478,7 +478,9 @@ is flagged:
 
 **What it looks like:** A heading row, then a responsive 2–4 column grid of image cards. Each real item: a photo that zooms slightly on hover, a caption overlay (title + small tag) fading up from a dark gradient at the bottom, and an optional coloured badge pinned to the top-right corner (e.g. "Premium Tier"). Items marked `comingSoon: true` (or with no image) instead show a plain card with just a title and small "coming soon" caption — no photo needed, useful as a permanent "your project here" call-to-action slot.
 
-**Theme:** ✅ Fully tokenised (the caption gradient/white text sits directly on a photo — a documented, intentional exception).
+**Theme:** ✅ Fully tokenised (the caption gradient/white text sits directly on a photo — a documented, intentional exception). Items fade up on scroll (`ScrollReveal`).
+
+**Zoomable (optional):** set `zoomable: true` and any item with a real image becomes tappable/clickable — opens full-screen at a larger fixed size. Dismiss via the close button, `Escape`, or clicking outside the image. Items with no image or `comingSoon: true` are never zoomable. (Task 7 adds real pinch-to-zoom/pan inside this view — see that task's doc update.)
 
 **Config usage:**
 ```json
@@ -486,6 +488,7 @@ is flagged:
   "__block": "showcase-gallery",
   "kicker": "My work",
   "title": "The Portfolio",
+  "zoomable": true,
   "items": [
     { "image": "/images/portfolio-1.jpg", "title": "RPG Drone Corp", "tag": "Sci-Fi Skirmish", "badge": "Premium Tier" },
     { "title": "Your commission here", "comingSoon": true, "comingSoonText": "Slots Available Now" }
@@ -493,7 +496,7 @@ is flagged:
 }
 ```
 
-**Props:** `kicker?`, `title` (required), `subtitle?`, `anchorId?`, `items: {image?, imageAlt?, title, tag?, badge?, comingSoon?, comingSoonText?}[]` (required).
+**Props:** `kicker?`, `title` (required), `subtitle?`, `anchorId?`, `items: {image?, imageAlt?, title, tag?, badge?, comingSoon?, comingSoonText?}[]` (required), `zoomable?: boolean` (default false).
 
 ---
 

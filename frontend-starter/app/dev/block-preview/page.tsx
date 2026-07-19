@@ -75,6 +75,7 @@ export default function BlockPreviewPage() {
       <div data-testid="preview-showcase-gallery">
         <ShowcaseGallery
           title="Preview Gallery"
+          zoomable
           items={[
             { image: '/images/hero.jpg', imageAlt: 'Item one', title: 'Item One', tag: 'Tag One' },
             { image: '/images/hero.jpg', imageAlt: 'Item two', title: 'Item Two', tag: 'Tag Two' },
