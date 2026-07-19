@@ -48,7 +48,7 @@ export function ShowcaseGallery({ kicker, title, subtitle, items, anchorId, zoom
           {items.map((item, i) => {
             const canZoom = zoomable && !item.comingSoon && !!item.image
             return (
-              <ScrollReveal key={item.title} delay={(i % 4) * 0.08} data-testid="showcase-item">
+              <ScrollReveal key={i} delay={(i % 4) * 0.08} data-testid="showcase-item">
                 <figure className="group relative overflow-hidden rounded-2xl border border-border bg-card-bg">
                   {item.comingSoon || !item.image ? (
                     <div className="aspect-[4/5] flex flex-col items-center justify-center gap-2 p-6 text-center">
@@ -99,7 +99,7 @@ export function ShowcaseGallery({ kicker, title, subtitle, items, anchorId, zoom
 
       {openItem?.image && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-6"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-6"
           role="dialog"
           aria-modal="true"
           aria-label={`${openItem.title} — zoomed view`}
@@ -108,7 +108,10 @@ export function ShowcaseGallery({ kicker, title, subtitle, items, anchorId, zoom
         >
           <button
             type="button"
-            onClick={() => setOpenIndex(null)}
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpenIndex(null)
+            }}
             className="absolute top-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-2xl leading-none text-white hover:bg-white/20"
             aria-label="Close zoomed view"
             data-testid="zoom-close"

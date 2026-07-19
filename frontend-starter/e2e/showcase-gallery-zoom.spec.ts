@@ -35,3 +35,15 @@ test('zoomable gallery: close button and outside-click both dismiss it', async (
   await overlay.click({ position: { x: 5, y: 5 } })
   await expect(overlay).not.toBeVisible()
 })
+
+test('zoomable gallery: clicking the enlarged image itself does not close it', async ({ page }) => {
+  await page.goto('/dev/block-preview')
+  const openButton = page.getByRole('button', { name: 'Open Item One full size' })
+  await openButton.scrollIntoViewIfNeeded()
+  await openButton.click()
+
+  const overlay = page.getByTestId('zoom-overlay')
+  await expect(overlay).toBeVisible()
+  await overlay.locator('img').click()
+  await expect(overlay).toBeVisible()
+})
