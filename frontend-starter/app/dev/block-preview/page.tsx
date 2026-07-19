@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { ScrollExpandHero } from '@/components/blocks/visual/scroll-expand-hero'
 import { ShowcaseGallery } from '@/components/blocks/content/showcase-gallery'
 import { BentoGrid } from '@/components/blocks/content/bento-grid'
@@ -16,6 +17,13 @@ export const metadata: Metadata = {
 // wired into any live client config yet, so this is what Playwright exercises.
 // Not linked from any nav; excluded from robots.ts and the sitemap.
 export default function BlockPreviewPage() {
+  // Dev/QA-only content — this route ships in every client's build, so it
+  // must not be reachable in production. robots metadata only discourages
+  // well-behaved crawlers; this is the actual access gate.
+  if (process.env.NODE_ENV === 'production') {
+    notFound()
+  }
+
   return (
     <div>
       <div data-testid="preview-navbar">
