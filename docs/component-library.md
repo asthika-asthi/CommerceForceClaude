@@ -63,7 +63,6 @@ is flagged:
 | 🌓 **Mostly tokenised** | Tokenised, with a minor grey placeholder (loading skeleton / empty image state) that doesn't reskin — cosmetic only |
 | 🌑 **Fixed dark section** | Deliberately renders as a dark panel regardless of the client's theme (mixes `--brand-dark` with hardcoded slate greys) — reads fine on any client, but won't lighten for a pale-branded client |
 | 🖼️ **Hero-over-photo** | Requires a background image; white text over a dark overlay is the whole point, not a theme gap |
-| ⚠️ **Placeholder** | The source file literally says "replace with your final TSX" — usable, but was never finished/styled for production |
 
 ---
 
@@ -840,7 +839,7 @@ These render structural chrome (nav, footer, menu). In practice the storefront's
 ## `footer`
 **What it's for:** A basic multi-column footer block — same use case as `navbar`. The site's real footer (`components/layout/footer.tsx`) is what actually ships; this registry entry is for a standalone footer-shaped block inside a page's `sections[]` if ever needed.
 
-**What it looks like:** A dark brand-coloured footer: logo/tagline on the left, up to several link columns to the right, and a thin copyright line along the bottom.
+**What it looks like:** A dark footer: logo/tagline on the left, up to several link columns to the right, and a thin copyright line along the bottom.
 
 **Theme:** ✅ Fully tokenised.
 

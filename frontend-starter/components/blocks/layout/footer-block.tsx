@@ -23,7 +23,7 @@ export function FooterBlock({
   copyrightText,
 }: FooterBlockProps) {
   return (
-    <footer className="bg-brand-dark text-on-dark px-6 py-12">
+    <footer className="bg-dark-deep text-on-dark px-6 py-12">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div>
