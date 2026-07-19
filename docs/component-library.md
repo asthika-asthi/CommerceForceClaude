@@ -571,7 +571,7 @@ is flagged:
 ## `bento-grid`
 **What it's for:** An asymmetric "bento box" card grid — good for audience/persona segments ("who this is for"), feature highlights, or any set of 3–4 items where one or two deserve visual emphasis over the others.
 
-**What it looks like:** A 2–3 column grid where `size: "large"` cards span two columns and two rows (bigger image, bigger title), and `size: "small"` cards are compact — all in bordered card-coloured tiles with an optional image, a heading, a clamped body paragraph, and an optional "link text →" at the bottom. Maximum 4 cards shown even if more are supplied.
+**What it looks like:** A 2–3 column grid where `size: "large"` cards span two columns and two rows (bigger image, bigger title), and `size: "small"` cards are compact — all in bordered card-coloured tiles with an optional image, a heading, a clamped body paragraph, and an optional "link text →" at the bottom. Maximum 4 cards shown even if more are supplied. Each card fades and slides up the first time it scrolls into view, staggered slightly card-to-card (`ScrollReveal`).
 
 **Theme:** ✅ Fully tokenised.
 

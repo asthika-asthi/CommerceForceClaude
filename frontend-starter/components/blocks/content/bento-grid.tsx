@@ -1,3 +1,6 @@
+'use client'
+import { ScrollReveal } from '@/components/ui/scroll-reveal'
+
 interface BentoCard {
   title: string
   body: string
@@ -21,8 +24,10 @@ export function BentoGrid({ cards, title }: BentoGridProps) {
       )}
       <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[180px]">
         {display.map((card, i) => (
-          <div
+          <ScrollReveal
             key={i}
+            delay={i * 0.08}
+            data-testid="bento-card"
             className={`rounded-2xl overflow-hidden bg-card-bg border border-border p-6 flex flex-col justify-between ${
               card.size === 'large' ? 'col-span-2 row-span-2' : ''
             }`}
@@ -46,7 +51,7 @@ export function BentoGrid({ cards, title }: BentoGridProps) {
                 {card.linkText} →
               </a>
             )}
-          </div>
+          </ScrollReveal>
         ))}
       </div>
     </section>
