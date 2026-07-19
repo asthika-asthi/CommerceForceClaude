@@ -67,7 +67,7 @@ export function ScrollExpandHero({
   // separate code path.
   useMotionValueEvent(scrollYProgress, 'change', (progress) => {
     if (!hasChapters || !chapters) return
-    const index = Math.min(chapters.length - 1, Math.floor(progress * chapters.length))
+    const index = Math.max(0, Math.min(chapters.length - 1, Math.floor(progress * chapters.length)))
     setChapterIndex((current) => (current === index ? current : index))
   })
 
