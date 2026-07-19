@@ -716,7 +716,7 @@ is flagged:
 ## `split-image-text`
 **What it's for:** A classic "photo on one side, story on the other" section — brand story, "meet the maker", a featured product highlight. Image position is switchable per instance.
 
-**What it looks like:** A two-column layout (stacks on mobile): a square rounded photo on one side, and on the other a bold heading, a paragraph of body copy, and an optional button. `imagePosition: "right"` flips which side the photo sits on.
+**What it looks like:** A two-column layout (stacks on mobile): a square rounded photo on one side, and on the other a bold heading, a paragraph of body copy, and an optional button. `imagePosition: "right"` flips which side the photo sits on. The image and text panels fade up independently as each scrolls into view (`ScrollReveal`), text following slightly behind the image.
 
 **Theme:** 🌓 Mostly tokenised (image placeholder background is a neutral grey while the photo loads/if broken).
 
