@@ -1,5 +1,6 @@
 'use client'
 import { useRef, useState, type PointerEvent, type WheelEvent } from 'react'
+import { useReducedMotion } from 'framer-motion'
 
 interface PinchZoomImageProps {
   src: string
@@ -27,20 +28,25 @@ function distance(a: Point, b: Point): number {
  * simplification that keeps the gesture predictable.
  */
 export function PinchZoomImage({ src, alt, maxScale = 4 }: PinchZoomImageProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 })
   const pointers = useRef(new Map<number, Point>())
   const pinchStart = useRef<{ distance: number; scale: number; pan: Point } | null>(null)
   const dragStart = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null)
   const [isGesturing, setIsGesturing] = useState(false)
+  const prefersReducedMotion = useReducedMotion()
 
   function clampPan(nextPan: Point, nextScale: number): Point {
-    const el = containerRef.current
+    const el = imgRef.current
     if (!el) return nextPan
     const rect = el.getBoundingClientRect()
-    const maxX = (rect.width * (nextScale - 1)) / 2
-    const maxY = (rect.height * (nextScale - 1)) / 2
+    // rect is the image's own current (already-scaled) box, so divide out
+    // nextScale to get the unscaled size the clamp math expects.
+    const unscaledWidth = rect.width / scale
+    const unscaledHeight = rect.height / scale
+    const maxX = (unscaledWidth * (nextScale - 1)) / 2
+    const maxY = (unscaledHeight * (nextScale - 1)) / 2
     return {
       x: Math.max(-maxX, Math.min(maxX, nextPan.x)),
       y: Math.max(-maxY, Math.min(maxY, nextPan.y)),
@@ -48,7 +54,8 @@ export function PinchZoomImage({ src, alt, maxScale = 4 }: PinchZoomImageProps) 
   }
 
   function handlePointerDown(e: PointerEvent<HTMLDivElement>) {
-    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
+    if (e.button !== 0 && e.pointerType === 'mouse') return
+    e.currentTarget.setPointerCapture(e.pointerId)
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     setIsGesturing(true)
 
@@ -67,6 +74,7 @@ export function PinchZoomImage({ src, alt, maxScale = 4 }: PinchZoomImageProps) 
 
     if (pointers.current.size === 2 && pinchStart.current) {
       const [a, b] = Array.from(pointers.current.values())
+      if (pinchStart.current.distance === 0) return
       const ratio = distance(a, b) / pinchStart.current.distance
       const nextScale = Math.max(MIN_SCALE, Math.min(maxScale, pinchStart.current.scale * ratio))
       setScale(nextScale)
@@ -81,7 +89,18 @@ export function PinchZoomImage({ src, alt, maxScale = 4 }: PinchZoomImageProps) 
   function handlePointerUp(e: PointerEvent<HTMLDivElement>) {
     pointers.current.delete(e.pointerId)
     pinchStart.current = null
-    dragStart.current = null
+
+    if (pointers.current.size === 1) {
+      // One finger survives a pinch's release — hand off into single-finger
+      // pan using its last known position, instead of dropping movement
+      // until a full release/re-press (fingers rarely lift in a clean pair).
+      const [remaining] = Array.from(pointers.current.values())
+      dragStart.current =
+        scale > MIN_SCALE ? { x: remaining.x, y: remaining.y, panX: pan.x, panY: pan.y } : null
+    } else {
+      dragStart.current = null
+    }
+
     if (pointers.current.size === 0) setIsGesturing(false)
     if (scale <= MIN_SCALE) setPan({ x: 0, y: 0 })
   }
@@ -95,7 +114,6 @@ export function PinchZoomImage({ src, alt, maxScale = 4 }: PinchZoomImageProps) 
 
   return (
     <div
-      ref={containerRef}
       className="relative flex max-h-[85vh] max-w-[90vw] touch-none select-none items-center justify-center overflow-hidden"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -107,13 +125,14 @@ export function PinchZoomImage({ src, alt, maxScale = 4 }: PinchZoomImageProps) 
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={imgRef}
         src={src}
         alt={alt}
         draggable={false}
-        className="max-h-[85vh] max-w-[90vw] object-contain motion-reduce:transition-none"
+        className="max-h-[85vh] max-w-[90vw] object-contain"
         style={{
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-          transition: isGesturing ? 'none' : 'transform 0.2s ease-out',
+          transition: isGesturing || prefersReducedMotion ? 'none' : 'transform 0.2s ease-out',
         }}
       />
     </div>
