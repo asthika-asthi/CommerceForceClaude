@@ -480,7 +480,7 @@ is flagged:
 
 **Theme:** ✅ Fully tokenised (the caption gradient/white text sits directly on a photo — a documented, intentional exception). Items fade up on scroll (`ScrollReveal`).
 
-**Zoomable (optional):** set `zoomable: true` and any item with a real image becomes tappable/clickable — opens full-screen at a larger fixed size. Dismiss via the close button, `Escape`, or clicking outside the image. Items with no image or `comingSoon: true` are never zoomable. (Task 7 adds real pinch-to-zoom/pan inside this view — see that task's doc update.)
+**Zoomable (optional):** set `zoomable: true` and any item with a real image becomes tappable/clickable — opens full-screen with real two-finger pinch-to-zoom and drag-to-pan (desktop: scroll-wheel-zoom + drag). Dismiss via the close button, `Escape`, or clicking outside the image. Items with no image or `comingSoon: true` are never zoomable.
 
 **Config usage:**
 ```json

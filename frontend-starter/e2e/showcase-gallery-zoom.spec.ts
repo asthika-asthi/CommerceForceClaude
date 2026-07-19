@@ -47,3 +47,16 @@ test('zoomable gallery: clicking the enlarged image itself does not close it', a
   await overlay.locator('img').click()
   await expect(overlay).toBeVisible()
 })
+
+test('desktop wheel-zoom scales the zoomed image', async ({ page }) => {
+  await page.goto('/dev/block-preview')
+  const openButton = page.getByRole('button', { name: 'Open Item One full size' })
+  await openButton.scrollIntoViewIfNeeded()
+  await openButton.click()
+
+  const container = page.getByTestId('pinch-zoom-container')
+  await expect(container).toHaveAttribute('data-scale', '1.00')
+  await container.hover()
+  await page.mouse.wheel(0, -300)
+  await expect(container).not.toHaveAttribute('data-scale', '1.00')
+})

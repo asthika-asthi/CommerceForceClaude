@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { ScrollReveal } from '@/components/ui/scroll-reveal'
+import { PinchZoomImage } from '@/components/ui/pinch-zoom-image'
 
 interface ShowcaseItem {
   image?: string
@@ -118,13 +119,9 @@ export function ShowcaseGallery({ kicker, title, subtitle, items, anchorId, zoom
           >
             ×
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={openItem.image}
-            alt={openItem.imageAlt ?? openItem.title}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[85vh] max-w-[90vw] object-contain"
-          />
+          <div onClick={(e) => e.stopPropagation()}>
+            <PinchZoomImage src={openItem.image} alt={openItem.imageAlt ?? openItem.title} />
+          </div>
         </div>
       )}
     </section>
