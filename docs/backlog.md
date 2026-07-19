@@ -428,6 +428,56 @@ it needs `.env` present in the process environment. In Docker that's automatic �
 
 ---
 
+### Component library session — Phase 3 (2026-07-19)
+
+**Branch:** `feat/component-library-phase3` (off `feat/ui-pipeline-phase2`, unmerged). Spec: `docs/superpowers/specs/2026-07-19-phase3-component-library-design.md`.
+
+**Built + tested (automated):**
+- 3 placeholder blocks (`navbar`, `footer`, `menu`) restyled to production
+  theme tokens; `menu`'s dark-theme contrast bug fixed as part of the same pass.
+- `ScrollReveal` — shared fade-up-on-scroll wrapper (respects
+  `prefers-reduced-motion`), applied to `bento-grid`, `split-image-text`, and
+  `showcase-gallery`.
+- `showcase-gallery` — new opt-in `zoomable` prop: Layer 1 (tap/click →
+  full-screen, `Escape`/close-button/outside-click to dismiss, clicking the
+  enlarged image itself does not close it) is fully E2E-covered.
+- `scroll-expand-hero` — new opt-in `chapters` prop for a pinned, multi-stage
+  scroll narrative. Default (no `chapters`) behaviour E2E-verified unchanged,
+  including against the real Tri Star homepage's existing hero usage.
+- `docs/component-library.md` + `docs/component-library-gallery.html` updated
+  in step with every change above. `docs/component-sourcing-process.md`
+  written — growing the library ahead of demand is no longer ad-hoc.
+
+**Built, NOT automatically tested:**
+- `PinchZoomImage` (Layer 2 of the zoomable gallery) — real two-finger
+  pinch-to-zoom + drag-to-pan. Playwright cannot simulate true multi-touch;
+  desktop wheel-zoom *is* covered automatically. Code review caught and fixed
+  a real state-machine bug (asymmetric two-finger release silently killed
+  the surviving finger's pan) via direct code tracing, plus a fragile
+  clamp-measurement basis and an inert `prefers-reduced-motion` handler —
+  all fixed and re-verified. **Manual pass (Chrome DevTools touch emulation,
+  checklist in the Task 7 plan) status: still needed** — no subagent in this
+  session had GUI/touch-emulation tooling to perform it; run it during the
+  big test session before considering Layer 2 fully verified.
+
+**Known follow-up (non-blocking, not part of this session's scope):**
+- `showcase-gallery`'s zoom lightbox (`role="dialog"`/`aria-modal="true"`)
+  has no focus trap or focus restore — keyboard/screen-reader users can Tab
+  into background content while it's open. Flagged by code review as
+  independent of the pinch/pan work and not addressed by any task in this
+  plan; worth picking up before this block is wired into a real client
+  config, potentially alongside any future work that touches this overlay.
+
+**Explicitly not touched this round:** the 7 known overlapping block pairs
+in `docs/component-library.md` ("known overlaps"); Tri Star's live
+`landing-page.config.json`; no new registry blocks were added.
+
+**Next:** merge order is `feat/component-library-phase3` →
+`feat/ui-pipeline-phase2` → `master`, once the big manual test session
+(Phase 1 + Phase 2 + this) is done.
+
+---
+
 ## Not built — Priority 4 (medium, plan before building)
 
 | ID | Feature | Notes |
