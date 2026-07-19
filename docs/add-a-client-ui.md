@@ -39,7 +39,9 @@ blocks in the shared library — every client enriches it.
    token-styled (no raw hex; `font-heading` on headings), data-driven props,
    naturalised (shared spacing/radius/motion), gracefully degrading. Blocks that
    call the backend take `requiredPlugin` in the registry AND the config entry.
-   Then merge the shared branch into the client branch.
+   Then merge the shared branch into the client branch. Growing the library
+   speculatively, ahead of a specific client, follows a different process —
+   see `docs/component-sourcing-process.md`.
 
 6. **Config** (client branch) — author `landing-page.config.json`: `store`,
    `brand`, `plugins`, and the full `sections[]`. **Section gating is
