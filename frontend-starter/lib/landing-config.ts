@@ -15,6 +15,18 @@ export interface BrandConfig {
   font?: string
 }
 
+export interface StoreAddress {
+  line1?: string
+  line2?: string
+  line3?: string
+  city?: string
+  county?: string
+  postcode?: string
+  country?: string
+  display_short?: string
+  display_full?: string
+}
+
 export interface StoreConfig {
   name?: string
   tagline?: string
@@ -22,6 +34,7 @@ export interface StoreConfig {
   favicon_url?: string
   contact_email?: string
   contact_phone?: string
+  address?: StoreAddress
 }
 
 export interface LandingConfigSection {

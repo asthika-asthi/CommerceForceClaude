@@ -426,6 +426,24 @@ it needs `.env` present in the process environment. In Docker that's automatic �
 (no Docker) just needs `.env` exported into the shell first (see
 `docs/add-a-client-ui.md`). No dependency needed.
 
+**Bug found + fixed during Surkut manual testing (2026-07-20):** the topbar's
+physical address ("📍 Redwings Farm, Stevenage...") was hardcoded literal text
+in `components/layout/topbar.tsx`, unlike phone/email on the same line (which
+correctly read from admin Branding). Every client cloned from the template
+showed Tri Star's real address with no field anywhere — admin or config — able
+to change it. `getTopbarSection()` in `lib/landing-config.ts`, which looked
+like it might be the source, is dead code — nothing calls it.
+
+Fixed on this branch: `Topbar` now reads `store.address.display_short` from
+`landing-page.config.json` via a new `getStoreConfig().address` field (typed
+`StoreAddress`), passed down from `app/layout.tsx`. Deliberately **no
+hardcoded fallback** (unlike phone/email) — defaulting an unset client to Tri
+Star's real address would misrepresent their business, not just look
+unstyled; the span simply doesn't render if `address` is absent.
+Client-branch action still needed: `client/surkut`'s
+`landing-page.config.json` needs its own `store.address` object added before
+this actually shows Surkut's address instead of nothing.
+
 ---
 
 ## Not built — Priority 4 (medium, plan before building)
