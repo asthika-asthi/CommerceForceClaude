@@ -327,21 +327,18 @@ export interface Enquiry {
   created_at: string
 }
 
-// ── Landing Page ──────────────────────────────────────────────────────────────
-export type SectionType = "hero" | "features" | "testimonials" | "cta" | "html" | "products" | "block"
+// ── Page Content ──────────────────────────────────────────────────────────────
+export interface EditableField {
+  name: string
+  label: string
+  type: "text" | "image" | "link"
+  value: string
+}
 
-export interface LandingSection {
-  id: string
-  section_type: SectionType
-  title?: string
-  subtitle?: string
-  content?: string
-  image_url?: string
-  cta_text?: string
-  cta_url?: string
-  sort_order: number
-  is_active: boolean
-  background_color?: string
+export interface EditableSection {
+  section_key: string
+  is_hidden: boolean
+  fields: EditableField[]
 }
 
 // ── Bulk Variant CSV Import ────────────────────────────────────────────────────
