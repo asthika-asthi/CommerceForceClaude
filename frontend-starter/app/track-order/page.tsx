@@ -46,7 +46,7 @@ function TrackOrderForm() {
         Enter your order number and the email address you used at checkout.
       </p>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-100 rounded-2xl p-6 space-y-4 mb-8">
+      <form onSubmit={handleSubmit} className="bg-card-bg border border-slate-100 rounded-2xl p-6 space-y-4 mb-8">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Order number</label>
           <input value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} required

@@ -38,7 +38,7 @@ export function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group">
+    <div className="bg-card-bg rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group">
       <div className="relative">
         <Link href={`/products/${product.slug}`}>
           <div className="aspect-square bg-slate-50 overflow-hidden">

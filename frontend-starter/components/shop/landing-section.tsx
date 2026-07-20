@@ -64,7 +64,7 @@ export function LandingSectionRenderer({ section, data }: { section: LandingSect
     let features: { title: string; body: string }[] = []
     try { features = JSON.parse(section.content ?? "[]") } catch { /* raw content */ }
     return (
-      <section style={style} className="py-20 px-4 bg-white">
+      <section style={style} className="py-20 px-4 bg-card-bg">
         <div className="max-w-5xl mx-auto">
           {section.title && <h2 className="text-3xl font-bold text-center mb-2 text-slate-900">{section.title}</h2>}
           {section.subtitle && <p className="text-slate-500 text-center mb-12">{section.subtitle}</p>}
@@ -90,7 +90,7 @@ export function LandingSectionRenderer({ section, data }: { section: LandingSect
           {section.title && <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">{section.title}</h2>}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
-              <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+              <div key={i} className="bg-card-bg p-6 rounded-xl shadow-sm border border-slate-100">
                 <p className="text-slate-600 italic mb-4">&ldquo;{t.quote}&rdquo;</p>
                 <p className="font-semibold text-slate-900 text-sm">{t.name}</p>
                 {t.role && <p className="text-slate-400 text-xs">{t.role}</p>}

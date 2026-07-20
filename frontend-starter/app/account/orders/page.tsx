@@ -48,7 +48,7 @@ export default function OrdersPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden divide-y divide-slate-50">
+        <div className="bg-card-bg border border-slate-100 rounded-2xl overflow-hidden divide-y divide-slate-50">
           {orders.map((order) => (
             <Link key={order.id} href={`/account/orders/${order.id}`}
               className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors">

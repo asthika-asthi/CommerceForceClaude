@@ -1,6 +1,9 @@
 # Runtime
 .server-pids.json
 
+# Claude Code brainstorming-companion sessions (local scratch, not project output)
+.superpowers/
+
 # Python
 __pycache__/
 *.py[cod]

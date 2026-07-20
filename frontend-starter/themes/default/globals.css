@@ -39,4 +39,8 @@
   --border: #E0DED8;
   --border-subtle: #F0EEEA;
   --card-bg: #FFFFFF;
+
+  /* Optional per-client extensions (fall back automatically when unset):
+     --heading-family: font stack for headings (defaults to the body font)
+     --emphasis-surface: selected/emphasis surface (defaults to --brand-dark) */
 }

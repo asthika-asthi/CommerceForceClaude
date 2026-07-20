@@ -111,7 +111,7 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
                       className={[
                         'px-4 py-1.5 rounded-lg border text-sm font-medium transition-colors',
                         isSelected
-                          ? 'bg-brand-dark text-white border-brand-dark'
+                          ? 'bg-emphasis-surface text-white border-brand-dark'
                           : isAvailable
                             ? 'bg-bg text-fg border-border hover:border-brand-dark hover:text-brand-dark'
                             : 'bg-card-bg text-muted border-border line-through opacity-60 cursor-pointer',

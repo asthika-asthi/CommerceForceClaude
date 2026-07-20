@@ -31,7 +31,7 @@ export async function CouponSpotlight(_props: Props) {
     <section className="w-full bg-card-bg border-y border-border py-8 px-4">
       <div className="max-w-md mx-auto text-center">
         <p className="text-muted text-sm uppercase tracking-wide mb-2">Exclusive Offer</p>
-        <div className="bg-white border-2 border-dashed border-brand rounded-xl p-6">
+        <div className="bg-card-bg border-2 border-dashed border-brand rounded-xl p-6">
           <p className="text-3xl font-bold text-brand-dark mb-1">{discountLabel}</p>
           <p className="text-muted text-sm mb-3">Use code at checkout</p>
           <div className="bg-brand/10 rounded-lg px-4 py-2 inline-block">

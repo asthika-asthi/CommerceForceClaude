@@ -253,7 +253,7 @@ export default function BookPage() {
           <h1 className="text-2xl font-bold text-slate-900 mb-2">
             Your {term("appointment_singular", "Appointment").toLowerCase()} is confirmed!
           </h1>
-          <div className="bg-white border border-slate-100 rounded-xl p-5 mt-6 text-left space-y-1.5">
+          <div className="bg-card-bg border border-slate-100 rounded-xl p-5 mt-6 text-left space-y-1.5">
             <p className="text-sm text-slate-600">
               <span className="font-medium text-slate-900">{confirmed.appointment_type_name ?? selectedService?.name}</span>
             </p>
@@ -310,7 +310,7 @@ export default function BookPage() {
                     isDone
                       ? "bg-brand text-on-brand"
                       : isCurrent
-                        ? "bg-brand-dark text-white"
+                        ? "bg-emphasis-surface text-white"
                         : "bg-slate-100 text-slate-400"
                   }`}
                 >
@@ -346,7 +346,7 @@ export default function BookPage() {
                   key={svc.id}
                   type="button"
                   onClick={() => selectService(svc)}
-                  className={`text-left bg-white border rounded-xl p-5 transition-colors hover:border-brand-dark ${
+                  className={`text-left bg-card-bg border rounded-xl p-5 transition-colors hover:border-brand-dark ${
                     selectedService?.id === svc.id ? "border-brand-dark bg-brand/5" : "border-slate-200"
                   }`}
                 >
@@ -389,7 +389,7 @@ export default function BookPage() {
                   key={p.id}
                   type="button"
                   onClick={() => selectProvider(p)}
-                  className={`text-left bg-white border rounded-xl p-5 transition-colors hover:border-brand-dark ${
+                  className={`text-left bg-card-bg border rounded-xl p-5 transition-colors hover:border-brand-dark ${
                     selectedProvider?.id === p.id ? "border-brand-dark bg-brand/5" : "border-slate-200"
                   }`}
                 >
@@ -445,7 +445,7 @@ export default function BookPage() {
                   onClick={() => selectSlot(slot)}
                   className={`text-sm font-medium rounded-lg px-3 py-2.5 border transition-colors ${
                     selectedSlot === slot
-                      ? "border-brand-dark bg-brand-dark text-white"
+                      ? "border-brand-dark bg-emphasis-surface text-white"
                       : "border-slate-200 text-slate-700 hover:border-brand-dark"
                   }`}
                 >
@@ -464,7 +464,7 @@ export default function BookPage() {
             <ChevronLeft size={14} /> Change time
           </button>
 
-          <div className="bg-white border border-slate-100 rounded-xl p-6 mb-6">
+          <div className="bg-card-bg border border-slate-100 rounded-xl p-6 mb-6">
             <h2 className="font-semibold text-slate-900 mb-4">Your details</h2>
             {user ? (
               <p className="text-sm text-slate-600">
@@ -528,7 +528,7 @@ export default function BookPage() {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-100 rounded-xl p-6">
+          <div className="bg-card-bg border border-slate-100 rounded-xl p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Summary</h2>
             <div className="space-y-1.5 text-sm text-slate-600 mb-6">
               <p><span className="text-slate-900 font-medium">{selectedService.name}</span> ({selectedService.duration_minutes} min)</p>

@@ -38,7 +38,7 @@ export function CookieConsent({ analyticsEnabled = false }: Props) {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 pointer-events-none">
-      <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-xl shadow-lg p-4 md:p-5 pointer-events-auto">
+      <div className="max-w-2xl mx-auto bg-card-bg border border-slate-200 rounded-xl shadow-lg p-4 md:p-5 pointer-events-auto">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <p className="text-sm text-slate-700 font-medium mb-1">This site uses cookies</p>

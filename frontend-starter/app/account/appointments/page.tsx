@@ -235,7 +235,7 @@ export default function MyAppointmentsPage() {
     const isRescheduling = rescheduleId === appt.id
 
     return (
-      <div key={appt.id} className="bg-white border border-slate-100 rounded-2xl overflow-hidden">
+      <div key={appt.id} className="bg-card-bg border border-slate-100 rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4">
           <div>
             <p className="text-sm font-medium text-slate-900">{formatDateTime(appt.start_at)}</p>
@@ -286,7 +286,7 @@ export default function MyAppointmentsPage() {
                     value={rescheduleDate}
                     min={todayISODate()}
                     onChange={(e) => changeRescheduleDate(e.target.value)}
-                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark bg-white"
+                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark bg-card-bg"
                   />
                 </div>
                 {rescheduleActionError && (
@@ -317,7 +317,7 @@ export default function MyAppointmentsPage() {
                         type="button"
                         disabled={rescheduleSubmitting}
                         onClick={() => pickRescheduleSlot(slot)}
-                        className="text-sm font-medium rounded-lg px-3 py-2 border border-slate-200 text-slate-700 hover:border-brand-dark bg-white transition-colors disabled:opacity-50"
+                        className="text-sm font-medium rounded-lg px-3 py-2 border border-slate-200 text-slate-700 hover:border-brand-dark bg-card-bg transition-colors disabled:opacity-50"
                       >
                         {formatSlotTime(slot)}
                       </button>
@@ -383,7 +383,7 @@ export default function MyAppointmentsPage() {
 
       {cancelId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+          <div className="bg-card-bg rounded-2xl p-6 max-w-sm w-full">
             <h2 className="font-semibold text-slate-900 mb-2">
               Cancel this {term("appointment_singular", "appointment").toLowerCase()}?
             </h2>

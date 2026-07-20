@@ -1,3 +1,6 @@
+'use client'
+import { ScrollReveal } from '@/components/ui/scroll-reveal'
+
 interface SplitImageTextProps {
   image: string
   imageAlt: string
@@ -20,12 +23,12 @@ export function SplitImageText({
   return (
     <section className="py-16 px-4 bg-bg">
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <div className={imagePosition === 'right' ? 'md:order-last' : ''}>
+        <ScrollReveal data-testid="split-image-panel" className={imagePosition === 'right' ? 'md:order-last' : ''}>
           <div className="rounded-2xl overflow-hidden aspect-square bg-slate-100">
             <img src={image} alt={imageAlt} className="w-full h-full object-cover" />
           </div>
-        </div>
-        <div>
+        </ScrollReveal>
+        <ScrollReveal data-testid="split-text-panel" delay={0.15}>
           <h2 className="text-3xl md:text-4xl font-bold text-fg mb-4 leading-tight">{title}</h2>
           <p className="text-muted text-base leading-relaxed mb-8">{body}</p>
           {ctaText && ctaUrl && (
@@ -36,7 +39,7 @@ export function SplitImageText({
               {ctaText}
             </a>
           )}
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   )

@@ -1,0 +1,1503 @@
+<title>CommerceForce Block Registry — Specimen Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /* ============================================================
+     CHROME TOKENS — the gallery's own design system (not either
+     client's brand). Redefined for dark mode via media query AND
+     the viewer's explicit data-theme toggle (both directions).
+     ============================================================ */
+  :root {
+    --paper: #EDEFEE;
+    --paper-raised: #FFFFFF;
+    --ink: #14181C;
+    --ink-dim: #55606B;
+    --ink-faint: #889197;
+    --line: #D7DCDD;
+    --accent: #1E7F86;
+    --accent-soft: #E4F1F1;
+    --accent-ink: #0B3236;
+    --shadow: 0 1px 2px rgba(20, 24, 28, 0.06), 0 8px 24px rgba(20, 24, 28, 0.05);
+    --radius-ui: 8px;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    --font-display: -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10151A;
+      --paper-raised: #171E24;
+      --ink: #E7EDEE;
+      --ink-dim: #8CA0A6;
+      --ink-faint: #57676D;
+      --line: #26323A;
+      --accent: #4FC4C0;
+      --accent-soft: #16302E;
+      --accent-ink: #C7F3F0;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #10151A; --paper-raised: #171E24; --ink: #E7EDEE; --ink-dim: #8CA0A6;
+    --ink-faint: #57676D; --line: #26323A; --accent: #4FC4C0; --accent-soft: #16302E;
+    --accent-ink: #C7F3F0; --shadow: 0 1px 2px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"] {
+    --paper: #EDEFEE; --paper-raised: #FFFFFF; --ink: #14181C; --ink-dim: #55606B;
+    --ink-faint: #88919B; --line: #D7DCDD; --accent: #1E7F86; --accent-soft: #E4F1F1;
+    --accent-ink: #0B3236; --shadow: 0 1px 2px rgba(20,24,28,.06), 0 8px 24px rgba(20,24,28,.05);
+  }
+
+  /* ============================================================
+     CONTENT TOKENS — the two real client brands being catalogued.
+     Independent of the chrome above; scoped to .stage, switched
+     by data-brand on #gallery. These are the ACTUAL values from
+     themes/default/globals.css (tristar) and the Surkut client
+     branch, not invented colours.
+     ============================================================ */
+  #gallery[data-brand="tristar"] .stage {
+    --p-brand: #C8102E; --p-brand-hover: #A50D24; --p-brand-tint: #FDF0F2;
+    --p-brand-highlight: #ffb3bf; --p-brand-dark: #1B2A4A; --p-dark-deep: #0F1E38;
+    --p-dark-border: #253A58; --p-on-dark-strong: #CBD8EE; --p-on-dark: #A8BDD8;
+    --p-on-dark-muted: #7A92B0; --p-accent: #D4A017; --p-bg: #F5F5F3;
+    --p-surface-alt: #FAFAF8; --p-fg: #1a1a1a; --p-muted: #5C5C5C;
+    --p-border: #E0DED8; --p-border-subtle: #F0EEEA; --p-card: #FFFFFF;
+    --p-on-brand: #FFFFFF; --p-heading-font: inherit; --p-brand-name: "Tri Star";
+  }
+  #gallery[data-brand="surkut"] .stage {
+    --p-brand: #C9A84C; --p-brand-hover: #E8C97A; --p-brand-tint: rgba(201,168,76,.14);
+    --p-brand-highlight: #E8C97A; --p-brand-dark: #E8C97A; --p-dark-deep: #0A0C10;
+    --p-dark-border: rgba(201,168,76,.28); --p-on-dark-strong: #F0EAD6; --p-on-dark: #D6CDB4;
+    --p-on-dark-muted: #B8AE98; --p-accent: #E8C97A; --p-bg: #10131A;
+    --p-surface-alt: #161B26; --p-fg: #F0EAD6; --p-muted: #B8AE98;
+    --p-border: rgba(201,168,76,.24); --p-border-subtle: rgba(201,168,76,.12); --p-card: #161B26;
+    --p-on-brand: #0A0C10; --p-heading-font: Georgia, "Times New Roman", serif; --p-brand-name: "Surkut";
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--font-display); line-height: 1.5;
+  }
+  h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
+  ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+  a { color: inherit; }
+  button { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    border-bottom: 1px solid var(--line);
+    padding: 40px 0 28px;
+  }
+  .masthead .kicker {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  }
+  .masthead h1 {
+    font-size: clamp(28px, 4vw, 40px); font-weight: 800; letter-spacing: -0.01em;
+    max-width: 16ch;
+  }
+  .masthead p.lede {
+    max-width: 62ch; color: var(--ink-dim); font-size: 15px; margin-top: 14px;
+  }
+  .masthead-row {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    gap: 24px; flex-wrap: wrap; margin-top: 26px;
+  }
+  .stat-line {
+    display: flex; gap: 26px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-dim);
+  }
+  .stat-line b { color: var(--ink); font-weight: 700; }
+
+  /* ---------- brand switch ---------- */
+  .switch {
+    display: inline-flex; align-items: center; background: var(--paper-raised);
+    border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 2px;
+    box-shadow: var(--shadow);
+  }
+  .switch button {
+    border: none; background: transparent; cursor: pointer; border-radius: 999px;
+    padding: 8px 16px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.02em;
+    color: var(--ink-dim); display: flex; align-items: center; gap: 8px;
+    transition: color .2s ease;
+  }
+  .switch button .chip {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .switch button[aria-pressed="true"] {
+    background: var(--ink); color: var(--paper);
+  }
+
+  /* ---------- legend ---------- */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 22px; padding: 18px 0 30px;
+    border-bottom: 1px solid var(--line); margin-bottom: 8px;
+    font-size: 12.5px; color: var(--ink-dim);
+  }
+  .legend .item { display: flex; align-items: center; gap: 8px; }
+
+  /* readiness glyphs */
+  .glyph { width: 14px; height: 14px; flex-shrink: 0; display: inline-block; position: relative; }
+  .glyph--full { background: var(--accent); border-radius: 50%; }
+  .glyph--mostly { border-radius: 50%; background:
+      conic-gradient(var(--accent) 0deg 180deg, transparent 180deg 360deg);
+      border: 1.5px solid var(--accent); }
+  .glyph--fixed { background: var(--ink-dim); border-radius: 2px; }
+  .glyph--photo { border: 1.5px solid var(--ink-dim); border-radius: 50%; }
+  .glyph--photo::after {
+    content: ""; position: absolute; inset: 3px; border-radius: 50%; border: 1.5px solid var(--ink-dim);
+  }
+  .glyph--placeholder {
+    background-image: repeating-linear-gradient(45deg, var(--ink-dim) 0 2px, transparent 2px 5px);
+    border-radius: 2px; opacity: .8;
+  }
+
+  /* ---------- plate header ---------- */
+  .plate-header {
+    display: flex; align-items: baseline; gap: 16px; margin: 56px 0 22px;
+  }
+  .plate-header .numeral {
+    font-family: var(--font-mono); font-size: 13px; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 4px; padding: 2px 7px; letter-spacing: 0.06em;
+  }
+  .plate-header h2 {
+    font-size: 20px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
+  }
+  .plate-header .rule { flex: 1; height: 1px; background: var(--line); }
+  .plate-header .count { font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); white-space: nowrap; }
+  .plate-note { color: var(--ink-dim); font-size: 13.5px; margin: -10px 0 22px; max-width: 68ch; }
+
+  /* ---------- specimen grid/card ---------- */
+  .specimens { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+  .specimen {
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius-ui);
+    box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden;
+  }
+  .specimen-head { padding: 14px 16px 0; }
+  .specimen-code-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .specimen-code {
+    font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.05em;
+  }
+  .specimen h3 { font-size: 16px; font-weight: 800; margin-top: 8px; }
+  .specimen .purpose { font-size: 12.5px; color: var(--ink-dim); margin-top: 5px; line-height: 1.5; min-height: 32px; }
+
+  /* preview stage with print-style register marks */
+  .stage-frame { position: relative; margin: 14px 16px 0; }
+  .stage-frame .mark { position: absolute; width: 9px; height: 9px; border: var(--ink-faint) solid; opacity: .5; }
+  .stage-frame .mark.tl { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+  .stage-frame .mark.tr { top: -1px; right: -1px; border-width: 1px 1px 0 0; }
+  .stage-frame .mark.bl { bottom: -1px; left: -1px; border-width: 0 0 1px 1px; }
+  .stage-frame .mark.br { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+  .stage {
+    overflow: hidden; border-radius: 3px; position: relative;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+  }
+
+  .specimen-foot {
+    margin-top: auto; padding: 10px 16px 14px; display: flex; align-items: center;
+    justify-content: space-between; gap: 8px; border-top: 1px solid var(--line);
+  }
+  .config-stub {
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 5px;
+    padding: 5px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+  }
+  .copy-btn {
+    border: 1px solid var(--line); background: var(--paper-raised); color: var(--ink-dim);
+    border-radius: 5px; padding: 5px 9px; font-size: 11px; cursor: pointer; flex-shrink: 0;
+    font-family: var(--font-mono); transition: all .15s ease;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); }
+
+  .plugin-tag {
+    font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); background: var(--accent-soft);
+    padding: 2px 6px; border-radius: 4px; margin-left: 6px; white-space: nowrap;
+  }
+
+  footer.credits { padding: 50px 0 70px; color: var(--ink-faint); font-size: 12px; border-top: 1px solid var(--line); margin-top: 40px; }
+  footer.credits a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 640px) {
+    .masthead-row { flex-direction: column; align-items: flex-start; }
+    .plate-header h2 { white-space: normal; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  /* ============================================================
+     SHARED PREVIEW UTILITIES (".pv-*") used inside every .stage
+     ============================================================ */
+  .pv-p { padding: 20px; }
+  .pv-center { text-align: center; }
+  .pv-row { display: flex; }
+  .pv-col { display: flex; flex-direction: column; }
+  .pv-gap8 { gap: 8px; } .pv-gap10 { gap: 10px; } .pv-gap14 { gap: 14px; } .pv-gap20 { gap: 20px; }
+  .pv-wrap { flex-wrap: wrap; }
+  .pv-center-items { align-items: center; justify-content: center; }
+  .pv-between { justify-content: space-between; align-items: center; }
+  .pv-bg-brand { background: var(--p-brand); }
+  .pv-bg-brand-dark { background: var(--p-brand-dark); }
+  .pv-bg-dark-deep { background: var(--p-dark-deep); }
+  .pv-bg-page { background: var(--p-bg); }
+  .pv-bg-card { background: var(--p-card); }
+  .pv-bg-alt { background: var(--p-surface-alt); }
+  .pv-bg-tint { background: var(--p-brand-tint); }
+  .pv-fg { color: var(--p-fg); }
+  .pv-muted { color: var(--p-muted); }
+  .pv-onbrand { color: var(--p-on-brand); }
+  .pv-brand { color: var(--p-brand); }
+  .pv-brand-dark { color: var(--p-brand-dark); }
+  .pv-accent { color: var(--p-accent); }
+  .pv-on-dark-strong { color: var(--p-on-dark-strong); }
+  .pv-on-dark { color: var(--p-on-dark); }
+  .pv-on-dark-muted { color: var(--p-on-dark-muted); }
+  .pv-border { border: 1px solid var(--p-border); }
+  .pv-border-t { border-top: 1px solid var(--p-border); }
+  .pv-border-b { border-bottom: 1px solid var(--p-border); }
+  .pv-r6 { border-radius: 6px; } .pv-r10 { border-radius: 10px; } .pv-r14 { border-radius: 14px; } .pv-rpill { border-radius: 999px; }
+  .pv-heading { font-family: var(--p-heading-font); font-weight: 800; }
+  .pv-btn {
+    display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px;
+    padding: 9px 16px; border-radius: 8px; border: none; cursor: default; white-space: nowrap;
+  }
+  .pv-btn-primary { background: var(--p-brand); color: var(--p-on-brand); }
+  .pv-btn-outline { background: transparent; border: 1.5px solid var(--p-border); color: var(--p-fg); }
+  .pv-btn-outline-dark { background: transparent; border: 1.5px solid var(--p-dark-border); color: var(--p-on-dark-strong); }
+  .pv-card { background: var(--p-card); border: 1px solid var(--p-border); border-radius: 10px; }
+  .pv-badge {
+    font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: var(--p-brand); color: var(--p-on-brand); display: inline-block;
+  }
+  .pv-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .pv-swatch-note {
+    position: absolute; top: 8px; right: 10px; font-family: var(--font-mono); font-size: 9.5px;
+    color: var(--p-on-dark-muted, var(--p-muted)); opacity: .55; letter-spacing: .04em;
+  }
+
+  /* marquee scroll */
+  @keyframes pv-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* shiny-button demo: rotating rainbow glow behind a dark pill */
+  .glow-btn-demo {
+    position: relative; z-index: 1; padding: 14px 30px; border-radius: 17px;
+    background: #111215; color: #fff; font-size: 12px; font-weight: 700; overflow: hidden;
+  }
+  .glow-btn-demo::before {
+    content: ""; position: absolute; inset: -60%; z-index: -1;
+    background: conic-gradient(from 0deg, #f50, transparent 35%, #05f, transparent 70%, #f50);
+    filter: blur(14px); animation: pv-spin 4s linear infinite; opacity: .85;
+  }
+  @keyframes pv-spin { to { transform: rotate(360deg); } }
+
+  /* glowing-shadow demo: dark card, colour-cycling halo */
+  .glow-card-demo {
+    position: relative; z-index: 1; padding: 22px 30px; border-radius: 16px;
+    background: hsl(260 40% 8%); color: #d8d8e6; font-size: 12px; font-weight: 600; text-align: center;
+    max-width: 220px;
+  }
+  .glow-card-demo::after {
+    content: ""; position: absolute; inset: -30%; z-index: -1; border-radius: 50%;
+    background: conic-gradient(from 0deg, #f0a, #05f, #0fa, #f0a);
+    filter: blur(22px); opacity: .55; animation: pv-spin 6s linear infinite;
+  }
+
+  /* tubelight nav demo */
+  .tube-nav { display: inline-flex; gap: 3px; padding: 5px; border-radius: 999px; }
+  .tube-nav button {
+    border: none; background: transparent; cursor: pointer; border-radius: 999px;
+    padding: 8px 16px; font-size: 11.5px; font-weight: 700; position: relative;
+  }
+  .tube-nav button.active .lamp {
+    position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+    width: 22px; height: 3px; border-radius: 3px;
+  }
+
+  /* accordion caret rotate */
+  details.pv-faq[open] summary .caret { transform: rotate(45deg); }
+  details.pv-faq summary { list-style: none; cursor: pointer; }
+  details.pv-faq summary::-webkit-details-marker { display: none; }
+  .caret { display: inline-block; transition: transform .2s ease; font-weight: 700; }
+</style>
+
+<div id="gallery" data-brand="tristar">
+
+  <div class="wrap">
+    <header class="masthead">
+      <div class="kicker">CommerceForce · Block Registry</div>
+      <h1>Specimen Book</h1>
+      <p class="lede">
+        Every section a client homepage can be built from — 48 entries in
+        <code style="font-family:var(--font-mono)">lib/block-registry.ts</code>,
+        one swatch each. Flip the switch below to re-dye every specimen between
+        the two live client brands; the ones that don't move are flagged
+        <span class="glyph glyph--fixed" style="vertical-align:-2px"></span> on purpose.
+      </p>
+      <div class="masthead-row">
+        <div class="stat-line">
+          <span><b>48</b> blocks</span>
+          <span><b>4</b> categories</span>
+          <span><b>7</b> plugin-gated</span>
+          <span><b>11</b> Tri Star originals</span>
+        </div>
+        <div class="switch" role="group" aria-label="Preview brand">
+          <button type="button" data-brand-btn="tristar" aria-pressed="true">
+            <span class="chip" style="background:#C8102E"></span> Tri Star
+          </button>
+          <button type="button" data-brand-btn="surkut" aria-pressed="false">
+            <span class="chip" style="background:#C9A84C"></span> Surkut
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="legend">
+      <div class="item"><span class="glyph glyph--full"></span> Fully tokenised — re-dyes with the switch above</div>
+      <div class="item"><span class="glyph glyph--mostly"></span> Mostly tokenised — one grey placeholder stays put</div>
+      <div class="item"><span class="glyph glyph--fixed"></span> Fixed dark — always dark, by design, any client</div>
+      <div class="item"><span class="glyph glyph--photo"></span> Hero-over-photo — needs a background image</div>
+    </div>
+
+    <!-- ============================================================
+         PLATE I — VISUAL
+         ============================================================ -->
+    <div class="plate-header">
+      <span class="numeral">PLATE I</span><h2>Visual</h2><span class="rule"></span>
+      <span class="count">10 specimens</span>
+    </div>
+    <p class="plate-note">Heroes, banners and ambient decoration — the sections that set a page's first impression or punctuate a scroll.</p>
+
+    <div class="specimens">
+
+      <!-- spotlight-hero -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·01</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+          </div>
+          <h3>spotlight-hero</h3>
+          <p class="purpose">Dark, high-drama homepage hero — badge, two-part headline, dual CTA, stat chips.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-dark-deep pv-p pv-center" style="background-image:radial-gradient(ellipse at top, var(--p-brand-tint), transparent 65%)">
+            <span class="pv-swatch-note">radial glow</span>
+            <span class="pv-badge pv-rpill" style="background:transparent;border:1px solid var(--p-dark-border);color:var(--p-brand-highlight,var(--p-accent))">
+              <span class="pv-dot" style="background:#22c55e"></span> Commissions Open
+            </span>
+            <h2 class="pv-heading pv-on-dark-strong" style="font-size:24px;margin-top:14px;line-height:1.15">
+              Your Army, Painted Live.<br><span class="pv-brand-dark" style="color:var(--p-brand-highlight,var(--p-accent))">With Your Input.</span>
+            </h2>
+            <p class="pv-on-dark" style="font-size:12px;max-width:34ch;margin:10px auto 0">Watch your miniatures come to life on stream — collaboratively.</p>
+            <div class="pv-row pv-gap8 pv-center-items" style="margin-top:16px">
+              <span class="pv-btn pv-btn-primary">Request a Commission</span>
+              <span class="pv-btn pv-btn-outline-dark">View Portfolio</span>
+            </div>
+            <div class="pv-row pv-gap20 pv-center-items" style="margin-top:18px">
+              <div><div class="pv-heading pv-brand-dark" style="font-size:15px;color:var(--p-brand-highlight,var(--p-accent))">3</div><div class="pv-on-dark-muted" style="font-size:9.5px">Service Tiers</div></div>
+              <div><div class="pv-heading" style="font-size:15px;color:var(--p-brand-highlight,var(--p-accent))">Live</div><div class="pv-on-dark-muted" style="font-size:9.5px">On Twitch</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "spotlight-hero", "title": "..." }</span>
+          <button class="copy-btn" data-copy='{"__block":"spotlight-hero","badge":"Commissions Open","title":"Your Headline"}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- scroll-expand-hero -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·02</span>
+            <span class="glyph glyph--fixed" title="Fixed dark by default"></span>
+          </div>
+          <h3>scroll-expand-hero</h3>
+          <p class="purpose">Media starts small, expands full-width as you scroll. Optional "chapters" turn it into a multi-stage narrative.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-p pv-center" style="background:#0f172a;min-height:170px">
+            <p style="color:rgba(255,255,255,.55);font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Est. 1995</p>
+            <h2 class="pv-heading" style="color:#fff;font-size:19px">Premium Tarpaulins &amp; Covers</h2>
+            <div class="pv-row pv-gap8" style="margin-top:14px;justify-content:center">
+              <div style="width:38%;aspect-ratio:16/9;background:linear-gradient(135deg,#334155,#1e293b);border-radius:10px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:9px">collapsed →</div>
+              <div style="width:52%;aspect-ratio:16/9;background:linear-gradient(135deg,#475569,#1e293b);border-radius:2px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:9px">→ expanded (scrolled)</div>
+            </div>
+            <p style="color:rgba(255,255,255,.4);font-size:9px;margin-top:12px;letter-spacing:.08em;text-transform:uppercase">Scroll to explore</p>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "scroll-expand-hero", "mediaSrc": "..." }</span>
+          <button class="copy-btn" data-copy='{"__block":"scroll-expand-hero","mediaType":"image","mediaSrc":"/images/hero.jpg","title":"Your Title"}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- glassmorphism-hero -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·03</span>
+            <span class="glyph glyph--photo" title="Hero-over-photo"></span>
+          </div>
+          <h3>glassmorphism-hero</h3>
+          <p class="purpose">Frosted-glass content card floating over a full-bleed background photo.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-p pv-center" style="background:linear-gradient(135deg,#a78bfa,#60a5fa);min-height:170px;display:flex;align-items:center;justify-content:center">
+            <div style="background:rgba(255,255,255,.16);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.3);border-radius:16px;padding:20px 26px;max-width:280px">
+              <h2 class="pv-heading" style="color:#fff;font-size:19px">Elevate Your Space</h2>
+              <p style="color:rgba(255,255,255,.8);font-size:11px;margin-top:6px">Curated furniture for modern living</p>
+              <span class="pv-btn pv-rpill" style="background:#fff;color:#1a1a1a;margin-top:12px;font-size:11px">Shop the Collection</span>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "glassmorphism-hero", "backgroundImage": "..." }</span>
+          <button class="copy-btn" data-copy='{"__block":"glassmorphism-hero","backgroundImage":"/images/hero-bg.jpg","title":"Your Title","ctaText":"Shop Now","ctaUrl":"/products"}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- parallax-banner -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·04</span>
+            <span class="glyph glyph--photo" title="Hero-over-photo"></span>
+          </div>
+          <h3>parallax-banner</h3>
+          <p class="purpose">Fixed-background photo CTA break — background stays still while content scrolls.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-p pv-center" style="background:linear-gradient(135deg,#334155,#0f172a);min-height:150px;display:flex;align-items:center;justify-content:center;position:relative">
+            <div style="position:absolute;inset:0;background:rgba(0,0,0,.35)"></div>
+            <div style="position:relative">
+              <h2 class="pv-heading" style="color:#fff;font-size:19px">Need a Custom Size?</h2>
+              <p style="color:rgba(255,255,255,.8);font-size:11px;margin-top:6px">We cut to measure — any shape, any size.</p>
+              <span class="pv-btn pv-btn-primary" style="margin-top:12px">Get a Quote</span>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "parallax-banner", "backgroundImage": "..." }</span>
+          <button class="copy-btn" data-copy='{"__block":"parallax-banner","backgroundImage":"/images/cta-bg.jpg","title":"Need a Custom Size?","ctaText":"Get a Quote","ctaUrl":"/contact"}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- marquee-ticker -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·05</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+          </div>
+          <h3>marquee-ticker</h3>
+          <p class="purpose">Thin, endlessly scrolling strip of short call-outs — delivery promise, press mentions.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-brand-dark" style="padding:12px 0;overflow:hidden;white-space:nowrap">
+            <div class="pv-on-dark-strong" style="display:inline-flex;animation:pv-marquee 9s linear infinite;font-size:11px;font-weight:600;letter-spacing:.02em">
+              <span style="padding:0 16px">Free UK delivery over £75</span><span style="opacity:.4">·</span>
+              <span style="padding:0 16px">Same-day despatch before 2pm</span><span style="opacity:.4">·</span>
+              <span style="padding:0 16px">30 years trading</span><span style="opacity:.4">·</span>
+              <span style="padding:0 16px">Free UK delivery over £75</span><span style="opacity:.4">·</span>
+              <span style="padding:0 16px">Same-day despatch before 2pm</span><span style="opacity:.4">·</span>
+              <span style="padding:0 16px">30 years trading</span><span style="opacity:.4">·</span>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "marquee-ticker", "items": [...] }</span>
+          <button class="copy-btn" data-copy='{"__block":"marquee-ticker","items":["Free UK delivery over £75","Same-day despatch before 2pm"],"speed":40}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- gradient-text-section -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·06</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+          </div>
+          <h3>gradient-text-section</h3>
+          <p class="purpose">Huge brand-gradient headline as its own visual full-stop between sections.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p pv-center" style="min-height:150px;display:flex;flex-direction:column;justify-content:center">
+            <h2 class="pv-heading" style="font-size:34px;background:linear-gradient(to right, var(--p-brand), var(--p-brand-dark));-webkit-background-clip:text;background-clip:text;color:transparent">Built to last.</h2>
+            <p class="pv-muted" style="font-size:11px;margin-top:8px">Every piece hand-finished in our workshop.</p>
+            <span class="pv-btn pv-btn-primary" style="margin:12px auto 0">See the range</span>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "gradient-text-section", "title": "..." }</span>
+          <button class="copy-btn" data-copy='{"__block":"gradient-text-section","title":"Built to last.","subtitle":"Every piece hand-finished."}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- image-mosaic -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·07</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+          </div>
+          <h3>image-mosaic</h3>
+          <p class="purpose">Pinterest-style photo grid, up to six images, one tall tile per row of three.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p" style="min-height:150px">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:34px;gap:6px">
+              <div style="grid-row:span 2;border-radius:8px;background:linear-gradient(135deg,var(--p-brand-tint),var(--p-border))"></div>
+              <div style="border-radius:8px;background:var(--p-surface-alt)"></div>
+              <div style="border-radius:8px;background:var(--p-surface-alt)"></div>
+              <div style="border-radius:8px;background:var(--p-surface-alt)"></div>
+              <div style="grid-row:span 2;border-radius:8px;background:linear-gradient(135deg,var(--p-border),var(--p-brand-tint))"></div>
+              <div style="border-radius:8px;background:var(--p-surface-alt)"></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "image-mosaic", "images": [...] }</span>
+          <button class="copy-btn" data-copy='{"__block":"image-mosaic","title":"In the Workshop","images":[{"src":"/images/workshop-1.jpg","alt":"Hand-finishing"}]}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- promotions-banner -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·08</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+            <span class="plugin-tag">promotions</span>
+          </div>
+          <h3>promotions-banner</h3>
+          <p class="purpose">Whatever promotion is live in admin, pulled from the backend — no config copy.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-brand-dark pv-p pv-center">
+            <h2 class="pv-heading pv-on-dark-strong" style="font-size:17px">Summer Clearance — 20% Off</h2>
+            <p class="pv-on-dark" style="font-size:11px;margin-top:4px">Offer ends 31 August</p>
+            <span class="pv-btn pv-btn-primary" style="margin-top:10px">Shop the sale</span>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "promotions-banner", "requiredPlugin": "promotions" }</span>
+          <button class="copy-btn" data-copy='{"__block":"promotions-banner","requiredPlugin":"promotions"}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- shiny-button -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·09</span>
+            <span class="glyph glyph--fixed" title="Theme-agnostic decorative effect"></span>
+          </div>
+          <h3>shiny-button</h3>
+          <p class="purpose">One big animated CTA moment — rotating rainbow glow border, its own full-width section.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p pv-center-items pv-row" style="min-height:150px">
+            <div class="glow-btn-demo">Register</div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "shiny-button", "children": "..." }</span>
+          <button class="copy-btn" data-copy='{"__block":"shiny-button","children":"Register for Trade","href":"/register"}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- glowing-shadow -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">VIS·10</span>
+            <span class="glyph glyph--fixed" title="Theme-agnostic decorative effect"></span>
+          </div>
+          <h3>glowing-shadow</h3>
+          <p class="purpose">Generic "glow card" wrapper — animated colour-cycling halo behind any short content.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-p pv-center-items pv-row" style="min-height:150px;background:#0a0a0f">
+            <div class="glow-card-demo">New season, new colours</div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "glowing-shadow", "children": "..." }</span>
+          <button class="copy-btn" data-copy='{"__block":"glowing-shadow","children":"New season, new colours"}'>Copy</button>
+        </div>
+      </article>
+
+    </div>
+    <!-- ============================================================
+         PLATE II — COMMERCE
+         ============================================================ -->
+    <div class="plate-header">
+      <span class="numeral">PLATE II</span><h2>Commerce</h2><span class="rule"></span>
+      <span class="count">8 specimens</span>
+    </div>
+    <p class="plate-note">Products, pricing, and the moments that turn a visitor into a lead or a sale.</p>
+
+    <div class="specimens">
+
+      <!-- pricing-tiers -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">COM·01</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+          </div>
+          <h3>pricing-tiers</h3>
+          <p class="purpose">Side-by-side service/product tier cards, one flagged as the recommended pick.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <div class="pv-card" style="padding:12px 9px">
+                <div class="pv-heading pv-fg" style="font-size:12px">Tabletop</div>
+                <div class="pv-brand" style="font-size:9.5px;margin-top:3px">Fast &amp; clean</div>
+                <div class="pv-muted" style="font-size:9px;margin-top:8px;line-height:1.5">✦ Solid base colours<br>✦ Basic shading</div>
+                <div class="pv-heading pv-fg" style="font-size:11px;margin-top:8px">From £10</div>
+              </div>
+              <div class="pv-card" style="padding:12px 9px;border-color:var(--p-brand);position:relative;box-shadow:0 4px 14px rgba(0,0,0,.08)">
+                <span class="pv-badge" style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:8.5px">Most Popular</span>
+                <div class="pv-heading pv-fg" style="font-size:12px;margin-top:4px">Premium</div>
+                <div class="pv-brand" style="font-size:9.5px;margin-top:3px">Highlights &amp; effects</div>
+                <div class="pv-muted" style="font-size:9px;margin-top:8px;line-height:1.5">✦ Complex shading<br>✦ Battle damage</div>
+                <div class="pv-heading pv-fg" style="font-size:11px;margin-top:8px">From £20</div>
+              </div>
+              <div class="pv-card" style="padding:12px 9px">
+                <div class="pv-heading pv-fg" style="font-size:12px">Display</div>
+                <div class="pv-brand" style="font-size:9.5px;margin-top:3px">Collector quality</div>
+                <div class="pv-muted" style="font-size:9px;margin-top:8px;line-height:1.5">✦ Competition-level<br>✦ Painted live</div>
+                <div class="pv-heading pv-fg" style="font-size:11px;margin-top:8px">Ask for a quote</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "pricing-tiers", "tiers": [...] }</span>
+          <button class="copy-btn" data-copy='{"__block":"pricing-tiers","title":"Choose Your Plan","tiers":[{"name":"Starter","priceNote":"£10/mo"},{"name":"Pro","highlight":true,"priceNote":"£20/mo"}]}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- enquiry-form -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">COM·02</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+            <span class="plugin-tag">contact</span>
+          </div>
+          <h3>enquiry-form</h3>
+          <p class="purpose">Lead-capture form posting to the contact plugin — for bespoke/quoted work.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:12px">
+              <div>
+                <div class="pv-heading pv-fg" style="font-size:12px">Let's Talk</div>
+                <p class="pv-muted" style="font-size:9.5px;margin-top:6px;line-height:1.5">Every project starts with a conversation.</p>
+              </div>
+              <div class="pv-col pv-gap8">
+                <div class="pv-border pv-r6" style="height:20px;background:var(--p-card)"></div>
+                <div class="pv-border pv-r6" style="height:20px;background:var(--p-card)"></div>
+                <div class="pv-border pv-r6" style="height:34px;background:var(--p-card)"></div>
+                <span class="pv-btn pv-btn-primary" style="font-size:10px;align-self:flex-start">Send enquiry</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "enquiry-form", "requiredPlugin": "contact" }</span>
+          <button class="copy-btn" data-copy='{"__block":"enquiry-form","requiredPlugin":"contact","title":"Get in Touch","messageLabel":"Tell us about your project"}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- featured-products-grid -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">COM·03</span>
+            <span class="glyph glyph--mostly" title="Mostly tokenised"></span>
+          </div>
+          <h3>featured-products-grid</h3>
+          <p class="purpose">Self-fetching featured-products grid — live client-side, not fed by the page's data prop.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div class="pv-heading pv-brand-dark pv-center" style="font-size:13px;margin-bottom:10px">Featured Products</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
+              <div class="pv-card" style="overflow:hidden"><div style="aspect-ratio:1;background:var(--p-surface-alt)"></div><div style="padding:6px"><div class="pv-fg" style="font-size:8px;height:8px;background:var(--p-border);border-radius:2px;margin-bottom:4px"></div><div class="pv-brand-dark" style="font-size:9px;font-weight:700">£24.99</div></div></div>
+              <div class="pv-card" style="overflow:hidden"><div style="aspect-ratio:1;background:var(--p-surface-alt)"></div><div style="padding:6px"><div style="height:8px;background:var(--p-border);border-radius:2px;margin-bottom:4px"></div><div class="pv-brand-dark" style="font-size:9px;font-weight:700">£19.99</div></div></div>
+              <div class="pv-card" style="overflow:hidden"><div style="aspect-ratio:1;background:var(--p-surface-alt)"></div><div style="padding:6px"><div style="height:8px;background:var(--p-border);border-radius:2px;margin-bottom:4px"></div><div class="pv-brand-dark" style="font-size:9px;font-weight:700">£34.99</div></div></div>
+              <div class="pv-card" style="overflow:hidden"><div style="aspect-ratio:1;background:var(--p-surface-alt)"></div><div style="padding:6px"><div style="height:8px;background:var(--p-border);border-radius:2px;margin-bottom:4px"></div><div class="pv-brand-dark" style="font-size:9px;font-weight:700">£12.99</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "featured-products-grid", "maxProducts": 8 }</span>
+          <button class="copy-btn" data-copy='{"__block":"featured-products-grid","title":"Featured Products","maxProducts":8}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- category-grid -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">COM·04</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+          </div>
+          <h3>category-grid</h3>
+          <p class="purpose">Config-authored category showcase — you supply the list and per-card art, no live fetch.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div class="pv-row pv-between" style="margin-bottom:10px">
+              <span class="pv-heading pv-brand-dark" style="font-size:12px">Shop by category</span>
+              <span class="pv-brand" style="font-size:9px;font-weight:700">All categories →</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
+              <div class="pv-card" style="overflow:hidden"><div style="height:28px;background:linear-gradient(135deg,var(--p-brand-tint),var(--p-border));display:flex;align-items:center;justify-content:center;font-size:16px">🛡️</div><div style="padding:6px"><div class="pv-brand-dark" style="font-size:9px;font-weight:700">Tarpaulins</div></div></div>
+              <div class="pv-card" style="overflow:hidden"><div style="height:28px;background:var(--p-surface-alt);display:flex;align-items:center;justify-content:center;font-size:16px">🧹</div><div style="padding:6px"><div class="pv-brand-dark" style="font-size:9px;font-weight:700">Dust Sheets</div></div></div>
+              <div class="pv-card" style="overflow:hidden"><div style="height:28px;background:var(--p-surface-alt);display:flex;align-items:center;justify-content:center;font-size:16px">🪣</div><div style="padding:6px"><div class="pv-brand-dark" style="font-size:9px;font-weight:700">Sacks</div></div></div>
+              <div class="pv-card" style="overflow:hidden"><div style="height:28px;background:var(--p-surface-alt);display:flex;align-items:center;justify-content:center;font-size:16px">🖌️</div><div style="padding:6px"><div class="pv-brand-dark" style="font-size:9px;font-weight:700">Brushes</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "category-grid", "categories": [...] }</span>
+          <button class="copy-btn" data-copy='{"__block":"category-grid","title":"Shop by category","categories":[{"name":"Tarpaulins","icon":"🛡️","href":"/products?category=tarps"}]}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- trust-strip -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">COM·05</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+          </div>
+          <h3>trust-strip</h3>
+          <p class="purpose">Thin row of trust badges — delivery promise, guarantee, certifications. Config-authored.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-card pv-border-b pv-p" style="padding-top:14px;padding-bottom:14px">
+            <div class="pv-row pv-between pv-wrap pv-gap14">
+              <div class="pv-row pv-gap8 pv-center-items"><span class="pv-rpill" style="width:22px;height:22px;background:var(--p-brand-tint);display:flex;align-items:center;justify-content:center;font-size:11px">🚚</span><div><div class="pv-brand-dark" style="font-size:9.5px;font-weight:700">Free UK Delivery</div><div class="pv-muted" style="font-size:8px">On orders over £75</div></div></div>
+              <div class="pv-row pv-gap8 pv-center-items"><span class="pv-rpill" style="width:22px;height:22px;background:var(--p-brand-tint);display:flex;align-items:center;justify-content:center;font-size:11px">📦</span><div><div class="pv-brand-dark" style="font-size:9.5px;font-weight:700">Same Day Despatch</div><div class="pv-muted" style="font-size:8px">Before 2pm</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "trust-strip", "items": [...] }</span>
+          <button class="copy-btn" data-copy='{"__block":"trust-strip","items":[{"icon":"🚚","heading":"Free UK Delivery","subtext":"On orders over £75"}]}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- product-range-table -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">COM·06</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+          </div>
+          <h3>product-range-table</h3>
+          <p class="purpose">Scannable spec-sheet table — product, category, sizes, availability. Config-authored rows.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div class="pv-card" style="overflow:hidden">
+              <div class="pv-bg-brand-dark pv-row" style="padding:6px 10px"><span class="pv-on-dark-strong" style="font-size:8.5px;font-weight:700;flex:2">PRODUCT</span><span class="pv-on-dark-strong" style="font-size:8.5px;font-weight:700;flex:1">SIZES</span><span class="pv-on-dark-strong" style="font-size:8.5px;font-weight:700;flex:1">STATUS</span></div>
+              <div class="pv-row pv-border-t" style="padding:7px 10px"><span class="pv-brand-dark" style="font-size:9px;font-weight:700;flex:2">Cotton Dust Sheet</span><span class="pv-muted" style="font-size:9px;flex:1">3×4m</span><span style="flex:1"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:99px;background:#D1FAE5;color:#059669">In stock</span></span></div>
+              <div class="pv-row pv-border-t" style="padding:7px 10px;background:var(--p-surface-alt)"><span class="pv-brand-dark" style="font-size:9px;font-weight:700;flex:2">Heavy Tarpaulin</span><span class="pv-muted" style="font-size:9px;flex:1">4×5m</span><span style="flex:1"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:99px;background:#FEF3C7;color:#D97706">Limited</span></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "product-range-table", "rows": [...] }</span>
+          <button class="copy-btn" data-copy='{"__block":"product-range-table","title":"Product range","rows":[{"product":"Cotton Dust Sheet","sizes":"3x4m","availability":"in-stock"}]}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- coupon-spotlight -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">COM·07</span>
+            <span class="glyph glyph--full" title="Fully tokenised"></span>
+            <span class="plugin-tag">coupons</span>
+          </div>
+          <h3>coupon-spotlight</h3>
+          <p class="purpose">The featured coupon code, live from admin — same live-data pattern as promotions-banner.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-card pv-p pv-center">
+            <p class="pv-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:.06em">Exclusive Offer</p>
+            <div class="pv-r14" style="border:2px dashed var(--p-brand);padding:14px;margin-top:8px">
+              <div class="pv-heading pv-brand-dark" style="font-size:20px">20% OFF</div>
+              <div class="pv-muted" style="font-size:9px;margin:4px 0 8px">Use code at checkout</div>
+              <span class="pv-badge pv-rpill" style="background:var(--p-brand-tint);color:var(--p-brand-dark);font-family:var(--font-mono);letter-spacing:.1em">WELCOME20</span>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "coupon-spotlight", "requiredPlugin": "coupons" }</span>
+          <button class="copy-btn" data-copy='{"__block":"coupon-spotlight","requiredPlugin":"coupons"}'>Copy</button>
+        </div>
+      </article>
+
+      <!-- loyalty-widget -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row">
+            <span class="specimen-code">COM·08</span>
+            <span class="glyph glyph--fixed" title="Fixed dark section"></span>
+            <span class="plugin-tag">loyalty</span>
+          </div>
+          <h3>loyalty-widget</h3>
+          <p class="purpose">Changes for the viewer: guests see a join pitch, members see their real points balance.</p>
+        </div>
+        <div class="stage-frame">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-p pv-center" style="background:linear-gradient(135deg,var(--p-brand-dark),#0f172a,#020617)">
+            <div class="pv-heading" style="color:#fff;font-size:15px">Your Loyalty Points</div>
+            <div class="pv-row pv-gap8 pv-center-items" style="margin-top:10px">
+              <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:8px 12px"><div class="pv-heading" style="color:#fff;font-size:13px">1,240</div><div style="color:#cbd5e1;font-size:7.5px">Balance</div></div>
+              <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:8px 12px"><div class="pv-heading" style="color:#fff;font-size:13px">3,900</div><div style="color:#cbd5e1;font-size:7.5px">Earned</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot">
+          <span class="config-stub">{ "__block": "loyalty-widget", "requiredPlugin": "loyalty" }</span>
+          <button class="copy-btn" data-copy='{"__block":"loyalty-widget","requiredPlugin":"loyalty","joinCtaText":"Start earning points today"}'>Copy</button>
+        </div>
+      </article>
+
+    </div>
+    <!-- ============================================================
+         PLATE III — CONTENT
+         ============================================================ -->
+    <div class="plate-header">
+      <span class="numeral">PLATE III</span><h2>Content</h2><span class="rule"></span>
+      <span class="count">14 specimens</span>
+    </div>
+    <p class="plate-note">Story, proof, and process — the sections that build the case for buying, not the shelf itself.</p>
+
+    <div class="specimens">
+
+      <!-- showcase-gallery -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·01</span><span class="glyph glyph--full" title="Fully tokenised"></span><span class="plugin-tag">zoomable</span></div>
+          <h3>showcase-gallery</h3>
+          <p class="purpose">Portfolio grid with per-item badges, "coming soon" slots, and optional real pinch-to-zoom.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-alt pv-p">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+              <div style="position:relative;aspect-ratio:4/5;border-radius:8px;background:linear-gradient(135deg,#78716c,#44403c)"><span style="position:absolute;top:4px;right:4px;background:var(--p-brand);color:var(--p-on-brand);font-size:7px;font-weight:700;padding:2px 5px;border-radius:99px">Premium</span><div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));padding:14px 6px 5px;color:#fff;font-size:7.5px;font-weight:700">Drone Corp</div></div>
+              <div style="position:relative;aspect-ratio:4/5;border-radius:8px;background:linear-gradient(135deg,#57534e,#292524)"><div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));padding:14px 6px 5px;color:#fff;font-size:7.5px;font-weight:700">Sawtooth</div></div>
+              <div style="aspect-ratio:4/5;border-radius:8px;background:var(--p-card);border:1px solid var(--p-border)"></div>
+              <div style="aspect-ratio:4/5;border-radius:8px;border:1.5px dashed var(--p-border);display:flex;align-items:center;justify-content:center;padding:6px;text-align:center"><span class="pv-brand" style="font-size:8px;font-weight:700">Your commission here</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "showcase-gallery", "items": [...] }</span><button class="copy-btn" data-copy='{"__block":"showcase-gallery","title":"The Portfolio","items":[{"image":"/images/work-1.jpg","title":"Project One","badge":"Featured"}]}'>Copy</button></div>
+      </article>
+
+      <!-- video-showcase -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·02</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>video-showcase</h3>
+          <p class="purpose">Grid of short clips with captions — native &lt;video&gt;, no external embed needed.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="pv-card" style="overflow:hidden"><div style="aspect-ratio:16/9;background:#111;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">▶</div><div style="padding:6px"><div class="pv-fg" style="font-size:8.5px;font-weight:700">Commission in Progress</div></div></div>
+              <div class="pv-card" style="overflow:hidden"><div style="aspect-ratio:16/9;background:#111;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">▶</div><div style="padding:6px"><div class="pv-fg" style="font-size:8.5px;font-weight:700">Painting Session</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "video-showcase", "videos": [...] }</span><button class="copy-btn" data-copy='{"__block":"video-showcase","title":"Watch the Process","videos":[{"src":"/videos/clip-1.mp4","caption":"Behind the scenes"}]}'>Copy</button></div>
+      </article>
+
+      <!-- stream-spotlight -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·03</span><span class="glyph glyph--fixed" title="Fixed dark section"></span></div>
+          <h3>stream-spotlight</h3>
+          <p class="purpose">"We stream this live" call-out panel — links out, doesn't embed the channel.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-dark-deep pv-p">
+            <div style="display:grid;grid-template-columns:1fr 1.1fr;gap:10px;align-items:center">
+              <div style="aspect-ratio:16/9;border-radius:10px;border:1px solid var(--p-dark-border);background:radial-gradient(ellipse at center, var(--p-brand-tint), transparent 70%);position:relative;display:flex;align-items:center;justify-content:center">
+                <span style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,.6);color:#fff;font-size:7px;font-weight:700;padding:2px 6px;border-radius:5px;display:flex;align-items:center;gap:3px"><span style="width:5px;height:5px;border-radius:50%;background:#ef4444"></span>LIVE</span>
+                <span class="pv-btn pv-btn-primary" style="font-size:9px;padding:6px 12px">Tune in</span>
+              </div>
+              <div>
+                <div class="pv-heading pv-on-dark-strong" style="font-size:13px;line-height:1.25">Your Model, Painted Live.</div>
+                <div class="pv-on-dark" style="font-size:8.5px;margin-top:6px">✦ Vote on colour choices<br>✦ Chat with the artist</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "stream-spotlight", "channelUrl": "..." }</span><button class="copy-btn" data-copy='{"__block":"stream-spotlight","title":"Watch Us Live","channelUrl":"https://twitch.tv/yourchannel"}'>Copy</button></div>
+      </article>
+
+      <!-- faq-accordion -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·04</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>faq-accordion</h3>
+          <p class="purpose">Native details/summary FAQ — zero JS, keyboard-accessible by default.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-alt pv-p pv-col pv-gap8">
+            <details class="pv-faq pv-card" open style="padding:9px 12px">
+              <summary class="pv-row pv-between"><span class="pv-fg" style="font-size:10px;font-weight:700">How do I request a commission?</span><span class="caret pv-brand">+</span></summary>
+              <p class="pv-muted" style="font-size:9px;margin-top:8px;line-height:1.5">Fill out the form below with your project details.</p>
+            </details>
+            <details class="pv-faq pv-card" style="padding:9px 12px">
+              <summary class="pv-row pv-between"><span class="pv-fg" style="font-size:10px;font-weight:700">How much does it cost?</span><span class="caret pv-brand">+</span></summary>
+            </details>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "faq-accordion", "items": [...] }</span><button class="copy-btn" data-copy='{"__block":"faq-accordion","title":"FAQ","items":[{"question":"How long does shipping take?","answer":"3-5 business days."}]}'>Copy</button></div>
+      </article>
+
+      <!-- bento-grid -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·05</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>bento-grid</h3>
+          <p class="purpose">Asymmetric card grid — audience segments, feature highlights, one item emphasised.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:26px;gap:6px">
+              <div class="pv-card" style="grid-column:span 2;grid-row:span 2;padding:9px"><div class="pv-heading pv-fg" style="font-size:11px">Wargamers</div><div class="pv-muted" style="font-size:8px;margin-top:4px;line-height:1.4">Armies worth £300+, tired of grey plastic.</div></div>
+              <div class="pv-card" style="padding:7px"><div class="pv-heading pv-fg" style="font-size:9px">Dungeon Masters</div></div>
+              <div class="pv-card" style="padding:7px"><div class="pv-heading pv-fg" style="font-size:9px">Collectors</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "bento-grid", "cards": [...] }</span><button class="copy-btn" data-copy='{"__block":"bento-grid","title":"Your People.","cards":[{"title":"Segment One","body":"Description","size":"large"}]}'>Copy</button></div>
+      </article>
+
+      <!-- how-to-order -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·06</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>how-to-order</h3>
+          <p class="purpose">Numbered step sequence — order process, onboarding, commission workflow.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-card pv-p pv-center">
+            <div class="pv-heading pv-brand-dark" style="font-size:12px;margin-bottom:12px">How to order from us</div>
+            <div class="pv-row pv-between" style="position:relative">
+              <div style="position:absolute;top:14px;left:14%;right:14%;height:2px;background:linear-gradient(to right,var(--p-brand),var(--p-brand-dark))"></div>
+              <div style="flex:1;position:relative;z-index:1"><div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--p-brand);background:var(--p-card);margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--p-brand);font-size:11px">1</div><div class="pv-muted" style="font-size:7.5px">Browse</div></div>
+              <div style="flex:1;position:relative;z-index:1"><div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--p-brand);background:var(--p-card);margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--p-brand);font-size:11px">2</div><div class="pv-muted" style="font-size:7.5px">Checkout</div></div>
+              <div style="flex:1;position:relative;z-index:1"><div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--p-brand);background:var(--p-card);margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--p-brand);font-size:11px">3</div><div class="pv-muted" style="font-size:7.5px">Delivery</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "how-to-order", "steps": [...] }</span><button class="copy-btn" data-copy='{"__block":"how-to-order","title":"How it works","steps":[{"number":1,"title":"Browse","description":"Find your product"}]}'>Copy</button></div>
+      </article>
+
+      <!-- stats-band -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·07</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>stats-band</h3>
+          <p class="purpose">Dark strip of big static statistics — years trading, orders shipped, a quick trust moment.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-brand-dark pv-p">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);text-align:center">
+              <div><div class="pv-heading pv-on-dark-strong" style="font-size:19px">30<span class="pv-brand" style="color:var(--p-brand)">+</span></div><div class="pv-on-dark" style="font-size:7px;margin-top:2px">Years trading</div></div>
+              <div><div class="pv-heading pv-on-dark-strong" style="font-size:19px">79<span style="color:var(--p-brand)">+</span></div><div class="pv-on-dark" style="font-size:7px;margin-top:2px">Products</div></div>
+              <div><div class="pv-heading pv-on-dark-strong" style="font-size:19px">3</div><div class="pv-on-dark" style="font-size:7px;margin-top:2px">Continents</div></div>
+              <div><div class="pv-heading pv-on-dark-strong" style="font-size:19px">£75</div><div class="pv-on-dark" style="font-size:7px;margin-top:2px">Free delivery</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "stats-band", "stats": [...] }</span><button class="copy-btn" data-copy='{"__block":"stats-band","stats":[{"number":"30","suffix":"+","label":"Years trading"}]}'>Copy</button></div>
+      </article>
+
+      <!-- testimonials-carousel -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·08</span><span class="glyph glyph--fixed" title="Fixed dark section"></span></div>
+          <h3>testimonials-carousel</h3>
+          <p class="purpose">One review on stage at a time, auto-advancing, with prev/next arrows and dots.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-p pv-center" style="background:#0f172a">
+            <div class="pv-row pv-center-items pv-gap8">
+              <span style="width:16px;height:16px;border-radius:50%;border:1px solid #475569;color:#94a3b8;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">‹</span>
+              <div style="background:rgba(30,41,59,.6);border:1px solid #334155;border-radius:14px;padding:14px 18px;max-width:260px">
+                <p style="color:#e2e8f0;font-style:italic;font-size:9.5px;line-height:1.5">"We've ordered for 12 years. Quality never drops."</p>
+                <div class="pv-row pv-gap8 pv-center-items" style="margin-top:8px"><span style="width:20px;height:20px;border-radius:50%;background:var(--p-brand);color:var(--p-on-brand);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center">DW</span><span style="color:#fff;font-size:9px;font-weight:700">David W.</span></div>
+              </div>
+              <span style="width:16px;height:16px;border-radius:50%;border:1px solid #475569;color:#94a3b8;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">›</span>
+            </div>
+            <div class="pv-row pv-gap8 pv-center-items" style="justify-content:center;margin-top:10px"><span style="width:14px;height:5px;border-radius:99px;background:var(--p-brand)"></span><span style="width:5px;height:5px;border-radius:50%;background:#475569"></span><span style="width:5px;height:5px;border-radius:50%;background:#475569"></span></div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "testimonials-carousel", "testimonials": [...] }</span><button class="copy-btn" data-copy='{"__block":"testimonials-carousel","testimonials":[{"name":"Jane D.","quote":"Excellent service.","role":"Customer"}]}'>Copy</button></div>
+      </article>
+
+      <!-- newsletter-section -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·09</span><span class="glyph glyph--fixed" title="Fixed dark by default"></span></div>
+          <h3>newsletter-section</h3>
+          <p class="purpose">Email sign-up with its own validation/success/error states. Generic, config-authored.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-p pv-center" style="background:linear-gradient(135deg,var(--p-brand-dark),#1e293b,#0f172a)">
+            <div class="pv-heading" style="color:#fff;font-size:14px">Stay in the loop</div>
+            <p style="color:#cbd5e1;font-size:9px;margin-top:4px">Offers and new arrivals, straight to your inbox.</p>
+            <div class="pv-row pv-gap8 pv-center-items" style="margin-top:10px;justify-content:center">
+              <div style="width:110px;height:22px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:8px"></div>
+              <span class="pv-btn pv-btn-primary" style="font-size:9px;padding:6px 12px">Subscribe</span>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "newsletter-section", "title": "..." }</span><button class="copy-btn" data-copy='{"__block":"newsletter-section","title":"Stay in the loop","buttonText":"Subscribe"}'>Copy</button></div>
+      </article>
+
+      <!-- cta-banner -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·10</span><span class="glyph glyph--fixed" title="Fixed dark fallback"></span></div>
+          <h3>cta-banner</h3>
+          <p class="purpose">General-purpose CTA break, parallax background, fades in/out as you scroll past.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-p pv-center" style="background:linear-gradient(135deg,var(--p-brand-dark),#1e293b,#020617)">
+            <div class="pv-row pv-center-items pv-gap8" style="justify-content:center;margin-bottom:8px"><span style="width:26px;height:1px;background:rgba(255,255,255,.3)"></span><span style="width:5px;height:5px;border-radius:50%;background:var(--p-brand)"></span><span style="width:26px;height:1px;background:rgba(255,255,255,.3)"></span></div>
+            <div class="pv-heading" style="color:#fff;font-size:16px">Need a Custom Size?</div>
+            <span class="glow-btn-demo" style="margin-top:10px;font-size:9px;padding:8px 18px;display:inline-block">Get a Quote</span>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "cta-banner", "title": "..." }</span><button class="copy-btn" data-copy='{"__block":"cta-banner","title":"Need a Custom Size?","ctaText":"Get a Quote","ctaUrl":"/contact"}'>Copy</button></div>
+      </article>
+
+      <!-- dual-cta-banner -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·11</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>dual-cta-banner</h3>
+          <p class="purpose">Two equal-weight promo cards side by side — "become trade" + "need bespoke".</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="pv-bg-brand-dark pv-r14" style="padding:12px;position:relative;overflow:hidden"><div style="position:absolute;bottom:-16px;right:-16px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.06)"></div><div class="pv-on-dark-strong" style="font-size:10px;font-weight:800;position:relative">Open a trade account</div><span class="pv-btn" style="background:#fff;color:var(--p-brand-dark);font-size:8px;margin-top:8px;position:relative">Register →</span></div>
+              <div class="pv-bg-brand pv-r14" style="padding:12px;position:relative;overflow:hidden"><div style="position:absolute;bottom:-16px;right:-16px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.06)"></div><div class="pv-onbrand" style="font-size:10px;font-weight:800;position:relative">Bespoke &amp; bulk orders</div><span class="pv-btn" style="background:#fff;color:var(--p-brand);font-size:8px;margin-top:8px;position:relative">Enquire →</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "dual-cta-banner", "cards": [...] }</span><button class="copy-btn" data-copy='{"__block":"dual-cta-banner","cards":[{"title":"Open a trade account","ctaLabel":"Register →","ctaHref":"/register"}]}'>Copy</button></div>
+      </article>
+
+      <!-- split-image-text -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·12</span><span class="glyph glyph--mostly" title="Mostly tokenised"></span></div>
+          <h3>split-image-text</h3>
+          <p class="purpose">Classic photo-one-side, story-other-side section. Image position switchable.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:12px;align-items:center">
+              <div style="aspect-ratio:1;border-radius:10px;background:linear-gradient(135deg,var(--p-brand-tint),var(--p-border))"></div>
+              <div><div class="pv-heading pv-fg" style="font-size:13px;line-height:1.2">Handmade, Start to Finish</div><p class="pv-muted" style="font-size:8.5px;margin-top:5px;line-height:1.5">Every piece begins as raw timber.</p><span class="pv-btn pv-btn-primary" style="font-size:8.5px;margin-top:8px">Meet the maker</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "split-image-text", "image": "..." }</span><button class="copy-btn" data-copy='{"__block":"split-image-text","image":"/images/workshop.jpg","imageAlt":"Our workshop","title":"Handmade, Start to Finish","body":"Every piece begins as raw timber."}'>Copy</button></div>
+      </article>
+
+      <!-- animated-counter -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·13</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>animated-counter</h3>
+          <p class="purpose">Numbers count up from zero the moment they scroll into view — try it below.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p pv-center">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr)">
+              <div><div class="pv-heading pv-brand-dark pv-counter" data-target="30" style="font-size:20px">0</div><div class="pv-muted" style="font-size:7.5px">Years trading</div></div>
+              <div><div class="pv-heading pv-brand-dark pv-counter" data-target="1800" style="font-size:20px">0</div><div class="pv-muted" style="font-size:7.5px">Customers</div></div>
+              <div><div class="pv-heading pv-brand-dark pv-counter" data-target="79" style="font-size:20px">0</div><div class="pv-muted" style="font-size:7.5px">Products</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "animated-counter", "stats": [...] }</span><button class="copy-btn" data-copy='{"__block":"animated-counter","stats":[{"value":30,"suffix":"+","label":"Years trading"}]}'>Copy</button></div>
+      </article>
+
+      <!-- button-group -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">CON·14</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>button-group</h3>
+          <p class="purpose">A standalone row of buttons, no other content — "pick a path" with no imagery.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p pv-row pv-gap8 pv-center-items" style="justify-content:center;min-height:90px">
+            <span class="pv-btn pv-btn-primary" style="font-size:10px">Shop Men's</span>
+            <span class="pv-btn pv-btn-outline" style="font-size:10px">Shop Women's</span>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "button-group", "buttons": [...] }</span><button class="copy-btn" data-copy='{"__block":"button-group","alignment":"center","buttons":[{"label":"Shop Now","url":"/products","variant":"primary"}]}'>Copy</button></div>
+      </article>
+
+    </div>
+    <!-- ============================================================
+         PLATE IV — LAYOUT
+         ============================================================ -->
+    <div class="plate-header">
+      <span class="numeral">PLATE IV</span><h2>Layout</h2><span class="rule"></span>
+      <span class="count">5 specimens</span>
+    </div>
+    <p class="plate-note">Structural chrome — for a page built entirely from blocks. The site's real navbar/footer live outside this pipeline; these are for building alternative or supplementary chrome directly into a page.</p>
+
+    <div class="specimens">
+
+      <!-- tubelight-navbar -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">LAY·01</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>tubelight-navbar</h3>
+          <p class="purpose">Floating pill bottom nav with an animated glow "lamp" under the active item — click one.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p pv-center-items pv-row" style="min-height:90px">
+            <div class="tube-nav" style="background:rgba(0,0,0,.04);border:1px solid var(--p-border);backdrop-filter:blur(6px)" data-tube>
+              <button class="active pv-fg" type="button">Home<span class="lamp" style="background:var(--p-brand)"></span></button>
+              <button class="pv-muted" type="button">Shop</button>
+              <button class="pv-muted" type="button">Contact</button>
+            </div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "tubelight-navbar", "items": [...] }</span><button class="copy-btn" data-copy='{"__block":"tubelight-navbar","items":[{"name":"Home","url":"/","icon":"Home"},{"name":"Shop","url":"/products","icon":"ShoppingCart"}]}'>Copy</button></div>
+      </article>
+
+      <!-- announcement-bar -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">LAY·02</span><span class="glyph glyph--full" title="Fully tokenised"></span><span class="plugin-tag">announcements</span></div>
+          <h3>announcement-bar</h3>
+          <p class="purpose">Site-wide message pulled live from admin — for time-sensitive notices, no redeploy needed.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-brand pv-center" style="padding:9px">
+            <span class="pv-onbrand" style="font-size:10px;font-weight:600">Bank holiday: orders placed after 12pm Fri ship Tuesday. <span style="text-decoration:underline">Learn more</span></span>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "announcement-bar", "requiredPlugin": "announcements" }</span><button class="copy-btn" data-copy='{"__block":"announcement-bar","requiredPlugin":"announcements"}'>Copy</button></div>
+      </article>
+
+      <!-- navbar -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">LAY·03</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>navbar</h3>
+          <p class="purpose">Basic in-page navbar block — logo, links, one CTA. For an alternative/supplementary in-page nav.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-card pv-border-b" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+            <span class="pv-brand-dark" style="font-weight:800;font-size:11px">My Store</span>
+            <div style="display:flex;gap:10px"><span class="pv-muted" style="font-size:9px">Shop</span><span class="pv-muted" style="font-size:9px">About</span></div>
+            <span class="pv-btn pv-btn-primary" style="font-size:9px;padding:5px 10px">Register</span>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "navbar", "logoText": "..." }</span><button class="copy-btn" data-copy='{"__block":"navbar","logoText":"My Store","links":[{"label":"Shop","url":"/products"}]}'>Copy</button></div>
+      </article>
+
+      <!-- footer -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">LAY·04</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>footer</h3>
+          <p class="purpose">Basic multi-column footer block. The site's real footer ships separately, always-on.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-dark-deep" style="padding:14px;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px">
+            <div><div class="pv-on-dark-strong" style="font-weight:800;font-size:10px">Store</div><div class="pv-on-dark-muted" style="font-size:7.5px;margin-top:3px">Quality goods since 1995</div></div>
+            <div><div class="pv-on-dark-strong" style="font-weight:700;font-size:8px">Shop</div><div class="pv-on-dark-muted" style="font-size:7.5px;margin-top:4px">All Products</div></div>
+            <div><div class="pv-on-dark-strong" style="font-weight:700;font-size:8px">Company</div><div class="pv-on-dark-muted" style="font-size:7.5px;margin-top:4px">About</div></div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "footer", "columns": [...] }</span><button class="copy-btn" data-copy='{"__block":"footer","logoText":"My Store","columns":[{"heading":"Shop","links":[{"label":"All Products","url":"/products"}]}]}'>Copy</button></div>
+      </article>
+
+      <!-- menu -->
+      <article class="specimen">
+        <div class="specimen-head">
+          <div class="specimen-code-row"><span class="specimen-code">LAY·05</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <h3>menu</h3>
+          <p class="purpose">Simple labelled link list, three layouts.</p>
+        </div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage pv-bg-page pv-p">
+            <div class="pv-muted" style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Quick Links</div>
+            <div class="pv-row pv-gap14"><span class="pv-fg" style="font-size:9.5px;font-weight:600">Products</span><span class="pv-fg" style="font-size:9.5px;font-weight:600">Reviews</span><span class="pv-fg" style="font-size:9.5px;font-weight:600">FAQ</span></div>
+          </div>
+        </div>
+        <div class="specimen-foot"><span class="config-stub">{ "__block": "menu", "items": [...] }</span><button class="copy-btn" data-copy='{"__block":"menu","title":"Quick Links","layout":"horizontal","items":[{"label":"Products","url":"/products"}]}'>Copy</button></div>
+      </article>
+
+    </div>
+    <!-- ============================================================
+         PLATE V — TRI STAR ORIGINALS
+         ============================================================ -->
+    <div class="plate-header">
+      <span class="numeral">PLATE V</span><h2>Tri Star Originals</h2><span class="rule"></span>
+      <span class="count">11 specimens</span>
+    </div>
+    <p class="plate-note">
+      The coarse-wrapped pieces of the live Tri Star homepage — copy and layout
+      are fixed, not props-driven. Text/accent colours use real theme tokens,
+      but several backgrounds are <em>intentionally</em> hardcoded white,
+      frozen for pixel-identity and untouched by the dark-theme sweep — not a
+      template to hand a dark-branded client. The brand switch above still
+      moves their accent colours; it won't move those fixed white panels.
+      Four (marked <span class="glyph glyph--full" style="vertical-align:-2px"></span>) receive the homepage's real product/category data automatically.
+    </p>
+
+    <div class="specimens" style="grid-template-columns:repeat(auto-fill, minmax(230px, 1fr))">
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·01</span></div><h3 style="font-size:13px">landing-promo-banner</h3><p class="purpose" style="min-height:auto;font-size:11px">Top gradient bar: despatch + trade-account promo.</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:linear-gradient(90deg,#C8102E,#8B0019);padding:8px 10px"><span style="color:#fff;font-size:8px;font-weight:600">Same-day despatch before 2pm · <span style="text-decoration:underline">Shop now →</span></span></div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·02</span><span class="glyph glyph--full" title="Receives live products"></span></div><h3 style="font-size:13px">landing-hero</h3><p class="purpose" style="min-height:auto;font-size:11px">Full hero + best-sellers card, real products.</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:#1B2A4A;padding:12px;position:relative;overflow:hidden;min-height:70px">
+            <div style="position:absolute;right:0;top:0;bottom:0;width:38%;background:#C8102E;clip-path:polygon(12% 0,100% 0,100% 100%,0 100%)"></div>
+            <div style="position:relative;color:#fff;font-size:11px;font-weight:800;max-width:60%;line-height:1.2">Quality protective<br>covers at <em style="color:#ffb3bf;font-style:normal">trade prices</em></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·03</span></div><h3 style="font-size:13px">landing-trust-strip</h3><p class="purpose" style="min-height:auto;font-size:11px">Fixed 5-item delivery/trade trust row.</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:#fff;border-bottom:1px solid #E0DED8;padding:9px 10px;display:flex;gap:10px">
+            <span style="font-size:9px;font-weight:700;color:#1B2A4A">🚚 Free Delivery</span><span style="font-size:9px;font-weight:700;color:#1B2A4A">📦 Same Day</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·04</span><span class="glyph glyph--full" title="Receives live categories"></span></div><h3 style="font-size:13px">landing-category-grid</h3><p class="purpose" style="min-height:auto;font-size:11px">4-category grid, real categories, emoji fallback art.</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:#F5F5F3;padding:8px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px"><div style="aspect-ratio:1;border-radius:5px;background:linear-gradient(135deg,#E8F4FD,#C8E6FA);display:flex;align-items:center;justify-content:center;font-size:11px">🛡️</div><div style="aspect-ratio:1;border-radius:5px;background:linear-gradient(135deg,#FFF8E1,#FFF0C0);display:flex;align-items:center;justify-content:center;font-size:11px">🧹</div><div style="aspect-ratio:1;border-radius:5px;background:linear-gradient(135deg,#F3E5F5,#E1BEE7);display:flex;align-items:center;justify-content:center;font-size:11px">🪣</div><div style="aspect-ratio:1;border-radius:5px;background:linear-gradient(135deg,#E8F5E9,#C8E6C9);display:flex;align-items:center;justify-content:center;font-size:11px">🖌️</div></div></div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·05</span><span class="glyph glyph--full" title="Receives live products"></span></div><h3 style="font-size:13px">landing-product-grid</h3><p class="purpose" style="min-height:auto;font-size:11px">Titled product grid — used twice on Tri Star's page.</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:#fff;padding:8px"><div style="font-size:9px;font-weight:800;color:#1B2A4A;margin-bottom:5px">Featured <span style="color:#C8102E">products</span></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px"><div style="aspect-ratio:1;border-radius:4px;background:linear-gradient(135deg,#DBEAFE,#BFDBFE)"></div><div style="aspect-ratio:1;border-radius:4px;background:linear-gradient(135deg,#DCFCE7,#BBF7D0)"></div><div style="aspect-ratio:1;border-radius:4px;background:linear-gradient(135deg,#FEF9C3,#FEF08A)"></div><div style="aspect-ratio:1;border-radius:4px;background:linear-gradient(135deg,#FFEDD5,#FED7AA)"></div></div></div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·06</span></div><h3 style="font-size:13px">landing-split-cards</h3><p class="purpose" style="min-height:auto;font-size:11px">Trade account (navy) + bespoke orders (red).</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#F5F5F3"><div style="background:#1B2A4A;border-radius:8px;padding:8px"><span style="color:#fff;font-size:8px;font-weight:700">Open a trade account</span></div><div style="background:#C8102E;border-radius:8px;padding:8px"><span style="color:#fff;font-size:8px;font-weight:700">Bespoke &amp; bulk orders</span></div></div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·07</span></div><h3 style="font-size:13px">landing-stats-band</h3><p class="purpose" style="min-height:auto;font-size:11px">Fixed 4-stat band: 30+ years, 79+ products…</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:#1B2A4A;padding:10px;display:flex;justify-content:space-around;text-align:center"><div><div style="color:#fff;font-weight:800;font-size:13px">30<span style="color:#C8102E">+</span></div></div><div><div style="color:#fff;font-weight:800;font-size:13px">79<span style="color:#C8102E">+</span></div></div><div><div style="color:#fff;font-weight:800;font-size:13px">£75</div></div></div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·08</span></div><h3 style="font-size:13px">landing-how-to-order</h3><p class="purpose" style="min-height:auto;font-size:11px">Fixed 4-step Browse → Login → Checkout → Delivery.</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:#fff;padding:10px;display:flex;justify-content:space-around">
+            <div style="width:20px;height:20px;border-radius:50%;border:2px solid #C8102E;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#C8102E">1</div>
+            <div style="width:20px;height:20px;border-radius:50%;border:2px solid #C8102E;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#C8102E">2</div>
+            <div style="width:20px;height:20px;border-radius:50%;border:2px solid #C8102E;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#C8102E">3</div>
+            <div style="width:20px;height:20px;border-radius:50%;border:2px solid #C8102E;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#C8102E">4</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·09</span><span class="glyph glyph--full" title="Auto-built from live products"></span></div><h3 style="font-size:13px">landing-range-table</h3><p class="purpose" style="min-height:auto;font-size:11px">Every real product, auto in-stock/out-of-stock pills.</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:#fff;padding:0"><div style="background:#1B2A4A;padding:5px 8px;font-size:7px;color:#CBD8EE;font-weight:700">PRODUCT</div><div style="padding:5px 8px;font-size:8px;color:#1a1a1a;display:flex;justify-content:space-between">Cotton Dust Sheet <span style="background:#D1FAE5;color:#059669;font-size:6.5px;font-weight:700;padding:1px 5px;border-radius:8px">In stock</span></div></div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·10</span></div><h3 style="font-size:13px">landing-testimonials</h3><p class="purpose" style="min-height:auto;font-size:11px">3 fixed reviews + Trustpilot bar (4.7, 94 reviews).</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:#fff;padding:10px"><div style="color:#D4A017;font-size:10px;letter-spacing:1px">★★★★★</div><p style="font-size:8px;color:#1a1a1a;font-style:italic;margin-top:3px">"Quality never drops."</p><div style="font-size:7px;color:#5C5C5C;margin-top:8px">4.7 on Trustpilot · 94 reviews</div></div>
+        </div>
+      </article>
+
+      <article class="specimen">
+        <div class="specimen-head"><div class="specimen-code-row"><span class="specimen-code">TSO·11</span></div><h3 style="font-size:13px">landing-newsletter</h3><p class="purpose" style="min-height:auto;font-size:11px">Sign-up, self-hides via the newsletter plugin.</p></div>
+        <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div class="stage" style="background:linear-gradient(135deg,#1B2A4A,#0F1E38);padding:10px;text-align:center"><div style="color:#fff;font-size:9px;font-weight:800">Stay ahead — trade offers</div><div style="display:flex;gap:5px;margin-top:6px;justify-content:center"><div style="width:70px;height:16px;background:rgba(255,255,255,.1);border-radius:5px"></div><div style="background:#C8102E;color:#fff;font-size:7px;font-weight:700;padding:0 8px;border-radius:5px;display:flex;align-items:center">Subscribe</div></div></div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- ============================================================
+         OVERLAPS
+         ============================================================ -->
+    <div class="plate-header">
+      <span class="numeral">NOTE</span><h2>Known overlaps — pick deliberately</h2><span class="rule"></span>
+    </div>
+    <p class="plate-note">Seven library blocks cover similar ground to a Tri Star original. Not interchangeable — different props, different data source, different polish. Reconciling them was explicitly ruled out of Phase 3 (backlog item Q) and remains unscheduled; both sides coexist deliberately for now.</p>
+    <div class="pv-card" style="overflow-x:auto;margin-bottom:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:520px">
+        <thead><tr style="background:var(--paper)"><th style="text-align:left;padding:9px 12px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);border-bottom:1px solid var(--line)">TOPIC</th><th style="text-align:left;padding:9px 12px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);border-bottom:1px solid var(--line)">CONFIG-AUTHORED</th><th style="text-align:left;padding:9px 12px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);border-bottom:1px solid var(--line)">TRI STAR ORIGINAL</th></tr></thead>
+        <tbody style="font-family:var(--font-mono);font-size:11.5px">
+          <tr><td style="padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--font-display)">Trust badges</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">trust-strip</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">landing-trust-strip</td></tr>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--font-display)">Category showcase</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">category-grid</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">landing-category-grid</td></tr>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--font-display)">Stats band</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">stats-band</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">landing-stats-band</td></tr>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--font-display)">How-to-order steps</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">how-to-order</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">landing-how-to-order</td></tr>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--font-display)">Product spec table</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">product-range-table</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">landing-range-table</td></tr>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--font-display)">Reviews</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">testimonials-carousel</td><td style="padding:8px 12px;border-bottom:1px solid var(--line)">landing-testimonials</td></tr>
+          <tr><td style="padding:8px 12px;font-family:var(--font-display)">Newsletter</td><td style="padding:8px 12px">newsletter-section</td><td style="padding:8px 12px">landing-newsletter</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="credits">
+      Built from <code style="font-family:var(--font-mono)">frontend-starter/lib/block-registry.ts</code> and the source of every block listed. Full written reference: <a href="#">docs/component-library.md</a>. Mockups are illustrative — colours and structure match the real components; complex scroll/animation behaviour is simplified for this page.
+    </footer>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var gallery = document.getElementById('gallery');
+
+  // Brand switch
+  var buttons = document.querySelectorAll('[data-brand-btn]');
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var brand = btn.getAttribute('data-brand-btn');
+      gallery.setAttribute('data-brand', brand);
+      buttons.forEach(function (b) {
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+    });
+  });
+
+  // Copy-to-clipboard config stubs
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var raw = btn.getAttribute('data-copy');
+      try {
+        var pretty = JSON.stringify(JSON.parse(raw), null, 2);
+      } catch (e) {
+        pretty = raw;
+      }
+      var done = function () {
+        var label = btn.textContent;
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(function () { btn.textContent = label; btn.classList.remove('copied'); }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pretty).then(done).catch(done);
+      } else {
+        done();
+      }
+    });
+  });
+
+  // Tubelight nav demo — click to switch active pill
+  document.querySelectorAll('[data-tube]').forEach(function (nav) {
+    nav.querySelectorAll('button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        nav.querySelectorAll('button').forEach(function (o) {
+          o.classList.remove('active', 'pv-fg');
+          o.classList.add('pv-muted');
+          var lamp = o.querySelector('.lamp');
+          if (lamp) lamp.remove();
+        });
+        b.classList.remove('pv-muted');
+        b.classList.add('active', 'pv-fg');
+        var lamp = document.createElement('span');
+        lamp.className = 'lamp';
+        lamp.style.background = 'var(--p-brand)';
+        b.appendChild(lamp);
+      });
+    });
+  });
+
+  // Animated counters — count up once when scrolled into view
+  var counters = document.querySelectorAll('.pv-counter');
+  if ('IntersectionObserver' in window && counters.length) {
+    var seen = new WeakSet();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting || seen.has(entry.target)) return;
+        seen.add(entry.target);
+        var el = entry.target;
+        var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+        var start = null;
+        var duration = 1200;
+        function step(ts) {
+          if (!start) start = ts;
+          var progress = Math.min((ts - start) / duration, 1);
+          el.textContent = Math.floor(progress * target).toLocaleString();
+          if (progress < 1) requestAnimationFrame(step);
+          else el.textContent = target.toLocaleString();
+        }
+        requestAnimationFrame(step);
+      });
+    }, { threshold: 0.4 });
+    counters.forEach(function (c) { io.observe(c); });
+  } else {
+    counters.forEach(function (c) { c.textContent = c.getAttribute('data-target'); });
+  }
+})();
+</script>

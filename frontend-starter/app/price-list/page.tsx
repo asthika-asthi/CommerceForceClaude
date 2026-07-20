@@ -34,7 +34,7 @@ export default function PriceListPage() {
           <Link href="/trade" className="text-brand hover:underline">register for a trade account</Link>.
         </p>
 
-        <div className="mt-12 bg-white border border-border rounded-xl p-6 text-left">
+        <div className="mt-12 bg-card-bg border border-border rounded-xl p-6 text-left">
           <h2 className="text-[15px] font-bold text-brand-dark mb-3">What&apos;s included</h2>
           <ul className="space-y-2 text-[14px] text-muted">
             {[

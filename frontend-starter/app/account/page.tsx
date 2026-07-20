@@ -81,7 +81,7 @@ export default function AccountPage() {
 
       {/* Recent orders */}
       {ordersEnabled && (
-        <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden">
+        <div className="bg-card-bg border border-slate-100 rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">Recent orders</h2>
           </div>

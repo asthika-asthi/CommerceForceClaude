@@ -12,6 +12,7 @@ import { CookieConsent } from "@/components/cookie-consent"
 import { AnalyticsScripts } from "@/components/analytics-scripts"
 import { serverFetch } from "@/lib/api"
 import { deriveTheme } from "@/lib/theme-colors"
+import { getStoreConfig } from "@/lib/landing-config"
 import type { BrandingConfig, Category } from "@/lib/types"
 
 const poppins = Poppins({
@@ -47,6 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Admin-chosen colours override the theme-file defaults. Inline style on
   // <html> beats stylesheet :root declarations regardless of head ordering.
   const themeVars = deriveTheme(branding?.theme_colors) as React.CSSProperties
+  const storeAddress = getStoreConfig().address?.display_short
 
   return (
     <html lang="en" className={`${poppins.variable} h-full`} style={themeVars}>
@@ -57,7 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-full flex flex-col antialiased">
         <AnalyticsScripts ga4MeasurementId={branding?.ga4_measurement_id} metaPixelId={branding?.meta_pixel_id} />
         <Providers enabledPlugins={enabledPlugins}>
-          <Topbar branding={branding} />
+          <Topbar branding={branding} address={storeAddress} />
           <Navbar branding={branding} enabledPlugins={enabledPlugins} />
           <CategoriesNav />
           <main className="flex-1">{children}</main>

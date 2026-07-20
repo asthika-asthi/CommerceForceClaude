@@ -132,7 +132,7 @@ export default function AccountSettingsPage() {
       </Link>
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Profile settings</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-100 rounded-2xl p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="bg-card-bg border border-slate-100 rounded-2xl p-6 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">First name</label>
@@ -167,7 +167,7 @@ export default function AccountSettingsPage() {
       </form>
 
       <h2 className="text-xl font-bold text-slate-900 mt-10 mb-4">Change password</h2>
-      <form onSubmit={handlePasswordSubmit} className="bg-white border border-slate-100 rounded-2xl p-6 space-y-4">
+      <form onSubmit={handlePasswordSubmit} className="bg-card-bg border border-slate-100 rounded-2xl p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Current password</label>
           <PasswordInput required value={pwForm.current_password}
@@ -196,7 +196,7 @@ export default function AccountSettingsPage() {
       </form>
 
       <h2 className="text-xl font-bold text-slate-900 mt-10 mb-4">Privacy</h2>
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-5">
+      <div className="bg-card-bg border border-slate-100 rounded-2xl p-6 space-y-5">
         <div>
           <p className="text-sm font-medium text-slate-800 mb-1">Download my data</p>
           <p className="text-xs text-slate-500 mb-3">

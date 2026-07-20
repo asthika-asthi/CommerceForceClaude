@@ -20,7 +20,7 @@ export function FilterBar({ currentSort, currentInStock, currentCategory, total 
     <>
       {currentCategory && <input type="hidden" name="category" value={currentCategory} />}
       <select name="sort" defaultValue={currentSort ?? ""}
-        className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark bg-white"
+        className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark bg-card-bg"
         onChange={(e) => { (e.target.form as HTMLFormElement).submit() }}>
         {sortOptions.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
