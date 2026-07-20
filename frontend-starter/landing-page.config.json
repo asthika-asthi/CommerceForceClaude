@@ -409,7 +409,7 @@
   },
 
   "sections": [
-    { "__block": "landing-promo-banner" },
+    { "__block": "announcement-bar" },
     { "__block": "landing-hero" },
     { "__block": "landing-trust-strip" },
     { "__block": "landing-category-grid" },
