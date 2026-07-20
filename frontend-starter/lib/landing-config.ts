@@ -40,6 +40,12 @@ export interface StoreConfig {
 export interface LandingConfigSection {
   __block: string
   requiredPlugin?: string
+  /** Superadmin opt-in: shop-admin can edit this section's content at all. */
+  adminEditable?: boolean
+  /** Stable identifier a shop-admin edit is stored/looked up against. */
+  adminSectionKey?: string
+  /** Which named fields on this section are shop-admin editable. */
+  adminEditableFields?: string[]
   [key: string]: unknown
 }
 
@@ -148,4 +154,35 @@ export function getFontLink(): string | null {
   } catch {
     return null
   }
+}
+
+export interface ContentOverrideEntry {
+  overrides: Record<string, string>
+  is_hidden: boolean
+}
+
+export type ContentOverrideMap = Record<string, ContentOverrideEntry>
+
+/**
+ * Layers saved shop-admin edits on top of the config file's own section
+ * props. A section with no matching override (or no adminSectionKey at all)
+ * passes through unchanged — this is what makes an empty overrides table
+ * indistinguishable from "no system present."
+ */
+export function mergeContentOverrides(
+  sections: LandingConfigSection[],
+  overridesMap: ContentOverrideMap
+): LandingConfigSection[] {
+  const merged: LandingConfigSection[] = []
+  for (const section of sections) {
+    const key = typeof section.adminSectionKey === "string" ? section.adminSectionKey : undefined
+    const entry = key ? overridesMap[key] : undefined
+    if (!entry) {
+      merged.push(section)
+      continue
+    }
+    if (entry.is_hidden) continue
+    merged.push({ ...section, ...entry.overrides })
+  }
+  return merged
 }
