@@ -7,6 +7,7 @@ services:
       DATABASE_URL: sqlite+aiosqlite:////app/data/commerceforce.db
       # Store currency (ISO code) — set CURRENCY_CODE in the root .env, default GBP.
       CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
+      LANDING_CONFIG_PATH: "/app/landing-page.config.json"
       # CORS and URL values are set in backend/.env by generate-env.sh
     # In production, ports are NOT exposed directly — nginx handles external traffic.
     # Remove the port mapping below once nginx is set up and verified (single-client
@@ -17,6 +18,7 @@ services:
     volumes:
       - cf_data:/app/data
       - ./uploads:/app/uploads
+      - ./frontend-starter/landing-page.config.json:/app/landing-page.config.json:ro
 
   frontend-starter:
     build:
