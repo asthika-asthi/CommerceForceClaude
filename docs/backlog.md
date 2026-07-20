@@ -446,6 +446,56 @@ this actually shows Surkut's address instead of nothing.
 
 ---
 
+### Component library session — Phase 3 (2026-07-19)
+
+**Branch:** `feat/component-library-phase3` (off `feat/ui-pipeline-phase2`, unmerged). Spec: `docs/superpowers/specs/2026-07-19-phase3-component-library-design.md`.
+
+**Built + tested (automated):**
+- 3 placeholder blocks (`navbar`, `footer`, `menu`) restyled to production
+  theme tokens; `menu`'s dark-theme contrast bug fixed as part of the same pass.
+- `ScrollReveal` — shared fade-up-on-scroll wrapper (respects
+  `prefers-reduced-motion`), applied to `bento-grid`, `split-image-text`, and
+  `showcase-gallery`.
+- `showcase-gallery` — new opt-in `zoomable` prop: Layer 1 (tap/click →
+  full-screen, `Escape`/close-button/outside-click to dismiss, clicking the
+  enlarged image itself does not close it) is fully E2E-covered.
+- `scroll-expand-hero` — new opt-in `chapters` prop for a pinned, multi-stage
+  scroll narrative. Default (no `chapters`) behaviour E2E-verified unchanged,
+  including against the real Tri Star homepage's existing hero usage.
+- `docs/component-library.md` + `docs/component-library-gallery.html` updated
+  in step with every change above. `docs/component-sourcing-process.md`
+  written — growing the library ahead of demand is no longer ad-hoc.
+
+**Built, NOT automatically tested:**
+- `PinchZoomImage` (Layer 2 of the zoomable gallery) — real two-finger
+  pinch-to-zoom + drag-to-pan. Playwright cannot simulate true multi-touch;
+  desktop wheel-zoom *is* covered automatically. Code review caught and fixed
+  a real state-machine bug (asymmetric two-finger release silently killed
+  the surviving finger's pan) via direct code tracing, plus a fragile
+  clamp-measurement basis and an inert `prefers-reduced-motion` handler —
+  all fixed and re-verified. **Manual pass (Chrome DevTools touch emulation,
+  checklist in the Task 7 plan) status: still needed** — no subagent in this
+  session had GUI/touch-emulation tooling to perform it; run it during the
+  big test session before considering Layer 2 fully verified.
+
+**Known follow-up (non-blocking, not part of this session's scope):**
+- `showcase-gallery`'s zoom lightbox (`role="dialog"`/`aria-modal="true"`)
+  has no focus trap or focus restore — keyboard/screen-reader users can Tab
+  into background content while it's open. Flagged by code review as
+  independent of the pinch/pan work and not addressed by any task in this
+  plan; worth picking up before this block is wired into a real client
+  config, potentially alongside any future work that touches this overlay.
+
+**Explicitly not touched this round:** the 7 known overlapping block pairs
+in `docs/component-library.md` ("known overlaps"); Tri Star's live
+`landing-page.config.json`; no new registry blocks were added.
+
+**Next:** merge order is `feat/component-library-phase3` →
+`feat/ui-pipeline-phase2` → `master`, once the big manual test session
+(Phase 1 + Phase 2 + this) is done.
+
+---
+
 ## Not built — Priority 4 (medium, plan before building)
 
 | ID | Feature | Notes |
@@ -457,6 +507,7 @@ this actually shows Surkut's address instead of nothing.
 | U | Consolidate stock to one source of truth (B3) | Checkout uses only `Product.stock_quantity`; the per-variant `WarehouseStock` system is built but never wired into selling (`deduct_stock_for_variant`/`get_variant_stock_total` are unused). Decide based on need: single pool → keep product-level authoritative and retire/relabel the warehouse feature; multi-warehouse → make warehouse authoritative and derive the shop's stock. Deferred pending the multi-warehouse decision. |
 | T | Eliminate frontend/backend type duplication | The frontends keep hand-written type mirrors (`frontend-starter/lib/types.ts`, `frontend-admin/lib/types.ts`) that silently drift from the backend Pydantic schemas — the cause of several 2026-07-04 bugs (`primary_image` vs `images[]`, missing `description`/`is_featured`). Fix: add an automated drift-check (CI/pre-commit runs `gen:types` and fails if `types.ts` is stale) and/or true codegen so frontend types are derived, not hand-kept; also add a `gen:types` script to the admin app (it currently has none). Process documented in `docs/type-sync.md`. |
 | W | Landing-page sections wiring (Phase 2 of the 2026-07-09 theme work) | **Engineering half DONE 2026-07-16** (homepage wired to config pipeline, see "Per-client UI pipeline — Phase 1 wiring"). Remaining: the admin "Page Content" editor / DB content-layer decision — still needs its own short design session. Make the homepage render from `landing-page.config.json` (structure, superadmin) + a DB content layer (admin edits) instead of hardcoded components. Replace the current dead admin "Landing Page Sections" screen (writes to a `landing_sections` table the storefront never reads) with a "Page Content" editor: admins edit each config-defined section's text/images/CTAs and can hide/show sections, but cannot add/delete/reorder (structure stays superadmin per the role split). Pre-seed Tri Star's current content so the live site is unchanged on day one; retire the orphaned table. **Needs a design session first** (scheduling-plugin scale): per-section editable fields, image handling, overlap with announcements/promotions plugins, how config changes reach the VPS. |
+| X | Composable decorative effects (glow background, shiny button) | `glowing-shadow` and `shiny-button`/`GlowButton` (`components/ui/shiny-button.tsx`, `components/blocks/visual/glowing-shadow.tsx`) only exist today as their own standalone, fixed-shape blocks — `glowing-shadow` wraps short content in one dark glow card (not usable as a page/section background), and `GlowButton` is a fixed 120×60px pill that can't be dropped into other components (e.g. swapped in for the navbar's hardcoded "Get a Quote" button, which lives in the shared `components/layout/navbar.tsx`, outside the config pipeline entirely). Surfaced 2026-07-20 during Surkut manual testing: user wanted the glow effect as a section/page background and the shiny button style applied to an existing navbar CTA — neither is possible without new code. **Needs a design session first**: decide whether these become configurable props on existing blocks (e.g. a `variant: "glow"` background option) vs. reusable style primitives other components can opt into (e.g. a `style: "shiny"` button variant), and which existing components should be able to take them. |
 
 ---
 
@@ -608,4 +659,4 @@ possible latent UX gap.
 - **CI/CD pipeline** — out of scope until product is ready for market
 - **`ENABLED_PLUGINS` / config divergence** — frontend reads config `"plugins"` list; backend reads `.env`; if they diverge, a block appears but its API returns 404 (handled gracefully)
 - **Visual preview tool** — live preview of `landing-page.config.json` without running full dev stack
-- **Component library builder** — systematic process for sourcing new block components; currently ad-hoc
+- ~~**Component library builder** — systematic process for sourcing new block components; currently ad-hoc~~ — done: see `docs/component-sourcing-process.md` (Phase 3, 2026-07-19)

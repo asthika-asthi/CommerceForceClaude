@@ -1,6 +1,4 @@
 'use client'
-// Placeholder — replace with your final menu TSX.
-
 interface MenuItem {
   label: string
   url: string
@@ -22,18 +20,18 @@ export function MenuBlock({ title, items = [], layout = 'horizontal' }: MenuBloc
   return (
     <section className="py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {title && <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">{title}</h3>}
+        {title && <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">{title}</h3>}
         <ul className={wrapClass}>
           {items.map((item, i) => (
             <li key={i}>
-              <a href={item.url} className="text-sm font-medium text-slate-700 hover:text-brand-dark transition-colors">
+              <a href={item.url} className="text-sm font-medium text-fg hover:text-brand-dark transition-colors">
                 {item.label}
               </a>
               {item.children && item.children.length > 0 && (
                 <ul className="mt-1 ml-3 space-y-1">
                   {item.children.map((child, j) => (
                     <li key={j}>
-                      <a href={child.url} className="text-xs text-slate-500 hover:text-brand-dark transition-colors">
+                      <a href={child.url} className="text-xs text-muted hover:text-brand-dark transition-colors">
                         {child.label}
                       </a>
                     </li>

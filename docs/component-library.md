@@ -63,7 +63,6 @@ is flagged:
 | 🌓 **Mostly tokenised** | Tokenised, with a minor grey placeholder (loading skeleton / empty image state) that doesn't reskin — cosmetic only |
 | 🌑 **Fixed dark section** | Deliberately renders as a dark panel regardless of the client's theme (mixes `--brand-dark` with hardcoded slate greys) — reads fine on any client, but won't lighten for a pale-branded client |
 | 🖼️ **Hero-over-photo** | Requires a background image; white text over a dark overlay is the whole point, not a theme gap |
-| ⚠️ **Placeholder** | The source file literally says "replace with your final TSX" — usable, but was never finished/styled for production |
 
 ---
 
@@ -103,6 +102,8 @@ is flagged:
 
 **What it looks like:** A tall (1.5 screens) section. While pinned to the viewport: an eyebrow/date line, then a large bold white title and optional subtitle, sitting above a rounded media panel that starts at 60% width and grows to fill the screen (corners squaring off) as you scroll. A "Scroll to explore" hint with an animated pulsing line sits at the bottom, fading out early. Background is either a solid colour (`background`, hex, defaults navy `#0f172a`) or a full-bleed background image (`bgImageSrc`). Supports either an `<img>` or a looping muted `<video>` as the media.
 
+**Chaptered mode (optional):** pass `chapters` — a list of `{caption, detail?, tint?}` — and the same pinned expand motion becomes a multi-stage narrative: the title/subtitle are replaced by whichever chapter is active as you scroll through the section, each optionally washing the media in its own colour tint. Omit `chapters` entirely and the block behaves exactly as it always has — this is the same single component either way, not a second block.
+
 **Theme:** 🌑 Fixed dark by default (background prop is a raw hex, not a token) — set `background` or `bgImageSrc` explicitly per client.
 
 **Config usage:**
@@ -118,7 +119,22 @@ is flagged:
 }
 ```
 
-**Props:** `mediaType?: 'video'|'image'` (default image), `mediaSrc` (required), `posterSrc?` (video poster), `bgImageSrc?`, `background?` (hex, fallback if no bg image), `title` (required), `eyebrow?` (string, or `{text}` object — both accepted), `subtitle?`, `date?` (shown if no eyebrow), `scrollToExpand?` (hint text), `textBlend?` (mix-blend title over media).
+Chaptered variant:
+```json
+{
+  "__block": "scroll-expand-hero",
+  "mediaType": "image",
+  "mediaSrc": "/images/workshop.jpg",
+  "title": "Handmade, Start to Finish",
+  "chapters": [
+    { "caption": "The raw material", "detail": "Sourced from sustainable forestry.", "tint": "#8B5E3C" },
+    { "caption": "Shaped by hand", "detail": "Every joint cut and fitted individually." },
+    { "caption": "Ready to ship", "tint": "#059669" }
+  ]
+}
+```
+
+**Props:** `mediaType?: 'video'|'image'` (default image), `mediaSrc` (required), `posterSrc?` (video poster), `bgImageSrc?`, `background?` (hex, fallback if no bg image), `title` (required — also shown as the small eyebrow line above the caption in chaptered mode), `eyebrow?` (string, or `{text}` object — both accepted, single-stage mode only), `subtitle?` (single-stage mode only), `date?` (shown if no eyebrow, single-stage mode only), `scrollToExpand?` (hint text), `textBlend?` (mix-blend title over media, single-stage mode only), `chapters?: {caption, detail?, tint?}[]` (omit for single-stage mode).
 
 ---
 
@@ -479,7 +495,9 @@ is flagged:
 
 **What it looks like:** A heading row, then a responsive 2–4 column grid of image cards. Each real item: a photo that zooms slightly on hover, a caption overlay (title + small tag) fading up from a dark gradient at the bottom, and an optional coloured badge pinned to the top-right corner (e.g. "Premium Tier"). Items marked `comingSoon: true` (or with no image) instead show a plain card with just a title and small "coming soon" caption — no photo needed, useful as a permanent "your project here" call-to-action slot.
 
-**Theme:** ✅ Fully tokenised (the caption gradient/white text sits directly on a photo — a documented, intentional exception).
+**Theme:** ✅ Fully tokenised (the caption gradient/white text sits directly on a photo — a documented, intentional exception). Items fade up on scroll (`ScrollReveal`).
+
+**Zoomable (optional):** set `zoomable: true` and any item with a real image becomes tappable/clickable — opens full-screen with real two-finger pinch-to-zoom and drag-to-pan (desktop: scroll-wheel-zoom + drag). Dismiss via the close button, `Escape`, or clicking outside the image. Items with no image or `comingSoon: true` are never zoomable.
 
 **Config usage:**
 ```json
@@ -487,6 +505,7 @@ is flagged:
   "__block": "showcase-gallery",
   "kicker": "My work",
   "title": "The Portfolio",
+  "zoomable": true,
   "items": [
     { "image": "/images/portfolio-1.jpg", "title": "RPG Drone Corp", "tag": "Sci-Fi Skirmish", "badge": "Premium Tier" },
     { "title": "Your commission here", "comingSoon": true, "comingSoonText": "Slots Available Now" }
@@ -494,7 +513,7 @@ is flagged:
 }
 ```
 
-**Props:** `kicker?`, `title` (required), `subtitle?`, `anchorId?`, `items: {image?, imageAlt?, title, tag?, badge?, comingSoon?, comingSoonText?}[]` (required).
+**Props:** `kicker?`, `title` (required), `subtitle?`, `anchorId?`, `items: {image?, imageAlt?, title, tag?, badge?, comingSoon?, comingSoonText?}[]` (required), `zoomable?: boolean` (default false).
 
 ---
 
@@ -572,7 +591,7 @@ is flagged:
 ## `bento-grid`
 **What it's for:** An asymmetric "bento box" card grid — good for audience/persona segments ("who this is for"), feature highlights, or any set of 3–4 items where one or two deserve visual emphasis over the others.
 
-**What it looks like:** A 2–3 column grid where `size: "large"` cards span two columns and two rows (bigger image, bigger title), and `size: "small"` cards are compact — all in bordered card-coloured tiles with an optional image, a heading, a clamped body paragraph, and an optional "link text →" at the bottom. Maximum 4 cards shown even if more are supplied.
+**What it looks like:** A 2–3 column grid where `size: "large"` cards span two columns and two rows (bigger image, bigger title), and `size: "small"` cards are compact — all in bordered card-coloured tiles with an optional image, a heading, a clamped body paragraph, and an optional "link text →" at the bottom. Maximum 4 cards shown even if more are supplied. Each card fades and slides up the first time it scrolls into view, staggered slightly card-to-card (`ScrollReveal`).
 
 **Theme:** ✅ Fully tokenised.
 
@@ -717,7 +736,7 @@ is flagged:
 ## `split-image-text`
 **What it's for:** A classic "photo on one side, story on the other" section — brand story, "meet the maker", a featured product highlight. Image position is switchable per instance.
 
-**What it looks like:** A two-column layout (stacks on mobile): a square rounded photo on one side, and on the other a bold heading, a paragraph of body copy, and an optional button. `imagePosition: "right"` flips which side the photo sits on.
+**What it looks like:** A two-column layout (stacks on mobile): a square rounded photo on one side, and on the other a bold heading, a paragraph of body copy, and an optional button. `imagePosition: "right"` flips which side the photo sits on. The image and text panels fade up independently as each scrolls into view (`ScrollReveal`), text following slightly behind the image.
 
 **Theme:** 🌓 Mostly tokenised (image placeholder background is a neutral grey while the photo loads/if broken).
 
@@ -821,12 +840,12 @@ These render structural chrome (nav, footer, menu). In practice the storefront's
 
 ---
 
-## `navbar` ⚠️ Placeholder
-**What it's for:** A basic in-page navbar block (logo, links, one CTA) — explicitly marked in its own source comment as a **placeholder to replace with your final design**, not a finished production component.
+## `navbar`
+**What it's for:** A basic in-page navbar block (logo, links, one CTA) — for building an alternative or supplementary nav directly into a page's `sections[]`. The site's real navbar (`components/layout/navbar.tsx`) is a separate, always-on component and unaffected by this.
 
-**What it looks like:** A plain white bar: bold logo text on the left, a row of grey nav links in the middle (desktop only), and an optional brand-coloured CTA button on the right.
+**What it looks like:** A card-coloured bar: bold logo text on the left, a row of nav links in the middle (desktop only), and an optional brand-coloured CTA button on the right.
 
-**Theme:** ⚠️ Placeholder — hardcodes `border-slate-200`, otherwise uses tokens for its two real surfaces.
+**Theme:** ✅ Fully tokenised.
 
 **Config usage:**
 ```json
@@ -837,12 +856,12 @@ These render structural chrome (nav, footer, menu). In practice the storefront's
 
 ---
 
-## `footer` ⚠️ Placeholder
-**What it's for:** A basic multi-column footer block — same placeholder status as `navbar`. The site's real footer (`components/layout/footer.tsx`) is what actually ships; this registry entry is for building a standalone footer-shaped block inside a page's `sections[]` if ever needed.
+## `footer`
+**What it's for:** A basic multi-column footer block — same use case as `navbar`. The site's real footer (`components/layout/footer.tsx`) is what actually ships; this registry entry is for a standalone footer-shaped block inside a page's `sections[]` if ever needed.
 
-**What it looks like:** A dark slate footer: logo/tagline on the left, up to several link columns to the right, and a thin copyright line along the bottom.
+**What it looks like:** A dark footer: logo/tagline on the left, up to several link columns to the right, and a thin copyright line along the bottom.
 
-**Theme:** ⚠️ Placeholder — entirely hardcoded slate colours, does not use theme tokens at all.
+**Theme:** ✅ Fully tokenised.
 
 **Config usage:**
 ```json
@@ -853,12 +872,12 @@ These render structural chrome (nav, footer, menu). In practice the storefront's
 
 ---
 
-## `menu` ⚠️ Placeholder
-**What it's for:** A simple labelled link list — a sitemap-style menu block, or a small in-page nav section (e.g. "Jump to: Products / Reviews / FAQ"). Same placeholder status as `navbar`/`footer`.
+## `menu`
+**What it's for:** A simple labelled link list — a sitemap-style menu block, or a small in-page nav section (e.g. "Jump to: Products / Reviews / FAQ").
 
 **What it looks like:** An optional small uppercase label, then a list of links in one of three layouts (`horizontal`, `vertical`, or a `grid`); each item can optionally have nested sub-links shown indented underneath it.
 
-**Theme:** ⚠️ Placeholder — uses hardcoded `text-slate-500/700`, which will be low-contrast on a dark client theme (grey text on a dark page).
+**Theme:** ✅ Fully tokenised.
 
 **Config usage:**
 ```json
@@ -922,4 +941,4 @@ A few library blocks cover similar ground to a Tri Star original but are **not i
 | Reviews | `testimonials-carousel` (one-at-a-time, auto-advancing) | `landing-testimonials` (static 3-card grid + Trustpilot bar) |
 | Newsletter | `newsletter-section` (generic, not plugin-gated itself) | `landing-newsletter` (Tri Star copy, plugin-gated) |
 
-Reconciling these twins into one canonical implementation each is tracked for the Phase 3 component-library session (backlog item Q) — not done yet, so both currently coexist deliberately.
+Reconciling these twins into one canonical implementation each was explicitly ruled out of the Phase 3 component-library session (backlog item Q) — see that session's design spec, §4 — and remains unscheduled for any specific future phase; both currently coexist deliberately.

@@ -334,8 +334,7 @@
         <code style="font-family:var(--font-mono)">lib/block-registry.ts</code>,
         one swatch each. Flip the switch below to re-dye every specimen between
         the two live client brands; the ones that don't move are flagged
-        <span class="glyph glyph--fixed" style="vertical-align:-2px"></span> or
-        <span class="glyph glyph--placeholder" style="vertical-align:-2px"></span> on purpose.
+        <span class="glyph glyph--fixed" style="vertical-align:-2px"></span> on purpose.
       </p>
       <div class="masthead-row">
         <div class="stat-line">
@@ -360,7 +359,6 @@
       <div class="item"><span class="glyph glyph--mostly"></span> Mostly tokenised — one grey placeholder stays put</div>
       <div class="item"><span class="glyph glyph--fixed"></span> Fixed dark — always dark, by design, any client</div>
       <div class="item"><span class="glyph glyph--photo"></span> Hero-over-photo — needs a background image</div>
-      <div class="item"><span class="glyph glyph--placeholder"></span> Placeholder — not styled for production yet</div>
     </div>
 
     <!-- ============================================================
@@ -419,7 +417,7 @@
             <span class="glyph glyph--fixed" title="Fixed dark by default"></span>
           </div>
           <h3>scroll-expand-hero</h3>
-          <p class="purpose">Media starts small, expands full-width as you scroll; title fades up and away.</p>
+          <p class="purpose">Media starts small, expands full-width as you scroll. Optional "chapters" turn it into a multi-stage narrative.</p>
         </div>
         <div class="stage-frame">
           <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
@@ -911,9 +909,9 @@
       <!-- showcase-gallery -->
       <article class="specimen">
         <div class="specimen-head">
-          <div class="specimen-code-row"><span class="specimen-code">CON·01</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
+          <div class="specimen-code-row"><span class="specimen-code">CON·01</span><span class="glyph glyph--full" title="Fully tokenised"></span><span class="plugin-tag">zoomable</span></div>
           <h3>showcase-gallery</h3>
-          <p class="purpose">Portfolio grid with per-item badges and "coming soon" placeholder slots.</p>
+          <p class="purpose">Portfolio grid with per-item badges, "coming soon" slots, and optional real pinch-to-zoom.</p>
         </div>
         <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
           <div class="stage pv-bg-alt pv-p">
@@ -1231,14 +1229,14 @@
       <!-- navbar -->
       <article class="specimen">
         <div class="specimen-head">
-          <div class="specimen-code-row"><span class="specimen-code">LAY·03</span><span class="glyph glyph--placeholder" title="Placeholder"></span></div>
+          <div class="specimen-code-row"><span class="specimen-code">LAY·03</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
           <h3>navbar</h3>
-          <p class="purpose">Basic in-page navbar block — logo, links, one CTA. Marked as a placeholder in its own source.</p>
+          <p class="purpose">Basic in-page navbar block — logo, links, one CTA. For an alternative/supplementary in-page nav.</p>
         </div>
         <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
-          <div class="stage" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
-            <span style="font-weight:800;font-size:11px;color:#1B2A4A">My Store</span>
-            <div style="display:flex;gap:10px"><span style="font-size:9px;color:#475569">Shop</span><span style="font-size:9px;color:#475569">About</span></div>
+          <div class="stage pv-bg-card pv-border-b" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+            <span class="pv-brand-dark" style="font-weight:800;font-size:11px">My Store</span>
+            <div style="display:flex;gap:10px"><span class="pv-muted" style="font-size:9px">Shop</span><span class="pv-muted" style="font-size:9px">About</span></div>
             <span class="pv-btn pv-btn-primary" style="font-size:9px;padding:5px 10px">Register</span>
           </div>
         </div>
@@ -1248,15 +1246,15 @@
       <!-- footer -->
       <article class="specimen">
         <div class="specimen-head">
-          <div class="specimen-code-row"><span class="specimen-code">LAY·04</span><span class="glyph glyph--placeholder" title="Placeholder"></span></div>
+          <div class="specimen-code-row"><span class="specimen-code">LAY·04</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
           <h3>footer</h3>
-          <p class="purpose">Basic multi-column footer block — same placeholder status. The real footer ships separately.</p>
+          <p class="purpose">Basic multi-column footer block. The site's real footer ships separately, always-on.</p>
         </div>
         <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
-          <div class="stage" style="background:#0f172a;padding:14px;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px">
-            <div><div style="color:#fff;font-weight:800;font-size:10px">Store</div><div style="color:#94a3b8;font-size:7.5px;margin-top:3px">Quality goods since 1995</div></div>
-            <div><div style="color:#fff;font-weight:700;font-size:8px">Shop</div><div style="color:#94a3b8;font-size:7.5px;margin-top:4px">All Products</div></div>
-            <div><div style="color:#fff;font-weight:700;font-size:8px">Company</div><div style="color:#94a3b8;font-size:7.5px;margin-top:4px">About</div></div>
+          <div class="stage pv-bg-dark-deep" style="padding:14px;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px">
+            <div><div class="pv-on-dark-strong" style="font-weight:800;font-size:10px">Store</div><div class="pv-on-dark-muted" style="font-size:7.5px;margin-top:3px">Quality goods since 1995</div></div>
+            <div><div class="pv-on-dark-strong" style="font-weight:700;font-size:8px">Shop</div><div class="pv-on-dark-muted" style="font-size:7.5px;margin-top:4px">All Products</div></div>
+            <div><div class="pv-on-dark-strong" style="font-weight:700;font-size:8px">Company</div><div class="pv-on-dark-muted" style="font-size:7.5px;margin-top:4px">About</div></div>
           </div>
         </div>
         <div class="specimen-foot"><span class="config-stub">{ "__block": "footer", "columns": [...] }</span><button class="copy-btn" data-copy='{"__block":"footer","logoText":"My Store","columns":[{"heading":"Shop","links":[{"label":"All Products","url":"/products"}]}]}'>Copy</button></div>
@@ -1265,14 +1263,14 @@
       <!-- menu -->
       <article class="specimen">
         <div class="specimen-head">
-          <div class="specimen-code-row"><span class="specimen-code">LAY·05</span><span class="glyph glyph--placeholder" title="Placeholder — grey text may read low-contrast on dark themes"></span></div>
+          <div class="specimen-code-row"><span class="specimen-code">LAY·05</span><span class="glyph glyph--full" title="Fully tokenised"></span></div>
           <h3>menu</h3>
-          <p class="purpose">Simple labelled link list, three layouts. Same placeholder status; watch contrast on dark clients.</p>
+          <p class="purpose">Simple labelled link list, three layouts.</p>
         </div>
         <div class="stage-frame"><span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
           <div class="stage pv-bg-page pv-p">
-            <div style="font-size:8px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Quick Links</div>
-            <div class="pv-row pv-gap14"><span style="font-size:9.5px;color:#475569;font-weight:600">Products</span><span style="font-size:9.5px;color:#475569;font-weight:600">Reviews</span><span style="font-size:9.5px;color:#475569;font-weight:600">FAQ</span></div>
+            <div class="pv-muted" style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Quick Links</div>
+            <div class="pv-row pv-gap14"><span class="pv-fg" style="font-size:9.5px;font-weight:600">Products</span><span class="pv-fg" style="font-size:9.5px;font-weight:600">Reviews</span><span class="pv-fg" style="font-size:9.5px;font-weight:600">FAQ</span></div>
           </div>
         </div>
         <div class="specimen-foot"><span class="config-stub">{ "__block": "menu", "items": [...] }</span><button class="copy-btn" data-copy='{"__block":"menu","title":"Quick Links","layout":"horizontal","items":[{"label":"Products","url":"/products"}]}'>Copy</button></div>
@@ -1393,7 +1391,7 @@
     <div class="plate-header">
       <span class="numeral">NOTE</span><h2>Known overlaps — pick deliberately</h2><span class="rule"></span>
     </div>
-    <p class="plate-note">Seven library blocks cover similar ground to a Tri Star original. Not interchangeable — different props, different data source, different polish. Reconciling them is Phase 3 (backlog item Q); both sides coexist deliberately for now.</p>
+    <p class="plate-note">Seven library blocks cover similar ground to a Tri Star original. Not interchangeable — different props, different data source, different polish. Reconciling them was explicitly ruled out of Phase 3 (backlog item Q) and remains unscheduled; both sides coexist deliberately for now.</p>
     <div class="pv-card" style="overflow-x:auto;margin-bottom:10px">
       <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:520px">
         <thead><tr style="background:var(--paper)"><th style="text-align:left;padding:9px 12px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);border-bottom:1px solid var(--line)">TOPIC</th><th style="text-align:left;padding:9px 12px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);border-bottom:1px solid var(--line)">CONFIG-AUTHORED</th><th style="text-align:left;padding:9px 12px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-dim);border-bottom:1px solid var(--line)">TRI STAR ORIGINAL</th></tr></thead>
