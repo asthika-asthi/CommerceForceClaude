@@ -12,7 +12,7 @@ const TITLES: Record<string, string> = {
   "/credit": "Credit Accounts",
   "/inventory": "Inventory",
   "/branding": "Branding",
-  "/landing-page": "Landing Page",
+  "/landing-page": "Page Content",
 }
 
 export function Header() {
