@@ -1,12 +1,13 @@
 import { serverFetch } from "@/lib/api"
-import { getFilteredSections, getHomepageConfig } from "@/lib/landing-config"
+import { getFilteredSections, getHomepageConfig, mergeContentOverrides, type ContentOverrideMap } from "@/lib/landing-config"
 import type { Category, LandingRuntimeData, LandingSection, PaginatedResponse, Product } from "@/lib/types"
 import { LandingSectionRenderer } from "@/components/shop/landing-section"
 
 export default async function HomePage() {
-  const [featuredRes, categories] = await Promise.all([
+  const [featuredRes, categories, overridesMap] = await Promise.all([
     serverFetch<PaginatedResponse<Product>>("/api/products?featured_only=true&page_size=8"),
     serverFetch<Category[]>("/api/categories").catch(() => [] as Category[]),
+    serverFetch<ContentOverrideMap>("/api/landing_page/overrides"),
   ])
 
   const products = [...(featuredRes?.items ?? [])]
@@ -28,7 +29,7 @@ export default async function HomePage() {
     showBestSellersCard: getHomepageConfig().showBestSellersCard !== false,
   }
 
-  const sections = getFilteredSections()
+  const sections = mergeContentOverrides(getFilteredSections(), overridesMap ?? {})
 
   return (
     <div className="bg-bg" data-landing-source="config-pipeline">
