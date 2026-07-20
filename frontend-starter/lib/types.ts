@@ -43,23 +43,6 @@ export interface BrandingConfig {
   theme_colors?: { core?: Record<string, string>; overrides?: Record<string, string> }
 }
 
-// ── Landing page ──────────────────────────────────────────────────────────────
-export type SectionType = "hero" | "features" | "testimonials" | "cta" | "html" | "products" | "block"
-
-export interface LandingSection {
-  id: string
-  section_type: SectionType
-  title?: string
-  subtitle?: string
-  content?: string
-  image_url?: string
-  cta_text?: string
-  cta_url?: string
-  sort_order: number
-  is_active: boolean
-  background_color?: string
-}
-
 // ── Categories ────────────────────────────────────────────────────────────────
 export interface Category {
   id: string

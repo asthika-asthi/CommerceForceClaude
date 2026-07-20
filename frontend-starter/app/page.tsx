@@ -1,6 +1,6 @@
 import { serverFetch } from "@/lib/api"
 import { getFilteredSections, getHomepageConfig, mergeContentOverrides, type ContentOverrideMap } from "@/lib/landing-config"
-import type { Category, LandingRuntimeData, LandingSection, PaginatedResponse, Product } from "@/lib/types"
+import type { Category, LandingRuntimeData, PaginatedResponse, Product } from "@/lib/types"
 import { LandingSectionRenderer } from "@/components/shop/landing-section"
 
 export default async function HomePage() {
@@ -36,7 +36,7 @@ export default async function HomePage() {
       {sections.map((section, i) => (
         <LandingSectionRenderer
           key={`${section.__block}-${i}`}
-          section={section as unknown as LandingSection}
+          section={section}
           data={data}
         />
       ))}
