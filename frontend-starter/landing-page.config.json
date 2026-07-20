@@ -425,6 +425,9 @@
     },
     {
       "__block": "landing-product-grid",
+      "adminEditable": true,
+      "adminSectionKey": "product-grid-more",
+      "adminEditableFields": ["title", "titleHighlight"],
       "title": "More from",
       "titleHighlight": "our range",
       "viewAllHref": "/products",
