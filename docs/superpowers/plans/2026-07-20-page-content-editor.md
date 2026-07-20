@@ -10,6 +10,22 @@
 
 ---
 
+**Correction found during execution (Task 2):** Tasks 2, 3, 4, and 5 as
+originally written below assumed they could land as independent commits.
+They can't — `app/plugins/landing_page/models.py` is imported by
+`schemas.py`, which is imported by `router.py`, which the plugin registry
+(`app/main.py`) imports eagerly at process boot for every enabled plugin.
+Replacing the model alone (Task 2) breaks the whole app's import chain, not
+just this plugin's tests, until schemas/service/router (Tasks 3-5) also
+land. `backend/alembic/env.py` also imports the old model directly and was
+missing from every task's file list. In execution, Tasks 2-5 were merged
+into a single commit for this reason. The task breakdown below is kept
+as-is for the historical record of what was planned; treat Tasks 2, 3, 4,
+and 5 as one atomic unit if re-running this plan elsewhere, and add
+`backend/alembic/env.py` to Task 2's file list.
+
+---
+
 ## Before you start
 
 Confirm you're on branch `feat/page-content-editor` (already created, has the approved spec committed at `docs/superpowers/specs/2026-07-20-page-content-editor-design.md`). Read that spec before starting — this plan implements it section by section.
