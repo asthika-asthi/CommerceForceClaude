@@ -100,6 +100,16 @@ async def client(db: AsyncSession) -> AsyncClient:
 
 
 @pytest.fixture
+def landing_config_fixture_path(monkeypatch):
+    fixture_path = os.path.join(os.path.dirname(__file__), "fixtures", "test_landing_config.json")
+    monkeypatch.setenv("LANDING_CONFIG_PATH", fixture_path)
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+    yield fixture_path
+    get_settings.cache_clear()
+
+
+@pytest.fixture
 async def concurrent_client() -> AsyncClient:
     """AsyncClient whose get_db override creates a fresh session per request.
 

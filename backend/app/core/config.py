@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./commerceforce.db"
 
+    # Path to the storefront's landing-page.config.json — read directly by
+    # the landing_page plugin so admin-editable sections/fields are defined
+    # once, in the file the superadmin already maintains, never duplicated.
+    LANDING_CONFIG_PATH: str = "../frontend-starter/landing-page.config.json"
+
     # Plugins
     ENABLED_PLUGINS: str = "auth"
 

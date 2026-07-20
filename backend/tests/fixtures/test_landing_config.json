@@ -1,0 +1,21 @@
+{
+  "sections": [
+    { "__block": "landing-hero", "title": "Not editable at all" },
+    {
+      "__block": "landing-trust-strip",
+      "adminEditable": true,
+      "adminSectionKey": "trust-strip",
+      "adminEditableFields": ["title"],
+      "title": "Free delivery on all orders"
+    },
+    {
+      "__block": "landing-product-grid",
+      "adminEditable": true,
+      "adminSectionKey": "hero",
+      "adminEditableFields": ["title", "titleHighlight", "bgImageSrc", "missingField"],
+      "title": "Original Title",
+      "titleHighlight": "our range",
+      "bgImageSrc": "/images/hero-bg.jpg"
+    }
+  ]
+}
