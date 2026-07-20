@@ -43,7 +43,7 @@ async def setup_test_db():
     from app.plugins.loyalty.models import LoyaltyConfig, LoyaltyAccount, LoyaltyTransaction  # noqa
     from app.plugins.newsletter.models import NewsletterSubscriber  # noqa
     from app.plugins.branding.models import BrandingConfig  # noqa
-    from app.plugins.landing_page.models import LandingSection  # noqa
+    from app.plugins.landing_page.models import LandingContentOverride  # noqa
     from app.plugins.contact.models import Enquiry  # noqa
     from app.plugins.reviews.models import Review  # noqa
     from app.plugins.discount_rules.models import DiscountRule  # noqa

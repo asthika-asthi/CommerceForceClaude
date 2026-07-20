@@ -1,69 +1,109 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+import re
+from typing import Any
 from fastapi import HTTPException, status
-from app.plugins.landing_page.models import LandingSection, SectionType
-from app.plugins.landing_page.schemas import LandingSectionCreate, LandingSectionUpdate
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.landing_config import get_editable_section_defs
+from app.plugins.landing_page.models import LandingContentOverride
 
 
-async def list_sections(db: AsyncSession, active_only: bool = True) -> list[LandingSection]:
-    query = select(LandingSection)
-    if active_only:
-        query = query.where(LandingSection.is_active == True)
-    query = query.order_by(LandingSection.sort_order.asc(), LandingSection.created_at.asc())
-    result = await db.execute(query)
-    return list(result.scalars().all())
+def humanize_field_name(name: str) -> str:
+    """'bgImageSrc' -> 'Bg Image Src'. No hand-maintained label list to drift."""
+    spaced = re.sub(r"(?<!^)(?=[A-Z])", " ", name)
+    spaced = spaced.replace("_", " ")
+    return spaced.strip().title()
 
 
-async def get_section(section_id: str, db: AsyncSession) -> LandingSection:
-    result = await db.execute(select(LandingSection).where(LandingSection.id == section_id))
-    section = result.scalar_one_or_none()
-    if not section:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section not found")
-    return section
+def infer_field_type(field_name: str) -> str:
+    lname = field_name.lower()
+    if any(token in lname for token in ("image", "logo", "photo", "avatar", "icon")) or lname.endswith("src"):
+        return "image"
+    if lname.endswith("url") or lname.endswith("href"):
+        return "link"
+    return "text"
 
 
-async def create_section(data: LandingSectionCreate, db: AsyncSession) -> LandingSection:
-    try:
-        section_type = SectionType(data.section_type)
-    except ValueError:
-        valid = [e.value for e in SectionType]
+async def get_editable_sections(db: AsyncSession) -> list[dict[str, Any]]:
+    defs = get_editable_section_defs()
+    result = await db.execute(select(LandingContentOverride))
+    override_rows = {row.section_key: row for row in result.scalars().all()}
+
+    sections_out = []
+    for d in defs:
+        section = d["section"]
+        override_row = override_rows.get(d["section_key"])
+        saved_overrides = override_row.overrides if override_row else {}
+        is_hidden = override_row.is_hidden if override_row else False
+
+        fields_out = []
+        for field_name in d["editable_fields"]:
+            base_value = section.get(field_name)
+            if not isinstance(base_value, str):
+                continue  # unknown/non-text field named in the config — skip silently
+            current_value = saved_overrides.get(field_name, base_value)
+            fields_out.append({
+                "name": field_name,
+                "label": humanize_field_name(field_name),
+                "type": infer_field_type(field_name),
+                "value": current_value,
+            })
+
+        sections_out.append({
+            "section_key": d["section_key"],
+            "is_hidden": is_hidden,
+            "fields": fields_out,
+        })
+    return sections_out
+
+
+async def get_override_map(db: AsyncSession) -> dict[str, dict[str, Any]]:
+    result = await db.execute(select(LandingContentOverride))
+    return {
+        row.section_key: {"overrides": row.overrides, "is_hidden": row.is_hidden}
+        for row in result.scalars().all()
+    }
+
+
+async def save_override(
+    db: AsyncSession, section_key: str, overrides: dict[str, str], is_hidden: bool
+) -> LandingContentOverride:
+    """Fully replaces this section's overrides and is_hidden — not a merge. Callers must
+    resend the complete current field set on every save."""
+    defs = {d["section_key"]: d["editable_fields"] for d in get_editable_section_defs()}
+    if section_key not in defs:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section is not editable")
+
+    allowed_fields = set(defs[section_key])
+    unknown = set(overrides.keys()) - allowed_fields
+    if unknown:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid section_type '{data.section_type}'. Valid values: {valid}",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Field(s) not editable on this section: {', '.join(sorted(unknown))}",
         )
-    section = LandingSection(
-        section_type=section_type,
-        title=data.title,
-        subtitle=data.subtitle,
-        content=data.content,
-        image_url=data.image_url,
-        cta_text=data.cta_text,
-        cta_url=data.cta_url,
-        sort_order=data.sort_order,
-        background_color=data.background_color,
+
+    result = await db.execute(
+        select(LandingContentOverride).where(LandingContentOverride.section_key == section_key)
     )
-    db.add(section)
-    await db.flush()
-    return section
-
-
-async def update_section(section_id: str, data: LandingSectionUpdate, db: AsyncSession) -> LandingSection:
-    section = await get_section(section_id, db)
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(section, field, value)
-    await db.flush()
-    return section
-
-
-async def delete_section(section_id: str, db: AsyncSession) -> None:
-    section = await get_section(section_id, db)
-    await db.delete(section)
-    await db.flush()
-
-
-async def reorder_sections(section_ids: list[str], db: AsyncSession) -> list[LandingSection]:
-    for idx, section_id in enumerate(section_ids):
-        section = await get_section(section_id, db)
-        section.sort_order = idx
-    await db.flush()
-    return await list_sections(db, active_only=False)
+    row = result.scalar_one_or_none()
+    if row is None:
+        try:
+            async with db.begin_nested():
+                row = LandingContentOverride(section_key=section_key, overrides=overrides, is_hidden=is_hidden)
+                db.add(row)
+                await db.flush()
+        except IntegrityError:
+            # Another request created this section's row concurrently — load it and
+            # apply this request's values (full-replace semantics, same as the update branch).
+            result = await db.execute(
+                select(LandingContentOverride).where(LandingContentOverride.section_key == section_key)
+            )
+            row = result.scalar_one()
+            row.overrides = overrides
+            row.is_hidden = is_hidden
+    else:
+        row.overrides = overrides
+        row.is_hidden = is_hidden
+    await db.commit()
+    await db.refresh(row)
+    return row

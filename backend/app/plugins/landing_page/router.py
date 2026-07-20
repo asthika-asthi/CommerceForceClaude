@@ -1,38 +1,31 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import require_admin
-from app.plugins.landing_page.schemas import LandingSectionCreate, LandingSectionUpdate, LandingSectionOut
+from app.plugins.landing_page.schemas import EditableSectionOut, ContentOverrideSave, ContentOverrideEntryOut
 from app.plugins.landing_page import service
 
 router = APIRouter()
 
 
-@router.get("", response_model=list[LandingSectionOut])
-async def list_sections(
-    active_only: bool = True,
-    db: AsyncSession = Depends(get_db),
-):
-    return await service.list_sections(db, active_only=active_only)
+# Static paths declared before /{section_key} — same ordering rule as every
+# other plugin router in this codebase (dynamic path segments must come last).
+
+@router.get("/editable", response_model=list[EditableSectionOut], dependencies=[Depends(require_admin())])
+async def list_editable_sections(db: AsyncSession = Depends(get_db)):
+    return await service.get_editable_sections(db)
 
 
-@router.post("", response_model=LandingSectionOut, status_code=status.HTTP_201_CREATED,
-             dependencies=[Depends(require_admin())])
-async def create_section(data: LandingSectionCreate, db: AsyncSession = Depends(get_db)):
-    return await service.create_section(data, db)
+@router.get("/overrides", response_model=dict[str, ContentOverrideEntryOut])
+async def list_overrides(db: AsyncSession = Depends(get_db)):
+    return await service.get_override_map(db)
 
 
-@router.put("/{section_id}", response_model=LandingSectionOut, dependencies=[Depends(require_admin())])
-async def update_section(section_id: str, data: LandingSectionUpdate, db: AsyncSession = Depends(get_db)):
-    return await service.update_section(section_id, data, db)
-
-
-@router.delete("/{section_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[Depends(require_admin())])
-async def delete_section(section_id: str, db: AsyncSession = Depends(get_db)):
-    await service.delete_section(section_id, db)
-
-
-@router.post("/reorder", response_model=list[LandingSectionOut], dependencies=[Depends(require_admin())])
-async def reorder_sections(section_ids: list[str], db: AsyncSession = Depends(get_db)):
-    return await service.reorder_sections(section_ids, db)
+@router.put("/{section_key}", response_model=EditableSectionOut, dependencies=[Depends(require_admin())])
+async def save_section_content(section_key: str, data: ContentOverrideSave, db: AsyncSession = Depends(get_db)):
+    await service.save_override(db, section_key, data.overrides, data.is_hidden)
+    sections = await service.get_editable_sections(db)
+    for s in sections:
+        if s["section_key"] == section_key:
+            return s
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section is not editable")

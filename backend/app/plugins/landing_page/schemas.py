@@ -1,42 +1,25 @@
-from typing import Optional
+from typing import Literal
 from pydantic import BaseModel
-from app.plugins.landing_page.models import SectionType
 
 
-class LandingSectionCreate(BaseModel):
-    section_type: SectionType
-    title: Optional[str] = None
-    subtitle: Optional[str] = None
-    content: Optional[str] = None
-    image_url: Optional[str] = None
-    cta_text: Optional[str] = None
-    cta_url: Optional[str] = None
-    sort_order: int = 0
-    background_color: Optional[str] = None
+class EditableFieldOut(BaseModel):
+    name: str
+    label: str
+    type: Literal["text", "image", "link"]
+    value: str
 
 
-class LandingSectionUpdate(BaseModel):
-    title: Optional[str] = None
-    subtitle: Optional[str] = None
-    content: Optional[str] = None
-    image_url: Optional[str] = None
-    cta_text: Optional[str] = None
-    cta_url: Optional[str] = None
-    sort_order: Optional[int] = None
-    is_active: Optional[bool] = None
-    background_color: Optional[str] = None
+class EditableSectionOut(BaseModel):
+    section_key: str
+    is_hidden: bool
+    fields: list[EditableFieldOut]
 
 
-class LandingSectionOut(BaseModel):
-    id: str
-    section_type: SectionType
-    title: Optional[str] = None
-    subtitle: Optional[str] = None
-    content: Optional[str] = None
-    image_url: Optional[str] = None
-    cta_text: Optional[str] = None
-    cta_url: Optional[str] = None
-    sort_order: int
-    is_active: bool
-    background_color: Optional[str] = None
-    model_config = {"from_attributes": True}
+class ContentOverrideSave(BaseModel):
+    overrides: dict[str, str]
+    is_hidden: bool = False
+
+
+class ContentOverrideEntryOut(BaseModel):
+    overrides: dict[str, str]
+    is_hidden: bool
