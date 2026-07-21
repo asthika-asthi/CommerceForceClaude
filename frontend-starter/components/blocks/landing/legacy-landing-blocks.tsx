@@ -25,11 +25,20 @@ export function LandingPromoBannerBlock() {
   return <PromoBanner />
 }
 
-export function LandingHeroBlock({ data }: DataProps) {
+interface LandingHeroProps extends DataProps {
+  title?: string
+  titleHighlight?: string
+  subtitle?: string
+}
+
+export function LandingHeroBlock({ data, title, titleHighlight, subtitle }: LandingHeroProps) {
   return (
     <Hero
       bestSellers={(data?.products ?? []).slice(0, 4)}
       showBestSellersCard={data?.showBestSellersCard ?? true}
+      title={title}
+      titleHighlight={titleHighlight}
+      subtitle={subtitle}
     />
   )
 }
@@ -38,8 +47,13 @@ export function LandingTrustStripBlock() {
   return <TrustStrip />
 }
 
-export function LandingCategoryGridBlock({ data }: DataProps) {
-  return <CategoryGrid categories={data?.categories ?? []} />
+interface LandingCategoryGridProps extends DataProps {
+  title?: string
+  titleHighlight?: string
+}
+
+export function LandingCategoryGridBlock({ data, title, titleHighlight }: LandingCategoryGridProps) {
+  return <CategoryGrid categories={data?.categories ?? []} title={title} titleHighlight={titleHighlight} />
 }
 
 interface LandingProductGridProps extends DataProps {
@@ -78,18 +92,38 @@ export function LandingStatsBandBlock() {
   return <StatsBand />
 }
 
-export function LandingHowToOrderBlock() {
-  return <HowToOrder />
+interface LandingHowToOrderProps {
+  title?: string
+  titleHighlight?: string
 }
 
-export function LandingRangeTableBlock({ data }: DataProps) {
-  return <RangeTable products={data?.products ?? []} categories={data?.categories ?? []} />
+export function LandingHowToOrderBlock({ title, titleHighlight }: LandingHowToOrderProps) {
+  return <HowToOrder title={title} titleHighlight={titleHighlight} />
 }
 
-export function LandingTestimonialsBlock() {
-  return <Testimonials />
+interface LandingRangeTableProps extends DataProps {
+  title?: string
+  titleHighlight?: string
 }
 
-export function LandingNewsletterBlock() {
-  return <Newsletter />
+export function LandingRangeTableBlock({ data, title, titleHighlight }: LandingRangeTableProps) {
+  return <RangeTable products={data?.products ?? []} categories={data?.categories ?? []} title={title} titleHighlight={titleHighlight} />
+}
+
+interface LandingTestimonialsProps {
+  title?: string
+  titleHighlight?: string
+}
+
+export function LandingTestimonialsBlock({ title, titleHighlight }: LandingTestimonialsProps) {
+  return <Testimonials title={title} titleHighlight={titleHighlight} />
+}
+
+interface LandingNewsletterProps {
+  title?: string
+  subtitle?: string
+}
+
+export function LandingNewsletterBlock({ title, subtitle }: LandingNewsletterProps) {
+  return <Newsletter title={title} subtitle={subtitle} />
 }

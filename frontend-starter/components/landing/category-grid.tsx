@@ -26,16 +26,18 @@ const FALLBACK_STYLES = [
 
 interface Props {
   categories: Category[]
+  title?: string
+  titleHighlight?: string
 }
 
-export function CategoryGrid({ categories }: Props) {
+export function CategoryGrid({ categories, title = "Shop by", titleHighlight = "product range" }: Props) {
   const display = categories.slice(0, 4)
 
   return (
     <div className="max-w-[1280px] mx-auto px-10 py-14">
       <div className="flex justify-between items-baseline mb-8">
         <h2 className="text-[26px] font-bold text-brand-dark">
-          Shop by <span className="text-brand">product range</span>
+          {title} <span className="text-brand">{titleHighlight}</span>
         </h2>
         <Link href="/products" className="text-[13px] font-semibold text-brand flex items-center gap-1 hover:text-brand-hover transition-colors">
           All categories →

@@ -21,13 +21,18 @@ const STEPS = [
   },
 ]
 
-export function HowToOrder() {
+interface Props {
+  title?: string
+  titleHighlight?: string
+}
+
+export function HowToOrder({ title = "How to", titleHighlight = "order from us" }: Props) {
   return (
     <div className="bg-white py-14">
       <div className="max-w-[1280px] mx-auto px-10">
         <div className="flex justify-between items-baseline mb-8">
           <h2 className="text-[26px] font-bold text-brand-dark">
-            How to <span className="text-brand">order from us</span>
+            {title} <span className="text-brand">{titleHighlight}</span>
           </h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-0 relative">

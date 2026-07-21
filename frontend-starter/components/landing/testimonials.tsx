@@ -25,13 +25,18 @@ const REVIEWS = [
   },
 ]
 
-export function Testimonials() {
+interface Props {
+  title?: string
+  titleHighlight?: string
+}
+
+export function Testimonials({ title = "What our", titleHighlight = "customers say" }: Props) {
   return (
     <div className="bg-white py-14">
       <div className="max-w-[1280px] mx-auto px-10">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-[26px] font-bold text-brand-dark">
-            What our <span className="text-brand">customers say</span>
+            {title} <span className="text-brand">{titleHighlight}</span>
           </h2>
           <div className="flex items-center gap-2">
             <span className="text-[#00B67A] text-base">★★★★★</span>

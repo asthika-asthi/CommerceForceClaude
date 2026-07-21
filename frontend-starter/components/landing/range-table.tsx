@@ -4,9 +4,11 @@ import type { Product, Category } from "@/lib/types"
 interface Props {
   products: Product[]
   categories?: Category[]
+  title?: string
+  titleHighlight?: string
 }
 
-export function RangeTable({ products, categories = [] }: Props) {
+export function RangeTable({ products, categories = [], title = "Product range", titleHighlight = "quick reference" }: Props) {
   if (products.length === 0) return null
 
   const categoryNames = new Map(categories.map(c => [c.id, c.name]))
@@ -15,7 +17,7 @@ export function RangeTable({ products, categories = [] }: Props) {
     <div className="max-w-[1280px] mx-auto px-10 pb-14">
       <div className="flex justify-between items-baseline mb-8">
         <h2 className="text-[26px] font-bold text-brand-dark">
-          Product range <span className="text-brand">quick reference</span>
+          {title} <span className="text-brand">{titleHighlight}</span>
         </h2>
         <Link href="/products" className="text-[13px] font-semibold text-brand flex items-center gap-1 hover:text-brand-hover transition-colors">
           Full catalogue →

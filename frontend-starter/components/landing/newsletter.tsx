@@ -3,7 +3,15 @@ import { useState } from "react"
 import { api } from "@/lib/api"
 import { usePlugin } from "@/lib/plugins-context"
 
-export function Newsletter() {
+interface Props {
+  title?: string
+  subtitle?: string
+}
+
+export function Newsletter({
+  title = "Stay ahead — trade offers & new stock",
+  subtitle = "Join 1,800+ decorators, builders, and site managers who get early access to promotions, new product lines, and price list updates.",
+}: Props) {
   const newsletterEnabled = usePlugin("newsletter")
   const [email, setEmail] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle")
@@ -25,9 +33,9 @@ export function Newsletter() {
   return (
     <div className="py-[60px] px-10" style={{ background: "linear-gradient(135deg, var(--brand-dark) 0%, var(--dark-deep) 100%)" }}>
       <div className="max-w-[600px] mx-auto text-center">
-        <h2 className="text-[28px] font-bold text-white mb-2">Stay ahead — trade offers &amp; new stock</h2>
+        <h2 className="text-[28px] font-bold text-white mb-2">{title}</h2>
         <p className="text-[15px] text-on-dark mb-7">
-          Join 1,800+ decorators, builders, and site managers who get early access to promotions, new product lines, and price list updates.
+          {subtitle}
         </p>
 
         {status === "done" ? (
