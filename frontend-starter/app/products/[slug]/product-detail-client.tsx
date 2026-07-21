@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import type { Product, ReviewSummary } from "@/lib/types"
 import { AddToCartButton } from "./add-to-cart-button"
 import { WishlistButton } from "@/components/shop/wishlist-button"
@@ -57,11 +58,15 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
       <div>
         {images.length > 0 ? (
           <div className="space-y-3">
-            <div className="aspect-square bg-slate-50 rounded-2xl overflow-hidden">
-              <img
+            <div className="relative aspect-square bg-slate-50 rounded-2xl overflow-hidden">
+              <Image
                 src={displayedImageUrl ?? images[0].url}
                 alt={displayedAlt}
-                className="w-full h-full object-cover"
+                fill
+                unoptimized
+                priority
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="object-cover"
               />
             </div>
             {images.length > 1 && (
@@ -72,13 +77,13 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
                     type="button"
                     onClick={() => setDisplayedImageUrl(img.url)}
                     className={[
-                      "aspect-square bg-slate-50 rounded-xl overflow-hidden border-2 transition-colors",
+                      "relative aspect-square bg-slate-50 rounded-xl overflow-hidden border-2 transition-colors",
                       displayedImageUrl === img.url
                         ? "border-brand-dark"
                         : "border-transparent hover:border-slate-300",
                     ].join(" ")}
                   >
-                    <img src={img.url} alt={img.alt_text ?? ""} className="w-full h-full object-cover" />
+                    <Image src={img.url} alt={img.alt_text ?? ""} fill unoptimized sizes="25vw" className="object-cover" />
                   </button>
                 ))}
               </div>

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import type { Product } from "@/lib/types"
 import { formatMoney } from "@/lib/currency"
 
@@ -71,7 +72,7 @@ export function ProductGridSection({
                 {/* Image */}
                 <div className="h-[180px] flex items-center justify-center text-[72px] relative flex-shrink-0" style={{ background: imageUrl ? undefined : GRADIENTS[idx] }}>
                   {imageUrl ? (
-                    <img src={imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                    <Image src={imageUrl} alt={product.name} fill unoptimized sizes="(min-width: 768px) 25vw, 50vw" className="object-cover" />
                   ) : (
                     EMOJIS[idx]
                   )}

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Quote } from 'lucide-react'
+import Image from 'next/image'
 
 interface Testimonial {
   name: string
@@ -133,9 +134,12 @@ export function TestimonialsCarousel({
                   {/* Author */}
                   <div className="flex flex-col items-center gap-3">
                     {current.avatar ? (
-                      <img
+                      <Image
                         src={current.avatar}
                         alt={current.name}
+                        width={56}
+                        height={56}
+                        unoptimized
                         className="w-14 h-14 rounded-full object-cover border-2 border-brand"
                       />
                     ) : (

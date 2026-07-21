@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link"
+import Image from "next/image"
 import type { Category } from "@/lib/types"
 
 function resolveImageUrl(url: string): string {
@@ -58,10 +59,13 @@ export function CategoryGrid({ categories, title = "Shop by", titleHighlight = "
                 {style.emoji}
                 {/* Image overlaid on top — hidden via onError if URL is broken */}
                 {cat.image_url && (
-                  <img
+                  <Image
                     src={resolveImageUrl(cat.image_url)}
                     alt=""
-                    className="absolute inset-0 w-full h-full object-cover"
+                    fill
+                    unoptimized
+                    sizes="(min-width: 768px) 25vw, 50vw"
+                    className="object-cover"
                     onError={e => { (e.target as HTMLImageElement).style.display = "none" }}
                   />
                 )}

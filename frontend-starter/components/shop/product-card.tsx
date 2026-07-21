@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { ShoppingCart, Check, X } from "lucide-react"
 import { useCartStore } from "@/store/cart"
 import { WishlistButton } from "@/components/shop/wishlist-button"
@@ -41,10 +42,16 @@ export function ProductCard({ product }: { product: Product }) {
     <div className="bg-card-bg rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group">
       <div className="relative">
         <Link href={`/products/${product.slug}`}>
-          <div className="aspect-square bg-slate-50 overflow-hidden">
+          <div className="relative aspect-square bg-slate-50 overflow-hidden">
             {image ? (
-              <img src={image.url} alt={image.alt_text ?? product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              <Image
+                src={image.url}
+                alt={image.alt_text ?? product.name}
+                fill
+                unoptimized
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-slate-200">
                 <ShoppingCart size={40} />

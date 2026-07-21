@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import type { Product } from "@/lib/types"
 
 function resolveImageUrl(url: string): string {
@@ -109,7 +110,7 @@ export function Hero({
               >
                 <div className="w-11 h-11 rounded-lg flex items-center justify-center text-xl flex-shrink-0 overflow-hidden" style={{ backgroundColor: p.iconBg }}>
                   {p.image ? (
-                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                    <Image src={p.image} alt={p.name} width={44} height={44} unoptimized className="w-full h-full object-cover" />
                   ) : (
                     p.icon
                   )}

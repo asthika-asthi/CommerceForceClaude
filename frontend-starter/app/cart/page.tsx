@@ -4,6 +4,7 @@ import { useCartStore } from "@/store/cart"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import Link from "next/link"
+import Image from "next/image"
 import { Trash2, Plus, Minus, X } from "lucide-react"
 import { formatMoney } from "@/lib/currency"
 
@@ -103,9 +104,9 @@ export default function CartPage() {
               const busy = busyItems.has(item.variant_id)
               return (
                 <div key={item.id} className={`flex gap-4 bg-card-bg border border-slate-100 rounded-xl p-4 transition-opacity ${busy ? "opacity-60" : ""}`}>
-                  <div className="w-20 h-20 bg-slate-50 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="relative w-20 h-20 bg-slate-50 rounded-lg overflow-hidden flex-shrink-0">
                     {item.primary_image ? (
-                      <img src={item.primary_image} alt={item.product_name} className="w-full h-full object-cover" />
+                      <Image src={item.primary_image} alt={item.product_name} fill unoptimized sizes="80px" className="object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-200 text-2xl">📦</div>
                     )}

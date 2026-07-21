@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import type { WishlistItem, Product } from "@/lib/types"
@@ -80,7 +81,7 @@ export default function WishlistPage() {
             return (
               <div key={item.id} className="bg-card-bg border border-slate-100 rounded-2xl p-4 flex items-center gap-4">
                 {p?.images?.[0]?.url ? (
-                  <img src={p.images[0].url} alt={p.name} className="w-16 h-16 object-cover rounded-xl flex-shrink-0" />
+                  <Image src={p.images[0].url} alt={p.name} width={64} height={64} unoptimized className="w-16 h-16 object-cover rounded-xl flex-shrink-0" />
                 ) : (
                   <div className="w-16 h-16 bg-slate-100 rounded-xl flex-shrink-0" />
                 )}

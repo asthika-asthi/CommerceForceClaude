@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { ScrollReveal } from '@/components/ui/scroll-reveal'
 
 interface BentoCard {
@@ -33,8 +34,8 @@ export function BentoGrid({ cards, title }: BentoGridProps) {
             }`}
           >
             {card.image && (
-              <div className={`overflow-hidden rounded-xl mb-4 ${card.size === 'large' ? 'h-40' : 'h-20'}`}>
-                <img src={card.image} alt={card.title} className="w-full h-full object-cover" />
+              <div className={`relative overflow-hidden rounded-xl mb-4 ${card.size === 'large' ? 'h-40' : 'h-20'}`}>
+                <Image src={card.image} alt={card.title} fill unoptimized sizes="(min-width: 768px) 33vw, 50vw" className="object-cover" />
               </div>
             )}
             <div className="flex-1">

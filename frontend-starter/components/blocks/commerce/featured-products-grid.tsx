@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ShoppingCart, Check, Package, X } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -62,13 +63,15 @@ function ProductGridCard({ product }: { product: Product }) {
       transition={{ duration: 0.25, ease: 'easeOut' }}
     >
       <Link href={`/products/${product.slug}`} className="block overflow-hidden">
-        <div className="aspect-square bg-slate-100 overflow-hidden">
+        <div className="relative aspect-square bg-slate-100 overflow-hidden">
           {imageUrl ? (
-            <img
+            <Image
               src={imageUrl}
               alt={product.name}
-              loading="lazy"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              fill
+              unoptimized
+              sizes="(min-width: 768px) 25vw, 50vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-slate-300">

@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState, useRef } from "react"
 import { useAuthStore } from "@/store/auth"
@@ -50,7 +51,14 @@ export function Navbar({ branding }: Props) {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 flex-shrink-0">
           {logoUrl ? (
-            <img src={logoUrl} alt={storeName || "Home"} className="h-10 w-auto" />
+            <Image
+              src={logoUrl}
+              alt={storeName || "Home"}
+              width={160}
+              height={40}
+              unoptimized
+              style={{ width: "auto", height: "40px" }}
+            />
           ) : initials ? (
             <div className="w-11 h-11 bg-brand rounded-lg flex items-center justify-center text-on-brand font-bold text-lg leading-none">
               {initials}

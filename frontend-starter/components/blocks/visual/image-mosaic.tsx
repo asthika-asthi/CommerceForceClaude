@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 interface MosaicImage {
   src: string
   alt: string
@@ -22,16 +24,19 @@ export function ImageMosaic({ images, title }: ImageMosaicProps) {
         {display.map((img, i) => {
           const isTall = i % 3 === 0
           const content = (
-            <img
+            <Image
               src={img.src}
               alt={img.alt}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              fill
+              unoptimized
+              sizes="(min-width: 768px) 33vw, 50vw"
+              className="object-cover hover:scale-105 transition-transform duration-500"
             />
           )
           return (
             <div
               key={i}
-              className={`overflow-hidden rounded-xl bg-slate-100 ${isTall ? 'row-span-2' : ''}`}
+              className={`relative overflow-hidden rounded-xl bg-slate-100 ${isTall ? 'row-span-2' : ''}`}
             >
               {img.linkUrl ? (
                 <a href={img.linkUrl} className="block w-full h-full">{content}</a>

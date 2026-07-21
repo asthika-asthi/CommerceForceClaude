@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import type { BrandingConfig, Category } from "@/lib/types"
 
 interface Props {
@@ -32,7 +33,14 @@ export function Footer({ branding, categories }: Props) {
             {(storeName || branding?.logo_url) && (
               <div className="flex items-center gap-2.5">
                 {branding?.logo_url ? (
-                  <img src={branding.logo_url} alt={storeName || "Logo"} className="h-10 w-auto" />
+                  <Image
+                    src={branding.logo_url}
+                    alt={storeName || "Logo"}
+                    width={160}
+                    height={40}
+                    unoptimized
+                    style={{ width: "auto", height: "40px" }}
+                  />
                 ) : (
                   <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center text-base font-bold text-on-brand">{initials}</div>
                 )}
