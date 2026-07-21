@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-07-16. This is the single source of truth for build status.
+Last updated: 2026-07-21. This is the single source of truth for build status.
 Bug-review findings and their fix status live in `docs/bugs-log.md`.
 Forward-looking gaps, per-profile coverage, and the multi-tenant question live in
 `docs/gap-analysis-and-roadmap.md`.
@@ -493,6 +493,33 @@ in `docs/component-library.md` ("known overlaps"); Tri Star's live
 **Next:** merge order is `feat/component-library-phase3` →
 `feat/ui-pipeline-phase2` → `master`, once the big manual test session
 (Phase 1 + Phase 2 + this) is done.
+
+---
+
+### Bank Transfer + PayPal payment methods (2026-07-21)
+
+Two new manual/offline payment methods alongside Stripe: customer picks the
+method, sees the store's bank details / PayPal email at checkout (configured
+per-client in admin Branding → Payment Methods), order is created
+`payment_status=pending`. Admin confirms the payment arrived via a new
+"Mark as Paid" button on the order detail page, which triggers the same
+deferred stock/coupon/loyalty effects the Stripe webhook triggers on success.
+
+**Built, NOT manually tested — needs the big session:**
+- Automated: 10 new backend tests (`tests/test_checkout_deferral.py`) — 5
+  calling the service layer directly (deferral, `mark_paid` idempotency,
+  wrong-payment-method rejection, 503-when-unconfigured) and 5 hitting the
+  real HTTP endpoints (`POST /orders/{id}/mark-paid` success + idempotent 409
+  + non-admin 403 + wrong-method 400, and a `PUT`→`GET /api/branding`
+  round-trip for the new fields) — all passing. Full backend suite (389
+  tests), ruff, mypy, `alembic upgrade head`, and `tsc --noEmit` on both
+  frontends all clean.
+- **Not yet verified in a real browser**: setting bank details/PayPal email in
+  admin Branding, seeing both options appear at storefront checkout with
+  correct instructions, placing an order with each, clicking "Mark as Paid"
+  in admin, confirming the "Payment received" email arrives, and confirming
+  the order can still be cancelled/refunded-by-hand afterward with stock
+  correctly restored.
 
 ---
 

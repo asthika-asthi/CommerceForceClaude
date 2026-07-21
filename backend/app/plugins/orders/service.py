@@ -84,6 +84,8 @@ async def create_order(
     discount_amount: Decimal = Decimal("0"),
     tax_amount: Decimal = Decimal("0"),
     shipping_cost: Decimal = Decimal("0"),
+    pending_coupon_code: Optional[str] = None,
+    pending_redeem_points: int = 0,
 ) -> Order:
     if not items:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Order must have at least one item")
@@ -105,6 +107,8 @@ async def create_order(
         total=total,
         shipping_address=shipping_address,
         notes=notes,
+        pending_coupon_code=pending_coupon_code,
+        pending_redeem_points=pending_redeem_points,
     )
     db.add(order)
     await db.flush()
@@ -289,6 +293,63 @@ async def fulfil_order(order_id: str, data: FulfilRequest, db: AsyncSession) -> 
             )
         except Exception as exc:
             logger.warning("Shipping notification failed for order %s: %s", order.id, exc)
+
+    return order
+
+
+async def mark_paid(order_id: str, db: AsyncSession) -> Order:
+    """Admin confirmation that a manual payment (bank transfer / PayPal) has arrived.
+
+    Applies the same deferred stock/coupon/loyalty effects the Stripe webhook applies on
+    payment_intent.succeeded — bank transfer and PayPal have no webhook, so an admin
+    confirms the payment by hand instead.
+    """
+    order = await get_order(order_id, db)
+    if order.payment_method not in (PaymentMethod.bank_transfer, PaymentMethod.paypal):
+        raise HTTPException(status_code=400, detail="Only bank transfer or PayPal orders can be manually marked as paid")
+    if order.status == OrderStatus.cancelled:
+        raise HTTPException(status_code=409, detail="Cannot mark a cancelled order as paid")
+    if order.payment_status == PaymentStatus.paid:
+        raise HTTPException(status_code=409, detail="Order is already marked as paid")
+
+    order.payment_status = PaymentStatus.paid
+    if order.status == OrderStatus.pending:
+        order.status = OrderStatus.confirmed
+    await db.flush()
+
+    from app.plugins.checkout.service import _apply_paid_order_effects
+    stock_items = [(i.product_id, i.variant_id, i.quantity) for i in order.items]
+    await _apply_paid_order_effects(
+        order, stock_items, order.pending_coupon_code, order.pending_redeem_points, db
+    )
+    await db.flush()
+
+    # Notify the customer payment was received (short note — the full order
+    # confirmation + payment instructions already went out at checkout time).
+    recipient = order.guest_email
+    if not recipient and order.user_id:
+        try:
+            from app.plugins.auth.models import User
+            user_result = await db.execute(select(User).where(User.id == order.user_id))
+            user_obj = user_result.scalar_one_or_none()
+            if user_obj:
+                recipient = user_obj.email
+        except Exception:
+            pass
+
+    if recipient:
+        try:
+            from app.shared.email import send_email
+            from app.shared.currency import format_money
+            await send_email(
+                recipient, f"Payment received — {order.order_number}",
+                f"We've received your payment for order {order.order_number}. "
+                f"Your order is now confirmed and will be processed shortly.\n\n"
+                f"Total: {format_money(order.total)}\n\nThank you for shopping with us!",
+                db,
+            )
+        except Exception as exc:
+            logger.warning("Payment-received email failed for order %s: %s", order.id, exc)
 
     return order
 

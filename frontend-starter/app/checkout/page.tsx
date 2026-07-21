@@ -12,10 +12,10 @@ import { useCartStore } from "@/store/cart"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import Link from "next/link"
-import type { Address } from "@/lib/types"
+import type { Address, BrandingConfig } from "@/lib/types"
 import { formatMoney } from "@/lib/currency"
 
-type PaymentMethodKey = "cash" | "credit_limit" | "stripe"
+type PaymentMethodKey = "cash" | "credit_limit" | "stripe" | "bank_transfer" | "paypal"
 
 interface CheckoutForm {
   name: string
@@ -35,14 +35,22 @@ const PAYMENT_METHODS: { value: PaymentMethodKey; label: string; description: st
   { value: "cash", label: "Cash on Delivery", description: "Pay when your order arrives" },
   { value: "credit_limit", label: "Trade Credit Account", description: "Charge to your pre-approved business credit account" },
   { value: "stripe", label: "Pay by Card", description: "Pay securely with credit or debit card" },
+  { value: "bank_transfer", label: "Bank Transfer", description: "Pay directly via bank transfer using the details provided" },
+  { value: "paypal", label: "PayPal", description: "Send payment via PayPal using the details provided" },
 ]
 
 export default function CheckoutPage() {
   const [stripeKey, setStripeKey] = useState("")
+  const [bankDetails, setBankDetails] = useState("")
+  const [paypalEmail, setPaypalEmail] = useState("")
 
   useEffect(() => {
-    api.get<{ stripe_publishable_key?: string }>("/api/branding")
-      .then(b => setStripeKey(b?.stripe_publishable_key ?? ""))
+    api.get<BrandingConfig>("/api/branding")
+      .then(b => {
+        setStripeKey(b?.stripe_publishable_key ?? "")
+        setBankDetails(b?.bank_transfer_details ?? "")
+        setPaypalEmail(b?.paypal_email ?? "")
+      })
       .catch(() => {})
   }, [])
 
@@ -53,12 +61,12 @@ export default function CheckoutPage() {
 
   return (
     <Elements stripe={stripePromise}>
-      <CheckoutContent stripeEnabled={!!stripeKey} />
+      <CheckoutContent stripeEnabled={!!stripeKey} bankDetails={bankDetails} paypalEmail={paypalEmail} />
     </Elements>
   )
 }
 
-function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
+function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEnabled: boolean; bankDetails: string; paypalEmail: string }) {
   const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const { cart, fetch, clear } = useCartStore()
@@ -263,7 +271,7 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
       }
 
       clear()
-      router.push(`/checkout/success?order_id=${res.order_id}&order_number=${encodeURIComponent(res.order_number)}`)
+      router.push(`/checkout/success?order_id=${res.order_id}&order_number=${encodeURIComponent(res.order_number)}&payment_method=${form.payment_method}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed")
     } finally {
@@ -287,6 +295,8 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
     // visible for the B2B customers who do.
     if (m.value === "credit_limit" && !hasCreditAccount) return false
     if (m.value === "stripe" && !stripeEnabled) return false
+    if (m.value === "bank_transfer" && !bankDetails) return false
+    if (m.value === "paypal" && !paypalEmail) return false
     return true
   })
 
@@ -448,6 +458,28 @@ function CheckoutContent({ stripeEnabled }: { stripeEnabled: boolean }) {
                 />
                 <p className="mt-2 text-xs text-slate-400">
                   Payments are processed securely by Stripe. We never store your card details.
+                </p>
+              </div>
+            )}
+
+            {form.payment_method === "bank_transfer" && (
+              <div className="mt-4 border border-slate-200 rounded-xl p-4">
+                <p className="text-sm font-medium text-slate-900 mb-2">Bank transfer details</p>
+                <p className="text-sm text-slate-700 whitespace-pre-line">{bankDetails}</p>
+                <p className="mt-3 text-xs text-slate-400">
+                  Your order number will be emailed to you and shown on the confirmation page — please use it as your payment reference. Your order will be confirmed once we receive your payment.
+                </p>
+              </div>
+            )}
+
+            {form.payment_method === "paypal" && (
+              <div className="mt-4 border border-slate-200 rounded-xl p-4">
+                <p className="text-sm font-medium text-slate-900 mb-2">Pay via PayPal</p>
+                <p className="text-sm text-slate-700">
+                  Send the total amount to <span className="font-medium">{paypalEmail}</span> via PayPal.
+                </p>
+                <p className="mt-3 text-xs text-slate-400">
+                  Your order number will be emailed to you and shown on the confirmation page — please use it as your payment reference/note. Your order will be confirmed once we receive your payment.
                 </p>
               </div>
             )}

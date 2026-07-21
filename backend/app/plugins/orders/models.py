@@ -20,6 +20,8 @@ class PaymentMethod(str, enum.Enum):
     cash = "cash"
     credit_limit = "credit_limit"
     stripe = "stripe"
+    bank_transfer = "bank_transfer"
+    paypal = "paypal"
 
 
 class PaymentStatus(str, enum.Enum):
@@ -50,6 +52,11 @@ class Order(BaseModel):
     stripe_payment_intent_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     tracking_number: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     shipped_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Coupon/loyalty state for orders whose payment confirmation is deferred to a manual
+    # admin action (bank_transfer/paypal) rather than a webhook — read back by
+    # orders.service.mark_paid() when applying the deferred order effects.
+    pending_coupon_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    pending_redeem_points: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     items: Mapped[list["OrderItem"]] = relationship(
         "OrderItem", back_populates="order", cascade="all, delete-orphan", lazy="selectin"

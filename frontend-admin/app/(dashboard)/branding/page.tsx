@@ -154,6 +154,8 @@ export default function BrandingPage() {
       TEXT_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       IMAGE_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       f.custom_css = config.custom_css ?? ""
+      f.bank_transfer_details = config.bank_transfer_details ?? ""
+      f.paypal_email = config.paypal_email ?? ""
       f.ga4_measurement_id = config.ga4_measurement_id ?? ""
       f.meta_pixel_id = config.meta_pixel_id ?? ""
       const sl = (config as unknown as Record<string, unknown>).social_links
@@ -325,6 +327,31 @@ export default function BrandingPage() {
             onChange={(e) => setForm((f) => ({ ...f, social_links: e.target.value }))}
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder='{"twitter": "https://...", "instagram": "https://..."}' />
+        </div>
+
+        {/* ── Payment Methods ─────────────────────────────────────── */}
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Payment Methods</h3>
+          <p className="text-xs text-slate-500 mb-4">
+            Bank Transfer and PayPal only appear at checkout once their details below are filled in.
+            Orders paid this way stay pending until you confirm the payment arrived (Orders → Mark as Paid).
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Bank Transfer Details</label>
+              <textarea value={form.bank_transfer_details || ""}
+                onChange={(e) => setForm((f) => ({ ...f, bank_transfer_details: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
+                placeholder={"Bank name: ...\nAccount name: ...\nAccount number: ...\nSort code: ..."} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">PayPal Email</label>
+              <input value={form.paypal_email || ""}
+                onChange={(e) => setForm((f) => ({ ...f, paypal_email: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="payments@yourstore.com" />
+            </div>
+          </div>
         </div>
 
         {/* ── Analytics ───────────────────────────────────────────── */}

@@ -36,6 +36,8 @@ class BrandingConfigOut(BaseModel):
     contact_phone: Optional[str] = None
     social_links: Optional[dict] = None
     stripe_publishable_key: Optional[str] = None
+    bank_transfer_details: Optional[str] = None
+    paypal_email: Optional[str] = None
     ga4_measurement_id: Optional[str] = None
     meta_pixel_id: Optional[str] = None
     theme_colors: dict = {}
@@ -65,6 +67,8 @@ class BrandingConfigUpdate(BaseModel):
     contact_phone: Optional[str] = None
     social_links: Optional[dict] = None
     stripe_publishable_key: Optional[str] = None
+    bank_transfer_details: Optional[str] = None
+    paypal_email: Optional[str] = None
     ga4_measurement_id: Optional[str] = None
     meta_pixel_id: Optional[str] = None
     theme_colors: Optional[dict] = None

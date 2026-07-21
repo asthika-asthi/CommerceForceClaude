@@ -19,6 +19,8 @@ class BrandingConfig(BaseModel):
     contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     social_links: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string
     stripe_publishable_key: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    bank_transfer_details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    paypal_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     ga4_measurement_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     meta_pixel_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     # Theme colour overrides chosen in the admin panel:

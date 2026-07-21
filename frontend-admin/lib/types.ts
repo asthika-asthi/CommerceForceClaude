@@ -96,7 +96,7 @@ export interface ProductCreate {
 // ── Orders ────────────────────────────────────────────────────────────────────
 export type OrderStatus = "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled"
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
-export type PaymentMethod = "cash" | "credit_limit" | "stripe"
+export type PaymentMethod = "cash" | "credit_limit" | "stripe" | "bank_transfer" | "paypal"
 
 export interface OrderItem {
   id: string
@@ -302,6 +302,8 @@ export interface BrandingConfig {
   contact_phone?: string
   social_links?: string
   stripe_publishable_key?: string
+  bank_transfer_details?: string
+  paypal_email?: string
   ga4_measurement_id?: string | null
   meta_pixel_id?: string | null
   theme_colors?: { core?: Record<string, string>; overrides?: Record<string, string> }

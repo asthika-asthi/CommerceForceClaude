@@ -150,6 +150,12 @@ async def fulfil_order(
     return await service.fulfil_order(order_id, data, db)
 
 
+@router.post("/{order_id}/mark-paid", response_model=OrderOut,
+             dependencies=[Depends(require_admin())])
+async def mark_paid(order_id: str, db: AsyncSession = Depends(get_db)):
+    return await service.mark_paid(order_id, db)
+
+
 @router.post("/{order_id}/cancel", response_model=OrderOut)
 async def cancel_order(
     order_id: str,

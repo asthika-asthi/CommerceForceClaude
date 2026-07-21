@@ -6,7 +6,7 @@ import { api } from "@/lib/api"
 import type { Order, OrderStatus } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
-import { ArrowLeft, Truck } from "lucide-react"
+import { ArrowLeft, Truck, Banknote } from "lucide-react"
 import { CURRENCY_SYMBOL, formatMoney } from "@/lib/currency"
 
 const ORDER_STATUSES: OrderStatus[] = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]
@@ -53,6 +53,14 @@ function OrderDetail({ id }: { id: string }) {
     },
   })
 
+  const markPaid = useMutation({
+    mutationFn: () => api.post(`/api/orders/${id}/mark-paid`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order", id] })
+      qc.invalidateQueries({ queryKey: ["orders"] })
+    },
+  })
+
   if (isLoading) {
     return <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
   }
@@ -70,6 +78,35 @@ function OrderDetail({ id }: { id: string }) {
         <StatusBadge value={order.status} />
         <StatusBadge value={order.payment_status} />
       </div>
+
+      {/* Manual payment confirmation — bank transfer / PayPal only */}
+      {(order.payment_method === "bank_transfer" || order.payment_method === "paypal") && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5 mb-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Banknote size={15} className="text-slate-500" />
+            <h3 className="text-sm font-semibold text-slate-700">Payment</h3>
+          </div>
+          {order.payment_status === "paid" ? (
+            <p className="text-sm text-slate-500">Payment confirmed.</p>
+          ) : (
+            <div>
+              <p className="text-sm text-slate-500 mb-3">
+                Awaiting {order.payment_method === "bank_transfer" ? "bank transfer" : "PayPal"} payment. Confirm once it's received.
+              </p>
+              <button
+                onClick={() => markPaid.mutate()}
+                disabled={markPaid.isPending}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 transition-colors"
+              >
+                {markPaid.isPending ? "Marking…" : "Mark as Paid"}
+              </button>
+              {markPaid.isError && (
+                <p className="text-xs text-red-600 mt-2">{(markPaid.error as Error).message}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Fulfillment panel */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 mb-5">

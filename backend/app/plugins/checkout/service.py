@@ -22,7 +22,15 @@ AVAILABLE_PAYMENT_METHODS = [
     {"key": "cash", "label": "Cash on Delivery", "description": "Pay when your order is delivered"},
     {"key": "credit_limit", "label": "Credit Account", "description": "Pay using your business credit limit"},
     {"key": "stripe", "label": "Card (Stripe)", "description": "Pay securely with credit or debit card"},
+    {"key": "bank_transfer", "label": "Bank Transfer", "description": "Pay directly via bank transfer using the details provided"},
+    {"key": "paypal", "label": "PayPal", "description": "Send payment via PayPal using the details provided"},
 ]
+
+
+async def _get_branding(db: AsyncSession):
+    from app.plugins.branding.models import BrandingConfig
+    result = await db.execute(select(BrandingConfig).limit(1))
+    return result.scalar_one_or_none()
 
 
 async def _resolve_cart_items(
@@ -295,6 +303,8 @@ async def checkout(
         discount_amount=discount_amount,
         tax_amount=tax_amount,
         shipping_cost=shipping_cost,
+        pending_coupon_code=data.coupon_code,
+        pending_redeem_points=_points_to_redeem,
     )
 
     # Stock, coupon usage, and loyalty are applied only once the order is PAID —
@@ -336,6 +346,17 @@ async def checkout(
             raise HTTPException(status_code=502, detail="Payment processing unavailable")
         # Side effects are intentionally deferred to handle_stripe_webhook() — do NOT
         # deduct stock / record coupon / touch loyalty until payment actually succeeds.
+    elif data.payment_method == PaymentMethod.bank_transfer:
+        branding = await _get_branding(db)
+        if not branding or not branding.bank_transfer_details:
+            raise HTTPException(status_code=503, detail="Bank transfer is not configured on this platform")
+        # Side effects are deferred to orders.service.mark_paid() — an admin confirms the
+        # transfer arrived manually; do NOT deduct stock / record coupon / touch loyalty yet.
+    elif data.payment_method == PaymentMethod.paypal:
+        branding = await _get_branding(db)
+        if not branding or not branding.paypal_email:
+            raise HTTPException(status_code=503, detail="PayPal is not configured on this platform")
+        # Side effects are deferred to orders.service.mark_paid() — same as bank_transfer.
 
     # Clear the cart after successful checkout
     if data.use_cart:
@@ -467,6 +488,8 @@ async def _send_order_confirmation_email(
         "cash": "Cash on Delivery",
         "credit_limit": "Credit Account",
         "stripe": "Card",
+        "bank_transfer": "Bank Transfer",
+        "paypal": "PayPal",
     }.get(order.payment_method.value if hasattr(order.payment_method, "value") else str(order.payment_method), "")
 
     body = (
@@ -485,6 +508,19 @@ async def _send_order_confirmation_email(
         f"Total:     {format_money(order.total)}\n\n"
         f"Payment:   {payment_label}\n"
     )
+    if order.payment_method in (PaymentMethod.bank_transfer, PaymentMethod.paypal):
+        branding = await _get_branding(db)
+        if branding and order.payment_method == PaymentMethod.bank_transfer and branding.bank_transfer_details:
+            body += (
+                f"\nPlease transfer the total using the details below, quoting your order "
+                f"number ({order.order_number}) as the payment reference:\n\n{branding.bank_transfer_details}\n"
+            )
+        elif branding and order.payment_method == PaymentMethod.paypal and branding.paypal_email:
+            body += (
+                f"\nPlease send the total via PayPal to {branding.paypal_email}, using your "
+                f"order number ({order.order_number}) as the note/reference.\n"
+            )
+        body += "\nYour order will be confirmed once we receive your payment.\n"
     if order.shipping_address:
         body += f"\nShipping address:\n{order.shipping_address}\n"
     body += (
