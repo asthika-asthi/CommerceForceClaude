@@ -3,7 +3,7 @@ import { useState, useRef, useMemo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
-import { Trash2, Copy, Upload, Check } from "lucide-react"
+import { Trash2, Copy, Upload, Check, LayoutGrid, List, Search } from "lucide-react"
 
 interface MediaFile {
   filename: string
@@ -36,6 +36,8 @@ export default function MediaPage() {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState("")
   const [uploadFolder, setUploadFolder] = useState("")
+  const [view, setView] = useState<"grid" | "list">("grid")
+  const [search, setSearch] = useState("")
 
   const { data: files = [], isLoading } = useQuery<MediaFile[]>({
     queryKey: ["media-files"],
@@ -104,9 +106,15 @@ export default function MediaPage() {
     }
   }
 
+  const filteredFiles = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return files
+    return files.filter(f => f.filename.toLowerCase().includes(term))
+  }, [files, search])
+
   const groupedFiles = useMemo(() => {
     const map = new Map<string, MediaFile[]>()
-    for (const f of files) {
+    for (const f of filteredFiles) {
       const folder = getFolder(f.filename)
       if (!map.has(folder)) map.set(folder, [])
       map.get(folder)!.push(f)
@@ -118,7 +126,7 @@ export default function MediaPage() {
       return a.localeCompare(b)
     })
     return new Map(entries)
-  }, [files])
+  }, [filteredFiles])
 
   return (
     <div>
@@ -127,6 +135,32 @@ export default function MediaPage() {
         description="Manage uploaded images"
         actionNode={
           <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search filename…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-sm w-44 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setView("grid")}
+                title="Grid view"
+                className={`p-1.5 ${view === "grid" ? "bg-blue-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}
+              >
+                <LayoutGrid size={15} />
+              </button>
+              <button
+                onClick={() => setView("list")}
+                title="List view"
+                className={`p-1.5 ${view === "list" ? "bg-blue-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}
+              >
+                <List size={15} />
+              </button>
+            </div>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             <input
               type="text"
@@ -162,13 +196,70 @@ export default function MediaPage() {
         </div>
       )}
 
-      {!isLoading && files.length > 0 && (
+      {!isLoading && files.length > 0 && filteredFiles.length === 0 && (
+        <div className="text-center py-16 text-slate-400">
+          <p className="text-sm">No files match &quot;{search}&quot;.</p>
+        </div>
+      )}
+
+      {!isLoading && filteredFiles.length > 0 && (
         <div>
           {Array.from(groupedFiles.entries()).map(([folder, groupFiles]) => (
             <div key={folder} className="mb-6">
               <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
                 {folder === "" ? "Root" : folder}
               </h3>
+              {view === "list" ? (
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="w-16 py-2 px-3" />
+                        <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Filename</th>
+                        <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">URL</th>
+                        <th className="py-2 px-3" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupFiles.map(f => (
+                        <tr key={f.filename} className="border-t border-slate-100">
+                          <td className="py-2 px-3">
+                            <div className="w-10 h-10 rounded bg-slate-50 overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={f.url}
+                                alt={f.filename}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                              />
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-sm text-slate-700 truncate max-w-[200px]" title={f.filename}>{getBasename(f.filename)}</td>
+                          <td className="py-2 px-3 text-xs text-slate-500 font-mono truncate max-w-[300px]" title={f.url}>{f.url}</td>
+                          <td className="py-2 px-3">
+                            <div className="flex gap-1.5 justify-end">
+                              <button
+                                onClick={() => copyUrl(f.url)}
+                                title="Copy URL"
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                              >
+                                {copied === f.url ? <Check size={13} className="text-green-600" /> : <Copy size={13} />}
+                              </button>
+                              <button
+                                onClick={() => setDeleteTarget(f.filename)}
+                                title="Delete"
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-500 transition-colors"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {groupFiles.map(f => (
                   <div key={f.filename} className="bg-white rounded-xl border border-slate-200 overflow-hidden group">
@@ -205,6 +296,7 @@ export default function MediaPage() {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           ))}
         </div>
