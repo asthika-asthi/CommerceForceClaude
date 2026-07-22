@@ -24,7 +24,7 @@ export default function NewProductPage() {
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["categories"],
-    queryFn: () => api.get("/api/categories"),
+    queryFn: () => api.get("/api/categories?include_empty=true"),
   })
 
   const flatCategories = flattenCategories(categories)
