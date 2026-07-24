@@ -195,6 +195,9 @@ export default function AccountSettingsPage() {
         </button>
       </form>
 
+      <h2 className="text-xl font-bold text-slate-900 mt-10 mb-4">Two-factor authentication</h2>
+      <TwoFactorCard />
+
       <h2 className="text-xl font-bold text-slate-900 mt-10 mb-4">Privacy</h2>
       <div className="bg-card-bg border border-slate-100 rounded-2xl p-6 space-y-5">
         <div>
@@ -237,6 +240,118 @@ export default function AccountSettingsPage() {
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowDeleteConfirm(false)}
       />
+    </div>
+  )
+}
+
+function TwoFactorCard() {
+  const user = useAuthStore((s) => s.user)
+  const setUser = useAuthStore((s) => s.setUser)
+  const enabled = !!user?.is_2fa_enabled
+
+  // "idle" → enable/disable button; "confirm" → code entry (enrolling);
+  // "disable" → password entry (turning off).
+  const [mode, setMode] = useState<"idle" | "confirm" | "disable">("idle")
+  const [code, setCode] = useState("")
+  const [password, setPassword] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState("")
+  const [notice, setNotice] = useState("")
+
+  const inputCls = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark"
+
+  async function startEnable() {
+    setError(""); setNotice(""); setBusy(true)
+    try {
+      await api.post("/api/auth/2fa/setup")
+      setMode("confirm")
+      setNotice("We emailed you a 6-digit code. Enter it below to finish enabling two-factor.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't start setup")
+    } finally { setBusy(false) }
+  }
+
+  async function confirmEnable(e: React.FormEvent) {
+    e.preventDefault(); setError(""); setBusy(true)
+    try {
+      const updated = await api.post<User>("/api/auth/2fa/confirm", { code: code.trim() })
+      if (setUser) setUser(updated)
+      setMode("idle"); setCode(""); setNotice("Two-factor authentication is now on.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That code wasn't right")
+    } finally { setBusy(false) }
+  }
+
+  async function confirmDisable(e: React.FormEvent) {
+    e.preventDefault(); setError(""); setBusy(true)
+    try {
+      const updated = await api.post<User>("/api/auth/2fa/disable", { password })
+      if (setUser) setUser(updated)
+      setMode("idle"); setPassword(""); setNotice("Two-factor authentication is now off.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Password was incorrect")
+    } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="bg-card-bg border border-slate-100 rounded-2xl p-6">
+      <p className="text-sm text-slate-600 mb-4">
+        {enabled
+          ? "On — each sign-in also requires a code emailed to you."
+          : "Off — add a code emailed to you at each sign-in for extra security."}
+      </p>
+
+      {notice && !error && (
+        <div className="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-3 py-2">{notice}</div>
+      )}
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>
+      )}
+
+      {mode === "idle" && !enabled && (
+        <button onClick={startEnable} disabled={busy}
+          className="bg-brand hover:bg-brand-hover text-on-brand text-sm font-semibold py-2.5 px-4 rounded-xl transition-colors disabled:opacity-50">
+          {busy ? "Sending code…" : "Enable two-factor"}
+        </button>
+      )}
+
+      {mode === "idle" && enabled && (
+        <button onClick={() => { setMode("disable"); setNotice(""); setError("") }}
+          className="border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-medium py-2.5 px-4 rounded-xl transition-colors">
+          Turn off two-factor
+        </button>
+      )}
+
+      {mode === "confirm" && (
+        <form onSubmit={confirmEnable} className="space-y-3">
+          <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
+            value={code} onChange={(e) => setCode(e.target.value)} required autoFocus
+            placeholder="000000" className={`${inputCls} tracking-[0.4em] text-center`} />
+          <div className="flex gap-2">
+            <button type="submit" disabled={busy}
+              className="bg-brand hover:bg-brand-hover text-on-brand text-sm font-semibold py-2.5 px-4 rounded-xl transition-colors disabled:opacity-50">
+              {busy ? "Verifying…" : "Confirm"}
+            </button>
+            <button type="button" onClick={() => { setMode("idle"); setCode(""); setNotice("") }}
+              className="text-sm text-slate-500 hover:text-slate-700 py-2.5 px-2">Cancel</button>
+          </div>
+        </form>
+      )}
+
+      {mode === "disable" && (
+        <form onSubmit={confirmDisable} className="space-y-3">
+          <p className="text-xs text-slate-600">Enter your password to turn two-factor off.</p>
+          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus className={inputCls} />
+          <div className="flex gap-2">
+            <button type="submit" disabled={busy}
+              className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition-colors disabled:opacity-50">
+              {busy ? "Turning off…" : "Turn off"}
+            </button>
+            <button type="button" onClick={() => { setMode("idle"); setPassword("") }}
+              className="text-sm text-slate-500 hover:text-slate-700 py-2.5 px-2">Cancel</button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }

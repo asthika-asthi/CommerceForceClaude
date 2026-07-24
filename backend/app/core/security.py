@@ -27,3 +27,29 @@ def decode_access_token(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
+
+
+# ── 2FA login challenge ───────────────────────────────────────────────────────
+# After a correct password, a 2FA-enabled user gets this short-lived token instead
+# of a real session. It is type-tagged "2fa_pending" so decode_access_token (which
+# requires type=="access") rejects it — it can only be exchanged for real tokens by
+# passing the emailed code to the verify-2fa endpoint.
+
+TWO_FACTOR_PENDING_EXPIRE_MINUTES = 10
+
+
+def create_2fa_pending_token(user_id: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=TWO_FACTOR_PENDING_EXPIRE_MINUTES)
+    payload = {"sub": user_id, "exp": expire, "type": "2fa_pending"}
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def decode_2fa_pending_token(token: str) -> Optional[str]:
+    """Return the user_id if the token is a valid, unexpired 2FA-pending token, else None."""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("type") != "2fa_pending":
+            return None
+        return payload.get("sub")
+    except JWTError:
+        return None

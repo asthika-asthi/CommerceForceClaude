@@ -8,9 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
-from app.core.security import get_password_hash, verify_password
+from app.core.security import (
+    get_password_hash,
+    verify_password,
+    create_2fa_pending_token,
+    decode_2fa_pending_token,
+)
 from app.core.config import settings
-from app.plugins.auth.models import User, RefreshToken, PasswordResetToken, UserRole, DataDeletionRequest, DeletionRequestStatus
+from app.plugins.auth.models import User, RefreshToken, PasswordResetToken, TwoFactorCode, UserRole, DataDeletionRequest, DeletionRequestStatus
 from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, UpdateProfileRequest, ChangePasswordRequest
 from app.shared.email import send_email
 
@@ -20,6 +25,9 @@ PASSWORD_RESET_EXPIRE_MINUTES = 30
 
 
 EMAIL_VERIFICATION_EXPIRE_HOURS = 24
+
+
+TWO_FACTOR_CODE_EXPIRE_MINUTES = 10
 
 
 async def _issue_and_send_verification(user: User, db: AsyncSession) -> None:
@@ -158,6 +166,137 @@ async def authenticate(email: str, password: str, db: AsyncSession) -> User:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Please verify your email address before signing in. Check your inbox or request a new link.",
         )
+    return user
+
+
+# ── Email-code two-factor auth ────────────────────────────────────────────────
+
+async def _issue_2fa_code(user: User, db: AsyncSession) -> None:
+    """Generate a fresh 6-digit code, invalidate any earlier unused codes so only
+    the newest is valid, store its hash, and email it to the user."""
+    await db.execute(
+        update(TwoFactorCode)
+        .where(TwoFactorCode.user_id == user.id, TwoFactorCode.used == False)  # noqa: E712
+        .values(used=True)
+    )
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    code_hash = hashlib.sha256(code.encode()).hexdigest()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=TWO_FACTOR_CODE_EXPIRE_MINUTES)
+    db.add(TwoFactorCode(user_id=user.id, code_hash=code_hash, expires_at=expires_at))
+    await db.flush()
+
+    logger.info("2FA login code for %s issued (valid %dm)", user.email, TWO_FACTOR_CODE_EXPIRE_MINUTES)
+    print(f"\n[2FA CODE] {user.email} -> {code}\n", flush=True)
+    await send_email(
+        user.email,
+        "Your login verification code",
+        f"Hi {user.first_name},\n\n"
+        f"Your verification code is: {code}\n\n"
+        f"Enter it to finish signing in. This code expires in "
+        f"{TWO_FACTOR_CODE_EXPIRE_MINUTES} minutes and can be used once.\n\n"
+        f"If you didn't try to sign in, someone may have your password — please "
+        f"change it as soon as possible.",
+        db,
+    )
+
+
+async def _verify_and_consume_code(user_id: str, code: str, db: AsyncSession) -> bool:
+    """Check `code` against the newest unused, unexpired code for the user. On a
+    match, mark it used (single-use) and return True; otherwise return False."""
+    result = await db.execute(
+        select(TwoFactorCode)
+        .where(TwoFactorCode.user_id == user_id, TwoFactorCode.used == False)  # noqa: E712
+        .order_by(TwoFactorCode.created_at.desc())
+    )
+    stored = result.scalars().first()
+    if not stored:
+        return False
+
+    expires = stored.expires_at.replace(tzinfo=timezone.utc) if stored.expires_at.tzinfo is None else stored.expires_at
+    if expires < datetime.now(timezone.utc):
+        return False
+
+    if hashlib.sha256(code.encode()).hexdigest() != stored.code_hash:
+        return False
+
+    stored.used = True
+    await db.flush()
+    return True
+
+
+async def start_2fa_login(user: User, db: AsyncSession) -> str:
+    """Email a login code and return a short-lived pending token the client must
+    hand back (with the code) to /login/verify-2fa. No session is issued yet."""
+    await _issue_2fa_code(user, db)
+    return create_2fa_pending_token(user.id)
+
+
+async def _user_from_pending_token(pending_token: str, db: AsyncSession) -> User:
+    user_id = decode_2fa_pending_token(pending_token)
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="2FA session expired — please sign in again")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="2FA session expired — please sign in again")
+    return user
+
+
+async def resend_login_2fa_code(pending_token: str, db: AsyncSession) -> None:
+    user = await _user_from_pending_token(pending_token, db)
+    await _issue_2fa_code(user, db)
+
+
+async def verify_login_2fa(pending_token: str, code: str, db: AsyncSession) -> User:
+    """Exchange a pending token + emailed code for the authenticated user. The
+    caller issues the real access/refresh tokens (mirrors authenticate())."""
+    user = await _user_from_pending_token(pending_token, db)
+    if not await _verify_and_consume_code(user.id, code, db):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code")
+    return user
+
+
+async def setup_2fa(user: User, db: AsyncSession) -> None:
+    """Begin opt-in enrolment: email a code the user confirms to prove their inbox
+    works before 2FA is switched on (avoids self-lockout on broken email)."""
+    await _issue_2fa_code(user, db)
+
+
+async def confirm_2fa(user: User, code: str, db: AsyncSession) -> User:
+    if user.is_2fa_enabled:
+        return user  # already on — idempotent
+    if not await _verify_and_consume_code(user.id, code, db):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code")
+    user.is_2fa_enabled = True
+    await db.flush()
+    return user
+
+
+async def disable_2fa(user: User, password: str, db: AsyncSession) -> User:
+    """Turn 2FA off. Requires the account password so a hijacked live session can't
+    silently remove the second factor."""
+    if not verify_password(password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is incorrect")
+    user.is_2fa_enabled = False
+    await db.flush()
+    return user
+
+
+async def force_disable_2fa(user_id: str, db: AsyncSession) -> User:
+    """Superadmin lockout recovery — clear 2FA on an account whose owner can no
+    longer receive codes. Since there are no backup codes, this is the escape hatch."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user.is_2fa_enabled = False
+    await db.execute(
+        update(TwoFactorCode)
+        .where(TwoFactorCode.user_id == user_id, TwoFactorCode.used == False)  # noqa: E712
+        .values(used=True)
+    )
+    await db.flush()
     return user
 
 

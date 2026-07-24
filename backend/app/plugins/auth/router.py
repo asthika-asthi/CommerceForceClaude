@@ -11,9 +11,9 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.limiter import limiter
 from app.core.security import create_access_token
-from app.core.dependencies import get_current_user, require_admin
+from app.core.dependencies import get_current_user, require_admin, require_superadmin
 from app.plugins.auth.models import User, UserRole
-from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, LoginRequest, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest, ForgotPasswordRequest, ResetPasswordRequest, DeletionRequestOut, RejectDeletionRequest
+from app.plugins.auth.schemas import RegisterRequest, TradeRegisterRequest, LoginRequest, LoginResponse, TokenResponse, UserOut, AuthResponse, UpdateProfileRequest, ChangePasswordRequest, UpdateUserRequest, ForgotPasswordRequest, ResetPasswordRequest, DeletionRequestOut, RejectDeletionRequest, VerifyTwoFactorRequest, ResendTwoFactorRequest, ConfirmTwoFactorRequest, DisableTwoFactorRequest
 from app.plugins.auth import service
 from app.shared.pagination import Page, paginate
 
@@ -53,14 +53,35 @@ async def register_trade(data: TradeRegisterRequest, response: Response, db: Asy
     return AuthResponse(access_token=access_token, user=UserOut.model_validate(user))
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login", response_model=LoginResponse)
 @limiter.limit("5/minute")
 async def login(request: Request, data: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
     user = await service.authenticate(data.email, data.password, db)
+    # 2FA-enabled accounts don't get a session here — they get a challenge. The
+    # emailed code must be exchanged at /login/verify-2fa for real tokens.
+    if user.is_2fa_enabled:
+        pending = await service.start_2fa_login(user, db)
+        return LoginResponse(two_factor_required=True, pending_token=pending)
+    access_token = create_access_token(user.id, user.role.value)
+    refresh_raw = await service.issue_refresh_token(user.id, db)
+    _set_refresh_cookie(response, refresh_raw, max_age_days=7)
+    return LoginResponse(access_token=access_token, user=UserOut.model_validate(user))
+
+
+@router.post("/login/verify-2fa", response_model=AuthResponse)
+@limiter.limit("10/minute")
+async def verify_login_2fa(request: Request, data: VerifyTwoFactorRequest, response: Response, db: AsyncSession = Depends(get_db)):
+    user = await service.verify_login_2fa(data.pending_token, data.code, db)
     access_token = create_access_token(user.id, user.role.value)
     refresh_raw = await service.issue_refresh_token(user.id, db)
     _set_refresh_cookie(response, refresh_raw, max_age_days=7)
     return AuthResponse(access_token=access_token, user=UserOut.model_validate(user))
+
+
+@router.post("/login/resend-2fa", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("3/minute")
+async def resend_login_2fa(request: Request, data: ResendTwoFactorRequest, db: AsyncSession = Depends(get_db)):
+    await service.resend_login_2fa_code(data.pending_token, db)
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -127,6 +148,37 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
 ):
     await service.change_password(current_user, data, db)
+
+
+@router.post("/2fa/setup", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("3/minute")
+async def setup_two_factor(
+    request: Request,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Start opt-in 2FA enrolment: emails a code the user confirms below."""
+    await service.setup_2fa(current_user, db)
+
+
+@router.post("/2fa/confirm", response_model=UserOut)
+async def confirm_two_factor(
+    data: ConfirmTwoFactorRequest,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await service.confirm_2fa(current_user, data.code, db)
+    return UserOut.model_validate(user)
+
+
+@router.post("/2fa/disable", response_model=UserOut)
+async def disable_two_factor(
+    data: DisableTwoFactorRequest,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await service.disable_2fa(current_user, data.password, db)
+    return UserOut.model_validate(user)
 
 
 @router.get("/me/export-data")
@@ -217,6 +269,15 @@ async def patch_user(
         db,
         actor_is_superadmin=(current_user.role == "superadmin"),
     )
+    return UserOut.model_validate(user)
+
+
+@router.post("/users/{user_id}/disable-2fa", response_model=UserOut,
+             dependencies=[Depends(require_superadmin())])
+async def admin_disable_two_factor(user_id: str, db: AsyncSession = Depends(get_db)):
+    """Superadmin lockout recovery: clear 2FA on an account whose owner can no
+    longer receive email codes (there are no backup codes by design)."""
+    user = await service.force_disable_2fa(user_id, db)
     return UserOut.model_validate(user)
 
 

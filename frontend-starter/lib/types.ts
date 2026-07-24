@@ -9,6 +9,17 @@ export interface User {
   phone?: string
   company_name?: string
   is_email_verified?: boolean
+  is_2fa_enabled?: boolean
+}
+
+// POST /api/auth/login returns EITHER a completed login (access_token + user) OR,
+// when the account has 2FA on, a challenge (two_factor_required + pending_token)
+// exchanged at /api/auth/login/verify-2fa.
+export interface LoginResponse {
+  two_factor_required?: boolean
+  pending_token?: string
+  access_token?: string
+  user?: User
 }
 
 // ── GDPR ──────────────────────────────────────────────────────────────────────

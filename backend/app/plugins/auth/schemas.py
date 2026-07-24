@@ -48,6 +48,7 @@ class UserOut(BaseModel):
     vat_number: Optional[str] = None
     business_type: Optional[str] = None
     trade_status: Optional[str] = None
+    is_2fa_enabled: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -56,6 +57,34 @@ class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class LoginResponse(BaseModel):
+    """Login result. Either a completed login (access_token + user) OR, when the
+    account has 2FA enabled, a challenge (two_factor_required + pending_token) that
+    must be exchanged at /login/verify-2fa. The two states are mutually exclusive."""
+    two_factor_required: bool = False
+    pending_token: Optional[str] = None
+    access_token: Optional[str] = None
+    token_type: str = "bearer"
+    user: Optional[UserOut] = None
+
+
+class VerifyTwoFactorRequest(BaseModel):
+    pending_token: str
+    code: str
+
+
+class ResendTwoFactorRequest(BaseModel):
+    pending_token: str
+
+
+class ConfirmTwoFactorRequest(BaseModel):
+    code: str
+
+
+class DisableTwoFactorRequest(BaseModel):
+    password: str
 
 
 class UpdateProfileRequest(BaseModel):

@@ -29,6 +29,9 @@ class User(BaseModel):
     trade_status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # pending | approved | rejected
     email_verification_token: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Opt-in email-code two-factor auth. When True, login requires a 6-digit code
+    # emailed to this address (see auth/service.py's login + TwoFactorCode below).
+    is_2fa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
 
 class RefreshToken(BaseModel):
@@ -45,6 +48,19 @@ class PasswordResetToken(BaseModel):
 
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     token_hash: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class TwoFactorCode(BaseModel):
+    """A single-use 6-digit email login code. Only the hash is stored (same
+    discipline as PasswordResetToken). Used both to confirm 2FA enrolment and,
+    once enabled, as the second factor at login. Only the newest unused,
+    unexpired row for a user is accepted — see auth/service.py."""
+    __tablename__ = "two_factor_codes"
+
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    code_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
