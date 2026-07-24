@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class CartItemOut(BaseModel):
@@ -32,7 +32,9 @@ class AddItemRequest(BaseModel):
     # product_id (quick-add from a listing — resolves the product's default variant).
     variant_id: Optional[str] = None
     product_id: Optional[str] = None
-    quantity: int = 1
+    # ge=1: add_item stores this quantity directly (no <=0 guard, unlike update_item),
+    # so a negative value would persist a negative-priced line into the cart.
+    quantity: int = Field(1, ge=1)
 
     @model_validator(mode="after")
     def require_one_id(self) -> "AddItemRequest":
@@ -42,7 +44,9 @@ class AddItemRequest(BaseModel):
 
 
 class UpdateItemRequest(BaseModel):
-    quantity: int
+    # ge=0: update_item treats 0 as "remove the item"; a negative value is
+    # meaningless and only risks a negative stored quantity, so floor it at 0.
+    quantity: int = Field(..., ge=0)
 
 
 class RecoveryEmailRequest(BaseModel):

@@ -61,6 +61,69 @@ plugins) was sampled, not read line-by-line.
 
 ---
 
+## Round 3 — security audit (2026-07-22)
+
+A focused security pass over auth, checkout/pricing, payments, IDOR/authorization,
+file upload, and the scheduling/clinical-journal plugin. The backend was otherwise
+solid (ORM throughout — no SQL injection; Stripe webhook signature verified; server-side
+pricing; hashed/rotated refresh tokens; consistent IDOR scoping). Two findings **FIXED**
+(B10, B11); two logged as **Open** for a later session (B12, B13).
+
+### B10 — Negative `quantity` manipulates the order total (HIGH, security/money) — **FIXED**
+- **Where:** `checkout/schemas.py` (`CheckoutItem`, `redeem_points`), `cart/schemas.py`
+  (`AddItemRequest`, `UpdateItemRequest`), `orders/service.py` (`create_order`).
+- **What was wrong:** `CheckoutItem.quantity` and `AddItemRequest.quantity` had no lower
+  bound, and every stock check used `effective_stock_for(...) < quantity`, which a negative
+  quantity passes (`10 < -499` is False). The subtotal is `unit_price * quantity`, so a
+  negative-quantity line produced a **negative line total** that offsets real items —
+  letting any guest/customer drive an order total to near-zero and still receive the goods
+  (cash/credit orders auto-mark paid; Stripe charges the manipulated amount). `add_item`
+  also stored the negative quantity directly (unlike `update_item`, which deletes on ≤0).
+- **Fix (applied):** Added `Field(..., ge=1)` to `CheckoutItem.quantity` and
+  `AddItemRequest.quantity`, `Field(0, ge=0)` to `redeem_points`, and `Field(..., ge=0)`
+  to `UpdateItemRequest.quantity` (0 still means "remove"). Added a defence-in-depth guard
+  in `create_order` (the funnel for both checkout and RFQ-accept) that rejects any item with
+  quantity < 1. Ruff + mypy clean; `test_security_fixes`, `test_explicit_checkout`,
+  `test_checkout_deferral` all pass.
+
+### B11 — A regular admin can deactivate the superadmin/any admin (MEDIUM, security) — **FIXED**
+- **Where:** `auth/service.py` (`patch_user`), reached via `PATCH /api/auth/users/{id}`.
+- **What was wrong:** B4 gated *role* changes behind `actor_is_superadmin`, but `is_active`
+  toggling had no such guard and no check on the target's role. Any admin could set
+  `{"is_active": false}` on the **superadmin** (locking the platform owner out — `authenticate`
+  rejects inactive accounts) or on any fellow admin.
+- **Fix (applied):** `patch_user` now rejects (403) an `is_active` change targeting an
+  `admin` or `superadmin` account unless the actor is a superadmin. Admins retain full
+  control over ordinary customer accounts. Ruff + mypy clean; existing `test_security_fixes`
+  suite passes.
+
+### B12 — AI chat `chat()` does not verify session ownership (MED-LOW, IDOR) — **Open**
+- **Where:** `ai_chat/service.py` (`chat` / `_get_or_create_session`) vs. the ownership
+  check that *does* exist in `ai_chat/router.py` `get_history`.
+- **What's wrong:** `get_history` rejects reading another authenticated user's session, but
+  `POST /api/ai-chat/chat` does not: `_get_or_create_session` returns a session owned by
+  another user as-is, then loads its prior messages as context and appends new turns. Since
+  the system prompt seeds the customer's recent delivered orders, an actor who knows a
+  victim's `session_key` can read order data via the model reply and pollute the thread.
+  Mitigating factor: `session_key` is client-generated and must be known/guessed.
+- **Fix direction:** Apply the same ownership assertion `get_history` uses inside `chat()` —
+  if the resolved session's `user_id` differs from the current user (or the session is owned
+  but the request is anonymous), return 403 instead of reusing it.
+
+### B13 — Media upload trusts the client MIME header; no extension allowlist (LOW) — **Open**
+- **Where:** `routers/media.py` (`upload_file`); files served via `StaticFiles` at `/uploads`.
+- **What's wrong:** Validation checks only `file.content_type` (client-supplied) against an
+  image allowlist; the actual bytes and the file extension are never validated, and
+  `safe_name` preserves whatever extension is sent. An `.html`/`.svg` declared as
+  `image/png` is stored and later served with a script-executable content type (stored XSS
+  on the API origin). Held to LOW: the endpoint requires `require_admin`, and the API origin
+  holds no JS-readable session material (refresh cookie is HttpOnly + path-scoped).
+- **Fix direction:** Validate the file extension against an image allowlist, sniff real
+  content (magic bytes / Pillow open), and/or serve uploads with
+  `Content-Disposition: attachment` or from a separate cookieless origin.
+
+---
+
 ## HIGH
 
 ### B1 — Stripe payments mutate state before the card is charged — **FIXED**

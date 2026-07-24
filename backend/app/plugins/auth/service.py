@@ -236,6 +236,15 @@ async def patch_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if "is_active" in data and data["is_active"] is not None:
+        # Toggling is_active on a privileged account is itself a privilege operation:
+        # otherwise a regular admin could disable the superadmin (locking the platform
+        # owner out) or disable fellow admins. Only a superadmin may (de)activate an
+        # admin or superadmin; admins may still manage ordinary customer accounts.
+        if user.role in (UserRole.admin, UserRole.superadmin) and not actor_is_superadmin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only a superadmin can change an admin or superadmin account's active status",
+            )
         user.is_active = data["is_active"]
     if "role" in data and data["role"] is not None:
         # Changing a user's role is a privilege operation — only a superadmin may do it,
