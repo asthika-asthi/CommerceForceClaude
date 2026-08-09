@@ -32,17 +32,26 @@ Use these as talking points / on-screen captions:
 |------------|-------------------------------|
 | **Modern storefront** | A polished, mobile-first shop that loads fast and converts visitors into buyers. |
 | **Product variants** | Sell the same product in multiple sizes, colours, or pack sizes — each with its own price and stock. |
-| **Card, cash & credit checkout** | Take card payments (Stripe), cash on delivery, or let approved trade customers buy on a credit account. |
+| **Card, cash, credit, bank transfer & PayPal** | Take card payments (Stripe), cash on delivery, credit-account orders, or manual bank transfer / PayPal — mark manual payments as paid yourself with one click. |
 | **Trade accounts** | Business customers apply for an account; you approve them and unlock wholesale pricing. |
 | **Coupons & automatic discounts** | Run promo codes (one per customer) and automatic "spend over £X, save Y" offers. |
 | **Loyalty points** | Customers earn points on orders and redeem them for money off. |
 | **Order management** | Track every order from placed → confirmed → shipped → delivered, with tracking numbers and email updates. |
+| **Guest order tracking** | Shoppers can look up an order's status with just an order number and email — no account needed. |
+| **Abandoned-cart recovery** | Shoppers who leave items in their cart get an automatic reminder email, bringing them back to finish the purchase. |
+| **Tax / VAT handling** | Set tax rates by country or region; the right rate is applied automatically at checkout. |
+| **Built-in analytics** | Connect Google Analytics and/or Meta Pixel with one setting, shown to visitors behind a cookie-consent banner. |
+| **Two-factor login security** | You and your customers can opt in to a one-time email code at login, on top of the password. |
+| **GDPR data tools** | Customers can self-service export their data or request account deletion, which you review and approve. |
+| **Appointment booking & scheduling** | For service businesses: customers book appointments online; you manage providers, availability, and a calendar, with private client visit notes. |
 | **Bulk tools** | Import your whole catalogue from a spreadsheet; export orders and products to CSV. |
 | **Marketing built in** | Newsletter capture, promotional banners, announcement bar, and product reviews. |
 | **AI chat assistant** | An on-site chat widget that answers customer questions automatically. |
 | **Sell in any currency** | Each store is set to its own currency (£, $, €, ₹, and more) — prices, checkout, and card payments all use it. |
-| **Your brand, your look** | Set your logo, colours, and fonts; build your homepage from ready-made sections. |
+| **Your brand, your look** | Set your logo and a small set of core brand colours — the rest of the palette (hover states, tints, shades) is generated for you automatically. Build your homepage from a library of nearly 50 ready-made sections: hero banners, pricing tables, image galleries, video showcases, testimonials, FAQs, and more. |
 | **Reliable & secure** | Runs on your own server, HTTPS-secured, with automatic nightly backups. |
+
+> **Note:** not every feature suits every business. Your setup is tailored to what you sell — a retail shop typically gets card checkout, coupons, and loyalty; a wholesaler adds trade accounts and credit; a service business (salon, clinic, repair shop) adds appointment booking instead of a product catalogue. Ask your agency which combination fits you.
 
 ---
 
@@ -66,6 +75,8 @@ There is also a **Superadmin** login used by the agency that set up your store (
 3. You'll land on the **Dashboard**.
 
 *Forgot your password?* Use **Forgot Password** on the login screen — a reset link is emailed to you.
+
+*Two-factor login:* if you've turned on 2FA for your account (see **Account Security** in Part 4), you'll be asked for a one-time code sent to your email after entering your password.
 
 ---
 
@@ -117,6 +128,7 @@ Every order lands here. For each order you can:
 Payments:
 - **Cash on delivery** and **credit account** orders are marked paid immediately.
 - **Card (Stripe)** orders are only finalised — and stock/points/coupons only applied — once the card payment actually succeeds, so an abandoned checkout never affects your inventory.
+- **Bank transfer** and **PayPal** orders come in as pending payment; once you've confirmed the money has arrived, click **Mark as Paid** on the order to finalise it.
 
 ## 4.5 Customers & Trade Accounts
 
@@ -158,19 +170,43 @@ Trade customers can submit a **request for a quote** for bulk or custom orders. 
 
 ## 4.12 Branding (your look)
 
-Under **Branding** set your **store name, tagline, logo, favicon, brand colours, font, contact email/phone, and social links**. This is also where your **Stripe payment key** is entered to enable card payments. Changes appear on the storefront immediately.
+Under **Branding** set your **store name, tagline, logo, favicon, brand colours, font, contact email/phone, and social links**. Pick a small set of core brand colours and the rest of the palette (hover states, tints, shades) is generated for you automatically. This is also where your **Stripe payment key**, **bank transfer details**, and **PayPal email** are entered to enable each payment method. Changes appear on the storefront immediately.
 
 ## 4.13 Landing Page (homepage builder)
 
-The **Landing Page** section lets you shape your homepage from ready-made **sections/blocks** — hero banners, category grids, featured products, testimonials, stats, and more. Mark products as **Featured** (on the product page) to have them appear in the homepage's featured areas.
+The **Landing Page** section lets you shape your homepage from a library of nearly 50 ready-made **sections/blocks** — hero banners, category grids, featured products, pricing tables, image galleries, video showcases, testimonials, FAQs, stats, and more. Mark products as **Featured** (on the product page) to have them appear in the homepage's featured areas.
 
 ## 4.14 Media Library
 
-A central **image library** with folders. Upload images once here and reuse them across products, categories, and banners.
+A central **image library** with folders. Upload images once here and reuse them across products, categories, and banners. Use the **list view** and **filename search** to quickly find a specific image once your library grows.
 
 ## 4.15 Settings — Shipping
 
 Under **Settings**, set up **shipping zones** by country with a delivery rate. The correct rate is applied automatically at checkout based on the customer's country.
+
+## 4.16 Settings — Tax / VAT
+
+Set **tax rates by country or region** the same way you set up shipping zones. The correct rate is calculated automatically at checkout based on the customer's address.
+
+## 4.17 Analytics & Cookie Consent
+
+Connect **Google Analytics (GA4)** and/or **Meta Pixel** by entering your tracking IDs — no code required. Visitors see a **cookie-consent banner** first, and tracking only activates once they accept.
+
+## 4.18 Scheduling & Appointments (service businesses)
+
+For businesses that sell time rather than (or alongside) products — salons, clinics, repair shops, consultants — the **Scheduling** section lets you:
+- Set up **providers** (staff/practitioners) and their **availability**, including exceptions like holidays.
+- Define **appointment types** (e.g. duration, name) customers can book.
+- View and manage bookings on a **calendar**, with automatic double-booking prevention and confirmation emails.
+- Keep a **client record** per customer with a private visit journal — useful for businesses that need to track notes between visits (e.g. a clinic's SOAP notes).
+
+## 4.19 Account Security (2FA)
+
+From your **Account** settings, turn on **two-factor authentication**: once enabled, logging in requires a one-time code emailed to you after your password. You can turn this on for your own admin login and enable it as an option for customers.
+
+## 4.20 Data & Privacy (GDPR)
+
+Customers can request a **self-service export** of their data or ask to have their **account deleted**, directly from their account settings. Deletion requests land in **Deletion Requests** for you to review and approve or reject before anything is removed.
 
 ---
 
@@ -178,12 +214,14 @@ Under **Settings**, set up **shipping zones** by country with a delivery rate. T
 
 This is what your shoppers see — useful to narrate in a demo video:
 
-1. **Browse** the homepage, shop by category, search, and filter by price.
+1. **Browse** the homepage, shop by category, search, and filter by price. A cookie-consent banner appears first if analytics is enabled.
 2. **Open a product**, pick a variant (size/colour) — the price and image update live — and **add to cart**.
-3. **Cart** — adjust quantities, see the subtotal.
-4. **Checkout** — sign in or continue as a guest; enter a delivery address; apply a coupon or redeem loyalty points (the total updates to match); choose **cash, credit account, or card**; place the order.
-5. **Account** — customers track orders and tracking numbers, save addresses, keep a **wishlist**, and see their loyalty balance.
-6. **Extras** — leave reviews on delivered items, subscribe to the newsletter, apply for a trade account, and ask the **AI chat assistant** questions.
+3. **Cart** — adjust quantities, see the subtotal. If they leave without checking out, an **abandoned-cart reminder email** brings them back later.
+4. **Checkout** — sign in or continue as a guest; enter a delivery address; apply a coupon or redeem loyalty points (the total updates to match); tax/VAT is calculated automatically; choose **cash, credit account, card, bank transfer, or PayPal**; place the order.
+5. **Account** — customers track orders and tracking numbers, save addresses, keep a **wishlist**, see their loyalty balance, turn on **two-factor login**, and can **export their data** or request account deletion.
+6. **Track an order without an account** — anyone can look up an order's status on the public tracking page with just the order number and email.
+7. **Book an appointment** *(service businesses)* — customers pick a provider, appointment type, and time slot, and receive a confirmation email; they can view upcoming appointments from their account.
+8. **Extras** — leave reviews on delivered items, subscribe to the newsletter, apply for a trade account, and ask the **AI chat assistant** questions.
 
 ---
 
@@ -191,9 +229,10 @@ This is what your shoppers see — useful to narrate in a demo video:
 
 The **Superadmin** role is for the agency that deploys and styles stores for clients:
 
-- **Per-client branding & theming** — colours, fonts, logos, and homepage layout are tailored per client.
+- **Per-client branding & theming** — a small set of core colours per client auto-generates the full palette (tints, shades, hover states), so restyling a new client's site is fast and consistent; fonts, logos, and homepage layout are tailored per client too.
 - **Currency** — each store's currency is set at deployment via `CURRENCY_CODE` in the client's config (e.g. `USD`, `EUR`, `INR`; defaults to `GBP`). It drives every price symbol in the storefront and admin **and** the Stripe charge currency. Supported: GBP £, USD $, EUR €, INR ₹, AUD, CAD, AED, SGD, NZD. (It's a build-time setting, so changing it later means a quick rebuild — see `docs/new-client-setup.md`.)
-- **Landing-page block system** — assemble each client's homepage from a library of reusable sections.
+- **Landing-page block system** — assemble each client's homepage from a library of nearly 50 reusable sections (hero banners, pricing tables, galleries, testimonials, FAQs, and more), driven by a per-client config rather than one-off page code — new client sites can be assembled quickly from existing blocks.
+- **Plugin selection per client** — switch on only the plugins a client's business needs (e.g. trade/credit for a wholesaler, scheduling for a service business), so each client's admin panel only shows what's relevant to them.
 - **Deployment** — each store runs in Docker on its own server, secured with HTTPS, with automatic nightly backups. First-time setup and go-live steps are documented in `docs/new-client-setup.md`.
 - **Role separation** — the agency (superadmin) handles build/design; the client (admin) handles business operations only.
 
@@ -213,10 +252,10 @@ A ready-to-adapt outline for your promo video.
 
 *Visual: the admin dashboard, then the polished storefront on a phone.*
 
-**[0:20–0:45] Built for trade *and* retail**
-> "Sell to the public with fast card checkout — and to the trade with credit accounts, wholesale pricing, and request-a-quote. Offer products in any size or colour, with their own prices and stock."
+**[0:20–0:45] Built for trade *and* retail — and services too**
+> "Sell to the public with fast card, bank transfer, or PayPal checkout — and to the trade with credit accounts, wholesale pricing, and request-a-quote. Offer products in any size or colour, with their own prices and stock. Running a service business instead? Let customers book appointments online."
 
-*Visual: storefront product page with a variant picker; a trade customer paying 'on account'.*
+*Visual: storefront product page with a variant picker; a trade customer paying 'on account'; a customer booking an appointment slot.*
 
 **[0:45–1:05] Grow sales, on autopilot**
 > "Run coupons and automatic discounts, reward customers with loyalty points, collect reviews and newsletter sign-ups, and let an AI assistant answer questions around the clock."
@@ -233,7 +272,7 @@ A ready-to-adapt outline for your promo video.
 
 *Visual: logo + call to action.*
 
-**Key selling points to repeat:** one dashboard · trade + retail in one · card/cash/credit · any currency · variants · loyalty & coupons · your brand · secure & backed up.
+**Key selling points to repeat:** one dashboard · trade + retail + services in one · card/cash/credit/bank transfer/PayPal · any currency · variants · loyalty & coupons · booking for service businesses · your brand · secure & backed up.
 
 ---
 
