@@ -1,12 +1,14 @@
 from decimal import Decimal
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from app.plugins.orders.models import PaymentMethod
 
 
 class CheckoutItem(BaseModel):
     product_id: str
-    quantity: int
+    # ge=1: a non-positive quantity would produce a negative line total and let a
+    # buyer offset other items to manipulate the order total. Never allow it.
+    quantity: int = Field(..., ge=1)
     variant_id: Optional[str] = None  # optional; defaults to the product's default variant
 
 
@@ -19,7 +21,7 @@ class CheckoutRequest(BaseModel):
     use_cart: bool = True
     items: Optional[List[CheckoutItem]] = None
     coupon_code: Optional[str] = None
-    redeem_points: int = 0
+    redeem_points: int = Field(0, ge=0)
 
 
 class PaymentMethodOut(BaseModel):

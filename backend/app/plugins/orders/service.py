@@ -90,6 +90,13 @@ async def create_order(
     if not items:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Order must have at least one item")
 
+    # Defence in depth: a non-positive quantity multiplies into a negative/zero line
+    # total, which a buyer could use to offset other items and manipulate the order
+    # total. The request schemas already enforce ge=1, but every order flows through
+    # here (checkout + RFQ accept), so reject it unconditionally at the funnel too.
+    if any(int(i["quantity"]) < 1 for i in items):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Item quantity must be at least 1")
+
     subtotal = sum(Decimal(str(i["unit_price"])) * i["quantity"] for i in items)
     total = subtotal - discount_amount + tax_amount + shipping_cost
 
