@@ -6,15 +6,12 @@ import { useState, useRef } from "react"
 import { useAuthStore } from "@/store/auth"
 import { useCartStore } from "@/store/cart"
 import { usePlugin } from "@/lib/plugins-context"
+import { getStoreInitials } from "@/lib/store-initials"
 import type { BrandingConfig } from "@/lib/types"
 
 interface Props {
   branding: BrandingConfig | null
   enabledPlugins: string[]
-}
-
-function getInitials(name: string) {
-  return name.replace(/[^A-Za-z\s]/g, "").split(/\s+/).filter(Boolean).map(w => w[0]).join("").toUpperCase().slice(0, 2) || "ST"
 }
 
 export function Navbar({ branding }: Props) {
@@ -32,7 +29,7 @@ export function Navbar({ branding }: Props) {
   const storeName = (branding?.store_name ?? "").trim()
   const tagline = branding?.tagline ?? ""
   const logoUrl = branding?.logo_url
-  const initials = storeName ? getInitials(storeName) : ""
+  const initials = storeName ? (getStoreInitials(storeName) || "ST") : ""
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()

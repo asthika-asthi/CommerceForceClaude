@@ -14,11 +14,11 @@ import {
   isValidHex,
   type CoreKey,
 } from "@/lib/theme-colors"
+import { FONT_OPTIONS } from "@/lib/font-options"
 
 const TEXT_FIELDS = [
   { key: "store_name", label: "Store Name", placeholder: "My Store" },
   { key: "tagline", label: "Tagline", placeholder: "Your store tagline" },
-  { key: "font_family", label: "Font Family", placeholder: "Inter" },
   { key: "contact_email", label: "Contact Email", placeholder: "hello@store.com" },
   { key: "contact_phone", label: "Contact Phone", placeholder: "+1 555-0100" },
   { key: "stripe_publishable_key", label: "Stripe Publishable Key", placeholder: "pk_live_..." },
@@ -153,6 +153,7 @@ export default function BrandingPage() {
       const f: FormState = {}
       TEXT_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       IMAGE_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
+      f.font_family = config.font_family || FONT_OPTIONS[0].value
       f.custom_css = config.custom_css ?? ""
       f.bank_transfer_details = config.bank_transfer_details ?? ""
       f.paypal_email = config.paypal_email ?? ""
@@ -215,6 +216,16 @@ export default function BrandingPage() {
                 placeholder={placeholder} />
             </div>
           ))}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Font Family</label>
+            <select value={form.font_family || FONT_OPTIONS[0].value}
+              onChange={(e) => setForm((f) => ({ ...f, font_family: e.target.value }))}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+              {FONT_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* ── Colours ─────────────────────────────────────────────── */}

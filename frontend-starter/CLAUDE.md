@@ -137,20 +137,23 @@ Client design.md:   "Primary: #E67E22 (orange)"
 - `--brand-dark` on white should be ≥ 7:1 for body text use
 - Focus rings use `focus:ring-brand-dark` — ensure `--brand-dark` on white is ≥ 3:1
 
-### Step 2 — Update the font in `app/layout.tsx`
+### Step 2 — Set the font
 
-1. Change the import to the client's font (must be available on Google Fonts):
-   ```tsx
-   import { ClientFont } from "next/font/google"
-   const clientFont = ClientFont({
-     variable: "--font-poppins",   // keep this variable name — globals.css references it
-     subsets: ["latin"],
-     weight: ["400", "500", "600", "700"],
-   })
-   ```
-2. Replace the font variable in the `<html>` tag: `` className={`${clientFont.variable} h-full`} ``
+`app/layout.tsx` no longer hardcodes a single font. `lib/fonts.ts` preloads a curated set
+of Google Fonts (`FONT_OPTIONS`) and `resolveFont(branding.font_family)` picks the active
+one at request time — every option shares the `--font-poppins` CSS variable, so
+`globals.css` never needs to change when the font changes.
 
-If the client uses a custom/self-hosted font, place it in `public/fonts/` and add an `@font-face` rule in `globals.css` instead of using `next/font/google`.
+- **To use one of the curated fonts**: pick it from the Font Family dropdown on the admin
+  Branding page (`frontend-admin`) and save — no code change needed. Keep
+  `frontend-admin/lib/font-options.ts` in sync with `frontend-starter/lib/fonts.ts` if you
+  add/remove options (same discipline as `theme-colors.ts`).
+- **To add a new curated Google Font**: add it to both `FONT_OPTIONS` arrays (loader +
+  `.variable: "--font-poppins"` in `frontend-starter/lib/fonts.ts`; value/label in
+  `frontend-admin/lib/font-options.ts`).
+- **Custom/self-hosted font**: place the file in `public/fonts/`, add an `@font-face` rule
+  in `globals.css` targeting `--font-poppins`, and skip `resolveFont` for that client (or
+  add it as a special-cased entry) — this still requires a code change.
 
 ### Step 3 — Author the homepage `sections[]`
 

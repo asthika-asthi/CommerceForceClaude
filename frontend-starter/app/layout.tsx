@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Poppins } from "next/font/google"
 import "./globals.css"
 import { Providers } from "./providers"
 import { Navbar } from "@/components/layout/navbar"
@@ -13,13 +12,8 @@ import { AnalyticsScripts } from "@/components/analytics-scripts"
 import { serverFetch } from "@/lib/api"
 import { deriveTheme } from "@/lib/theme-colors"
 import { getStoreConfig } from "@/lib/landing-config"
+import { resolveFont } from "@/lib/fonts"
 import type { BrandingConfig, Category } from "@/lib/types"
-
-const poppins = Poppins({
-  variable: "--font-poppins",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-})
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await serverFetch<BrandingConfig>("/api/branding")
@@ -49,9 +43,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // <html> beats stylesheet :root declarations regardless of head ordering.
   const themeVars = deriveTheme(branding?.theme_colors) as React.CSSProperties
   const storeAddress = getStoreConfig().address?.display_short
+  const activeFont = resolveFont(branding?.font_family)
 
   return (
-    <html lang="en" className={`${poppins.variable} h-full`} style={themeVars}>
+    <html lang="en" className={`${activeFont.variable} h-full`} style={themeVars}>
       <head>
         {branding?.favicon_url && <link rel="icon" href={branding.favicon_url} />}
         {branding?.custom_css && <style>{branding.custom_css}</style>}

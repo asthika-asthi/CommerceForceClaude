@@ -1,16 +1,11 @@
 import Link from "next/link"
 import Image from "next/image"
+import { getStoreInitials } from "@/lib/store-initials"
 import type { BrandingConfig, Category } from "@/lib/types"
 
 interface Props {
   branding: BrandingConfig | null
   categories: Category[]
-}
-
-function storeInitials(name: string): string {
-  const words = name.trim().split(/\s+/)
-  if (words.length === 1) return name.slice(0, 2).toUpperCase()
-  return (words[0][0] + words[1][0]).toUpperCase()
 }
 
 export function Footer({ branding, categories }: Props) {
@@ -19,7 +14,7 @@ export function Footer({ branding, categories }: Props) {
   const phone = branding?.contact_phone ?? ""
   const email = branding?.contact_email ?? ""
   const year = new Date().getFullYear()
-  const initials = storeName ? storeInitials(storeName) : ""
+  const initials = storeName ? getStoreInitials(storeName) : ""
 
   const topCategories = categories.slice(0, 6)
 
@@ -45,10 +40,7 @@ export function Footer({ branding, categories }: Props) {
                   <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center text-base font-bold text-on-brand">{initials}</div>
                 )}
                 {storeName && (
-                  <div>
-                    <div className="text-base font-bold text-white">{storeName}</div>
-                    {tagline && <div className="text-[10px] text-on-dark-faint uppercase tracking-[0.5px]">{tagline}</div>}
-                  </div>
+                  <div className="text-base font-bold text-white">{storeName}</div>
                 )}
               </div>
             )}
