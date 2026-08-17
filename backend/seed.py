@@ -42,7 +42,7 @@ def _require_env(key: str) -> str:
 # ---------------------------------------------------------------------------
 
 async def seed_superadmin(db) -> None:
-    email = _require_env("SUPERADMIN_EMAIL")
+    email = _require_env("SUPERADMIN_EMAIL").lower()
     password = _require_env("SUPERADMIN_PASSWORD")
 
     result = await db.execute(select(User).where(User.email == email))
@@ -68,7 +68,7 @@ async def seed_superadmin(db) -> None:
 # ---------------------------------------------------------------------------
 
 async def seed_admin(db) -> None:
-    email = _require_env("ADMIN_EMAIL")
+    email = _require_env("ADMIN_EMAIL").lower()
     password = _require_env("ADMIN_TEMP_PASSWORD")
 
     result = await db.execute(select(User).where(User.email == email))

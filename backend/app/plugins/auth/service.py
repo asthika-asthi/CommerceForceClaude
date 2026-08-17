@@ -54,12 +54,13 @@ async def _issue_and_send_verification(user: User, db: AsyncSession) -> None:
 
 
 async def create_user(data: RegisterRequest, db: AsyncSession) -> User:
-    result = await db.execute(select(User).where(User.email == data.email))
+    email = data.email.lower()
+    result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     user = User(
-        email=data.email,
+        email=email,
         hashed_password=get_password_hash(data.password),
         first_name=data.first_name,
         last_name=data.last_name,
@@ -75,7 +76,7 @@ async def create_user(data: RegisterRequest, db: AsyncSession) -> User:
 
 async def resend_verification(email: str, db: AsyncSession) -> None:
     """Re-issue a verification email. Always silent (no account enumeration)."""
-    result = await db.execute(select(User).where(User.email == email))
+    result = await db.execute(select(User).where(User.email == email.lower()))
     user = result.scalar_one_or_none()
     if not user or user.is_email_verified or user.role != UserRole.customer:
         return
@@ -109,12 +110,13 @@ async def verify_email_token(raw_token: str, db: AsyncSession) -> User:
 
 
 async def create_trade_user(data: TradeRegisterRequest, db: AsyncSession) -> User:
-    result = await db.execute(select(User).where(User.email == data.email))
+    email = data.email.lower()
+    result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     user = User(
-        email=data.email,
+        email=email,
         hashed_password=get_password_hash(data.password),
         first_name=data.first_name,
         last_name=data.last_name,
@@ -153,7 +155,7 @@ async def create_trade_user(data: TradeRegisterRequest, db: AsyncSession) -> Use
 
 
 async def authenticate(email: str, password: str, db: AsyncSession) -> User:
-    result = await db.execute(select(User).where(User.email == email))
+    result = await db.execute(select(User).where(User.email == email.lower()))
     user = result.scalar_one_or_none()
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
@@ -401,7 +403,7 @@ async def patch_user(
 
 
 async def request_password_reset(email: str, db: AsyncSession) -> None:
-    result = await db.execute(select(User).where(User.email == email))
+    result = await db.execute(select(User).where(User.email == email.lower()))
     user = result.scalar_one_or_none()
     # Always return 200 — never reveal whether the email exists
     if not user or not user.is_active:
