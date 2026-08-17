@@ -2,7 +2,7 @@ const STATS = [
   { num: "30", suffix: "+", label: "Years supplying UK trade & retail" },
   { num: "79", suffix: "+", label: "Products across 4 categories" },
   { num: "3", suffix: "", label: "Sourcing continents — Europe, India, Far East" },
-  { num: "£75", suffix: "", label: "Free UK delivery threshold ex VAT" },
+  { num: "£500", suffix: "", label: "Free UK delivery threshold ex VAT" },
 ]
 
 export function StatsBand() {

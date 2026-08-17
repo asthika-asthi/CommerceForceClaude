@@ -1,5 +1,5 @@
 const TRUST_ITEMS = [
-  { icon: "🚚", strong: "Free UK Delivery", sub: "On all orders over £75 ex VAT" },
+  { icon: "🚚", strong: "Free UK Delivery", sub: "On all orders over £500 ex VAT" },
   { icon: "📦", strong: "Same Day Despatch", sub: "Orders placed before 2pm" },
   { icon: "🏭", strong: "Direct Importing", sub: "Europe, India & Far East" },
   { icon: "💼", strong: "Trade Accounts", sub: "Wholesale prices available" },

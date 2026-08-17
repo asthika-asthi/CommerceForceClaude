@@ -8,7 +8,7 @@ export function PromoBanner() {
           Limited Time
         </span>
         <span className="text-white text-[14px] font-medium">
-          Order before 2pm for same-day despatch — free delivery on orders over £75
+          Order before 2pm for same-day despatch — free delivery on orders over £500
         </span>
         <Link href="/products" className="text-brand-highlight text-[14px] font-semibold border-b border-brand-highlight pb-px cursor-pointer hover:text-white hover:border-white transition-colors">
           Shop now →
