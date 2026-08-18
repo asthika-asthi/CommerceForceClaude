@@ -1,5 +1,6 @@
 import Link from "next/link"
-import type { Product, Category } from "@/lib/types"
+import type { Product, Category, BrandingConfig } from "@/lib/types"
+import { serverFetch } from "@/lib/api"
 
 interface Props {
   products: Product[]
@@ -8,10 +9,12 @@ interface Props {
   titleHighlight?: string
 }
 
-export function RangeTable({ products, categories = [], title = "Product range", titleHighlight = "quick reference" }: Props) {
+export async function RangeTable({ products, categories = [], title = "Product range", titleHighlight = "quick reference" }: Props) {
   if (products.length === 0) return null
 
   const categoryNames = new Map(categories.map(c => [c.id, c.name]))
+  const branding = await serverFetch<BrandingConfig>("/api/branding")
+  const catalogueUrl = branding?.catalogue_url
 
   return (
     <div className="max-w-[1280px] mx-auto px-10 pb-14">
@@ -19,8 +22,13 @@ export function RangeTable({ products, categories = [], title = "Product range",
         <h2 className="text-[26px] font-bold text-brand-dark">
           {title} <span className="text-brand">{titleHighlight}</span>
         </h2>
-        <Link href="/products" className="text-[13px] font-semibold text-brand flex items-center gap-1 hover:text-brand-hover transition-colors">
-          Full catalogue →
+        <Link
+          href={catalogueUrl || "/products"}
+          target={catalogueUrl ? "_blank" : undefined}
+          rel={catalogueUrl ? "noopener noreferrer" : undefined}
+          className="text-[13px] font-semibold text-brand flex items-center gap-1 hover:text-brand-hover transition-colors"
+        >
+          {catalogueUrl ? "Download catalogue →" : "Full catalogue →"}
         </Link>
       </div>
       <div className="bg-white border border-border rounded-xl overflow-hidden">

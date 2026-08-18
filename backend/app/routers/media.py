@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 from fastapi import APIRouter, UploadFile, File, Request, HTTPException, Depends, Query
 from app.core.dependencies import require_admin
 
@@ -10,9 +11,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-MAX_BYTES = 10 * 1024 * 1024  # 10 MB
-ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+MAX_BYTES = 25 * 1024 * 1024  # 25 MB (covers product catalogue PDFs)
+ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"}
 _FOLDER_RE = re.compile(r'^[a-zA-Z0-9_-]+$')
+_UNSAFE_FILENAME_RE = re.compile(r'[^A-Za-z0-9._-]+')
+
+
+def _sanitize_filename(filename: str) -> str:
+    """Strip spaces/unsafe characters so the saved file's URL never needs encoding.
+
+    A raw space (or other reserved character) in a static file's URL breaks
+    when pasted as a plain href — the browser can't resolve it. Uploaded
+    filenames come straight from the client, so normalize them at save time
+    rather than leaving every downstream URL-builder to remember to encode.
+    """
+    name = Path(filename or "file").name
+    stem, suffix = Path(name).stem, Path(name).suffix
+    stem = _UNSAFE_FILENAME_RE.sub("-", stem).strip("-") or "file"
+    return f"{stem}{suffix}"
 
 
 @router.get("/files", dependencies=[Depends(require_admin())])
@@ -25,7 +41,7 @@ async def list_files(request: Request):
             rel = f.relative_to(UPLOAD_DIR)
             files.append({
                 "filename": rel.as_posix(),
-                "url": f"{base_url}/uploads/{rel.as_posix()}",
+                "url": f"{base_url}/uploads/{quote(rel.as_posix())}",
                 "size": stat.st_size,
                 "modified_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
             })
@@ -50,11 +66,11 @@ async def upload_file(request: Request, file: UploadFile = File(...), folder: st
     if folder and not _FOLDER_RE.match(folder):
         raise HTTPException(status_code=400, detail="Invalid folder name")
     if file.content_type not in ALLOWED_TYPES:
-        raise HTTPException(status_code=415, detail="Unsupported file type. Allowed: jpeg, png, gif, webp")
+        raise HTTPException(status_code=415, detail="Unsupported file type. Allowed: jpeg, png, gif, webp, pdf")
     contents = await file.read(MAX_BYTES + 1)
     if len(contents) > MAX_BYTES:
-        raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
-    safe_name = Path(file.filename or "file").name
+        raise HTTPException(status_code=413, detail="File too large (max 25 MB)")
+    safe_name = _sanitize_filename(file.filename or "file")
     save_dir = UPLOAD_DIR / folder if folder else UPLOAD_DIR
     save_dir.mkdir(parents=True, exist_ok=True)
     filepath = save_dir / safe_name

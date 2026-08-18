@@ -45,7 +45,7 @@ export default function MediaPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (filename: string) => api.del(`/api/media/files/${filename}`),
+    mutationFn: (filename: string) => api.del(`/api/media/files/${filename.split("/").map(encodeURIComponent).join("/")}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["media-files"] })
       setDeleteTarget(null)

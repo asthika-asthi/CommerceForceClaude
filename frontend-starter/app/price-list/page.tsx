@@ -1,8 +1,13 @@
 import Link from "next/link"
+import type { BrandingConfig } from "@/lib/types"
+import { serverFetch } from "@/lib/api"
 
 export const metadata = { title: "Price List — Tri Star UK Ltd" }
 
-export default function PriceListPage() {
+export default async function PriceListPage() {
+  const branding = await serverFetch<BrandingConfig>("/api/branding")
+  const catalogueUrl = branding?.catalogue_url
+
   return (
     <div className="max-w-[1280px] mx-auto px-10 py-16">
       <div className="max-w-xl mx-auto text-center">
@@ -16,18 +21,26 @@ export default function PriceListPage() {
           reflect current stock and pricing.
         </p>
 
-        <a
-          href="/price-list.pdf"
-          download
-          className="inline-flex items-center gap-3 bg-brand hover:bg-brand-hover text-on-brand font-bold text-[16px] px-8 py-4 rounded-xl transition-colors shadow-md"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Download Price List (PDF)
-        </a>
+        {catalogueUrl ? (
+          <a
+            href={catalogueUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 bg-brand hover:bg-brand-hover text-on-brand font-bold text-[16px] px-8 py-4 rounded-xl transition-colors shadow-md"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download Price List (PDF)
+          </a>
+        ) : (
+          <p className="text-[14px] text-muted bg-card-bg border border-border rounded-xl px-6 py-4">
+            The price list isn&apos;t available for download right now — please{" "}
+            <Link href="/contact" className="text-brand hover:underline">contact us</Link> and we&apos;ll send it over.
+          </p>
+        )}
 
         <p className="text-[12px] text-text-placeholder mt-4">
           For trade pricing and volume discounts,{" "}

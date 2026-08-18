@@ -28,6 +28,7 @@ class BrandingConfigOut(BaseModel):
     tagline: Optional[str] = None
     logo_url: Optional[str] = None
     favicon_url: Optional[str] = None
+    catalogue_url: Optional[str] = None
     primary_color: str
     secondary_color: str
     font_family: str
@@ -59,6 +60,7 @@ class BrandingConfigUpdate(BaseModel):
     tagline: Optional[str] = None
     logo_url: Optional[str] = None
     favicon_url: Optional[str] = None
+    catalogue_url: Optional[str] = None
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
     font_family: Optional[str] = None

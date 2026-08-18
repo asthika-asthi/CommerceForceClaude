@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type { BrandingConfig } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
-import { Upload, X, RotateCcw, AlertTriangle } from "lucide-react"
+import { Upload, X, RotateCcw, AlertTriangle, FileText } from "lucide-react"
 import {
   CORE_COLOR_META,
   FAMILY_RULES,
@@ -27,6 +27,10 @@ const TEXT_FIELDS = [
 const IMAGE_FIELDS = [
   { key: "logo_url", label: "Logo", hint: "PNG/SVG, transparent background recommended" },
   { key: "favicon_url", label: "Favicon", hint: "32×32 or 64×64 ICO/PNG" },
+]
+
+const DOCUMENT_FIELDS = [
+  { key: "catalogue_url", label: "Product Catalogue", hint: "PDF, max 25MB. Linked from the storefront's \"Full catalogue\" button." },
 ]
 
 const GA4_ID_RE = /^G-[A-Z0-9]+$/
@@ -87,6 +91,66 @@ function ImageUploadField({
         </div>
       </div>
       <input ref={fileRef} type="file" accept="image/*" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = "" }} />
+    </div>
+  )
+}
+
+function FileUploadField({
+  label, hint, value, onChange,
+}: { label: string; hint: string; value: string; onChange: (url: string) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleFile(file: File) {
+    setError(null)
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const result = await api.upload<{ url: string }>("/api/media/upload?folder=misc", fd)
+      onChange(result.url)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload failed")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="col-span-2">
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      <p className="text-xs text-slate-500 mb-2">{hint}</p>
+      <div className="flex items-start gap-3">
+        {value && (
+          <div className="relative flex-shrink-0">
+            <a href={value} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 h-14 px-3 rounded border border-slate-200 bg-slate-50 text-xs text-slate-600 hover:text-blue-600 hover:border-blue-300">
+              <FileText className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate max-w-[140px]">{value.split("/").pop()}</span>
+            </a>
+            <button type="button" onClick={() => onChange("")}
+              className="absolute -top-1.5 -right-1.5 bg-white border border-slate-200 rounded-full p-0.5 hover:bg-red-50 hover:border-red-300">
+              <X className="w-3 h-3 text-slate-500 hover:text-red-500" />
+            </button>
+          </div>
+        )}
+        <div className="flex-1 space-y-2">
+          <button type="button" disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-2 px-3 py-2 text-sm border border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50 transition-colors">
+            <Upload className="w-4 h-4" />
+            {uploading ? "Uploading…" : "Upload PDF"}
+          </button>
+          <input type="text" value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Or paste a URL" />
+          {error && <p className="text-xs text-red-500">{error}</p>}
+        </div>
+      </div>
+      <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = "" }} />
     </div>
   )
@@ -153,6 +217,7 @@ export default function BrandingPage() {
       const f: FormState = {}
       TEXT_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       IMAGE_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
+      DOCUMENT_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       f.font_family = config.font_family || FONT_OPTIONS[0].value
       f.custom_css = config.custom_css ?? ""
       f.bank_transfer_details = config.bank_transfer_details ?? ""
@@ -327,6 +392,14 @@ export default function BrandingPage() {
         <div className="grid grid-cols-2 gap-5 pt-1 border-t border-slate-100">
           {IMAGE_FIELDS.map(({ key, label, hint }) => (
             <ImageUploadField key={key} label={label} hint={hint}
+              value={form[key] ?? ""}
+              onChange={(url) => setForm((f) => ({ ...f, [key]: url }))} />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-5 pt-1 border-t border-slate-100">
+          {DOCUMENT_FIELDS.map(({ key, label, hint }) => (
+            <FileUploadField key={key} label={label} hint={hint}
               value={form[key] ?? ""}
               onChange={(url) => setForm((f) => ({ ...f, [key]: url }))} />
           ))}

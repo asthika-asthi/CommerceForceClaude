@@ -11,6 +11,7 @@ class BrandingConfig(BaseModel):
     tagline: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     logo_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     favicon_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    catalogue_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     primary_color: Mapped[str] = mapped_column(String(20), default="#000000", nullable=False)
     secondary_color: Mapped[str] = mapped_column(String(20), default="#ffffff", nullable=False)
     font_family: Mapped[str] = mapped_column(String(100), default="Inter", nullable=False)

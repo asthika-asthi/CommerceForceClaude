@@ -305,6 +305,7 @@ export interface BrandingConfig {
   tagline?: string
   logo_url?: string
   favicon_url?: string
+  catalogue_url?: string
   primary_color: string
   secondary_color: string
   font_family: string
