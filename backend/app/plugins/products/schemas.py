@@ -37,6 +37,7 @@ class ImageSortItem(BaseModel):
 class ProductCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    sku: Optional[str] = None
     category_id: Optional[str] = None
     price: Decimal = Field(..., ge=0)
     sale_price: Optional[Decimal] = Field(None, ge=0)

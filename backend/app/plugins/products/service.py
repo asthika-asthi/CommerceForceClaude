@@ -38,7 +38,13 @@ async def create_product(data: ProductCreate, db: AsyncSession) -> Product:
             i += 1
         slug = f"{base}-{i}"
 
-    sku = generate_sku(data.name)
+    sku = (data.sku or "").strip()
+    if sku:
+        existing_sku = await db.execute(select(Product).where(Product.sku == sku))
+        if existing_sku.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"SKU '{sku}' already in use")
+    else:
+        sku = generate_sku(data.name)
 
     product = Product(
         name=data.name,
