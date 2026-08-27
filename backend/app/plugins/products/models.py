@@ -18,6 +18,7 @@ class Product(BaseModel):
     )
     price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     sale_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
+    sale_percent: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
     is_on_sale: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     stock_quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     low_stock_threshold: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
@@ -31,9 +32,23 @@ class Product(BaseModel):
         order_by="ProductImage.sort_order", lazy="selectin"
     )
 
+    def apply_sale_to(self, base: Decimal) -> Decimal:
+        """Applies this product's configured sale mechanism to an arbitrary base
+        amount. Used both for the product's own price (via effective_price) and
+        for a direct-priced variant, so the sale rule is defined in exactly one
+        place regardless of which pricing mode a variant uses."""
+        if not self.is_on_sale:
+            return base
+        from app.core.config import settings
+        if settings.SALE_PRICE_MODE == "percentage":
+            if self.sale_percent is not None:
+                return (base * (Decimal("1") - self.sale_percent / Decimal("100"))).quantize(Decimal("0.01"))
+            return base
+        return self.sale_price if self.sale_price is not None else base
+
     @property
     def effective_price(self) -> Decimal:
-        return self.sale_price if self.is_on_sale and self.sale_price else self.price
+        return self.apply_sale_to(self.price)
 
     @property
     def in_stock(self) -> bool:
@@ -92,6 +107,7 @@ class ProductVariant(BaseModel):
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     price_adjustment: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
+    direct_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     stock_quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     option_links: Mapped[list["ProductVariantOption"]] = relationship(

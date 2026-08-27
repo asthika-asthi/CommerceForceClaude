@@ -10,6 +10,7 @@ from decimal import Decimal
 from httpx import AsyncClient
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.plugins.products.models import ProductVariant
 from app.plugins.orders.models import OrderItem
 
@@ -70,6 +71,27 @@ async def test_explicit_checkout_applies_variant_price_adjustment(client: AsyncC
     assert r.status_code == 201, r.text
     # unit price must be 20 + 5 = 25 → subtotal 50, not the base 40.
     assert float(r.json()["subtotal"]) == 50.0
+
+
+async def test_explicit_checkout_applies_variant_direct_price(client: AsyncClient, db, monkeypatch):
+    monkeypatch.setattr(settings, "VARIANT_PRICING_MODE", "direct")
+    admin_token = await make_admin(client, db)
+    product_id = await _make_product(client, admin_token, "Direct Widget", price="20.00", stock=10)
+
+    variant = await _default_variant(db, product_id)
+    variant.direct_price = Decimal("30.00")
+    await db.flush()
+
+    r = await client.post("/api/checkout", json={
+        "use_cart": False,
+        "items": [{"product_id": product_id, "quantity": 2}],
+        "payment_method": "cash",
+        "guest_email": "g@example.com",
+        "shipping_address": "1 Test St",
+    })
+    assert r.status_code == 201, r.text
+    # unit price must be the direct_price (30), not the base price (20) → subtotal 60.
+    assert float(r.json()["subtotal"]) == 60.0
 
 
 async def test_explicit_checkout_honors_explicit_variant_id(client: AsyncClient, db):

@@ -1,6 +1,8 @@
 """Phase 2 — Commerce Engine integration tests."""
 from httpx import AsyncClient
 
+from app.core.config import settings
+
 # --- helpers ---
 REGISTER_URL = "/api/auth/register"
 LOGIN_URL = "/api/auth/login"
@@ -97,7 +99,8 @@ async def test_product_search(client: AsyncClient, db):
     assert any("Umbrella" in i["name"] for i in r.json()["items"])
 
 
-async def test_product_sale_price(client: AsyncClient, db):
+async def test_product_sale_price(client: AsyncClient, db, monkeypatch):
+    monkeypatch.setattr(settings, "SALE_PRICE_MODE", "absolute")
     token = await make_admin(client, db)
     r = await client.post("/api/products", json={"name": "On Sale Item", "price": "50.00", "sale_price": "35.00", "is_on_sale": True, "stock_quantity": 10}, headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 201

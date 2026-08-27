@@ -2,6 +2,8 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -312,6 +314,60 @@ async def _setup_product_with_adjusted_variant(
     return product, xl
 
 
+async def _setup_product_with_direct_priced_variant(
+    client: AsyncClient, token: str
+) -> tuple[dict, dict]:
+    """Create a £20 product with a Size option, generate variants, set XL a direct
+    price of £30 (VARIANT_PRICING_MODE must already be set to 'direct' by the caller).
+    Returns (product, xl_variant)."""
+    r = await client.post(
+        "/api/products",
+        json={"name": "Direct Priced Shirt", "price": "20.00", "stock_quantity": 10},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 201
+    product = r.json()
+
+    r = await client.post(
+        f"/api/products/{product['id']}/options",
+        json={"name": "Size", "sort_order": 0},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 201
+    opt = r.json()
+
+    for label in ("S", "XL"):
+        r = await client.post(
+            f"/api/products/{product['id']}/options/{opt['id']}/values",
+            json={"label": label, "sort_order": 0},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert r.status_code == 201
+
+    r = await client.post(
+        f"/api/products/{product['id']}/variants/generate",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+
+    r = await client.get(
+        f"/api/products/{product['id']}/variants",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    variants = r.json()
+    xl = next(v for v in variants if "XL" in v["label"])
+
+    r = await client.patch(
+        f"/api/products/{product['id']}/variants/{xl['id']}",
+        json={"direct_price": "30.00", "stock_quantity": 10},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    assert r.json()["direct_price"] == "30.00"
+
+    return product, xl
+
+
 @pytest.mark.asyncio
 async def test_variant_patch_price_adjustment(client: AsyncClient, db: AsyncSession):
     """PATCH variant sets and clears price_adjustment."""
@@ -389,6 +445,197 @@ async def test_cart_unit_price_null_adjustment_uses_base(client: AsyncClient, db
     assert r.status_code == 200
     item = r.json()["items"][0]
     assert float(item["unit_price"]) == 20.00
+
+
+@pytest.mark.asyncio
+async def test_variant_patch_direct_price(client: AsyncClient, db: AsyncSession, monkeypatch):
+    """PATCH variant sets and clears direct_price; effective_price reflects it."""
+    monkeypatch.setattr(settings, "VARIANT_PRICING_MODE", "direct")
+    token = await _admin_token(client, db)
+    product = await _make_product(client, token)
+
+    r = await client.get(
+        f"/api/products/{product['id']}/variants",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    variant_id = r.json()[0]["id"]
+
+    r = await client.patch(
+        f"/api/products/{product['id']}/variants/{variant_id}",
+        json={"direct_price": "30.00"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    assert r.json()["direct_price"] == "30.00"
+    assert r.json()["effective_price"] == "30.00"
+
+    r = await client.patch(
+        f"/api/products/{product['id']}/variants/{variant_id}",
+        json={"direct_price": None},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    assert r.json()["direct_price"] is None
+
+
+@pytest.mark.asyncio
+async def test_variant_price_mode_direct_without_value_falls_back_to_adjustment(
+    client: AsyncClient, db: AsyncSession, monkeypatch
+):
+    """VARIANT_PRICING_MODE='direct' but no direct_price set yet — falls back to the
+    adjustment formula rather than erroring or pricing at zero."""
+    monkeypatch.setattr(settings, "VARIANT_PRICING_MODE", "direct")
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+
+    r = await client.get(
+        f"/api/products/{product['id']}/variants",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    xl_out = next(v for v in r.json() if v["id"] == xl["id"])
+    assert xl_out["direct_price"] is None
+    assert float(xl_out["effective_price"]) == 25.00  # £20 + £5 adjustment, unaffected
+
+
+@pytest.mark.asyncio
+async def test_cart_unit_price_uses_variant_direct_price(client: AsyncClient, db: AsyncSession, monkeypatch):
+    """Cart unit_price = variant.direct_price when VARIANT_PRICING_MODE='direct'."""
+    monkeypatch.setattr(settings, "VARIANT_PRICING_MODE", "direct")
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_direct_priced_variant(client, token)
+
+    r = await client.post(
+        "/api/cart/items",
+        json={"variant_id": xl["id"], "quantity": 1},
+        headers={"X-Session-Id": "test-session-direct"},
+    )
+    assert r.status_code == 200
+    item = next(i for i in r.json()["items"] if i["variant_id"] == xl["id"])
+    assert float(item["unit_price"]) == 30.00
+
+
+@pytest.mark.asyncio
+async def test_cart_unit_price_direct_mode_ignores_price_adjustment(
+    client: AsyncClient, db: AsyncSession, monkeypatch
+):
+    """A variant with both price_adjustment and direct_price set uses only
+    direct_price once VARIANT_PRICING_MODE='direct'."""
+    monkeypatch.setattr(settings, "VARIANT_PRICING_MODE", "direct")
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_direct_priced_variant(client, token)
+
+    # Switch to adjustment mode just long enough to also set price_adjustment on
+    # the same row (direct mode's schema still allows setting the field, it's
+    # simply ignored while VARIANT_PRICING_MODE stays 'direct').
+    r = await client.patch(
+        f"/api/products/{product['id']}/variants/{xl['id']}",
+        json={"price_adjustment": "99.00"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        "/api/cart/items",
+        json={"variant_id": xl["id"], "quantity": 1},
+        headers={"X-Session-Id": "test-session-direct-ignores-adj"},
+    )
+    assert r.status_code == 200
+    item = next(i for i in r.json()["items"] if i["variant_id"] == xl["id"])
+    assert float(item["unit_price"]) == 30.00  # not 20 + 99
+
+
+@pytest.mark.asyncio
+async def test_direct_priced_variant_under_sale_uses_sale_price(client: AsyncClient, db: AsyncSession, monkeypatch):
+    """Sale price still takes precedence over direct_price, same override rule as
+    it already applies to the base price in adjustment mode."""
+    monkeypatch.setattr(settings, "VARIANT_PRICING_MODE", "direct")
+    monkeypatch.setattr(settings, "SALE_PRICE_MODE", "absolute")
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_direct_priced_variant(client, token)
+
+    # Set the product on sale at £15 (below the £30 direct_price) directly via PUT.
+    r = await client.put(
+        f"/api/products/{product['id']}",
+        json={"name": product["name"], "price": product["price"], "sale_price": "15.00", "is_on_sale": True},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        "/api/cart/items",
+        json={"variant_id": xl["id"], "quantity": 1},
+        headers={"X-Session-Id": "test-session-direct-sale"},
+    )
+    assert r.status_code == 200
+    item = next(i for i in r.json()["items"] if i["variant_id"] == xl["id"])
+    assert float(item["unit_price"]) == 15.00  # sale price wins over direct_price
+
+
+@pytest.mark.asyncio
+async def test_sale_percent_mode_discounts_product_price(client: AsyncClient, db: AsyncSession, monkeypatch):
+    """SALE_PRICE_MODE='percentage': effective_price = price * (1 - sale_percent/100),
+    not the (unset) sale_price."""
+    monkeypatch.setattr(settings, "SALE_PRICE_MODE", "percentage")
+    token = await _admin_token(client, db)
+
+    r = await client.post(
+        "/api/products",
+        json={"name": "Percent Sale Widget", "price": "100.00", "stock_quantity": 10},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    product = r.json()
+
+    r = await client.put(
+        f"/api/products/{product['id']}",
+        json={"name": product["name"], "price": product["price"], "sale_percent": "20.00", "is_on_sale": True},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    assert float(r.json()["effective_price"]) == 80.00
+
+
+@pytest.mark.asyncio
+async def test_direct_priced_variant_under_percentage_sale(client: AsyncClient, db: AsyncSession, monkeypatch):
+    """Both new settings combined: direct-mode variant, percentage-mode sale — the
+    variant's direct_price (not the product price) is what gets discounted."""
+    monkeypatch.setattr(settings, "VARIANT_PRICING_MODE", "direct")
+    monkeypatch.setattr(settings, "SALE_PRICE_MODE", "percentage")
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_direct_priced_variant(client, token)  # direct_price = 30.00
+
+    r = await client.put(
+        f"/api/products/{product['id']}",
+        json={"name": product["name"], "price": product["price"], "sale_percent": "10.00", "is_on_sale": True},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+
+    r = await client.post(
+        "/api/cart/items",
+        json={"variant_id": xl["id"], "quantity": 1},
+        headers={"X-Session-Id": "test-session-direct-percent-sale"},
+    )
+    assert r.status_code == 200
+    item = next(i for i in r.json()["items"] if i["variant_id"] == xl["id"])
+    assert float(item["unit_price"]) == 27.00  # 30 * (1 - 10%)
+
+
+@pytest.mark.asyncio
+async def test_variant_patch_negative_direct_price_rejected(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
+    product = await _make_product(client, token)
+    r = await client.get(
+        f"/api/products/{product['id']}/variants",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    variant_id = r.json()[0]["id"]
+
+    r = await client.patch(
+        f"/api/products/{product['id']}/variants/{variant_id}",
+        json={"direct_price": "-5.00"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 422
 
 
 @pytest.mark.asyncio
@@ -479,6 +726,28 @@ async def test_update_variant_rejects_price_on_default_when_options_exist(client
     r = await client.patch(
         f"/api/products/{product['id']}/variants/{default_variant['id']}",
         json={"price_adjustment": "15.00"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_update_variant_rejects_direct_price_on_default_when_options_exist(
+    client: AsyncClient, db: AsyncSession
+):
+    """The ghost default variant must not be assignable a direct_price either."""
+    token = await _admin_token(client, db)
+    product, _xl = await _setup_product_with_adjusted_variant(client, token)
+
+    r = await client.get(
+        f"/api/products/{product['id']}/variants",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    default_variant = next(v for v in r.json() if v["is_default"])
+
+    r = await client.patch(
+        f"/api/products/{product['id']}/variants/{default_variant['id']}",
+        json={"direct_price": "15.00"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 400
@@ -748,3 +1017,142 @@ async def test_order_cancellation_restores_variant_stock(client: AsyncClient, db
 
     reloaded = await _get_product(client, token, product["id"])
     assert reloaded["stock_quantity"] == 10  # S(0) + XL(10)
+
+
+# ── delete variant ────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_delete_variant_success(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+
+    r = await client.delete(
+        f"/api/products/{product['id']}/variants/{xl['id']}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 204
+
+    variants = await _get_variants(client, token, product["id"])
+    ids = [v["id"] for v in variants]
+    assert xl["id"] not in ids
+    assert any("S" in v["label"] for v in variants if not v["is_default"])
+
+
+@pytest.mark.asyncio
+async def test_delete_default_variant_rejected(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
+    product = await _make_product(client, token)
+    variants = await _get_variants(client, token, product["id"])
+    default_variant = next(v for v in variants if v["is_default"])
+
+    r = await client.delete(
+        f"/api/products/{product['id']}/variants/{default_variant['id']}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_delete_variant_with_cart_item_removes_cart_item(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+
+    r = await client.post(
+        "/api/cart/items",
+        json={"variant_id": xl["id"], "quantity": 1},
+        headers={"X-Session-Id": "test-session-delete-variant"},
+    )
+    assert r.status_code == 200
+    assert any(i["variant_id"] == xl["id"] for i in r.json()["items"])
+
+    r = await client.delete(
+        f"/api/products/{product['id']}/variants/{xl['id']}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 204
+
+    r = await client.get("/api/cart", headers={"X-Session-Id": "test-session-delete-variant"})
+    assert r.status_code == 200
+    assert not any(i["variant_id"] == xl["id"] for i in r.json()["items"])
+
+
+@pytest.mark.asyncio
+async def test_delete_variant_with_order_history_preserves_order(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+
+    await client.post(
+        "/api/auth/register",
+        json={"email": "delbuyer@test.com", "password": "Buyer1234!", "first_name": "B", "last_name": "U"},
+    )
+    r = await client.post("/api/auth/login", json={"email": "delbuyer@test.com", "password": "Buyer1234!"})
+    customer_token = r.json()["access_token"]
+
+    await client.post(
+        "/api/cart/items",
+        json={"variant_id": xl["id"], "quantity": 1},
+        headers={"Authorization": f"Bearer {customer_token}"},
+    )
+    r = await client.post(
+        "/api/checkout",
+        json={"use_cart": True, "payment_method": "cash", "shipping_address": "1 Test St"},
+        headers={"Authorization": f"Bearer {customer_token}"},
+    )
+    assert r.status_code == 201
+    order_id = r.json()["order_id"]
+
+    r = await client.delete(
+        f"/api/products/{product['id']}/variants/{xl['id']}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 204
+
+    r = await client.get(f"/api/orders/{order_id}", headers={"Authorization": f"Bearer {customer_token}"})
+    assert r.status_code == 200
+    item = r.json()["items"][0]
+    assert item["variant_id"] is None
+    assert item["variant_label"] == xl["sku"]
+    assert float(item["unit_price"]) == 25.00
+    assert float(item["subtotal"]) == 25.00
+
+
+@pytest.mark.asyncio
+async def test_delete_variant_nulls_tagged_product_image(client: AsyncClient, db: AsyncSession):
+    from app.plugins.products.models import ProductImage
+
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+
+    img = ProductImage(product_id=product["id"], variant_id=xl["id"], url="http://example.com/xl.png")
+    db.add(img)
+    await db.flush()
+    await db.commit()
+    img_id = img.id
+
+    r = await client.delete(
+        f"/api/products/{product['id']}/variants/{xl['id']}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 204
+
+    from sqlalchemy import select
+    result = await db.execute(select(ProductImage).where(ProductImage.id == img_id))
+    reloaded_img = result.scalar_one_or_none()
+    assert reloaded_img is not None
+    assert reloaded_img.variant_id is None
+
+
+@pytest.mark.asyncio
+async def test_delete_variant_recalculates_product_stock(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+    # xl has stock 10 (set in the fixture); the S variant has stock 0.
+
+    r = await client.delete(
+        f"/api/products/{product['id']}/variants/{xl['id']}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 204
+
+    reloaded = await _get_product(client, token, product["id"])
+    assert reloaded["stock_quantity"] == 0

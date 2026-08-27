@@ -38,6 +38,16 @@ class Settings(BaseSettings):
     # Drives the Stripe charge currency and the symbol shown in order emails.
     CURRENCY_CODE: str = "GBP"
 
+    # Variant pricing model — "adjustment" (delta added to base/sale price, original
+    # behaviour) or "direct" (each variant carries its own absolute price instead of
+    # an adjustment). Store-wide, set per client at deploy.
+    VARIANT_PRICING_MODE: str = "adjustment"
+
+    # Sale price model — "absolute" (Product.sale_price overrides price when on sale,
+    # original behaviour) or "percentage" (Product.sale_percent discounts price/
+    # direct_price when on sale). Store-wide, set per client at deploy.
+    SALE_PRICE_MODE: str = "absolute"
+
     # Which visit-note template a scheduling deployment uses (see plugins/scheduling/
     # templates.py). Ships medical = SOAP.
     SCHEDULING_NOTE_TEMPLATE: str = "soap"

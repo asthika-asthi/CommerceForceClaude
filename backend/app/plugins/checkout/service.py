@@ -83,7 +83,7 @@ async def _items_from_cart(cart: Cart, db: AsyncSession) -> list[dict]:
             "product_id": product.id,
             "product_name": product.name,
             "product_sku": product.sku,
-            "unit_price": product.effective_price + (variant.price_adjustment if variant.price_adjustment is not None else Decimal("0")),
+            "unit_price": vs.effective_price_for(variant, product),
             "quantity": cart_item.quantity,
             "variant_id": variant.id,
             "variant_label": variant_label,
@@ -133,9 +133,7 @@ async def _items_from_explicit(checkout_items: list[CheckoutItem], db: AsyncSess
             raise HTTPException(status_code=409, detail=f"Insufficient stock for '{product.name}'")
 
         variant_label = variant.label if hasattr(variant, "label") and variant.label else variant.sku
-        unit_price = product.effective_price + (
-            variant.price_adjustment if variant.price_adjustment is not None else Decimal("0")
-        )
+        unit_price = vs.effective_price_for(variant, product)
         items.append({
             "product_id": product.id,
             "product_name": product.name,

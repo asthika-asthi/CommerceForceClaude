@@ -16,6 +16,7 @@ from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.plugins.cart.models import Cart
 from app.plugins.products.models import Product, ProductVariant
+from app.plugins.products import variant_service as vs
 from app.shared.email import send_email
 from app.shared.currency import format_money
 
@@ -41,7 +42,7 @@ async def _build_reminder_body(cart: Cart, db: AsyncSession) -> str:
         product = product_result.scalar_one_or_none()
         if not product:
             continue
-        unit_price = product.effective_price + (variant.price_adjustment or 0)
+        unit_price = vs.effective_price_for(variant, product)
         lines.append(f"  {product.name} x{item.quantity}  {format_money(float(unit_price) * item.quantity)}")
 
     items_text = "\n".join(lines) if lines else "  (items no longer available)"

@@ -92,11 +92,11 @@ async def _build_cart_out(cart: Cart, db: AsyncSession) -> CartOut:
         if not primary and product.images:
             primary = product.images[0].url
 
-        unit_price = product.effective_price + (variant.price_adjustment if variant.price_adjustment is not None else Decimal("0"))
+        unit_price = vs.effective_price_for(variant, product)
         line_total = unit_price * item.quantity
         subtotal += line_total
 
-        variant_label = vs.build_variant_out(variant)["label"]
+        variant_label = vs.build_variant_out(variant, product)["label"]
 
         items_out.append(CartItemOut(
             id=item.id,

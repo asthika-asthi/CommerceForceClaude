@@ -1,11 +1,13 @@
+from decimal import Decimal
 from itertools import product as itertools_product
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
+from app.core.config import settings
 from app.plugins.products.models import (
-    Product, ProductOptionType, ProductOptionValue, ProductVariant, ProductVariantOption,
+    Product, ProductImage, ProductOptionType, ProductOptionValue, ProductVariant, ProductVariantOption,
 )
 from app.plugins.products.schemas import OptionTypeCreate, OptionValueCreate, VariantUpdate
 
@@ -16,6 +18,12 @@ async def _load_product(product_id: str, db: AsyncSession) -> Product:
     if not p:
         raise HTTPException(status_code=404, detail="Product not found")
     return p
+
+
+async def get_product(product_id: str, db: AsyncSession) -> Product:
+    """Public accessor for routers that need the parent Product alongside a
+    list of variants, e.g. to compute each variant's effective_price."""
+    return await _load_product(product_id, db)
 
 
 async def _load_option_type(option_type_id: str, db: AsyncSession) -> ProductOptionType:
@@ -243,7 +251,10 @@ async def update_variant(product_id: str, variant_id: str, data: VariantUpdate, 
         raise HTTPException(status_code=404, detail="Variant not found for this product")
     updates = data.model_dump(exclude_unset=True)
 
-    sets_price = "price_adjustment" in updates and updates["price_adjustment"] is not None
+    sets_price = (
+        ("price_adjustment" in updates and updates["price_adjustment"] is not None)
+        or ("direct_price" in updates and updates["direct_price"] is not None)
+    )
     sets_stock = "stock_quantity" in updates and updates["stock_quantity"] is not None
     if (sets_price or sets_stock) and variant.is_default and not variant.option_links:
         # A default/no-option variant is only a "ghost" system row when the product
@@ -251,7 +262,7 @@ async def update_variant(product_id: str, variant_id: str, data: VariantUpdate, 
         # product (no options at all) legitimately prices/stocks its one default variant.
         option_types = await list_option_types(product_id, db)
         if option_types:
-            field = "price adjustment" if sets_price else "stock"
+            field = "price" if sets_price else "stock"
             raise HTTPException(
                 status_code=400,
                 detail=f"Cannot set a {field} on the default/no-option variant "
@@ -278,6 +289,31 @@ async def update_variant(product_id: str, variant_id: str, data: VariantUpdate, 
         await recalc_product_stock(product_id, db)
 
     return await _load_variant(variant_id, db)
+
+
+async def delete_variant(product_id: str, variant_id: str, db: AsyncSession) -> None:
+    variant = await _load_variant(variant_id, db)
+    if variant.product_id != product_id:
+        raise HTTPException(status_code=404, detail="Variant not found for this product")
+
+    if variant.is_default:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete the default/no-option variant — it is a permanent system row",
+        )
+
+    # product_images.variant_id has no FK constraint (plain nullable column), so no DB-level
+    # cascade will clear it. Unassign any images tagged to this variant explicitly — the image
+    # row itself survives as a general product image, just no longer tied to this variant.
+    await db.execute(
+        update(ProductImage)
+        .where(ProductImage.variant_id == variant_id)
+        .values(variant_id=None)
+    )
+
+    await db.delete(variant)
+    await db.flush()
+    await recalc_product_stock(product_id, db)
 
 
 async def has_real_variants(product_id: str, db: AsyncSession) -> bool:
@@ -347,7 +383,20 @@ def effective_stock_for(variant: ProductVariant, product: Product) -> int:
     return product.stock_quantity
 
 
-def build_variant_out(variant: ProductVariant) -> dict:
+def effective_price_for(variant: ProductVariant, product: Product) -> Decimal:
+    """The final unit price for this variant — the single source of truth that
+    replaces the formula that used to be duplicated across cart, checkout, and
+    the abandoned-cart email. In "direct" mode with a stored direct_price, that
+    absolute value (with the product's sale rule applied on top, same as it
+    already applies to the base price) is authoritative. Otherwise — including
+    "direct" mode before a direct_price has been entered — falls back to the
+    original delta formula."""
+    if settings.VARIANT_PRICING_MODE == "direct" and variant.direct_price is not None:
+        return product.apply_sale_to(variant.direct_price)
+    return product.effective_price + (variant.price_adjustment or Decimal("0"))
+
+
+def build_variant_out(variant: ProductVariant, product: Product) -> dict:
     option_values = []
     for link in sorted(
         variant.option_links,
@@ -369,5 +418,7 @@ def build_variant_out(variant: ProductVariant) -> dict:
         "option_values": option_values,
         "label": ", ".join(label_parts),
         "price_adjustment": str(variant.price_adjustment) if variant.price_adjustment is not None else None,
+        "direct_price": str(variant.direct_price) if variant.direct_price is not None else None,
+        "effective_price": str(effective_price_for(variant, product)),
         "stock_quantity": variant.stock_quantity,
     }

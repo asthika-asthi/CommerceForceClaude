@@ -113,6 +113,7 @@ async def list_products(
         list_items.append(ProductListOut(
             id=p.id, name=p.name, slug=p.slug, sku=p.sku, description=p.description,
             category_id=p.category_id, price=p.price, sale_price=p.sale_price,
+            sale_percent=p.sale_percent,
             is_on_sale=p.is_on_sale, effective_price=p.effective_price,
             stock_quantity=p.stock_quantity, in_stock=p.in_stock,
             is_active=p.is_active, is_featured=p.is_featured, primary_image=primary,
@@ -157,7 +158,7 @@ async def get_product(product_id: str, db: AsyncSession = Depends(get_db)):
     variants = await variant_service.list_variants(product.id, db)
     product_dict = ProductOut.model_validate(product).model_dump()
     product_dict["option_types"] = [OptionTypeOut.model_validate(ot).model_dump() for ot in option_types]
-    product_dict["variants"] = [variant_service.build_variant_out(v) for v in variants]
+    product_dict["variants"] = [variant_service.build_variant_out(v, product) for v in variants]
     return product_dict
 
 
@@ -168,7 +169,7 @@ async def get_product_by_slug(slug: str, db: AsyncSession = Depends(get_db)):
     variants = await variant_service.list_variants(product.id, db)
     product_dict = ProductOut.model_validate(product).model_dump()
     product_dict["option_types"] = [OptionTypeOut.model_validate(ot).model_dump() for ot in option_types]
-    product_dict["variants"] = [variant_service.build_variant_out(v) for v in variants]
+    product_dict["variants"] = [variant_service.build_variant_out(v, product) for v in variants]
     return product_dict
 
 

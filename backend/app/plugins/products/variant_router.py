@@ -95,7 +95,8 @@ async def delete_option_value(
 @router.get("/{product_id}/variants", response_model=list[dict])
 async def list_variants(product_id: str, db: AsyncSession = Depends(get_db)):
     variants = await service.list_variants(product_id, db)
-    return [service.build_variant_out(v) for v in variants]
+    product = await service.get_product(product_id, db)
+    return [service.build_variant_out(v, product) for v in variants]
 
 
 @router.post("/{product_id}/variants/generate", response_model=list[dict])
@@ -105,7 +106,8 @@ async def generate_variants(
     _=Depends(require_admin()),
 ):
     variants = await service.generate_variants(product_id, db)
-    return [service.build_variant_out(v) for v in variants]
+    product = await service.get_product(product_id, db)
+    return [service.build_variant_out(v, product) for v in variants]
 
 
 @router.patch("/{product_id}/variants/{variant_id}", response_model=dict)
@@ -117,4 +119,18 @@ async def update_variant(
     _=Depends(require_admin()),
 ):
     variant = await service.update_variant(product_id, variant_id, data, db)
-    return service.build_variant_out(variant)
+    product = await service.get_product(product_id, db)
+    return service.build_variant_out(variant, product)
+
+
+@router.delete(
+    "/{product_id}/variants/{variant_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_variant(
+    product_id: str,
+    variant_id: str,
+    db: AsyncSession = Depends(get_db),
+    _=Depends(require_admin()),
+):
+    await service.delete_variant(product_id, variant_id, db)

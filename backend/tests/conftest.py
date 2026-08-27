@@ -10,6 +10,7 @@ os.environ["ABANDONED_CART_ENABLED"] = "false"  # tests call send_reminders() di
 
 import pytest  # noqa: E402
 from httpx import AsyncClient, ASGITransport  # noqa: E402
+from sqlalchemy import event  # noqa: E402
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession  # noqa: E402
 
 # Clear the settings cache so it re-reads with our env overrides
@@ -27,6 +28,16 @@ assert "test_" in TEST_DB_URL, (
 
 test_engine = create_async_engine(TEST_DB_URL, echo=False)
 TestSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
+
+
+# SQLite doesn't enforce foreign keys (including ON DELETE CASCADE/SET NULL) unless this
+# pragma is set per-connection — the production engine (app/core/database.py) already does
+# this. Without it here, tests silently don't exercise real cascade/set-null behavior.
+@event.listens_for(test_engine.sync_engine, "connect")
+def _set_test_sqlite_pragmas(dbapi_connection, _connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 @pytest.fixture(scope="session", autouse=True)

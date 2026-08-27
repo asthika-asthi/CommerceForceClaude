@@ -443,6 +443,56 @@ async def run_tests() -> None:
     check("Second variant was not created", v2 is None)
 
     # ──────────────────────────────────────────────────────────
+    # [20] Invalid direct_price → row skipped
+    # ──────────────────────────────────────────────────────────
+    print("\n[20] Invalid direct_price")
+    csv_bad_direct = "\n".join([
+        "product_sku,variant_sku,option1_name,option1_value,option2_name,option2_value,direct_price,is_active",
+        "TSHIRT,TSHIRT-S-RED,Size,S,Colour,Red,notanumber,true",
+    ])
+    async with AsyncSessionLocal() as db:
+        r17 = await svc.import_variants_from_csv(csv_bad_direct, db, "set")
+        await db.commit()
+    check("Error for invalid direct_price", len(r17.errors) == 1, str(r17.errors))
+    check("Error field is direct_price", r17.errors[0].field == "direct_price", str(r17.errors))
+    check("variants_created == 0 (row skipped)", r17.variants_created == 0, str(r17))
+
+    # ──────────────────────────────────────────────────────────
+    # [21] Negative direct_price → row skipped
+    # ──────────────────────────────────────────────────────────
+    print("\n[21] Negative direct_price")
+    csv_neg_direct = "\n".join([
+        "product_sku,variant_sku,option1_name,option1_value,option2_name,option2_value,direct_price,is_active",
+        "TSHIRT,TSHIRT-S-RED,Size,S,Colour,Red,-10.00,true",
+    ])
+    async with AsyncSessionLocal() as db:
+        r18 = await svc.import_variants_from_csv(csv_neg_direct, db, "set")
+        await db.commit()
+    check("Error for negative direct_price", len(r18.errors) == 1, str(r18.errors))
+    check("Error field is direct_price", r18.errors[0].field == "direct_price", str(r18.errors))
+    check("variants_created == 0 (row skipped)", r18.variants_created == 0, str(r18))
+
+    # ──────────────────────────────────────────────────────────
+    # [22] Direct price import/export round-trip
+    # ──────────────────────────────────────────────────────────
+    print("\n[22] Direct price round-trip")
+    csv_direct_ok = "\n".join([
+        "product_sku,variant_sku,option1_name,option1_value,option2_name,option2_value,direct_price,is_active",
+        "TSHIRT,TSHIRT-M-BLU,Size,M,Colour,Blue,42.00,true",
+    ])
+    async with AsyncSessionLocal() as db:
+        r19 = await svc.import_variants_from_csv(csv_direct_ok, db, "set")
+        await db.commit()
+    check("Direct-priced variant created", r19.variants_created == 1, str(r19))
+
+    async with AsyncSessionLocal() as db:
+        exported_direct = await svc.export_variants_to_csv(db)
+    exp_direct_lines = exported_direct.strip().splitlines()
+    check("direct_price column in export", "direct_price" in exp_direct_lines[0], exp_direct_lines[0])
+    matching_row = next((l for l in exp_direct_lines if "TSHIRT-M-BLU" in l), None)
+    check("Exported row contains 42.00", matching_row is not None and "42.00" in matching_row, matching_row)
+
+    # ──────────────────────────────────────────────────────────
     # SUMMARY
     # ──────────────────────────────────────────────────────────
     print("\n" + "=" * 54)

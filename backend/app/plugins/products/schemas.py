@@ -41,6 +41,7 @@ class ProductCreate(BaseModel):
     category_id: Optional[str] = None
     price: Decimal = Field(..., ge=0)
     sale_price: Optional[Decimal] = Field(None, ge=0)
+    sale_percent: Optional[Decimal] = Field(None, ge=0, le=100)
     is_on_sale: bool = False
     stock_quantity: int = 0
     low_stock_threshold: int = 10
@@ -57,6 +58,7 @@ class ProductUpdate(BaseModel):
     category_id: Optional[str] = None
     price: Optional[Decimal] = None
     sale_price: Optional[Decimal] = None
+    sale_percent: Optional[Decimal] = Field(None, ge=0, le=100)
     is_on_sale: Optional[bool] = None
     stock_quantity: Optional[int] = None
     low_stock_threshold: Optional[int] = None
@@ -76,6 +78,7 @@ class ProductOut(BaseModel):
     category_id: Optional[str] = None
     price: Decimal
     sale_price: Optional[Decimal] = None
+    sale_percent: Optional[Decimal] = None
     is_on_sale: bool
     effective_price: Decimal
     stock_quantity: int
@@ -108,6 +111,7 @@ class ProductListOut(BaseModel):
     category_id: Optional[str] = None
     price: Decimal
     sale_price: Optional[Decimal] = None
+    sale_percent: Optional[Decimal] = None
     is_on_sale: bool
     effective_price: Decimal
     stock_quantity: int
@@ -193,6 +197,8 @@ class ProductVariantOut(BaseModel):
     option_values: list[VariantOptionLink] = []
     label: str = ""
     price_adjustment: Optional[Decimal] = None
+    direct_price: Optional[Decimal] = None
+    effective_price: Optional[Decimal] = None
     stock_quantity: int = 0
     model_config = {"from_attributes": True}
 
@@ -201,6 +207,7 @@ class VariantUpdate(BaseModel):
     sku: Optional[str] = None
     is_active: Optional[bool] = None
     price_adjustment: Optional[Decimal] = None
+    direct_price: Optional[Decimal] = Field(None, ge=0)
     stock_quantity: Optional[int] = None
 
 
