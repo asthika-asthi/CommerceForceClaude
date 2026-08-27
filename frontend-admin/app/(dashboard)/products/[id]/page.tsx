@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { Trash2, ChevronUp, ChevronDown, Star } from "lucide-react"
 import { CURRENCY_SYMBOL } from "@/lib/currency"
+import { VARIANT_PRICING_MODE, SALE_PRICE_MODE } from "@/lib/pricing-config"
 
 // ── Variant domain types ──────────────────────────────────────────────────────
 interface OptionValue {
@@ -30,6 +31,8 @@ interface ProductVariant {
   is_active: boolean
   is_default: boolean
   price_adjustment: string | null
+  direct_price: string | null
+  effective_price: string | null
   stock_quantity: number
 }
 
@@ -61,8 +64,8 @@ function EditProduct({ id }: { id: string }) {
 
   const [form, setForm] = useState({
     name: "", description: "", sku: "", barcode: "",
-    price: "", sale_price: "", stock_quantity: "0",
-    category_id: "", is_active: true, is_featured: false,
+    price: "", sale_price: "", sale_percent: "", stock_quantity: "0",
+    category_id: "", is_active: true, is_featured: false, is_on_sale: false,
   })
   const [error, setError] = useState("")
 
@@ -88,10 +91,12 @@ function EditProduct({ id }: { id: string }) {
         barcode: product.barcode ?? "",
         price: product.price,
         sale_price: product.sale_price ?? "",
+        sale_percent: product.sale_percent ?? "",
         stock_quantity: String(product.stock_quantity),
         category_id: product.category_id ?? "",
         is_active: product.is_active,
         is_featured: product.is_featured ?? false,
+        is_on_sale: product.is_on_sale ?? false,
       })
       const sorted = [...(product.images ?? [])].sort((a, b) => a.sort_order - b.sort_order)
       setImages(sorted)
@@ -104,6 +109,8 @@ function EditProduct({ id }: { id: string }) {
         ...data,
         stock_quantity: Number(data.stock_quantity),
         sale_price: data.sale_price || undefined,
+        sale_percent: data.sale_percent || undefined,
+        is_on_sale: data.is_on_sale,
         category_id: data.category_id || undefined,
         barcode: data.barcode || undefined,
       }),
@@ -179,6 +186,7 @@ function EditProduct({ id }: { id: string }) {
   // Per-variant SKU editing state
   const [variantSkus, setVariantSkus] = useState<Record<string, string>>({})
   const [variantAdjustments, setVariantAdjustments] = useState<Record<string, string>>({})
+  const [variantDirectPrices, setVariantDirectPrices] = useState<Record<string, string>>({})
   const [variantStocks, setVariantStocks] = useState<Record<string, string>>({})
   // Stock the product had *before* variants were generated — captured right before
   // calling generate so the migration banner can tell the admin what happened to it.
@@ -205,6 +213,11 @@ function EditProduct({ id }: { id: string }) {
         adjMap[v.id] = v.price_adjustment ?? ""
       }
       setVariantAdjustments(adjMap)
+      const directMap: Record<string, string> = {}
+      for (const v of vars) {
+        directMap[v.id] = v.direct_price ?? ""
+      }
+      setVariantDirectPrices(directMap)
       const stockMap: Record<string, string> = {}
       for (const v of vars) {
         stockMap[v.id] = String(v.stock_quantity)
@@ -320,10 +333,31 @@ function EditProduct({ id }: { id: string }) {
     const price_adjustment = raw === "" ? null : raw
     setVariantsError("")
     try {
-      await api.patch(`/api/products/${id}/variants/${variantId}`, { price_adjustment })
+      const updated = await api.patch<ProductVariant>(`/api/products/${id}/variants/${variantId}`, { price_adjustment })
       setVariants((prev) =>
         prev.map((v) =>
-          v.id === variantId ? { ...v, price_adjustment: raw || null } : v
+          v.id === variantId ? { ...v, price_adjustment: raw || null, effective_price: updated.effective_price } : v
+        )
+      )
+    } catch (err) {
+      setVariantsError(err instanceof Error ? err.message : "Failed to update variant")
+    }
+  }
+
+  async function handleVariantDirectPriceBlur(variantId: string) {
+    const raw = variantDirectPrices[variantId] ?? ""
+    const current = variants.find((v) => v.id === variantId)
+    if (!current) return
+    if (raw === "" && current.direct_price == null) return
+    if (raw !== "" && current.direct_price != null && parseFloat(raw) === parseFloat(current.direct_price)) return
+    if (raw !== "" && (isNaN(parseFloat(raw)) || parseFloat(raw) < 0)) return
+    const direct_price = raw === "" ? null : raw
+    setVariantsError("")
+    try {
+      const updated = await api.patch<ProductVariant>(`/api/products/${id}/variants/${variantId}`, { direct_price })
+      setVariants((prev) =>
+        prev.map((v) =>
+          v.id === variantId ? { ...v, direct_price: raw || null, effective_price: updated.effective_price } : v
         )
       )
     } catch (err) {
@@ -361,6 +395,18 @@ function EditProduct({ id }: { id: string }) {
       )
     } catch (err) {
       setVariantsError(err instanceof Error ? err.message : "Failed to update variant")
+    }
+  }
+
+  async function handleDeleteVariant(variant: ProductVariant) {
+    if (!confirm(`Delete variant "${variant.label}"? This cannot be undone.`)) return
+    setVariantsError("")
+    try {
+      await api.del(`/api/products/${id}/variants/${variant.id}`)
+      setVariants((prev) => prev.filter((v) => v.id !== variant.id))
+      qc.invalidateQueries({ queryKey: ["product", id] })
+    } catch (err) {
+      setVariantsError(err instanceof Error ? err.message : "Failed to delete variant")
     }
   }
 
@@ -540,10 +586,17 @@ function EditProduct({ id }: { id: string }) {
               <input required value={form.price} onChange={(e) => set("price", e.target.value)}
                 className={input} type="number" step="0.01" min="0" />
             </Field>
-            <Field label="Sale Price">
-              <input value={form.sale_price} onChange={(e) => set("sale_price", e.target.value)}
-                className={input} type="number" step="0.01" min="0" />
-            </Field>
+            {SALE_PRICE_MODE === "percentage" ? (
+              <Field label="Sale % off">
+                <input value={form.sale_percent} onChange={(e) => set("sale_percent", e.target.value)}
+                  className={input} type="number" step="0.01" min="0" max="100" />
+              </Field>
+            ) : (
+              <Field label="Sale Price">
+                <input value={form.sale_price} onChange={(e) => set("sale_price", e.target.value)}
+                  className={input} type="number" step="0.01" min="0" />
+              </Field>
+            )}
             <Field label={hasRealVariants ? "Stock (sum of variants)" : "Stock"}>
               {hasRealVariants ? (
                 <>
@@ -577,6 +630,11 @@ function EditProduct({ id }: { id: string }) {
             <input type="checkbox" checked={form.is_featured}
               onChange={(e) => set("is_featured", e.target.checked)} className="rounded" />
             Featured (highlighted on the storefront)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+            <input type="checkbox" checked={form.is_on_sale}
+              onChange={(e) => set("is_on_sale", e.target.checked)} className="rounded" />
+            On sale ({SALE_PRICE_MODE === "percentage" ? "applies the Sale % off above" : "applies the Sale Price above"})
           </label>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -735,9 +793,13 @@ function EditProduct({ id }: { id: string }) {
                           <tr className="border-b border-slate-200">
                             <th className="text-left py-2 pr-4 font-medium text-slate-600">Variant</th>
                             <th className="text-left py-2 pr-4 font-medium text-slate-600">SKU</th>
-                            <th className="text-left py-2 pr-4 font-medium text-slate-600">Price adj. ({CURRENCY_SYMBOL})</th>
+                            <th className="text-left py-2 pr-4 font-medium text-slate-600">
+                              {VARIANT_PRICING_MODE === "direct" ? `Direct price (${CURRENCY_SYMBOL})` : `Price adj. (${CURRENCY_SYMBOL})`}
+                            </th>
+                            <th className="text-left py-2 pr-4 font-medium text-slate-600">Effective price</th>
                             <th className="text-left py-2 pr-4 font-medium text-slate-600">Stock</th>
                             <th className="text-left py-2 font-medium text-slate-600">Active</th>
+                            <th className="px-2 py-2" />
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -756,17 +818,35 @@ function EditProduct({ id }: { id: string }) {
                                 />
                               </td>
                               <td className="py-2 pr-4">
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={variantAdjustments[variant.id] ?? ""}
-                                  onChange={(e) =>
-                                    setVariantAdjustments((prev) => ({ ...prev, [variant.id]: e.target.value }))
-                                  }
-                                  onBlur={() => handleVariantAdjustmentBlur(variant.id)}
-                                  placeholder="0.00"
-                                  className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-28"
-                                />
+                                {VARIANT_PRICING_MODE === "direct" ? (
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={variantDirectPrices[variant.id] ?? ""}
+                                    onChange={(e) =>
+                                      setVariantDirectPrices((prev) => ({ ...prev, [variant.id]: e.target.value }))
+                                    }
+                                    onBlur={() => handleVariantDirectPriceBlur(variant.id)}
+                                    placeholder="0.00"
+                                    className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-28"
+                                  />
+                                ) : (
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={variantAdjustments[variant.id] ?? ""}
+                                    onChange={(e) =>
+                                      setVariantAdjustments((prev) => ({ ...prev, [variant.id]: e.target.value }))
+                                    }
+                                    onBlur={() => handleVariantAdjustmentBlur(variant.id)}
+                                    placeholder="0.00"
+                                    className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-28"
+                                  />
+                                )}
+                              </td>
+                              <td className="py-2 pr-4 text-slate-500">
+                                {variant.effective_price != null ? `${CURRENCY_SYMBOL}${variant.effective_price}` : "—"}
                               </td>
                               <td className="py-2 pr-4">
                                 <input
@@ -792,6 +872,16 @@ function EditProduct({ id }: { id: string }) {
                                   onChange={(e) => handleVariantActiveChange(variant.id, e.target.checked)}
                                   className="rounded"
                                 />
+                              </td>
+                              <td className="py-2 pl-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteVariant(variant)}
+                                  className="p-1.5 rounded hover:bg-red-50 text-slate-500 hover:text-red-600"
+                                  title="Delete variant"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
                               </td>
                             </tr>
                           ))}

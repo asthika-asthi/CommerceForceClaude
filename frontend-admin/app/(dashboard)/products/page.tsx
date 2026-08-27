@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/status-badge"
 import { Pagination } from "@/components/ui/pagination"
 import { Pencil, Trash2, Upload, X, Copy, Search, ImageOff, AlertTriangle } from "lucide-react"
 import { formatMoney } from "@/lib/currency"
+import { SALE_PRICE_MODE } from "@/lib/pricing-config"
 
 function resolveImageUrl(url: string): string {
   if (url.startsWith("/")) {
@@ -360,6 +361,10 @@ export default function ProductsPage() {
                 <th className="text-left px-4 py-3 font-medium text-slate-600">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">SKU</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">Price</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600">Sale Price</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600">
+                  {SALE_PRICE_MODE === "percentage" ? "Discount %" : "Discount"}
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">Stock</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">Status</th>
                 <th className="px-4 py-3" />
@@ -368,7 +373,7 @@ export default function ProductsPage() {
             <tbody className="divide-y divide-slate-100">
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-400">
+                  <td colSpan={9} className="text-center py-12 text-slate-400">
                     No products yet.{" "}
                     <Link href="/products/new" className="text-blue-600 hover:underline">Create one</Link>
                     {" "}or{" "}
@@ -376,19 +381,28 @@ export default function ProductsPage() {
                   </td>
                 </tr>
               )}
-              {products.map((p) => (
+              {products.map((p) => {
+                const price = parseFloat(p.price)
+                const effectivePrice = p.effective_price != null ? parseFloat(p.effective_price) : price
+                const isOnSale = effectivePrice < price
+                return (
                 <tr key={p.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
                     <ProductThumb src={p.primary_image} alt={p.name} />
                   </td>
-                  <td className="px-4 py-3 font-medium text-slate-900">
-                    <div>{p.name}</div>
-                    {p.sale_price && (
-                      <div className="text-xs text-slate-400 line-through">{formatMoney(p.price)}</div>
-                    )}
-                  </td>
+                  <td className="px-4 py-3 font-medium text-slate-900">{p.name}</td>
                   <td className="px-4 py-3 text-slate-500 font-mono text-xs">{p.sku ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-700">{formatMoney(p.sale_price ?? p.price)}</td>
+                  <td className="px-4 py-3 text-slate-700">{formatMoney(p.price)}</td>
+                  <td className="px-4 py-3 text-slate-700">
+                    {isOnSale ? formatMoney(effectivePrice.toFixed(2)) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">
+                    {isOnSale
+                      ? SALE_PRICE_MODE === "percentage"
+                        ? (p.sale_percent ? `${p.sale_percent}%` : "—")
+                        : formatMoney((price - effectivePrice).toFixed(2))
+                      : "—"}
+                  </td>
                   <td className="px-4 py-3 text-slate-700">{p.stock_quantity}</td>
                   <td className="px-4 py-3">
                     <StatusBadge value={p.is_active ? "active" : "inactive"} />
@@ -412,7 +426,8 @@ export default function ProductsPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>

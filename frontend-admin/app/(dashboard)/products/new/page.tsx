@@ -7,6 +7,7 @@ import type { Category } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { Star, Trash2 } from "lucide-react"
+import { SALE_PRICE_MODE } from "@/lib/pricing-config"
 
 type ProductImageCreate = { url: string; alt_text?: string; is_primary: boolean; sort_order: number }
 
@@ -15,8 +16,8 @@ export default function NewProductPage() {
   const qc = useQueryClient()
   const [form, setForm] = useState({
     name: "", description: "", sku: "", barcode: "",
-    price: "", sale_price: "", stock_quantity: "0",
-    category_id: "", is_active: true, is_featured: false,
+    price: "", sale_price: "", sale_percent: "", stock_quantity: "0",
+    category_id: "", is_active: true, is_featured: false, is_on_sale: false,
   })
   const [images, setImages] = useState<ProductImageCreate[]>([])
   const [newImageUrl, setNewImageUrl] = useState("")
@@ -35,6 +36,8 @@ export default function NewProductPage() {
         ...data,
         stock_quantity: Number(data.stock_quantity),
         sale_price: data.sale_price || undefined,
+        sale_percent: data.sale_percent || undefined,
+        is_on_sale: data.is_on_sale,
         category_id: data.category_id || undefined,
         barcode: data.barcode || undefined,
         images: images.map(img => img),
@@ -169,10 +172,17 @@ export default function NewProductPage() {
             <input required value={form.price} onChange={(e) => set("price", e.target.value)}
               className={input} placeholder="0.00" type="number" step="0.01" min="0" />
           </Field>
-          <Field label="Sale Price">
-            <input value={form.sale_price} onChange={(e) => set("sale_price", e.target.value)}
-              className={input} placeholder="0.00" type="number" step="0.01" min="0" />
-          </Field>
+          {SALE_PRICE_MODE === "percentage" ? (
+            <Field label="Sale % off">
+              <input value={form.sale_percent} onChange={(e) => set("sale_percent", e.target.value)}
+                className={input} placeholder="0.00" type="number" step="0.01" min="0" max="100" />
+            </Field>
+          ) : (
+            <Field label="Sale Price">
+              <input value={form.sale_price} onChange={(e) => set("sale_price", e.target.value)}
+                className={input} placeholder="0.00" type="number" step="0.01" min="0" />
+            </Field>
+          )}
           <Field label="Stock">
             <input value={form.stock_quantity} onChange={(e) => set("stock_quantity", e.target.value)}
               className={input} type="number" min="0" />
@@ -189,6 +199,12 @@ export default function NewProductPage() {
             onChange={(e) => set("is_featured", e.target.checked)}
             className="rounded border-slate-300" />
           Featured (highlighted on the storefront)
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+          <input type="checkbox" checked={form.is_on_sale}
+            onChange={(e) => set("is_on_sale", e.target.checked)}
+            className="rounded border-slate-300" />
+          On sale ({SALE_PRICE_MODE === "percentage" ? "applies the Sale % off above" : "applies the Sale Price above"})
         </label>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

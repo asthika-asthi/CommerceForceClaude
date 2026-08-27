@@ -84,6 +84,9 @@ export interface Product {
   barcode?: string
   price: string
   sale_price?: string
+  sale_percent?: string
+  is_on_sale?: boolean
+  effective_price?: string
   stock_quantity: number
   is_active: boolean
   is_featured?: boolean
