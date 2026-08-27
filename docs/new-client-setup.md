@@ -253,6 +253,19 @@ openssl rand -hex 32
 > `docker compose build frontend-starter frontend-admin && docker compose up -d --force-recreate`.
 > Supported: GBP £, USD $, EUR €, INR ₹, AUD A$, CAD C$, AED, SGD S$, NZD NZ$ (others show the code).
 
+> **Variant pricing model:** variants price via an adjustment (delta added to the base/sale
+> price) by default. To let this client's admins set an absolute price per variant instead, set
+> `VARIANT_PRICING_MODE=direct` in the **root** `.env`. This is store-wide — every variant uses
+> whichever mode is configured, not a per-variant choice. Because the frontends bake it in at
+> build time, **rebuild the frontends** after changing it:
+> `docker compose build frontend-starter frontend-admin && docker compose up -d --force-recreate`.
+
+> **Sale price model:** a product's sale price defaults to an absolute override
+> (`Product.sale_price`). To let this client's admins enter a percentage discount instead, set
+> `SALE_PRICE_MODE=percentage` in the **root** `.env` — the admin panel's Sale Price field becomes
+> "Sale % off" and discounts the normal price (or a direct-priced variant) by that percentage.
+> Same rebuild requirement as above.
+
 </details>
 
 ---

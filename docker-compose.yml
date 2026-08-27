@@ -7,6 +7,10 @@ services:
       DATABASE_URL: sqlite+aiosqlite:////app/data/commerceforce.db
       # Store currency (ISO code) — set CURRENCY_CODE in the root .env, default GBP.
       CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
+      # Variant pricing model — set VARIANT_PRICING_MODE in the root .env, default adjustment.
+      VARIANT_PRICING_MODE: "${VARIANT_PRICING_MODE:-adjustment}"
+      # Sale price model — set SALE_PRICE_MODE in the root .env, default absolute.
+      SALE_PRICE_MODE: "${SALE_PRICE_MODE:-absolute}"
       LANDING_CONFIG_PATH: "/app/landing-page.config.json"
       # CORS and URL values are set in backend/.env by generate-env.sh
     # In production, ports are NOT exposed directly — nginx handles external traffic.
@@ -29,6 +33,8 @@ services:
         NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL_STOREFRONT}"
         NEXT_PUBLIC_STOREFRONT_URL: "${NEXT_PUBLIC_STOREFRONT_URL}"
         NEXT_PUBLIC_CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
+        NEXT_PUBLIC_VARIANT_PRICING_MODE: "${VARIANT_PRICING_MODE:-adjustment}"
+        NEXT_PUBLIC_SALE_PRICE_MODE: "${SALE_PRICE_MODE:-absolute}"
     # Port 3000 is accessed via nginx in production; exposed here for dev/fallback only
     ports:
       - "${STOREFRONT_PORT:-3000}:3000"
@@ -41,6 +47,8 @@ services:
       args:
         NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL_ADMIN}"
         NEXT_PUBLIC_CURRENCY_CODE: "${CURRENCY_CODE:-GBP}"
+        NEXT_PUBLIC_VARIANT_PRICING_MODE: "${VARIANT_PRICING_MODE:-adjustment}"
+        NEXT_PUBLIC_SALE_PRICE_MODE: "${SALE_PRICE_MODE:-absolute}"
     ports:
       - "${ADMIN_PORT:-3001}:3001"
     depends_on:
