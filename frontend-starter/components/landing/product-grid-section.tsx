@@ -61,8 +61,8 @@ export function ProductGridSection({
             const rawImage = product.primary_image ?? product.images?.[0]?.url ?? null
             const imageUrl = rawImage ? resolveImageUrl(rawImage) : null
             const price = parseFloat(product.price)
-            const salePrice = product.sale_price ? parseFloat(product.sale_price) : null
-            const isOnSale = salePrice !== null && salePrice < price
+            const effectivePrice = product.effective_price ? parseFloat(product.effective_price) : price
+            const isOnSale = effectivePrice < price
 
             return (
               <div
@@ -72,7 +72,7 @@ export function ProductGridSection({
                 {/* Image */}
                 <div className="h-[180px] flex items-center justify-center text-[72px] relative flex-shrink-0" style={{ background: imageUrl ? undefined : GRADIENTS[idx] }}>
                   {imageUrl ? (
-                    <Image src={imageUrl} alt={product.name} fill unoptimized sizes="(min-width: 768px) 25vw, 50vw" className="object-cover" />
+                    <Image src={imageUrl} alt={product.name} fill unoptimized sizes="(min-width: 768px) 25vw, 50vw" className="object-contain" />
                   ) : (
                     EMOJIS[idx]
                   )}
@@ -97,7 +97,7 @@ export function ProductGridSection({
                 <div className="p-3.5 pt-3 border-t border-border-subtle mt-3 flex items-center justify-between">
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-[17px] font-bold text-brand-dark">
-                      {formatMoney(isOnSale ? salePrice!.toFixed(2) : price.toFixed(2))}
+                      {formatMoney(effectivePrice.toFixed(2))}
                     </span>
                     {isOnSale && (
                       <span className="text-[12px] text-text-placeholder line-through">{formatMoney(price.toFixed(2))}</span>

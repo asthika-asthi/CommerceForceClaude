@@ -17,8 +17,8 @@ export function ProductCard({ product }: { product: Product }) {
   const [failed, setFailed] = useState(false)
 
   const price = parseFloat(product.price)
-  const salePrice = product.sale_price ? parseFloat(product.sale_price) : null
-  const displayPrice = salePrice ?? price
+  const displayPrice = product.effective_price ? parseFloat(product.effective_price) : price
+  const isOnSale = displayPrice < price
 
   async function handleAdd() {
     if (adding) return
@@ -50,7 +50,7 @@ export function ProductCard({ product }: { product: Product }) {
                 fill
                 unoptimized
                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                className="object-contain group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-slate-200">
@@ -74,7 +74,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="flex items-center justify-between mt-3">
           <div>
             <span className="font-bold text-slate-900">{formatMoney(displayPrice.toFixed(2))}</span>
-            {salePrice && (
+            {isOnSale && (
               <span className="ml-2 text-xs text-slate-400 line-through">{formatMoney(price.toFixed(2))}</span>
             )}
           </div>

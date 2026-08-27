@@ -36,7 +36,8 @@ function ProductGridCard({ product }: { product: Product }) {
 
   const imageUrl = product.primary_image ?? product.images?.[0]?.url ?? null
   const price = parseFloat(product.price)
-  const salePrice = product.sale_price ? parseFloat(product.sale_price) : null
+  const effectivePrice = product.effective_price ? parseFloat(product.effective_price) : price
+  const isOnSale = effectivePrice < price
 
   async function handleAdd() {
     if (adding) return
@@ -71,7 +72,7 @@ function ProductGridCard({ product }: { product: Product }) {
               fill
               unoptimized
               sizes="(min-width: 768px) 25vw, 50vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              className="object-contain group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-slate-300">
@@ -91,9 +92,9 @@ function ProductGridCard({ product }: { product: Product }) {
         <div className="mt-auto pt-3 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-brand-dark text-base">
-              {formatMoney((salePrice ?? price).toFixed(2))}
+              {formatMoney(effectivePrice.toFixed(2))}
             </span>
-            {salePrice && (
+            {isOnSale && (
               <span className="text-xs text-muted line-through">{formatMoney(price.toFixed(2))}</span>
             )}
           </div>

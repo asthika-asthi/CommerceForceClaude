@@ -6,6 +6,7 @@ import type { Product, ReviewSummary } from "@/lib/types"
 import { AddToCartButton } from "./add-to-cart-button"
 import { WishlistButton } from "@/components/shop/wishlist-button"
 import { formatMoney } from "@/lib/currency"
+import { VARIANT_PRICING_MODE } from "@/lib/pricing-config"
 
 interface Props {
   product: Product
@@ -44,11 +45,25 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
 
   const variants = product.variants ?? []
   const basePrice = parseFloat(product.price)
-  const salePrice = product.sale_price ? parseFloat(product.sale_price) : null
-  const effectiveBasePrice = salePrice ?? basePrice
+  // Prefer the backend-computed effective_price (absolute- and percentage-sale
+  // aware) over re-deriving it from sale_price alone, which only ever reflects
+  // an absolute sale override and silently misses percentage-mode sales.
+  const effectiveBasePrice = product.effective_price ? parseFloat(product.effective_price) : basePrice
   const selectedVariant = variants.find(v => v.id === selectedVariantId)
   const adjustment = selectedVariant?.price_adjustment ? parseFloat(selectedVariant.price_adjustment) : 0
-  const displayPrice = effectiveBasePrice + adjustment
+  // The variant's own "normal" (non-sale) price — direct_price in direct mode,
+  // otherwise the existing delta formula. Used for the "was" strikethrough below.
+  const variantNormalPrice =
+    VARIANT_PRICING_MODE === "direct" && selectedVariant?.direct_price != null
+      ? parseFloat(selectedVariant.direct_price)
+      : basePrice + adjustment
+  // Prefer the backend-computed effective_price (mode- and sale-aware) once a
+  // variant is selected; before selection, fall back to the base/sale price.
+  const displayPrice =
+    selectedVariant?.effective_price != null
+      ? parseFloat(selectedVariant.effective_price)
+      : effectiveBasePrice
+  const isOnSale = displayPrice < variantNormalPrice
 
   const displayedAlt = images.find(img => img.url === displayedImageUrl)?.alt_text ?? product.name
 
@@ -66,7 +81,7 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
                 unoptimized
                 priority
                 sizes="(min-width: 768px) 50vw, 100vw"
-                className="object-cover"
+                className="object-contain"
               />
             </div>
             {images.length > 1 && (
@@ -83,7 +98,7 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
                         : "border-transparent hover:border-slate-300",
                     ].join(" ")}
                   >
-                    <Image src={img.url} alt={img.alt_text ?? ""} fill unoptimized sizes="25vw" className="object-cover" />
+                    <Image src={img.url} alt={img.alt_text ?? ""} fill unoptimized sizes="25vw" className="object-contain" />
                   </button>
                 ))}
               </div>
@@ -105,7 +120,7 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
 
         <div className="flex items-baseline gap-3 mb-2">
           <span className="text-2xl font-bold text-slate-900">{formatMoney(displayPrice.toFixed(2))}</span>
-          {salePrice && <span className="text-lg text-slate-400 line-through">{formatMoney(basePrice.toFixed(2))}</span>}
+          {isOnSale && <span className="text-lg text-slate-400 line-through">{formatMoney(variantNormalPrice.toFixed(2))}</span>}
         </div>
 
         {summary && summary.total_reviews > 0 && (

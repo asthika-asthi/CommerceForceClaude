@@ -81,7 +81,7 @@ export default function WishlistPage() {
             return (
               <div key={item.id} className="bg-card-bg border border-slate-100 rounded-2xl p-4 flex items-center gap-4">
                 {p?.images?.[0]?.url ? (
-                  <Image src={p.images[0].url} alt={p.name} width={64} height={64} unoptimized className="w-16 h-16 object-cover rounded-xl flex-shrink-0" />
+                  <Image src={p.images[0].url} alt={p.name} width={64} height={64} unoptimized className="w-16 h-16 object-contain bg-slate-50 rounded-xl flex-shrink-0" />
                 ) : (
                   <div className="w-16 h-16 bg-slate-100 rounded-xl flex-shrink-0" />
                 )}
@@ -90,7 +90,7 @@ export default function WishlistPage() {
                     <>
                       <Link href={`/products/${p.slug}`} className="font-medium text-slate-900 hover:text-brand-dark text-sm line-clamp-1">{p.name}</Link>
                       <p className="text-sm font-bold text-slate-900 mt-0.5">
-                        {formatMoney(parseFloat(p.sale_price ?? p.price).toFixed(2))}
+                        {formatMoney(parseFloat(p.effective_price ?? p.price).toFixed(2))}
                       </p>
                       <p className={`text-xs mt-0.5 ${p.stock_quantity > 0 ? "text-green-600" : "text-red-500"}`}>
                         {p.stock_quantity > 0 ? "In stock" : "Out of stock"}

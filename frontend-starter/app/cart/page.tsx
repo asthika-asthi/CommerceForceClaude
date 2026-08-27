@@ -106,7 +106,7 @@ export default function CartPage() {
                 <div key={item.id} className={`flex gap-4 bg-card-bg border border-slate-100 rounded-xl p-4 transition-opacity ${busy ? "opacity-60" : ""}`}>
                   <div className="relative w-20 h-20 bg-slate-50 rounded-lg overflow-hidden flex-shrink-0">
                     {item.primary_image ? (
-                      <Image src={item.primary_image} alt={item.product_name} fill unoptimized sizes="80px" className="object-cover" />
+                      <Image src={item.primary_image} alt={item.product_name} fill unoptimized sizes="80px" className="object-contain" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-200 text-2xl">📦</div>
                     )}

@@ -92,6 +92,8 @@ export interface ProductVariant {
   option_values: VariantOptionValue[]
   label: string
   price_adjustment?: string | null
+  direct_price?: string | null
+  effective_price?: string | null
   stock_quantity: number
 }
 
@@ -116,6 +118,8 @@ export interface Product {
   sku?: string
   price: string
   sale_price?: string
+  sale_percent?: string
+  effective_price?: string
   stock_quantity: number
   is_active: boolean
   category_id?: string
