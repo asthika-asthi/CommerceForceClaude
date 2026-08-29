@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { api } from "@/lib/api"
 
 interface ImageUploadProps {
   value?: string
@@ -24,26 +25,8 @@ export function ImageUpload({ value, onUpload, label = "Upload Image" }: ImageUp
       const formData = new FormData()
       formData.append("file", file)
 
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("cf_access_token")
-          : null
-
-      const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-      const res = await fetch(`${base}/api/media/upload`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      })
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: res.statusText }))
-        throw new Error(err.detail ?? "Upload failed")
-      }
-
-      const data = await res.json()
-      onUpload(data.url as string)
+      const data = await api.upload<{ url: string }>("/api/media/upload", formData)
+      onUpload(data.url)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed")
     } finally {
