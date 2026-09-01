@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # Auth policy — when True, customers must verify their email before they can log in.
     REQUIRE_EMAIL_VERIFICATION: bool = True
 
+    # Guest checkout — when True, guest_email is checked for a real, mail-accepting
+    # domain (live DNS/MX lookup) in addition to syntax, catching addresses like
+    # a@b.com that are well-formed but unreachable.
+    EMAIL_CHECK_DELIVERABILITY: bool = True
+
     # Refresh-cookie Secure flag. Keep True for HTTPS deployments. Set False for an
     # HTTP-only deployment (no TLS yet), otherwise the browser won't send the cookie and
     # sessions can't be refreshed.

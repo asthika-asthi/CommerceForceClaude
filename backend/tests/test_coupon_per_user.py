@@ -74,6 +74,8 @@ async def test_guest_can_use_coupon(client: AsyncClient, db):
         "payment_method": "cash",
         "coupon_code": "GUESTOK",
         "guest_email": "guest@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 201, r.text

@@ -92,6 +92,7 @@ async def test_stripe_charges_in_configured_currency(client: AsyncClient, db, mo
     data = CheckoutRequest(
         payment_method=PaymentMethod.stripe, use_cart=False,
         items=[{"product_id": product_id, "quantity": 1}], guest_email="g@example.com",
+        guest_name="Test Guest", guest_postcode="SW1A 1AA",
     )
     await checkout_service.checkout(data, db, user_id=None)
     assert captured.get("currency") == "usd"
@@ -113,6 +114,8 @@ async def test_order_confirmation_email_uses_currency_symbol(client: AsyncClient
         "items": [{"product_id": product_id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "buyer@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 201, r.text

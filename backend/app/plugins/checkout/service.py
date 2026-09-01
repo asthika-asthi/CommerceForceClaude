@@ -223,8 +223,16 @@ async def checkout(
     else:
         raise HTTPException(status_code=400, detail="Provide cart items or explicit items list")
 
-    if not user_id and not data.guest_email:
-        raise HTTPException(status_code=400, detail="Guest checkout requires guest_email")
+    if not user_id:
+        missing = [
+            name for name, val in (
+                ("guest_email", data.guest_email),
+                ("guest_name", data.guest_name),
+                ("guest_postcode", data.guest_postcode),
+            ) if not val
+        ]
+        if missing:
+            raise HTTPException(status_code=400, detail=f"Guest checkout requires {', '.join(missing)}")
 
     if data.payment_method == PaymentMethod.credit_limit:
         if not user_id:

@@ -138,6 +138,8 @@ async def test_guest_checkout_sends_admin_notification(client: AsyncClient, db):
         resp = await client.post("/api/checkout", json={
             "payment_method": "cash",
             "guest_email": "guest@buyer.com",
+            "guest_name": "Test Guest",
+            "guest_postcode": "SW1A 1AA",
             "use_cart": False,
             "items": [{"product_id": prod.json()["id"], "quantity": 1}],
         })

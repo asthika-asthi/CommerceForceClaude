@@ -377,6 +377,8 @@ async def test_guest_checkout_journey(client: AsyncClient, db):
     checkout_r = await client.post("/api/checkout", json={
         "payment_method": "cash",
         "guest_email": "guest@example.com",
+        "guest_name": "Jamie Rivers",
+        "guest_postcode": "4000",
         "shipping_address": "99 Guest Ave, Brisbane QLD 4000",
     })
     assert checkout_r.status_code == 201, checkout_r.text

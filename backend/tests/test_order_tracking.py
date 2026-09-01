@@ -24,6 +24,8 @@ async def _place_guest_order(client: AsyncClient, admin_token: str, email: str =
         "items": [{"product_id": product_id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": email,
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 201, r.text

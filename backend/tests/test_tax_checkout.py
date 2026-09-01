@@ -35,6 +35,8 @@ async def test_checkout_applies_tax_for_matching_country(client: AsyncClient, db
         "items": [{"product_id": product_id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
         "delivery_country": "GB",
     })
@@ -55,6 +57,8 @@ async def test_checkout_no_delivery_country_means_no_tax(client: AsyncClient, db
         "items": [{"product_id": product_id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 201, r.text
@@ -73,6 +77,8 @@ async def test_checkout_country_with_no_zone_means_no_tax(client: AsyncClient, d
         "items": [{"product_id": product_id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
         "delivery_country": "US",
     })
@@ -97,6 +103,8 @@ async def test_order_detail_exposes_tax_and_shipping(client: AsyncClient, db):
         "items": [{"product_id": product_id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
         "delivery_country": "GB",
     })
@@ -127,6 +135,8 @@ async def test_tax_computed_on_discounted_subtotal(client: AsyncClient, db):
         "items": [{"product_id": product_id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
         "delivery_country": "GB",
         "coupon_code": "TENOFF",

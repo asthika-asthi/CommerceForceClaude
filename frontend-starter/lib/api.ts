@@ -40,7 +40,17 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail ?? "Request failed")
+    const detail = err.detail
+    let message = "Request failed"
+    if (typeof detail === "string") {
+      message = detail
+    } else if (Array.isArray(detail)) {
+      message = detail
+        .map((d: { msg?: string }) => d?.msg?.replace(/^Value error,\s*/, ""))
+        .filter(Boolean)
+        .join("; ") || message
+    }
+    throw new Error(message)
   }
 
   if (res.status === 204) return undefined as T

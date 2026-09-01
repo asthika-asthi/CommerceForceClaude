@@ -43,6 +43,8 @@ async def test_explicit_checkout_records_variant_id(client: AsyncClient, db):
         "items": [{"product_id": product_id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 201, r.text
@@ -66,6 +68,8 @@ async def test_explicit_checkout_applies_variant_price_adjustment(client: AsyncC
         "items": [{"product_id": product_id, "quantity": 2}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 201, r.text
@@ -87,6 +91,8 @@ async def test_explicit_checkout_applies_variant_direct_price(client: AsyncClien
         "items": [{"product_id": product_id, "quantity": 2}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 201, r.text
@@ -104,6 +110,8 @@ async def test_explicit_checkout_honors_explicit_variant_id(client: AsyncClient,
         "items": [{"product_id": product_id, "variant_id": variant.id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 201, r.text
@@ -148,6 +156,8 @@ async def test_explicit_checkout_product_id_only_rejected_when_variants_exist(cl
         "items": [{"product_id": product_id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 400, r.text
@@ -173,6 +183,8 @@ async def test_explicit_checkout_explicit_ghost_variant_id_rejected(client: Asyn
         "items": [{"product_id": product_id, "variant_id": ghost.id, "quantity": 1}],
         "payment_method": "cash",
         "guest_email": "g@example.com",
+        "guest_name": "Test Guest",
+        "guest_postcode": "SW1A 1AA",
         "shipping_address": "1 Test St",
     })
     assert r.status_code == 400, r.text

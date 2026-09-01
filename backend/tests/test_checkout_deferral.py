@@ -67,6 +67,8 @@ async def test_stripe_checkout_defers_effects_until_webhook(client: AsyncClient,
         items=[{"product_id": product_id, "quantity": 2}],
         coupon_code="TENOFF",
         guest_email="buyer@example.com",
+        guest_name="Test Guest",
+        guest_postcode="SW1A 1AA",
     )
     order, client_secret = await checkout_service.checkout(data, db, user_id=None)
     await db.flush()
@@ -115,6 +117,7 @@ async def test_stripe_webhook_is_idempotent(client: AsyncClient, db, monkeypatch
     data = CheckoutRequest(
         payment_method=PaymentMethod.stripe, use_cart=False,
         items=[{"product_id": product_id, "quantity": 3}], guest_email="b@example.com",
+        guest_name="Test Guest", guest_postcode="SW1A 1AA",
     )
     order, _ = await checkout_service.checkout(data, db, user_id=None)
     await db.flush()
@@ -141,6 +144,7 @@ async def test_cash_checkout_applies_effects_immediately(client: AsyncClient, db
         payment_method=PaymentMethod.cash, use_cart=False,
         items=[{"product_id": product_id, "quantity": 3}],
         coupon_code="CASH10", guest_email="cash@example.com",
+        guest_name="Test Guest", guest_postcode="SW1A 1AA",
     )
     order, _ = await checkout_service.checkout(data, db, user_id=None)
     await db.flush()
@@ -163,6 +167,7 @@ async def test_bank_transfer_checkout_defers_effects_until_marked_paid(client: A
         payment_method=PaymentMethod.bank_transfer, use_cart=False,
         items=[{"product_id": product_id, "quantity": 2}],
         coupon_code="BANK10", guest_email="bank@example.com",
+        guest_name="Test Guest", guest_postcode="SW1A 1AA",
     )
     order, client_secret = await checkout_service.checkout(data, db, user_id=None)
     await db.flush()
@@ -192,6 +197,7 @@ async def test_paypal_checkout_same_deferral(client: AsyncClient, db):
     data = CheckoutRequest(
         payment_method=PaymentMethod.paypal, use_cart=False,
         items=[{"product_id": product_id, "quantity": 1}], guest_email="pp@example.com",
+        guest_name="Test Guest", guest_postcode="SW1A 1AA",
     )
     order, client_secret = await checkout_service.checkout(data, db, user_id=None)
     await db.flush()
@@ -216,6 +222,7 @@ async def test_mark_paid_is_idempotent(client: AsyncClient, db):
     data = CheckoutRequest(
         payment_method=PaymentMethod.bank_transfer, use_cart=False,
         items=[{"product_id": product_id, "quantity": 3}], guest_email="idem@example.com",
+        guest_name="Test Guest", guest_postcode="SW1A 1AA",
     )
     order, _ = await checkout_service.checkout(data, db, user_id=None)
     await db.flush()
@@ -238,6 +245,7 @@ async def test_mark_paid_rejects_wrong_payment_method(client: AsyncClient, db):
     data = CheckoutRequest(
         payment_method=PaymentMethod.cash, use_cart=False,
         items=[{"product_id": product_id, "quantity": 1}], guest_email="cashreject@example.com",
+        guest_name="Test Guest", guest_postcode="SW1A 1AA",
     )
     order, _ = await checkout_service.checkout(data, db, user_id=None)
     await db.flush()
@@ -255,6 +263,7 @@ async def test_bank_transfer_checkout_503_when_not_configured(client: AsyncClien
     data = CheckoutRequest(
         payment_method=PaymentMethod.bank_transfer, use_cart=False,
         items=[{"product_id": product_id, "quantity": 1}], guest_email="unconf@example.com",
+        guest_name="Test Guest", guest_postcode="SW1A 1AA",
     )
     with pytest.raises(HTTPException) as exc_info:
         await checkout_service.checkout(data, db, user_id=None)

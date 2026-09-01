@@ -17,6 +17,9 @@ import { formatMoney } from "@/lib/currency"
 
 type PaymentMethodKey = "cash" | "credit_limit" | "stripe" | "bank_transfer" | "paypal"
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const UK_POSTCODE_RE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
+
 interface CheckoutForm {
   name: string
   line1: string
@@ -77,6 +80,7 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
   const [guestMode, setGuestMode] = useState<"choose" | "guest">("choose")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"name" | "guest_email" | "zip", boolean>>>({})
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [shippingCost, setShippingCost] = useState<number>(0)
@@ -226,9 +230,34 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
     }
   }
 
+  function validateFields(): { field: "name" | "guest_email" | "zip"; message: string } | null {
+    const nameParts = form.name.trim().split(/\s+/).filter(Boolean)
+    if (nameParts.length < 2) {
+      return { field: "name", message: "Please enter your full name (first and last)." }
+    }
+    if (!user && !EMAIL_RE.test(form.guest_email.trim())) {
+      return { field: "guest_email", message: "Please enter a valid email address." }
+    }
+    const zip = form.zip.trim()
+    if (!zip) {
+      return { field: "zip", message: "Please enter a postcode." }
+    }
+    if (form.country.trim().toUpperCase() === "GB" && !UK_POSTCODE_RE.test(zip)) {
+      return { field: "zip", message: "Please enter a valid UK postcode." }
+    }
+    return null
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
+    setFieldErrors({})
+    const invalid = validateFields()
+    if (invalid) {
+      setError(invalid.message)
+      setFieldErrors({ [invalid.field]: true })
+      return
+    }
     setLoading(true)
     try {
       const addressParts = [form.name, form.line1, form.line2, `${form.city}, ${form.county} ${form.zip}`, form.country]
@@ -241,7 +270,11 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
       }
       if (form.coupon_code) payload.coupon_code = form.coupon_code
       if (form.redeem_points > 0) payload.redeem_points = form.redeem_points
-      if (!user && form.guest_email) payload.guest_email = form.guest_email
+      if (!user && form.guest_email) {
+        payload.guest_email = form.guest_email
+        payload.guest_name = form.name
+        payload.guest_postcode = form.zip
+      }
 
       const res = await api.post<{
         order_id: string
@@ -355,9 +388,10 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
                   value={form.guest_email}
                   onChange={(e) => setForm((f) => ({ ...f, guest_email: e.target.value }))}
                   placeholder="you@example.com"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark"
+                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark ${fieldErrors.guest_email ? "border-red-400 ring-1 ring-red-300" : "border-slate-200"}`}
                 />
-                <p className="mt-1 text-xs text-slate-400">Order confirmation will be sent here.{" "}
+                <p className="mt-1 text-xs text-slate-400">
+                  We&apos;ll send your order confirmation and tracking link here — please make sure it&apos;s correct.{" "}
                   <Link href="/login?redirect=/checkout" className="text-brand-dark hover:underline">Sign in instead</Link>
                 </p>
               </div>
@@ -366,7 +400,7 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
               <div>
                 <label className="block text-sm text-slate-600 mb-1">Full name</label>
                 <input required value={form.name} onChange={field("name")}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
+                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark ${fieldErrors.name ? "border-red-400 ring-1 ring-red-300" : "border-slate-200"}`} />
               </div>
               <div>
                 <label className="block text-sm text-slate-600 mb-1">Address line 1</label>
@@ -394,7 +428,7 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
                 <div>
                   <label className="block text-sm text-slate-600 mb-1">Postcode</label>
                   <input required value={form.zip} onChange={field("zip")}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark" />
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark ${fieldErrors.zip ? "border-red-400 ring-1 ring-red-300" : "border-slate-200"}`} />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-600 mb-1">Country</label>
