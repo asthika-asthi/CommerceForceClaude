@@ -53,15 +53,25 @@ function NavItem({ href, label, icon }: { href: string; label: string; icon?: Re
 }
 
 export function Sidebar() {
-  const { data: menuData } = useQuery<{ admin_menu: PluginMenu[] }>({
+  const { data: menuData } = useQuery<{ admin_menu: PluginMenu[]; superadmin_menu: PluginMenu[] }>({
     queryKey: ["menu"],
-    queryFn: () => api.get<{ admin_menu: PluginMenu[] }>("/api/menu"),
+    queryFn: () => api.get<{ admin_menu: PluginMenu[]; superadmin_menu: PluginMenu[] }>("/api/menu"),
     staleTime: 5 * 60_000,
   })
-  const menu = menuData?.admin_menu
   const logout = useAuthStore((s) => s.logout)
   const user = useAuthStore((s) => s.user)
   const router = useRouter()
+
+  // Superadmin-only plugin menus are appended for superadmins only. We only
+  // surface entries that target the admin app (path starts with "/admin"); the
+  // "/superadmin/*" placeholders in other manifests have no page yet.
+  const superadminMenu =
+    user?.role === "superadmin"
+      ? (menuData?.superadmin_menu ?? [])
+          .map((p) => ({ ...p, items: p.items.filter((i) => i.path.startsWith("/admin")) }))
+          .filter((p) => p.items.length > 0)
+      : []
+  const menu = [...(menuData?.admin_menu ?? []), ...superadminMenu]
 
   async function handleLogout() {
     await logout()

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.core.dependencies import require_admin
+from app.core.dependencies import require_superadmin
 from app.plugins.landing_page.schemas import EditableSectionOut, ContentOverrideSave, ContentOverrideEntryOut
 from app.plugins.landing_page import service
 
@@ -11,7 +11,7 @@ router = APIRouter()
 # Static paths declared before /{section_key} — same ordering rule as every
 # other plugin router in this codebase (dynamic path segments must come last).
 
-@router.get("/editable", response_model=list[EditableSectionOut], dependencies=[Depends(require_admin())])
+@router.get("/editable", response_model=list[EditableSectionOut], dependencies=[Depends(require_superadmin())])
 async def list_editable_sections(db: AsyncSession = Depends(get_db)):
     return await service.get_editable_sections(db)
 
@@ -21,7 +21,7 @@ async def list_overrides(db: AsyncSession = Depends(get_db)):
     return await service.get_override_map(db)
 
 
-@router.put("/{section_key}", response_model=EditableSectionOut, dependencies=[Depends(require_admin())])
+@router.put("/{section_key}", response_model=EditableSectionOut, dependencies=[Depends(require_superadmin())])
 async def save_section_content(section_key: str, data: ContentOverrideSave, db: AsyncSession = Depends(get_db)):
     await service.save_override(db, section_key, data.overrides, data.is_hidden)
     sections = await service.get_editable_sections(db)

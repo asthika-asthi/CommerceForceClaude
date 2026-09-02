@@ -2,12 +2,13 @@
  * Page Content override E2E — verifies a shop-admin content edit reaches the
  * live homepage, and that clearing it reverts to the config-authored value.
  *
- * Prerequisites: backend on :8000, storefront on :3000, seeded admin user.
+ * Prerequisites: backend on :8000, storefront on :3000, seeded superadmin user
+ * (Page Content is a superadmin-only surface).
  */
 import { test, expect } from '@playwright/test'
 
 const API = 'http://localhost:8000'
-const ADMIN = { email: 'admin@commerceforce.dev', password: 'Admin1234!' }
+const SUPERADMIN = { email: 'superadmin@commerceforce.dev', password: 'SuperAdmin1234!' }
 
 test.describe('Page Content override', () => {
   test('saved content override renders on the homepage, then reverts when cleared', async ({ page, request }) => {
@@ -16,8 +17,8 @@ test.describe('Page Content override', () => {
     // real headroom over 90_000 + 90_000 plus login/navigation overhead.
     test.setTimeout(210_000)
 
-    const login = await request.post(`${API}/api/auth/login`, { data: ADMIN })
-    test.skip(!login.ok(), 'seeded admin login unavailable')
+    const login = await request.post(`${API}/api/auth/login`, { data: SUPERADMIN })
+    test.skip(!login.ok(), 'seeded superadmin login unavailable')
     const { access_token } = await login.json()
     const headers = { Authorization: `Bearer ${access_token}` }
 

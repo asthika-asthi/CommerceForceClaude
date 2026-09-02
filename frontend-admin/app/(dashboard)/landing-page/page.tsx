@@ -1,18 +1,29 @@
 "use client"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type { EditableSection } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { useAuthStore } from "@/store/auth"
 
 type FormState = Record<string, { overrides: Record<string, string>; is_hidden: boolean }>
 
 export default function LandingPagePage() {
   const qc = useQueryClient()
+  const router = useRouter()
+  const user = useAuthStore((s) => s.user)
+
+  // Page Content is superadmin-only; the API enforces this too (403 for admins).
+  const isSuperadmin = user?.role === "superadmin"
+  useEffect(() => {
+    if (user && !isSuperadmin) router.replace("/products")
+  }, [user, isSuperadmin, router])
   const { data: sections = [], isLoading } = useQuery<EditableSection[]>({
     queryKey: ["editable-sections"],
     queryFn: () => api.get("/api/landing_page/editable"),
+    enabled: isSuperadmin,
   })
 
   const [form, setForm] = useState<FormState>({})

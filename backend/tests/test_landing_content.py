@@ -12,6 +12,7 @@ LOGIN_URL = "/api/auth/login"
 EDITABLE_URL = "/api/landing_page/editable"
 OVERRIDES_URL = "/api/landing_page/overrides"
 
+SUPERADMIN_DATA = {"email": "content2_super@example.com", "password": "superpass1", "first_name": "Super", "last_name": "Content2"}
 ADMIN_DATA = {"email": "content2_admin@example.com", "password": "adminpass1", "first_name": "Admin", "last_name": "Content2"}
 CUSTOMER_DATA = {"email": "content2_cust@example.com", "password": "custpass1", "first_name": "Cust", "last_name": "Content2"}
 
@@ -22,21 +23,31 @@ async def register_and_token(client: AsyncClient, data: dict) -> str:
     return r.json()["access_token"]
 
 
-async def make_admin(client: AsyncClient, db) -> str:
-    await register_and_token(client, ADMIN_DATA)
+async def _make_with_role(client: AsyncClient, db, data: dict, role) -> str:
+    await register_and_token(client, data)
     from sqlalchemy import update
-    from app.plugins.auth.models import User, UserRole
-    await db.execute(update(User).where(User.email == ADMIN_DATA["email"]).values(role=UserRole.admin))
+    from app.plugins.auth.models import User
+    await db.execute(update(User).where(User.email == data["email"]).values(role=role))
     await db.flush()
-    r = await client.post(LOGIN_URL, json={"email": ADMIN_DATA["email"], "password": ADMIN_DATA["password"]})
+    r = await client.post(LOGIN_URL, json={"email": data["email"], "password": data["password"]})
     return r.json()["access_token"]
+
+
+async def make_superadmin(client: AsyncClient, db) -> str:
+    from app.plugins.auth.models import UserRole
+    return await _make_with_role(client, db, SUPERADMIN_DATA, UserRole.superadmin)
+
+
+async def make_admin(client: AsyncClient, db) -> str:
+    from app.plugins.auth.models import UserRole
+    return await _make_with_role(client, db, ADMIN_DATA, UserRole.admin)
 
 
 # ── GET /editable ────────────────────────────────────────────────────────────
 
 async def test_editable_sections_only_returns_flagged_sections(client: AsyncClient, db, landing_config_fixture_path):
-    admin_token = await make_admin(client, db)
-    r = await client.get(EDITABLE_URL, headers={"Authorization": f"Bearer {admin_token}"})
+    token = await make_superadmin(client, db)
+    r = await client.get(EDITABLE_URL, headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
     body = r.json()
     keys = {s["section_key"] for s in body}
@@ -44,8 +55,8 @@ async def test_editable_sections_only_returns_flagged_sections(client: AsyncClie
 
 
 async def test_editable_sections_infers_field_types_and_labels(client: AsyncClient, db, landing_config_fixture_path):
-    admin_token = await make_admin(client, db)
-    r = await client.get(EDITABLE_URL, headers={"Authorization": f"Bearer {admin_token}"})
+    token = await make_superadmin(client, db)
+    r = await client.get(EDITABLE_URL, headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
     hero = next(s for s in r.json() if s["section_key"] == "hero")
     fields_by_name = {f["name"]: f for f in hero["fields"]}
@@ -60,8 +71,8 @@ async def test_editable_sections_infers_field_types_and_labels(client: AsyncClie
 
 
 async def test_editable_sections_skips_unknown_field_name(client: AsyncClient, db, landing_config_fixture_path):
-    admin_token = await make_admin(client, db)
-    r = await client.get(EDITABLE_URL, headers={"Authorization": f"Bearer {admin_token}"})
+    token = await make_superadmin(client, db)
+    r = await client.get(EDITABLE_URL, headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
     hero = next(s for s in r.json() if s["section_key"] == "hero")
     field_names = {f["name"] for f in hero["fields"]}
@@ -73,21 +84,26 @@ async def test_editable_sections_requires_admin(client: AsyncClient, db, landing
     assert r.status_code == 401
 
 
-async def test_non_admin_cannot_list_editable_sections(client: AsyncClient, db, landing_config_fixture_path):
-    await make_admin(client, db)
+async def test_non_superadmin_cannot_list_editable_sections(client: AsyncClient, db, landing_config_fixture_path):
     cust_token = await register_and_token(client, CUSTOMER_DATA)
     r = await client.get(EDITABLE_URL, headers={"Authorization": f"Bearer {cust_token}"})
+    assert r.status_code == 403
+
+
+async def test_plain_admin_cannot_list_editable_sections(client: AsyncClient, db, landing_config_fixture_path):
+    admin_token = await make_admin(client, db)
+    r = await client.get(EDITABLE_URL, headers={"Authorization": f"Bearer {admin_token}"})
     assert r.status_code == 403
 
 
 # ── PUT /{section_key} ───────────────────────────────────────────────────────
 
 async def test_save_override_updates_value(client: AsyncClient, db, landing_config_fixture_path):
-    admin_token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     r = await client.put(
         "/api/landing_page/hero",
         json={"overrides": {"title": "New Headline"}, "is_hidden": False},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200
     body = r.json()
@@ -97,32 +113,41 @@ async def test_save_override_updates_value(client: AsyncClient, db, landing_conf
 
 
 async def test_save_override_rejects_unknown_field(client: AsyncClient, db, landing_config_fixture_path):
-    admin_token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     r = await client.put(
         "/api/landing_page/hero",
         json={"overrides": {"notAllowed": "hack"}, "is_hidden": False},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 400
 
 
 async def test_save_override_rejects_unknown_section(client: AsyncClient, db, landing_config_fixture_path):
-    admin_token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     r = await client.put(
         "/api/landing_page/does-not-exist",
         json={"overrides": {}, "is_hidden": False},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 404
 
 
-async def test_non_admin_cannot_save(client: AsyncClient, db, landing_config_fixture_path):
-    await make_admin(client, db)
+async def test_non_superadmin_cannot_save(client: AsyncClient, db, landing_config_fixture_path):
     cust_token = await register_and_token(client, CUSTOMER_DATA)
     r = await client.put(
         "/api/landing_page/hero",
         json={"overrides": {"title": "Hacked"}, "is_hidden": False},
         headers={"Authorization": f"Bearer {cust_token}"},
+    )
+    assert r.status_code == 403
+
+
+async def test_plain_admin_cannot_save(client: AsyncClient, db, landing_config_fixture_path):
+    admin_token = await make_admin(client, db)
+    r = await client.put(
+        "/api/landing_page/hero",
+        json={"overrides": {"title": "Hacked"}, "is_hidden": False},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 403
 
@@ -136,11 +161,11 @@ async def test_public_overrides_empty_when_nothing_saved(client: AsyncClient, db
 
 
 async def test_public_overrides_reflects_saved_value_no_auth_needed(client: AsyncClient, db, landing_config_fixture_path):
-    admin_token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     save_resp = await client.put(
         "/api/landing_page/trust-strip",
         json={"overrides": {"title": "Free shipping worldwide"}, "is_hidden": False},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert save_resp.status_code == 200
 
@@ -152,11 +177,11 @@ async def test_public_overrides_reflects_saved_value_no_auth_needed(client: Asyn
 
 
 async def test_hide_section_via_save(client: AsyncClient, db, landing_config_fixture_path):
-    admin_token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     r = await client.put(
         "/api/landing_page/trust-strip",
         json={"overrides": {}, "is_hidden": True},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200
 
