@@ -1,7 +1,7 @@
 import json
 import re
 from typing import Optional
-from pydantic import BaseModel, field_validator, field_serializer
+from pydantic import BaseModel, field_validator, field_serializer, model_validator
 
 # GA4 measurement IDs look like "G-XXXXXXXXXX"; Meta Pixel IDs are numeric.
 # These render into a <script> tag on the storefront (see analytics-scripts.tsx),
@@ -25,6 +25,8 @@ def _validate_tracking_id(value: Optional[str], pattern: re.Pattern, label: str)
 class BrandingConfigOut(BaseModel):
     id: str
     store_name: str
+    show_store_name: bool = True
+    enable_cash_on_delivery: bool = True
     tagline: Optional[str] = None
     logo_url: Optional[str] = None
     favicon_url: Optional[str] = None
@@ -41,6 +43,14 @@ class BrandingConfigOut(BaseModel):
     paypal_email: Optional[str] = None
     ga4_measurement_id: Optional[str] = None
     meta_pixel_id: Optional[str] = None
+    company_number: Optional[str] = None
+    vat_number: Optional[str] = None
+    eori_number: Optional[str] = None
+    trademark_number: Optional[str] = None
+    delivery_promo_text: Optional[str] = None
+    dispatch_days: Optional[int] = None
+    transit_days_min: Optional[int] = None
+    transit_days_max: Optional[int] = None
     theme_colors: dict = {}
     model_config = {"from_attributes": True}
 
@@ -57,6 +67,8 @@ class BrandingConfigOut(BaseModel):
 
 class BrandingConfigUpdate(BaseModel):
     store_name: Optional[str] = None
+    show_store_name: Optional[bool] = None
+    enable_cash_on_delivery: Optional[bool] = None
     tagline: Optional[str] = None
     logo_url: Optional[str] = None
     favicon_url: Optional[str] = None
@@ -73,7 +85,29 @@ class BrandingConfigUpdate(BaseModel):
     paypal_email: Optional[str] = None
     ga4_measurement_id: Optional[str] = None
     meta_pixel_id: Optional[str] = None
+    company_number: Optional[str] = None
+    vat_number: Optional[str] = None
+    eori_number: Optional[str] = None
+    trademark_number: Optional[str] = None
+    delivery_promo_text: Optional[str] = None
+    dispatch_days: Optional[int] = None
+    transit_days_min: Optional[int] = None
+    transit_days_max: Optional[int] = None
     theme_colors: Optional[dict] = None
+
+    @model_validator(mode="after")
+    def _validate_delivery_days(self) -> "BrandingConfigUpdate":
+        for field in ("dispatch_days", "transit_days_min", "transit_days_max"):
+            value = getattr(self, field)
+            if value is not None and value < 0:
+                raise ValueError(f"{field} must not be negative")
+        if (
+            self.transit_days_min is not None
+            and self.transit_days_max is not None
+            and self.transit_days_min > self.transit_days_max
+        ):
+            raise ValueError("transit_days_min must not exceed transit_days_max")
+        return self
 
     @field_validator("ga4_measurement_id")
     @classmethod

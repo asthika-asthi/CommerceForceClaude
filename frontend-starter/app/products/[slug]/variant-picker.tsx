@@ -35,7 +35,6 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
 
   // Per-combination availability: a value is available if there exists at least one
   // active variant that has this value AND matches every other currently selected value.
-  // When nothing is selected in other groups, no constraint is applied from those groups.
   const availableValues = useMemo(() => {
     const map = new Map<string, Set<string>>()
     for (const ot of optionTypes) {
@@ -43,12 +42,10 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
       for (const val of ot.values) {
         const hasMatch = variants.some(v => {
           if (!v.is_active || v.stock_quantity <= 0) return false
-          // Must have this value for the current option type
           const hasThisValue = v.option_values.some(
             ov => ov.option_type_name === ot.name && ov.option_value_label === val.label
           )
           if (!hasThisValue) return false
-          // Must match every other currently selected option type
           for (const [selectedType, selectedLabel] of Object.entries(selections)) {
             if (selectedType === ot.name) continue
             const matchesOther = v.option_values.some(
@@ -75,55 +72,65 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
       v.option_values.length > 0 &&
       v.option_values.every(ov => selections[ov.option_type_name] === ov.option_value_label)
     )
-    // Pass the variant ID whether active or not.
-    // add-to-cart-button.tsx checks is_active and shows "Out of stock" if inactive.
     onSelect(matched?.id ?? null)
   }, [selections, variants, optionTypes, onSelect])
 
   if (optionTypes.length === 0) return null
 
+  const hasSelection = Object.keys(selections).length > 0
+
   return (
-    <div className="space-y-5 my-4">
+    <div className="space-y-4 my-4">
       {[...optionTypes]
         .sort((a, b) => a.sort_order - b.sort_order)
-        .map(optionType => (
-          <div key={optionType.id} role="group" aria-label={optionType.name}>
-            <p className="text-sm font-semibold text-fg mb-2">
-              {optionType.name}
-              {selections[optionType.name] && (
-                <span className="ml-2 font-normal text-muted">— {selections[optionType.name]}</span>
-              )}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {[...optionType.values]
-                .sort((a, b) => a.sort_order - b.sort_order)
-                .map(val => {
-                  const isSelected = selections[optionType.name] === val.label
-                  const isAvailable = availableValues.get(optionType.name)?.has(val.label) ?? false
-
-                  return (
-                    <button
-                      key={val.id}
-                      aria-pressed={isSelected}
-                      onClick={() =>
-                        setSelections(prev => ({ ...prev, [optionType.name]: val.label }))
-                      }
-                      className={[
-                        'px-4 py-1.5 rounded-lg border text-sm font-medium transition-colors',
-                        isSelected
-                          ? 'bg-emphasis-surface text-white border-brand-dark'
-                          : isAvailable
-                            ? 'bg-bg text-fg border-border hover:border-brand-dark hover:text-brand-dark'
-                            : 'bg-card-bg text-muted border-border line-through opacity-60 cursor-pointer',
-                      ].join(' ')}
-                    >
-                      {val.label}
-                    </button>
-                  )
-                })}
+        .map(optionType => {
+          const available = availableValues.get(optionType.name)
+          return (
+            <div key={optionType.id}>
+              <label
+                htmlFor={`opt-${optionType.id}`}
+                className="block text-sm font-semibold text-fg mb-1.5"
+              >
+                {optionType.name}
+              </label>
+              <select
+                id={`opt-${optionType.id}`}
+                value={selections[optionType.name] ?? ""}
+                onChange={e =>
+                  setSelections(prev => {
+                    const next = { ...prev }
+                    if (e.target.value) next[optionType.name] = e.target.value
+                    else delete next[optionType.name]
+                    return next
+                  })
+                }
+                className="w-full border border-border rounded-lg px-3 py-2.5 text-sm bg-bg text-fg focus:outline-none focus:ring-2 focus:ring-brand-dark"
+              >
+                <option value="">Choose an option</option>
+                {[...optionType.values]
+                  .sort((a, b) => a.sort_order - b.sort_order)
+                  .map(val => {
+                    const isAvailable = available?.has(val.label) ?? false
+                    return (
+                      <option key={val.id} value={val.label}>
+                        {val.label}{isAvailable ? "" : " — unavailable"}
+                      </option>
+                    )
+                  })}
+              </select>
             </div>
-          </div>
-        ))}
+          )
+        })}
+
+      {hasSelection && (
+        <button
+          type="button"
+          onClick={() => setSelections({})}
+          className="text-xs text-muted hover:text-brand-dark underline transition-colors"
+        >
+          Clear
+        </button>
+      )}
     </div>
   )
 }

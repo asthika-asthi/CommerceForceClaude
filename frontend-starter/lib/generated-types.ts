@@ -567,6 +567,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/categories/{category_id}/path": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Category Path
+         * @description Root → leaf ancestor trail for the given category (storefront breadcrumbs).
+         */
+        get: operations["get_category_path_api_categories__category_id__path_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/categories/{category_id}": {
         parameters: {
             query?: never;
@@ -892,7 +912,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Variant */
+        delete: operations["delete_variant_api_products__product_id__variants__variant_id__delete"];
         options?: never;
         head?: never;
         /** Update Variant */
@@ -1689,6 +1710,16 @@ export interface components {
             id: string;
             /** Store Name */
             store_name: string;
+            /**
+             * Show Store Name
+             * @default true
+             */
+            show_store_name: boolean;
+            /**
+             * Enable Cash On Delivery
+             * @default true
+             */
+            enable_cash_on_delivery: boolean;
             /** Tagline */
             tagline?: string | null;
             /** Logo Url */
@@ -1723,6 +1754,22 @@ export interface components {
             ga4_measurement_id?: string | null;
             /** Meta Pixel Id */
             meta_pixel_id?: string | null;
+            /** Company Number */
+            company_number?: string | null;
+            /** Vat Number */
+            vat_number?: string | null;
+            /** Eori Number */
+            eori_number?: string | null;
+            /** Trademark Number */
+            trademark_number?: string | null;
+            /** Delivery Promo Text */
+            delivery_promo_text?: string | null;
+            /** Dispatch Days */
+            dispatch_days?: number | null;
+            /** Transit Days Min */
+            transit_days_min?: number | null;
+            /** Transit Days Max */
+            transit_days_max?: number | null;
             /**
              * Theme Colors
              * @default {}
@@ -1735,6 +1782,10 @@ export interface components {
         BrandingConfigUpdate: {
             /** Store Name */
             store_name?: string | null;
+            /** Show Store Name */
+            show_store_name?: boolean | null;
+            /** Enable Cash On Delivery */
+            enable_cash_on_delivery?: boolean | null;
             /** Tagline */
             tagline?: string | null;
             /** Logo Url */
@@ -1769,6 +1820,22 @@ export interface components {
             ga4_measurement_id?: string | null;
             /** Meta Pixel Id */
             meta_pixel_id?: string | null;
+            /** Company Number */
+            company_number?: string | null;
+            /** Vat Number */
+            vat_number?: string | null;
+            /** Eori Number */
+            eori_number?: string | null;
+            /** Trademark Number */
+            trademark_number?: string | null;
+            /** Delivery Promo Text */
+            delivery_promo_text?: string | null;
+            /** Dispatch Days */
+            dispatch_days?: number | null;
+            /** Transit Days Min */
+            transit_days_min?: number | null;
+            /** Transit Days Max */
+            transit_days_max?: number | null;
             /** Theme Colors */
             theme_colors?: {
                 [key: string]: unknown;
@@ -1862,6 +1929,18 @@ export interface components {
              */
             children: components["schemas"]["CategoryOut"][];
         };
+        /**
+         * CategoryPathItem
+         * @description One hop in a category's root→leaf ancestor trail (for storefront breadcrumbs).
+         */
+        CategoryPathItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+        };
         /** CategoryUpdate */
         CategoryUpdate: {
             /** Name */
@@ -1905,6 +1984,10 @@ export interface components {
             notes?: string | null;
             /** Guest Email */
             guest_email?: string | null;
+            /** Guest Name */
+            guest_name?: string | null;
+            /** Guest Postcode */
+            guest_postcode?: string | null;
             /**
              * Use Cart
              * @default true
@@ -2377,8 +2460,15 @@ export interface components {
         ProductCreate: {
             /** Name */
             name: string;
+            /** Short Description */
+            short_description?: string | null;
             /** Description */
             description?: string | null;
+            /**
+             * Specifications
+             * @default []
+             */
+            specifications: components["schemas"]["ProductSpecItem"][];
             /** Sku */
             sku?: string | null;
             /** Category Id */
@@ -2512,8 +2602,15 @@ export interface components {
             name: string;
             /** Slug */
             slug: string;
+            /** Short Description */
+            short_description?: string | null;
             /** Description */
             description?: string | null;
+            /**
+             * Specifications
+             * @default []
+             */
+            specifications: components["schemas"]["ProductSpecItem"][];
             /** Sku */
             sku: string;
             /** Category Id */
@@ -2560,12 +2657,23 @@ export interface components {
              */
             variants: components["schemas"]["ProductVariantOut"][];
         };
+        /** ProductSpecItem */
+        ProductSpecItem: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
         /** ProductUpdate */
         ProductUpdate: {
             /** Name */
             name?: string | null;
+            /** Short Description */
+            short_description?: string | null;
             /** Description */
             description?: string | null;
+            /** Specifications */
+            specifications?: components["schemas"]["ProductSpecItem"][] | null;
             /** Category Id */
             category_id?: string | null;
             /** Price */
@@ -2689,7 +2797,7 @@ export interface components {
             /** Product Id */
             product_id: string;
             /** User Id */
-            user_id: string;
+            user_id?: string | null;
             /** Rating */
             rating: number;
             /** Title */
@@ -3958,6 +4066,37 @@ export interface operations {
             };
         };
     };
+    get_category_path_api_categories__category_id__path_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryPathItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_category_api_categories__category_id__get: {
         parameters: {
             query?: never;
@@ -4801,6 +4940,36 @@ export interface operations {
                         [key: string]: unknown;
                     }[];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_variant_api_products__product_id__variants__variant_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                variant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -34,3 +34,12 @@ class CategoryOut(BaseModel):
 
 
 CategoryOut.model_rebuild()
+
+
+class CategoryPathItem(BaseModel):
+    """One hop in a category's root→leaf ancestor trail (for storefront breadcrumbs)."""
+    id: str
+    name: str
+    slug: str
+
+    model_config = {"from_attributes": True}

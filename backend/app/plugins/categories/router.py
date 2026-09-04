@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import require_admin
-from app.plugins.categories.schemas import CategoryCreate, CategoryUpdate, CategoryOut
+from app.plugins.categories.schemas import CategoryCreate, CategoryUpdate, CategoryOut, CategoryPathItem
 from app.plugins.categories import service
 
 router = APIRouter()
@@ -49,6 +49,12 @@ async def list_categories(include_empty: bool = False, db: AsyncSession = Depend
     if include_empty:
         return await service.list_all_categories(db)
     return await service.list_root_categories(db)
+
+
+@router.get("/{category_id}/path", response_model=list[CategoryPathItem])
+async def get_category_path(category_id: str, db: AsyncSession = Depends(get_db)):
+    """Root → leaf ancestor trail for the given category (storefront breadcrumbs)."""
+    return await service.get_category_path(category_id, db)
 
 
 @router.get("/{category_id}", response_model=CategoryOut)

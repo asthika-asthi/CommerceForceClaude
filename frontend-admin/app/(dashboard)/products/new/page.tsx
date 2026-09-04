@@ -3,9 +3,10 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
-import type { Category } from "@/lib/types"
+import type { Category, ProductSpec } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { SpecificationsEditor } from "@/components/products/specifications-editor"
 import { Star, Trash2 } from "lucide-react"
 import { SALE_PRICE_MODE } from "@/lib/pricing-config"
 
@@ -15,11 +16,12 @@ export default function NewProductPage() {
   const router = useRouter()
   const qc = useQueryClient()
   const [form, setForm] = useState({
-    name: "", description: "", sku: "", barcode: "",
+    name: "", short_description: "", description: "", sku: "", barcode: "",
     price: "", sale_price: "", sale_percent: "", stock_quantity: "0",
     category_id: "", is_active: true, is_featured: false, is_on_sale: false,
   })
   const [images, setImages] = useState<ProductImageCreate[]>([])
+  const [specs, setSpecs] = useState<ProductSpec[]>([])
   const [newImageUrl, setNewImageUrl] = useState("")
   const [error, setError] = useState("")
 
@@ -34,12 +36,14 @@ export default function NewProductPage() {
     mutationFn: (data: typeof form) =>
       api.post("/api/products", {
         ...data,
+        short_description: data.short_description || undefined,
         stock_quantity: Number(data.stock_quantity),
         sale_price: data.sale_price || undefined,
         sale_percent: data.sale_percent || undefined,
         is_on_sale: data.is_on_sale,
         category_id: data.category_id || undefined,
         barcode: data.barcode || undefined,
+        specifications: specs,
         images: images.map(img => img),
       }),
     onSuccess: () => {
@@ -87,10 +91,16 @@ export default function NewProductPage() {
           <input required value={form.name} onChange={(e) => set("name", e.target.value)}
             className={input} placeholder="Product name" />
         </Field>
+        <Field label="Short description">
+          <textarea value={form.short_description} onChange={(e) => set("short_description", e.target.value)}
+            className={`${input} h-20 resize-none`}
+            placeholder="Shown as the summary on the product page; the full Description shows in its own tab. One '- ' bullet per line renders as a list." />
+        </Field>
         <Field label="Description">
           <textarea value={form.description} onChange={(e) => set("description", e.target.value)}
             className={`${input} h-24 resize-none`} placeholder="Optional description" />
         </Field>
+        <SpecificationsEditor value={specs} onChange={setSpecs} />
         <Field label="Images">
           {images.length > 0 && (
             <div className="mb-3 space-y-2">

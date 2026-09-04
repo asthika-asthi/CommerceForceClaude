@@ -1,10 +1,10 @@
 "use client"
-import { useRef, useState, useEffect } from "react"
+import { Suspense, useCallback, useRef, useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { api } from "@/lib/api"
 import type { Product } from "@/lib/types"
-import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Pagination } from "@/components/ui/pagination"
 import { Pencil, Trash2, Upload, X, Copy, Search, ImageOff, AlertTriangle } from "lucide-react"
@@ -74,13 +74,43 @@ interface CsvImportError { row: number; error: string }
 interface CsvResult { created: number; updated?: number; errors: CsvImportError[] }
 
 export default function ProductsPage() {
+  // useSearchParams() needs a Suspense boundary in Next.js App Router.
+  return (
+    <Suspense fallback={null}>
+      <ProductsPageInner />
+    </Suspense>
+  )
+}
+
+function ProductsPageInner() {
   const qc = useQueryClient()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const fileRef = useRef<HTMLInputElement>(null)
   const [csvResult, setCsvResult] = useState<CsvResult | null>(null)
   const [csvUploading, setCsvUploading] = useState(false)
-  const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const [page, setPage] = useState(1)
+
+  // Page and search live in the URL so returning to this list (browser back,
+  // an edit-page "Cancel"/"Save") restores the exact view the user left.
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1)
+  const urlSearch = searchParams.get("q") || ""
+  const [search, setSearch] = useState(urlSearch)
+  const [debouncedSearch, setDebouncedSearch] = useState(urlSearch)
+
+  const setParams = useCallback(
+    (next: { page?: number; q?: string }) => {
+      const params = new URLSearchParams(searchParams.toString())
+      const p = next.page ?? page
+      const q = next.q ?? urlSearch
+      if (p > 1) params.set("page", String(p))
+      else params.delete("page")
+      if (q) params.set("q", q)
+      else params.delete("q")
+      const qs = params.toString()
+      router.replace(qs ? `/products?${qs}` : "/products", { scroll: false })
+    },
+    [router, searchParams, page, urlSearch],
+  )
 
   // Duplicate finder state
   const [dupPanelOpen, setDupPanelOpen] = useState(false)
@@ -95,6 +125,13 @@ export default function ProductsPage() {
     const t = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(t)
   }, [search])
+
+  // Push the settled search term into the URL (and jump back to page 1 for a
+  // genuinely new query). Guarded so it doesn't fire on mount or on back-nav.
+  useEffect(() => {
+    if (debouncedSearch === urlSearch) return
+    setParams({ q: debouncedSearch, page: 1 })
+  }, [debouncedSearch, urlSearch, setParams])
 
   const { data, isLoading } = useQuery<ProductsResponse>({
     queryKey: ["products", page, debouncedSearch],
@@ -192,7 +229,7 @@ export default function ProductsPage() {
               type="text"
               placeholder="Search products…"
               value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1) }}
+              onChange={e => setSearch(e.target.value)}
               className="pl-8 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-52"
             />
           </div>
@@ -348,6 +385,13 @@ export default function ProductsPage() {
         </div>
       )}
 
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPrev={() => setParams({ page: page - 1 })}
+        onNext={() => setParams({ page: page + 1 })}
+      />
+
       {isLoading && !data ? (
         <div className="flex justify-center py-12">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -386,7 +430,12 @@ export default function ProductsPage() {
                 const effectivePrice = p.effective_price != null ? parseFloat(p.effective_price) : price
                 const isOnSale = effectivePrice < price
                 return (
-                <tr key={p.id} className="hover:bg-slate-50">
+                <tr
+                  key={p.id}
+                  onDoubleClick={() => router.push(`/products/${p.id}`)}
+                  className="hover:bg-slate-50 cursor-pointer select-none"
+                  title="Double-click to edit"
+                >
                   <td className="px-4 py-3">
                     <ProductThumb src={p.primary_image} alt={p.name} />
                   </td>
@@ -408,7 +457,10 @@ export default function ProductsPage() {
                     <StatusBadge value={p.is_active ? "active" : "inactive"} />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 justify-end">
+                    <div
+                      className="flex items-center gap-2 justify-end"
+                      onDoubleClick={e => e.stopPropagation()}
+                    >
                       <Link
                         href={`/products/${p.id}`}
                         className="p-1.5 rounded hover:bg-slate-100 text-slate-500"
@@ -435,8 +487,8 @@ export default function ProductsPage() {
       <Pagination
         page={page}
         totalPages={totalPages}
-        onPrev={() => setPage(p => p - 1)}
-        onNext={() => setPage(p => p + 1)}
+        onPrev={() => setParams({ page: page - 1 })}
+        onNext={() => setParams({ page: page + 1 })}
       />
     </div>
   )

@@ -38,6 +38,8 @@ export interface DeletionRequest {
 export interface BrandingConfig {
   id: string
   store_name: string
+  show_store_name?: boolean
+  enable_cash_on_delivery?: boolean
   tagline?: string
   logo_url?: string
   favicon_url?: string
@@ -54,6 +56,14 @@ export interface BrandingConfig {
   paypal_email?: string
   ga4_measurement_id?: string | null
   meta_pixel_id?: string | null
+  company_number?: string
+  vat_number?: string
+  eori_number?: string
+  trademark_number?: string
+  delivery_promo_text?: string
+  dispatch_days?: number | null
+  transit_days_min?: number | null
+  transit_days_max?: number | null
   theme_colors?: { core?: Record<string, string>; overrides?: Record<string, string> }
 }
 
@@ -66,6 +76,13 @@ export interface Category {
   image_url?: string
   is_active: boolean
   children?: Category[]
+}
+
+/** One hop in a category's root→leaf ancestor trail — GET /api/categories/{id}/path */
+export interface CategoryPathItem {
+  id: string
+  name: string
+  slug: string
 }
 
 // ── Products ──────────────────────────────────────────────────────────────────
@@ -110,17 +127,27 @@ export interface ProductOptionType {
   values: ProductOptionTypeValue[]
 }
 
+export interface ProductSpec {
+  label: string
+  value: string
+}
+
 export interface Product {
   id: string
   name: string
   slug: string
+  short_description?: string
   description?: string
+  specifications?: ProductSpec[]
   sku?: string
+  barcode?: string
   price: string
   sale_price?: string
   sale_percent?: string
   effective_price?: string
   stock_quantity: number
+  weight?: string
+  tags?: string
   is_active: boolean
   category_id?: string
   images: ProductImage[]
@@ -291,7 +318,7 @@ export interface WishlistItem {
 export interface Review {
   id: string
   product_id: string
-  user_id: string
+  user_id?: string | null
   rating: number
   title?: string
   body?: string

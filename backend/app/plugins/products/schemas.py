@@ -34,9 +34,22 @@ class ImageSortItem(BaseModel):
     sort_order: int
 
 
+class ProductSpecItem(BaseModel):
+    label: str
+    value: str
+
+    @model_validator(mode="after")
+    def _trim(self) -> "ProductSpecItem":
+        self.label = (self.label or "").strip()
+        self.value = (self.value or "").strip()
+        return self
+
+
 class ProductCreate(BaseModel):
     name: str
+    short_description: Optional[str] = None
     description: Optional[str] = None
+    specifications: List[ProductSpecItem] = []
     sku: Optional[str] = None
     category_id: Optional[str] = None
     price: Decimal = Field(..., ge=0)
@@ -54,7 +67,9 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
+    short_description: Optional[str] = None
     description: Optional[str] = None
+    specifications: Optional[List[ProductSpecItem]] = None
     category_id: Optional[str] = None
     price: Optional[Decimal] = None
     sale_price: Optional[Decimal] = None
@@ -73,7 +88,9 @@ class ProductOut(BaseModel):
     id: str
     name: str
     slug: str
+    short_description: Optional[str] = None
     description: Optional[str] = None
+    specifications: List[ProductSpecItem] = []
     sku: str
     category_id: Optional[str] = None
     price: Decimal

@@ -27,9 +27,13 @@ export function Navbar({ branding }: Props) {
   const searchRef = useRef<HTMLInputElement>(null)
 
   const storeName = (branding?.store_name ?? "").trim()
-  const tagline = branding?.tagline ?? ""
+  // Clients who want a blank brand lockup unless a real logo image is set can
+  // turn this off in Branding — it hides the store-name text, the tagline, and
+  // the initials monogram that otherwise stands in for a missing logo.
+  const showName = branding?.show_store_name !== false
+  const tagline = showName ? (branding?.tagline ?? "") : ""
   const logoUrl = branding?.logo_url
-  const initials = storeName ? (getStoreInitials(storeName) || "ST") : ""
+  const initials = showName && storeName ? (getStoreInitials(storeName) || "ST") : ""
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -46,7 +50,7 @@ export function Navbar({ branding }: Props) {
       <div className="max-w-[1280px] mx-auto px-10 flex items-center h-[72px] gap-6">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 flex-shrink-0">
+        <Link href="/" aria-label={storeName || "Home"} className="flex items-center gap-3 flex-shrink-0">
           {logoUrl ? (
             <Image
               src={logoUrl}
@@ -61,7 +65,7 @@ export function Navbar({ branding }: Props) {
               {initials}
             </div>
           ) : null}
-          {storeName && (
+          {showName && storeName && (
             <div className="leading-tight">
               <div className="text-[18px] font-bold text-brand-dark">{storeName}</div>
               {tagline && <div className="text-[10px] text-muted tracking-[0.5px] uppercase">{tagline}</div>}

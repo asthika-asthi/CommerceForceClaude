@@ -1,10 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import type { Product, ReviewSummary } from "@/lib/types"
+import { useState } from "react"
+import type { BrandingConfig, CategoryPathItem, Product, ReviewSummary } from "@/lib/types"
 import { AddToCartButton } from "./add-to-cart-button"
 import { WishlistButton } from "@/components/shop/wishlist-button"
+import { ProductGallery } from "./product-gallery"
+import { DeliveryEstimate } from "./delivery-estimate"
+import { PaymentButtons } from "./payment-buttons"
+import { ProductMeta } from "./product-meta"
+import { ShortDescription } from "./short-description"
+import { StarRow } from "./star-row"
 import { formatMoney } from "@/lib/currency"
 import { VARIANT_PRICING_MODE } from "@/lib/pricing-config"
 
@@ -13,102 +18,53 @@ interface Props {
   inStock: boolean
   defaultVariantId: string
   summary: ReviewSummary | null
+  branding: BrandingConfig | null
+  categoryLeaf: CategoryPathItem | null
 }
 
-function StarRow({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <svg key={n} className={`w-4 h-4 ${n <= Math.round(rating) ? "text-amber-400" : "text-slate-200"} fill-current`} viewBox="0 0 20 20">
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-        </svg>
-      ))}
-    </div>
-  )
-}
-
-export function ProductDetailClient({ product, inStock, defaultVariantId, summary }: Props) {
+export function ProductDetailClient({
+  product,
+  inStock,
+  defaultVariantId,
+  summary,
+  branding,
+  categoryLeaf,
+}: Props) {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
 
   const images = product.images ?? []
-  const [displayedImageUrl, setDisplayedImageUrl] = useState<string | null>((images.find(img => img.is_primary) ?? images[0])?.url ?? null)
-
-  // Switch main image when a variant with tagged images is selected
-  useEffect(() => {
-    if (!selectedVariantId) return
-    const variantImages = images.filter(img => img.variant_id === selectedVariantId)
-    if (variantImages.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- correct sync of displayed image to selected variant; proper refactor tracked in backlog "Storefront lint debt"
-      setDisplayedImageUrl(variantImages[0].url)
-    }
-  }, [selectedVariantId])
-
   const variants = product.variants ?? []
   const basePrice = parseFloat(product.price)
-  // Prefer the backend-computed effective_price (absolute- and percentage-sale
-  // aware) over re-deriving it from sale_price alone, which only ever reflects
-  // an absolute sale override and silently misses percentage-mode sales.
   const effectiveBasePrice = product.effective_price ? parseFloat(product.effective_price) : basePrice
+
   const selectedVariant = variants.find(v => v.id === selectedVariantId)
   const adjustment = selectedVariant?.price_adjustment ? parseFloat(selectedVariant.price_adjustment) : 0
-  // The variant's own "normal" (non-sale) price — direct_price in direct mode,
-  // otherwise the existing delta formula. Used for the "was" strikethrough below.
   const variantNormalPrice =
     VARIANT_PRICING_MODE === "direct" && selectedVariant?.direct_price != null
       ? parseFloat(selectedVariant.direct_price)
       : basePrice + adjustment
-  // Prefer the backend-computed effective_price (mode- and sale-aware) once a
-  // variant is selected; before selection, fall back to the base/sale price.
   const displayPrice =
     selectedVariant?.effective_price != null
       ? parseFloat(selectedVariant.effective_price)
       : effectiveBasePrice
   const isOnSale = displayPrice < variantNormalPrice
 
-  const displayedAlt = images.find(img => img.url === displayedImageUrl)?.alt_text ?? product.name
+  // Price range across sellable variants — shown until a specific variant is chosen.
+  const activeVariantPrices = variants
+    .filter(v => v.is_active && !v.is_default && v.effective_price != null)
+    .map(v => parseFloat(v.effective_price as string))
+    .filter(n => !Number.isNaN(n))
+  const rangeMin = activeVariantPrices.length ? Math.min(...activeVariantPrices) : effectiveBasePrice
+  const rangeMax = activeVariantPrices.length ? Math.max(...activeVariantPrices) : effectiveBasePrice
+  const showRange = !selectedVariant && rangeMax - rangeMin > 0.005
+
+  const promo = (branding?.delivery_promo_text ?? "").trim()
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-8">
       {/* Left: image gallery */}
       <div>
-        {images.length > 0 ? (
-          <div className="space-y-3">
-            <div className="relative aspect-square bg-slate-50 rounded-2xl overflow-hidden">
-              <Image
-                src={displayedImageUrl ?? images[0].url}
-                alt={displayedAlt}
-                fill
-                unoptimized
-                priority
-                sizes="(min-width: 768px) 50vw, 100vw"
-                className="object-contain"
-              />
-            </div>
-            {images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {images.slice(0, 4).map((img) => (
-                  <button
-                    key={img.id}
-                    type="button"
-                    onClick={() => setDisplayedImageUrl(img.url)}
-                    className={[
-                      "relative aspect-square bg-slate-50 rounded-xl overflow-hidden border-2 transition-colors",
-                      displayedImageUrl === img.url
-                        ? "border-brand-dark"
-                        : "border-transparent hover:border-slate-300",
-                    ].join(" ")}
-                  >
-                    <Image src={img.url} alt={img.alt_text ?? ""} fill unoptimized sizes="25vw" className="object-contain" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="aspect-square bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 text-6xl">
-            &#128230;
-          </div>
-        )}
+        <ProductGallery images={images} selectedVariantId={selectedVariantId} productName={product.name} />
       </div>
 
       {/* Right: product info */}
@@ -118,19 +74,38 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
           <WishlistButton productId={product.id} size={20} className="mt-1" />
         </div>
 
-        <div className="flex items-baseline gap-3 mb-2">
-          <span className="text-2xl font-bold text-slate-900">{formatMoney(displayPrice.toFixed(2))}</span>
-          {isOnSale && <span className="text-lg text-slate-400 line-through">{formatMoney(variantNormalPrice.toFixed(2))}</span>}
-        </div>
+        <DeliveryEstimate branding={branding} />
 
         {summary && summary.total_reviews > 0 && (
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-3">
             <StarRow rating={summary.average_rating} />
-            <span className="text-sm text-slate-500">
-              {summary.average_rating.toFixed(1)} ({summary.total_reviews} {summary.total_reviews === 1 ? "review" : "reviews"})
-            </span>
+            <a href="#reviews" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">
+              {summary.average_rating.toFixed(1)} ({summary.total_reviews}{" "}
+              {summary.total_reviews === 1 ? "customer review" : "customer reviews"})
+            </a>
           </div>
         )}
+
+        <div className="flex items-baseline gap-3 mb-2">
+          {showRange ? (
+            <span className="text-2xl font-bold text-slate-900">
+              {formatMoney(rangeMin.toFixed(2))} – {formatMoney(rangeMax.toFixed(2))}
+            </span>
+          ) : (
+            <>
+              <span className="text-2xl font-bold text-slate-900">{formatMoney(displayPrice.toFixed(2))}</span>
+              {isOnSale && (
+                <span className="text-lg text-slate-400 line-through">
+                  {formatMoney(variantNormalPrice.toFixed(2))}
+                </span>
+              )}
+            </>
+          )}
+        </div>
+
+        {promo && <p className="text-sm font-bold text-red-600 mb-3">{promo}</p>}
+
+        <ShortDescription text={product.short_description} />
 
         {inStock ? (
           <p className="text-sm text-green-600 font-medium mb-4">
@@ -138,12 +113,6 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
           </p>
         ) : (
           <p className="text-sm text-red-500 font-medium mb-4">Out of stock</p>
-        )}
-
-        {product.description && (
-          <div className="prose prose-sm prose-slate mb-6">
-            <p>{product.description}</p>
-          </div>
         )}
 
         <AddToCartButton
@@ -155,6 +124,10 @@ export function ProductDetailClient({ product, inStock, defaultVariantId, summar
           selectedVariantId={selectedVariantId}
           onVariantSelect={setSelectedVariantId}
         />
+
+        <PaymentButtons branding={branding} />
+
+        <ProductMeta sku={product.sku} categoryLeaf={categoryLeaf} tags={product.tags} />
       </div>
     </div>
   )

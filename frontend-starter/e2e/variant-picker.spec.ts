@@ -1,6 +1,11 @@
 /**
  * Variant picker E2E tests.
  *
+ * The picker renders one <select> per option type. A value that has no active,
+ * in-stock variant given the other current selection is shown with a
+ * " — unavailable" suffix (but still selectable, matching the old pill UI which
+ * kept unavailable values clickable).
+ *
  * Prerequisites:
  *   - Backend running on :8000 (admin@commerceforce.dev / Admin1234!)
  *   - Storefront running on :3000 (npm run dev)
@@ -39,17 +44,11 @@ async function setVariantActive(token: string, active: boolean) {
   await ctx.dispose()
 }
 
-/** Return the pill state for all [aria-pressed] buttons on the page. */
-const pillState = (page: import('@playwright/test').Page) =>
-  page.$$eval('[aria-pressed]', btns =>
-    btns.map(b => ({
-      text: b.textContent?.trim() ?? '',
-      pressed: b.getAttribute('aria-pressed') === 'true',
-      oos: b.className.includes('line-through'),
-    }))
-  )
+/** Visible option labels for the <select> whose associated <label> matches `name`. */
+const optionLabels = (page: import('@playwright/test').Page, name: RegExp) =>
+  page.getByLabel(name).locator('option').allTextContents()
 
-test.describe('Variant picker — per-combination OOS narrowing', () => {
+test.describe('Variant picker — per-combination availability (dropdown UI)', () => {
   let token: string
 
   test.beforeAll(async () => {
@@ -63,57 +62,48 @@ test.describe('Variant picker — per-combination OOS narrowing', () => {
     await setVariantActive(token, true)
   })
 
-  test('initial state: all pills available with no selection', async ({ page }) => {
+  test('initial state: a select per option type, nothing marked unavailable', async ({ page }) => {
     await page.goto(PRODUCT_URL)
-    await page.waitForSelector('[aria-pressed]')
-    const pills = await pillState(page)
-    expect(pills.length).toBe(5)
-    expect(pills.every(p => !p.oos)).toBe(true)
+    const size = page.getByLabel(/^Size$/)
+    const colour = page.getByLabel(/^Colour$/)
+    await expect(size).toBeVisible()
+    await expect(colour).toBeVisible()
+
+    const colourOpts = await optionLabels(page, /^Colour$/)
+    expect(colourOpts.some(t => /unavailable/i.test(t))).toBe(false)
   })
 
-  test('selecting L greys out Blue (L+Blue inactive), keeps Red available', async ({ page }) => {
+  test('selecting L marks Blue unavailable (L+Blue inactive), keeps Red available', async ({ page }) => {
     await page.goto(PRODUCT_URL)
-    await page.waitForSelector('[aria-pressed]')
-
-    await page.locator('[aria-pressed]', { hasText: /^L$/ }).click()
+    await page.getByLabel(/^Size$/).selectOption('L')
     await page.waitForTimeout(200)
 
-    const pills = await pillState(page)
-    const blue = pills.find(p => p.text === 'Blue')
-    const red = pills.find(p => p.text === 'Red')
-    const l = pills.find(p => p.text === 'L')
-
-    expect(l?.pressed).toBe(true)
-    expect(blue?.oos).toBe(true)   // L+Blue is inactive
-    expect(red?.oos).toBe(false)   // L+Red is active
+    const colourOpts = await optionLabels(page, /^Colour$/)
+    const blue = colourOpts.find(t => t.startsWith('Blue'))
+    const red = colourOpts.find(t => t.startsWith('Red'))
+    expect(blue).toMatch(/unavailable/i)
+    expect(red).not.toMatch(/unavailable/i)
   })
 
   test('switching from L to M makes Blue available again', async ({ page }) => {
     await page.goto(PRODUCT_URL)
-    await page.waitForSelector('[aria-pressed]')
-
-    await page.locator('[aria-pressed]', { hasText: /^L$/ }).click()
-    await page.waitForTimeout(200)
-    await page.locator('[aria-pressed]', { hasText: /^M$/ }).click()
+    await page.getByLabel(/^Size$/).selectOption('L')
+    await page.waitForTimeout(150)
+    await page.getByLabel(/^Size$/).selectOption('M')
     await page.waitForTimeout(200)
 
-    const pills = await pillState(page)
-    const blue = pills.find(p => p.text === 'Blue')
-    const red = pills.find(p => p.text === 'Red')
-
-    expect(blue?.oos).toBe(false)  // M+Blue is active
-    expect(red?.oos).toBe(false)   // M+Red is active
+    const colourOpts = await optionLabels(page, /^Colour$/)
+    expect(colourOpts.find(t => t.startsWith('Blue'))).not.toMatch(/unavailable/i)
+    expect(colourOpts.find(t => t.startsWith('Red'))).not.toMatch(/unavailable/i)
   })
 
-  test('selecting S keeps all colours available', async ({ page }) => {
+  test('Clear resets the selections', async ({ page }) => {
     await page.goto(PRODUCT_URL)
-    await page.waitForSelector('[aria-pressed]')
+    await page.getByLabel(/^Size$/).selectOption('L')
+    await page.getByLabel(/^Colour$/).selectOption('Red')
+    await page.getByRole('button', { name: 'Clear' }).click()
 
-    await page.locator('[aria-pressed]', { hasText: /^S$/ }).click()
-    await page.waitForTimeout(200)
-
-    const pills = await pillState(page)
-    const colours = pills.filter(p => ['Red', 'Blue'].includes(p.text))
-    expect(colours.every(p => !p.oos)).toBe(true)
+    await expect(page.getByLabel(/^Size$/)).toHaveValue('')
+    await expect(page.getByLabel(/^Colour$/)).toHaveValue('')
   })
 })

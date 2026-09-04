@@ -14,8 +14,7 @@ import { api } from "@/lib/api"
 import Link from "next/link"
 import type { Address, BrandingConfig } from "@/lib/types"
 import { formatMoney } from "@/lib/currency"
-
-type PaymentMethodKey = "cash" | "credit_limit" | "stripe" | "bank_transfer" | "paypal"
+import { enabledStorefrontPaymentMethods, type PaymentMethodKey } from "@/lib/payment-methods"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const UK_POSTCODE_RE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/
@@ -34,18 +33,11 @@ interface CheckoutForm {
   payment_method: PaymentMethodKey
 }
 
-const PAYMENT_METHODS: { value: PaymentMethodKey; label: string; description: string }[] = [
-  { value: "cash", label: "Cash on Delivery", description: "Pay when your order arrives" },
-  { value: "credit_limit", label: "Trade Credit Account", description: "Charge to your pre-approved business credit account" },
-  { value: "stripe", label: "Pay by Card", description: "Pay securely with credit or debit card" },
-  { value: "bank_transfer", label: "Bank Transfer", description: "Pay directly via bank transfer using the details provided" },
-  { value: "paypal", label: "PayPal", description: "Send payment via PayPal using the details provided" },
-]
-
 export default function CheckoutPage() {
   const [stripeKey, setStripeKey] = useState("")
   const [bankDetails, setBankDetails] = useState("")
   const [paypalEmail, setPaypalEmail] = useState("")
+  const [cashEnabled, setCashEnabled] = useState(true)
 
   useEffect(() => {
     api.get<BrandingConfig>("/api/branding")
@@ -53,6 +45,7 @@ export default function CheckoutPage() {
         setStripeKey(b?.stripe_publishable_key ?? "")
         setBankDetails(b?.bank_transfer_details ?? "")
         setPaypalEmail(b?.paypal_email ?? "")
+        setCashEnabled(b?.enable_cash_on_delivery !== false)
       })
       .catch(() => {})
   }, [])
@@ -64,12 +57,12 @@ export default function CheckoutPage() {
 
   return (
     <Elements stripe={stripePromise}>
-      <CheckoutContent stripeEnabled={!!stripeKey} bankDetails={bankDetails} paypalEmail={paypalEmail} />
+      <CheckoutContent stripeEnabled={!!stripeKey} bankDetails={bankDetails} paypalEmail={paypalEmail} cashEnabled={cashEnabled} />
     </Elements>
   )
 }
 
-function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEnabled: boolean; bankDetails: string; paypalEmail: string }) {
+function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail, cashEnabled }: { stripeEnabled: boolean; bankDetails: string; paypalEmail: string; cashEnabled: boolean }) {
   const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const { cart, fetch, clear } = useCartStore()
@@ -113,6 +106,20 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
       .then((c) => setLoyaltyRate({ rate: Number(c.redemption_rate), min: c.min_redemption, active: c.is_active }))
       .catch(() => setLoyaltyRate(null))
   }, [])
+
+  // Keep the selected payment method valid as availability resolves — e.g. the
+  // "cash" default is gone once the store turns Cash on Delivery off.
+  useEffect(() => {
+    const avail = enabledStorefrontPaymentMethods({
+      cashEnabled, stripeEnabled,
+      bankTransferEnabled: !!bankDetails, paypalEnabled: !!paypalEmail,
+      hasCreditAccount,
+    })
+    if (avail.length > 0 && !avail.some((m) => m.value === form.payment_method)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resync selection to what's actually offered; proper refactor tracked in backlog "Storefront lint debt"
+      setForm((f) => ({ ...f, payment_method: avail[0].value }))
+    }
+  }, [cashEnabled, stripeEnabled, bankDetails, paypalEmail, hasCreditAccount, form.payment_method])
 
   useEffect(() => {
     if (!form.country) return
@@ -321,16 +328,14 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
     )
   }
 
-  const availablePaymentMethods = PAYMENT_METHODS.filter((m) => {
-    // Trade credit is a pre-approved business account an admin sets up — not
-    // something every logged-in customer has, and not a card. Hide it entirely
-    // for guests and for regular (B2C) customers who don't have one; it stays
-    // visible for the B2B customers who do.
-    if (m.value === "credit_limit" && !hasCreditAccount) return false
-    if (m.value === "stripe" && !stripeEnabled) return false
-    if (m.value === "bank_transfer" && !bankDetails) return false
-    if (m.value === "paypal" && !paypalEmail) return false
-    return true
+  // Trade credit is a pre-approved business account an admin sets up — hidden for
+  // guests and B2C customers who don't have one, shown for the B2B customers who do.
+  const availablePaymentMethods = enabledStorefrontPaymentMethods({
+    cashEnabled,
+    stripeEnabled,
+    bankTransferEnabled: !!bankDetails,
+    paypalEnabled: !!paypalEmail,
+    hasCreditAccount,
   })
 
   return (
@@ -442,6 +447,11 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
           {/* Payment method */}
           <div className="bg-card-bg border border-slate-100 rounded-xl p-6">
             <h2 className="font-semibold text-slate-900 mb-4">Payment method</h2>
+            {availablePaymentMethods.length === 0 && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                No payment methods are currently available. Please contact us to place your order.
+              </p>
+            )}
             <div className="space-y-3">
               {availablePaymentMethods.map((pm) => (
                 <label
@@ -596,7 +606,7 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail }: { stripeEn
               </div>
             </div>
             {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-4">{error}</div>}
-            <button type="submit" disabled={loading || (form.payment_method === "stripe" && !stripe)}
+            <button type="submit" disabled={loading || availablePaymentMethods.length === 0 || (form.payment_method === "stripe" && !stripe)}
               className="w-full bg-brand hover:bg-brand-hover text-on-brand font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
               {loading
                 ? form.payment_method === "stripe" ? "Processing payment..." : "Placing order..."

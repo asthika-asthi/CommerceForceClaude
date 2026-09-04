@@ -49,7 +49,11 @@ async def create_product(data: ProductCreate, db: AsyncSession) -> Product:
     product = Product(
         name=data.name,
         slug=slug,
+        short_description=data.short_description,
         description=data.description,
+        specifications=[
+            s.model_dump() for s in data.specifications if s.label or s.value
+        ],
         sku=sku,
         category_id=data.category_id,
         price=data.price,
@@ -161,6 +165,11 @@ async def list_products(
 async def update_product(product_id: str, data: ProductUpdate, db: AsyncSession) -> Product:
     product = await _load(product_id, db, for_update=True)
     updates = data.model_dump(exclude_unset=True)
+    if "specifications" in updates and updates["specifications"] is not None:
+        updates["specifications"] = [
+            row for row in updates["specifications"]
+            if (row.get("label") or "").strip() or (row.get("value") or "").strip()
+        ]
     if "stock_quantity" in updates:
         from app.plugins.products import variant_service
         # Once a product has real variants, stock_quantity is a derived cache (the sum

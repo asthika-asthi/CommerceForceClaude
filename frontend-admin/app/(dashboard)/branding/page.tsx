@@ -33,6 +33,19 @@ const DOCUMENT_FIELDS = [
   { key: "catalogue_url", label: "Product Catalogue", hint: "PDF, max 25MB. Linked from the storefront's \"Full catalogue\" button." },
 ]
 
+const LEGAL_FIELDS = [
+  { key: "company_number", label: "Company Number", placeholder: "12345678" },
+  { key: "vat_number", label: "VAT Number", placeholder: "GB123456789" },
+  { key: "eori_number", label: "EORI Number", placeholder: "GB123456789000" },
+  { key: "trademark_number", label: "Trademark Number", placeholder: "UK00003XXXXXX" },
+]
+
+const DELIVERY_DAY_FIELDS = [
+  { key: "dispatch_days", label: "Dispatch days", hint: "Working days to pick, pack and hand to the courier" },
+  { key: "transit_days_min", label: "Transit days (min)", hint: "Fastest courier delivery time" },
+  { key: "transit_days_max", label: "Transit days (max)", hint: "Slowest courier delivery time" },
+]
+
 const GA4_ID_RE = /^G-[A-Z0-9]+$/
 const PIXEL_ID_RE = /^\d{5,20}$/
 
@@ -219,11 +232,19 @@ export default function BrandingPage() {
       IMAGE_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       DOCUMENT_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       f.font_family = config.font_family || FONT_OPTIONS[0].value
+      f.show_store_name = config.show_store_name === false ? "" : "true"
+      f.enable_cash_on_delivery = config.enable_cash_on_delivery === false ? "" : "true"
       f.custom_css = config.custom_css ?? ""
       f.bank_transfer_details = config.bank_transfer_details ?? ""
       f.paypal_email = config.paypal_email ?? ""
       f.ga4_measurement_id = config.ga4_measurement_id ?? ""
       f.meta_pixel_id = config.meta_pixel_id ?? ""
+      LEGAL_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
+      f.delivery_promo_text = config.delivery_promo_text ?? ""
+      DELIVERY_DAY_FIELDS.forEach(({ key }) => {
+        const v = (config as unknown as Record<string, number | null>)[key]
+        f[key] = v != null ? String(v) : ""
+      })
       const sl = (config as unknown as Record<string, unknown>).social_links
       f.social_links = sl && typeof sl === "object" ? JSON.stringify(sl) : (sl as string | null) ?? ""
       setForm(f)
@@ -242,7 +263,16 @@ export default function BrandingPage() {
         Object.keys(cleanCore).length || Object.keys(cleanOverrides).length
           ? { core: cleanCore, overrides: cleanOverrides }
           : {}
-      return api.put("/api/branding", { ...d, theme_colors })
+      const payload: Record<string, unknown> = { ...d, theme_colors }
+      // The three delivery-day inputs are held as strings in form state — send
+      // real numbers, or null to clear.
+      for (const { key } of DELIVERY_DAY_FIELDS) {
+        const raw = (d[key] ?? "").trim()
+        payload[key] = raw === "" ? null : Number(raw)
+      }
+      payload.show_store_name = (d.show_store_name ?? "") !== ""
+      payload.enable_cash_on_delivery = (d.enable_cash_on_delivery ?? "") !== ""
+      return api.put("/api/branding", payload)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["branding"] })
@@ -265,10 +295,24 @@ export default function BrandingPage() {
   const warnings = contrastWarnings(core)
   const anyColourSet = Object.values(core).some(Boolean) || Object.values(overrides).some(Boolean)
 
+  const transitMin = (form.transit_days_min ?? "").trim()
+  const transitMax = (form.transit_days_max ?? "").trim()
+  const transitRangeInvalid =
+    transitMin !== "" && transitMax !== "" && Number(transitMin) > Number(transitMax)
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (transitRangeInvalid) {
+      setSaveError("Transit days (min) must not be greater than transit days (max).")
+      return
+    }
+    update.mutate(form)
+  }
+
   return (
     <div className="max-w-2xl">
       <PageHeader title="Branding" description="Storefront identity and visual settings" />
-      <form onSubmit={(e) => { e.preventDefault(); update.mutate(form) }}
+      <form onSubmit={handleSubmit}
         className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
 
         <div className="grid grid-cols-2 gap-5">
@@ -292,6 +336,21 @@ export default function BrandingPage() {
             </select>
           </div>
         </div>
+
+        <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+          <input type="checkbox"
+            checked={(form.show_store_name ?? "") !== ""}
+            onChange={(e) => setForm((f) => ({ ...f, show_store_name: e.target.checked ? "true" : "" }))}
+            className="mt-0.5 rounded border-slate-300" />
+          <span>
+            Show store name in the header &amp; footer
+            <span className="block text-xs text-slate-500">
+              When off, the site header and footer show neither the store-name text, the tagline,
+              nor the initials badge that stands in for a missing logo — leave off for a logo-only
+              (or blank) brand lockup.
+            </span>
+          </span>
+        </label>
 
         {/* ── Colours ─────────────────────────────────────────────── */}
         <div className="pt-4 border-t border-slate-100">
@@ -420,6 +479,19 @@ export default function BrandingPage() {
             Bank Transfer and PayPal only appear at checkout once their details below are filled in.
             Orders paid this way stay pending until you confirm the payment arrived (Orders → Mark as Paid).
           </p>
+          <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer mb-4">
+            <input type="checkbox"
+              checked={(form.enable_cash_on_delivery ?? "") !== ""}
+              onChange={(e) => setForm((f) => ({ ...f, enable_cash_on_delivery: e.target.checked ? "true" : "" }))}
+              className="mt-0.5 rounded border-slate-300" />
+            <span>
+              Offer Cash on Delivery at checkout
+              <span className="block text-xs text-slate-500">
+                When off, customers cannot choose &ldquo;pay on delivery&rdquo; — make sure at least one
+                other method (card, bank transfer or PayPal) is configured.
+              </span>
+            </span>
+          </label>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Bank Transfer Details</label>
@@ -466,6 +538,55 @@ export default function BrandingPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* ── Legal / Company ─────────────────────────────────────── */}
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Legal / Company</h3>
+          <p className="text-xs text-slate-500 mb-4">
+            Shown in the storefront footer. Leave a field blank to hide it.
+          </p>
+          <div className="grid grid-cols-2 gap-5">
+            {LEGAL_FIELDS.map(({ key, label, placeholder }) => (
+              <div key={key}>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+                <input value={form[key] || ""}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={placeholder} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Delivery & Dispatch ─────────────────────────────────── */}
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Delivery &amp; Dispatch</h3>
+          <p className="text-xs text-slate-500 mb-4">
+            The dispatch/transit days drive the estimated-delivery range shown on product pages.
+            Leave all three blank to hide that line.
+          </p>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Delivery promo text</label>
+            <input value={form.delivery_promo_text || ""}
+              onChange={(e) => setForm((f) => ({ ...f, delivery_promo_text: e.target.value }))}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Free Delivery | Express Delivery Available" />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {DELIVERY_DAY_FIELDS.map(({ key, label, hint }) => (
+              <div key={key}>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+                <input type="number" min="0" value={form[key] || ""}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <p className="text-xs text-slate-400 mt-1">{hint}</p>
+              </div>
+            ))}
+          </div>
+          {transitRangeInvalid && (
+            <p className="text-xs text-red-600 mt-2">Transit days (min) must not be greater than transit days (max).</p>
+          )}
         </div>
 
         <div>

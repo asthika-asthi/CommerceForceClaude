@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import Optional
-from sqlalchemy import String, Boolean, Integer, Numeric, Text, ForeignKey, UniqueConstraint
+from sqlalchemy import String, Boolean, Integer, Numeric, Text, ForeignKey, UniqueConstraint, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.base_model import BaseModel
 
@@ -10,7 +10,11 @@ class Product(BaseModel):
 
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     slug: Mapped[str] = mapped_column(String(500), unique=True, nullable=False, index=True)
+    short_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Ordered list of {"label": str, "value": str} rows shown in the storefront
+    # "Additional information" tab alongside auto-derived rows (weight, options, SKU).
+    specifications: Mapped[list] = mapped_column(JSON, default=list, server_default="[]", nullable=False)
     sku: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     barcode: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
     category_id: Mapped[Optional[str]] = mapped_column(

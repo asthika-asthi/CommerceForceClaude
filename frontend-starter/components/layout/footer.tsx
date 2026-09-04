@@ -10,13 +10,22 @@ interface Props {
 
 export function Footer({ branding, categories }: Props) {
   const storeName = (branding?.store_name ?? "").trim()
-  const tagline = branding?.tagline ?? ""
+  // Off = blank brand lockup unless a real logo image is set (no name, tagline or monogram).
+  const showName = branding?.show_store_name !== false
+  const tagline = showName ? (branding?.tagline ?? "") : ""
   const phone = branding?.contact_phone ?? ""
   const email = branding?.contact_email ?? ""
   const year = new Date().getFullYear()
-  const initials = storeName ? getStoreInitials(storeName) : ""
+  const initials = showName && storeName ? getStoreInitials(storeName) : ""
 
   const topCategories = categories.slice(0, 6)
+
+  const registrationParts = [
+    branding?.company_number ? `Company No. ${branding.company_number}` : null,
+    branding?.vat_number ? `VAT No. ${branding.vat_number}` : null,
+    branding?.eori_number ? `EORI No. ${branding.eori_number}` : null,
+    branding?.trademark_number ? `Trademark ${branding.trademark_number}` : null,
+  ].filter(Boolean) as string[]
 
   return (
     <footer className="bg-dark-deep pt-[60px]">
@@ -25,7 +34,7 @@ export function Footer({ branding, categories }: Props) {
 
           {/* Brand */}
           <div>
-            {(storeName || branding?.logo_url) && (
+            {(branding?.logo_url || initials || (showName && storeName)) && (
               <div className="flex items-center gap-2.5">
                 {branding?.logo_url ? (
                   <Image
@@ -36,10 +45,10 @@ export function Footer({ branding, categories }: Props) {
                     unoptimized
                     style={{ width: "auto", height: "40px" }}
                   />
-                ) : (
+                ) : initials ? (
                   <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center text-base font-bold text-on-brand">{initials}</div>
-                )}
-                {storeName && (
+                ) : null}
+                {showName && storeName && (
                   <div className="text-base font-bold text-white">{storeName}</div>
                 )}
               </div>
@@ -116,9 +125,15 @@ export function Footer({ branding, categories }: Props) {
 
       <hr className="border-none border-t border-brand-dark" />
 
+      {registrationParts.length > 0 && (
+        <div className="max-w-[1280px] mx-auto px-10 pt-4 text-[12px] text-on-dark-faint">
+          {registrationParts.join("  ·  ")}
+        </div>
+      )}
+
       <div className="max-w-[1280px] mx-auto px-10 py-5 flex justify-between items-center flex-wrap gap-2.5">
         <div className="text-[12px] text-on-dark-faint">
-          © {year}{storeName ? ` ${storeName}` : ""}. All rights reserved.&nbsp;|&nbsp;
+          © {year}{showName && storeName ? ` ${storeName}` : ""}. All rights reserved.&nbsp;|&nbsp;
           <Link href="/privacy" className="hover:text-on-dark-muted transition-colors">Privacy Policy</Link>&nbsp;|&nbsp;
           <Link href="/terms" className="hover:text-on-dark-muted transition-colors">Terms</Link>&nbsp;|&nbsp;
           <Link href="/cookies" className="hover:text-on-dark-muted transition-colors">Cookie Policy</Link>

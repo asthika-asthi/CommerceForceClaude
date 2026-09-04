@@ -3,9 +3,10 @@ import { useEffect, useState, useCallback, use } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
-import type { Product, Category, ProductImage } from "@/lib/types"
+import type { Product, Category, ProductImage, ProductSpec } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { SpecificationsEditor } from "@/components/products/specifications-editor"
 import { Trash2, ChevronUp, ChevronDown, Star } from "lucide-react"
 import { CURRENCY_SYMBOL } from "@/lib/currency"
 import { VARIANT_PRICING_MODE, SALE_PRICE_MODE } from "@/lib/pricing-config"
@@ -63,10 +64,11 @@ function EditProduct({ id }: { id: string }) {
   const flatCategories = flattenCategories(categories)
 
   const [form, setForm] = useState({
-    name: "", description: "", sku: "", barcode: "",
+    name: "", short_description: "", description: "", sku: "", barcode: "",
     price: "", sale_price: "", sale_percent: "", stock_quantity: "0",
     category_id: "", is_active: true, is_featured: false, is_on_sale: false,
   })
+  const [specs, setSpecs] = useState<ProductSpec[]>([])
   const [error, setError] = useState("")
 
   // Locally managed image list (ordered)
@@ -86,6 +88,7 @@ function EditProduct({ id }: { id: string }) {
     if (product) {
       setForm({
         name: product.name,
+        short_description: product.short_description ?? "",
         description: product.description ?? "",
         sku: product.sku ?? "",
         barcode: product.barcode ?? "",
@@ -100,6 +103,7 @@ function EditProduct({ id }: { id: string }) {
       })
       const sorted = [...(product.images ?? [])].sort((a, b) => a.sort_order - b.sort_order)
       setImages(sorted)
+      setSpecs(product.specifications ?? [])
     }
   }, [product])
 
@@ -107,17 +111,22 @@ function EditProduct({ id }: { id: string }) {
     mutationFn: (data: typeof form) =>
       api.put(`/api/products/${id}`, {
         ...data,
+        short_description: data.short_description || undefined,
         stock_quantity: Number(data.stock_quantity),
         sale_price: data.sale_price || undefined,
         sale_percent: data.sale_percent || undefined,
         is_on_sale: data.is_on_sale,
         category_id: data.category_id || undefined,
         barcode: data.barcode || undefined,
+        specifications: specs,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] })
       qc.invalidateQueries({ queryKey: ["product", id] })
-      router.push("/products")
+      // Return to wherever the user came from (e.g. the product list on the page
+      // they were browsing), falling back to the list for a direct visit.
+      if (window.history.length > 1) router.back()
+      else router.push("/products")
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Failed"),
   })
@@ -474,10 +483,16 @@ function EditProduct({ id }: { id: string }) {
           <Field label="Name *">
             <input required value={form.name} onChange={(e) => set("name", e.target.value)} className={input} />
           </Field>
+          <Field label="Short description">
+            <textarea value={form.short_description} onChange={(e) => set("short_description", e.target.value)}
+              className={`${input} h-20 resize-none`}
+              placeholder="Shown as the summary on the product page; the full Description shows in its own tab. One '- ' bullet per line renders as a list." />
+          </Field>
           <Field label="Description">
             <textarea value={form.description} onChange={(e) => set("description", e.target.value)}
               className={`${input} h-24 resize-none`} />
           </Field>
+          <SpecificationsEditor value={specs} onChange={setSpecs} />
 
           {/* Image management */}
           <Field label="Images">

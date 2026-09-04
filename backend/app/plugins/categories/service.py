@@ -63,6 +63,35 @@ async def get_category(category_id: str, db: AsyncSession) -> Category:
     return await _load(category_id, db)
 
 
+async def get_category_path(category_id: str, db: AsyncSession) -> list[Category]:
+    """Ancestor trail for a category, ordered root → leaf.
+
+    Walks the self-referential parent_id chain. 404s if the starting category
+    does not exist; a broken parent link or a cycle simply stops the walk.
+    """
+    result = await db.execute(select(Category).where(Category.id == category_id))
+    cat = result.scalar_one_or_none()
+    if not cat:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+
+    trail: list[Category] = [cat]
+    seen = {cat.id}
+    current = cat
+    while current.parent_id and current.parent_id not in seen and len(trail) < 10:
+        parent_result = await db.execute(
+            select(Category).where(Category.id == current.parent_id)
+        )
+        parent = parent_result.scalar_one_or_none()
+        if not parent:
+            break
+        trail.append(parent)
+        seen.add(parent.id)
+        current = parent
+
+    trail.reverse()
+    return trail
+
+
 async def list_root_categories(db: AsyncSession) -> list[Category]:
     from app.plugins.products.models import Product  # lazy to avoid circular import at module load
     has_products = (

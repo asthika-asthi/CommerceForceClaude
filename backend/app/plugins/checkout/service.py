@@ -320,6 +320,9 @@ async def checkout(
 
     client_secret: Optional[str] = None
     if data.payment_method == PaymentMethod.cash:
+        branding = await _get_branding(db)
+        if branding and not branding.enable_cash_on_delivery:
+            raise HTTPException(status_code=503, detail="Cash on delivery is not available on this store")
         order.payment_status = PaymentStatus.paid
         await _apply_paid_order_effects(order, stock_items, data.coupon_code, _points_to_redeem, db)
     elif data.payment_method == PaymentMethod.credit_limit:

@@ -9,13 +9,13 @@ import { Check, Trash2, Star } from "lucide-react"
 interface AdminReview {
   id: string
   product_id: string
-  user_id: string
+  user_id: string | null  // NULL when the author's account was deleted (GDPR)
   rating: number
   title?: string
   body?: string
   is_approved: boolean
   reviewer_name: string
-  reviewer_email: string
+  reviewer_email: string | null
   created_at: string
 }
 

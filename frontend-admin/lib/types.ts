@@ -75,11 +75,18 @@ export interface ProductImage {
   variant_id?: string | null
 }
 
+export interface ProductSpec {
+  label: string
+  value: string
+}
+
 export interface Product {
   id: string
   name: string
   slug: string
+  short_description?: string
   description?: string
+  specifications?: ProductSpec[]
   sku?: string
   barcode?: string
   price: string
@@ -98,7 +105,9 @@ export interface Product {
 
 export interface ProductCreate {
   name: string
+  short_description?: string
   description?: string
+  specifications?: ProductSpec[]
   sku?: string
   price: string
   sale_price?: string
@@ -305,6 +314,8 @@ export interface Warehouse {
 export interface BrandingConfig {
   id: string
   store_name: string
+  show_store_name?: boolean
+  enable_cash_on_delivery?: boolean
   tagline?: string
   logo_url?: string
   favicon_url?: string
@@ -321,6 +332,14 @@ export interface BrandingConfig {
   paypal_email?: string
   ga4_measurement_id?: string | null
   meta_pixel_id?: string | null
+  company_number?: string
+  vat_number?: string
+  eori_number?: string
+  trademark_number?: string
+  delivery_promo_text?: string
+  dispatch_days?: number | null
+  transit_days_min?: number | null
+  transit_days_max?: number | null
   theme_colors?: { core?: Record<string, string>; overrides?: Record<string, string> }
 }
 

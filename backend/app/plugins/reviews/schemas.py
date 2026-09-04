@@ -13,7 +13,9 @@ class ReviewCreate(BaseModel):
 class ReviewOut(BaseModel):
     id: str
     product_id: str
-    user_id: str
+    # NULL once the author's account is deleted (GDPR) — the review text is kept
+    # and still shown, attributed to "Former customer".
+    user_id: Optional[str] = None
     rating: int
     title: Optional[str] = None
     body: Optional[str] = None
