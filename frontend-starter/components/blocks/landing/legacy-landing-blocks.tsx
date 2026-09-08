@@ -32,12 +32,14 @@ interface LandingHeroProps extends DataProps {
 }
 
 export function LandingHeroBlock({ data, title, titleHighlight, subtitle }: LandingHeroProps) {
+  // A superadmin prop on the config section wins; otherwise the client's
+  // branding drives the hero heading, falling back to the Hero block default.
   return (
     <Hero
       bestSellers={(data?.products ?? []).slice(0, 4)}
       showBestSellersCard={data?.showBestSellersCard ?? true}
-      title={title}
-      titleHighlight={titleHighlight}
+      title={title ?? data?.heroHeading}
+      titleHighlight={titleHighlight ?? data?.heroHeadingHighlight}
       subtitle={subtitle}
     />
   )

@@ -1720,8 +1720,17 @@ export interface components {
              * @default true
              */
             enable_cash_on_delivery: boolean;
+            /**
+             * Show Bespoke Enquiry
+             * @default false
+             */
+            show_bespoke_enquiry: boolean;
             /** Tagline */
             tagline?: string | null;
+            /** Hero Heading */
+            hero_heading?: string | null;
+            /** Hero Heading Highlight */
+            hero_heading_highlight?: string | null;
             /** Logo Url */
             logo_url?: string | null;
             /** Favicon Url */
@@ -1786,8 +1795,14 @@ export interface components {
             show_store_name?: boolean | null;
             /** Enable Cash On Delivery */
             enable_cash_on_delivery?: boolean | null;
+            /** Show Bespoke Enquiry */
+            show_bespoke_enquiry?: boolean | null;
             /** Tagline */
             tagline?: string | null;
+            /** Hero Heading */
+            hero_heading?: string | null;
+            /** Hero Heading Highlight */
+            hero_heading_highlight?: string | null;
             /** Logo Url */
             logo_url?: string | null;
             /** Favicon Url */

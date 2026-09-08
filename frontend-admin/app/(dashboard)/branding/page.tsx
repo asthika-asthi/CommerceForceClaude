@@ -234,6 +234,9 @@ export default function BrandingPage() {
       f.font_family = config.font_family || FONT_OPTIONS[0].value
       f.show_store_name = config.show_store_name === false ? "" : "true"
       f.enable_cash_on_delivery = config.enable_cash_on_delivery === false ? "" : "true"
+      f.show_bespoke_enquiry = config.show_bespoke_enquiry === true ? "true" : ""
+      f.hero_heading = config.hero_heading ?? ""
+      f.hero_heading_highlight = config.hero_heading_highlight ?? ""
       f.custom_css = config.custom_css ?? ""
       f.bank_transfer_details = config.bank_transfer_details ?? ""
       f.paypal_email = config.paypal_email ?? ""
@@ -272,6 +275,9 @@ export default function BrandingPage() {
       }
       payload.show_store_name = (d.show_store_name ?? "") !== ""
       payload.enable_cash_on_delivery = (d.enable_cash_on_delivery ?? "") !== ""
+      payload.show_bespoke_enquiry = (d.show_bespoke_enquiry ?? "") !== ""
+      payload.hero_heading = (d.hero_heading ?? "").trim()
+      payload.hero_heading_highlight = (d.hero_heading_highlight ?? "").trim()
       return api.put("/api/branding", payload)
     },
     onSuccess: () => {
@@ -348,6 +354,47 @@ export default function BrandingPage() {
               When off, the site header and footer show neither the store-name text, the tagline,
               nor the initials badge that stands in for a missing logo — leave off for a logo-only
               (or blank) brand lockup.
+            </span>
+          </span>
+        </label>
+
+        {/* ── Homepage hero heading ───────────────────────────────── */}
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Homepage hero heading</h3>
+          <p className="text-xs text-slate-500 mb-3">
+            The large headline on the homepage hero. Line&nbsp;2 is shown in the brand highlight
+            colour. Leave line&nbsp;2 blank for a single-line headline — the layout closes up
+            with no empty gap.
+          </p>
+          <div className="grid grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Line 1</label>
+              <input value={form.hero_heading || ""}
+                onChange={(e) => setForm((f) => ({ ...f, hero_heading: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Quality protective" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Line 2 (emphasised)</label>
+              <input value={form.hero_heading_highlight || ""}
+                onChange={(e) => setForm((f) => ({ ...f, hero_heading_highlight: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="covers at trade prices" />
+            </div>
+          </div>
+        </div>
+
+        <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+          <input type="checkbox"
+            checked={(form.show_bespoke_enquiry ?? "") !== ""}
+            onChange={(e) => setForm((f) => ({ ...f, show_bespoke_enquiry: e.target.checked ? "true" : "" }))}
+            className="mt-0.5 rounded border-slate-300" />
+          <span>
+            Show the bespoke enquiry form
+            <span className="block text-xs text-slate-500">
+              Adds a &ldquo;Bespoke Orders&rdquo; page with a custom-spec enquiry form, linked from
+              the main nav, the footer and the price-list page. When off, that page is removed and
+              its links disappear.
             </span>
           </span>
         </label>

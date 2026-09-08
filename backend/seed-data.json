@@ -4,6 +4,9 @@
   "branding": {
     "store_name": "",
     "tagline": "",
+    "hero_heading": "",
+    "hero_heading_highlight": "",
+    "show_bespoke_enquiry": false,
     "contact_email": "",
     "contact_phone": "",
     "logo_url": "",

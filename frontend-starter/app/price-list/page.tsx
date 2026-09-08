@@ -70,8 +70,12 @@ export default async function PriceListPage() {
 
         <p className="text-[13px] text-text-placeholder mt-6">
           Need a specific quote?{" "}
-          <Link href="/contact" className="text-brand hover:underline">Contact us</Link> or{" "}
-          <Link href="/bespoke" className="text-brand hover:underline">submit a bespoke enquiry</Link>.
+          <Link href="/contact" className="text-brand hover:underline">Contact us</Link>
+          {branding?.show_bespoke_enquiry && (
+            <> or{" "}
+              <Link href="/bespoke" className="text-brand hover:underline">submit a bespoke enquiry</Link>
+            </>
+          )}.
         </p>
       </div>
     </div>

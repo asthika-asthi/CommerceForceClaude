@@ -1,13 +1,14 @@
 import { serverFetch } from "@/lib/api"
 import { getFilteredSections, getHomepageConfig, mergeContentOverrides, type ContentOverrideMap } from "@/lib/landing-config"
-import type { Category, LandingRuntimeData, PaginatedResponse, Product } from "@/lib/types"
+import type { BrandingConfig, Category, LandingRuntimeData, PaginatedResponse, Product } from "@/lib/types"
 import { LandingSectionRenderer } from "@/components/shop/landing-section"
 
 export default async function HomePage() {
-  const [featuredRes, categories, overridesMap] = await Promise.all([
+  const [featuredRes, categories, overridesMap, branding] = await Promise.all([
     serverFetch<PaginatedResponse<Product>>("/api/products?featured_only=true&page_size=8"),
     serverFetch<Category[]>("/api/categories").catch(() => [] as Category[]),
     serverFetch<ContentOverrideMap>("/api/landing_page/overrides"),
+    serverFetch<BrandingConfig>("/api/branding").catch(() => null),
   ])
 
   const products = [...(featuredRes?.items ?? [])]
@@ -27,6 +28,10 @@ export default async function HomePage() {
     products,
     categories: (categories ?? []).filter(c => c.is_active),
     showBestSellersCard: getHomepageConfig().showBestSellersCard !== false,
+    // `?.trim()` keeps the difference between "unset" (undefined ⇒ Hero default)
+    // and "explicitly cleared" ("" ⇒ that line is dropped, no empty gap).
+    heroHeading: branding?.hero_heading?.trim(),
+    heroHeadingHighlight: branding?.hero_heading_highlight?.trim(),
   }
 
   const sections = mergeContentOverrides(getFilteredSections(), overridesMap ?? {})

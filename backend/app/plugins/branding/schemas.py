@@ -27,7 +27,10 @@ class BrandingConfigOut(BaseModel):
     store_name: str
     show_store_name: bool = True
     enable_cash_on_delivery: bool = True
+    show_bespoke_enquiry: bool = False
     tagline: Optional[str] = None
+    hero_heading: Optional[str] = None
+    hero_heading_highlight: Optional[str] = None
     logo_url: Optional[str] = None
     favicon_url: Optional[str] = None
     catalogue_url: Optional[str] = None
@@ -69,7 +72,10 @@ class BrandingConfigUpdate(BaseModel):
     store_name: Optional[str] = None
     show_store_name: Optional[bool] = None
     enable_cash_on_delivery: Optional[bool] = None
+    show_bespoke_enquiry: Optional[bool] = None
     tagline: Optional[str] = None
+    hero_heading: Optional[str] = None
+    hero_heading_highlight: Optional[str] = None
     logo_url: Optional[str] = None
     favicon_url: Optional[str] = None
     catalogue_url: Optional[str] = None

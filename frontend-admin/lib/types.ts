@@ -316,7 +316,10 @@ export interface BrandingConfig {
   store_name: string
   show_store_name?: boolean
   enable_cash_on_delivery?: boolean
+  show_bespoke_enquiry?: boolean
   tagline?: string
+  hero_heading?: string
+  hero_heading_highlight?: string
   logo_url?: string
   favicon_url?: string
   catalogue_url?: string

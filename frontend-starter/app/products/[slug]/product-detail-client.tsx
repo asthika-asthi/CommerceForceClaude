@@ -103,7 +103,7 @@ export function ProductDetailClient({
           )}
         </div>
 
-        {promo && <p className="text-sm font-bold text-red-600 mb-3">{promo}</p>}
+        {promo && <p className="text-xl font-bold text-red-600 leading-snug mb-3">{promo}</p>}
 
         <ShortDescription text={product.short_description} />
 

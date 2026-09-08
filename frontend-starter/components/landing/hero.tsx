@@ -18,6 +18,7 @@ interface Props {
   bestSellers?: Product[]
   /** Superadmin switch (landing-page.config.json → homepage.showBestSellersCard) */
   showBestSellersCard?: boolean
+  /** Hero H1 line 1 (plain) and line 2 (brand-highlight). Editable via Branding. */
   title?: string
   titleHighlight?: string
   subtitle?: string
@@ -27,9 +28,13 @@ export function Hero({
   bestSellers = [],
   showBestSellersCard = true,
   title = "Quality protective",
-  titleHighlight = "trade prices",
+  titleHighlight = "covers at trade prices",
   subtitle = "Tri Star UK Ltd — Hertfordshire's leading importer and distributor of tarpaulins, cotton dust sheets, sacks, bags, and decorating supplies. Trade and retail welcome.",
 }: Props) {
+  // Two independent heading lines. An empty line 2 collapses the <br> and the
+  // highlight span so the hero never renders a blank line or dangling markup.
+  const headingLine1 = (title ?? "").trim()
+  const headingLine2 = (titleHighlight ?? "").trim()
   const svgBg = `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C%2Fsvg%3E")`
 
   const displayProducts = bestSellers.slice(0, 4).map((p, i) => {
@@ -65,9 +70,13 @@ export function Hero({
             Sourced from Europe, India &amp; Far East · Est. 1995
           </div>
 
-          <h1 className="text-[42px] font-bold text-white leading-[1.18] mb-4">
-            {title}<br />covers at <em className="text-brand-highlight not-italic">{titleHighlight}</em>
-          </h1>
+          {(headingLine1 || headingLine2) && (
+            <h1 className="text-[42px] font-bold text-white leading-[1.18] mb-4">
+              {headingLine1}
+              {headingLine1 && headingLine2 && <br />}
+              {headingLine2 && <em className="text-brand-highlight not-italic">{headingLine2}</em>}
+            </h1>
+          )}
 
           <p className="text-on-dark text-base leading-[1.65] mb-8 max-w-[440px]">
             {subtitle}

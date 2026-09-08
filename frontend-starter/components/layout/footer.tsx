@@ -80,7 +80,7 @@ export function Footer({ branding, categories }: Props) {
             {[
               { label: "Register for trade", href: "/register" },
               { label: "Trade login", href: "/login" },
-              { label: "Bulk & bespoke orders", href: "/bespoke" },
+              ...(branding?.show_bespoke_enquiry ? [{ label: "Bulk & bespoke orders", href: "/bespoke" }] : []),
               { label: "30-day terms", href: "/trade" },
             ].map(({ label, href }) => (
               <Link key={label} href={href} className="block text-[13px] text-on-dark-muted mb-2.5 hover:text-on-dark-strong transition-colors">{label}</Link>

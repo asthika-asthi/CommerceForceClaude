@@ -1,5 +1,5 @@
 import { serverFetch } from "@/lib/api"
-import type { Category } from "@/lib/types"
+import type { BrandingConfig, Category } from "@/lib/types"
 import Link from "next/link"
 
 export async function CategoriesNav() {
@@ -10,6 +10,9 @@ export async function CategoriesNav() {
   } catch {
     // render without dynamic categories
   }
+
+  const branding = await serverFetch<BrandingConfig>("/api/branding").catch(() => null)
+  const showBespoke = branding?.show_bespoke_enquiry === true
 
   const linkCls = "text-on-dark-strong text-[13px] font-medium px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-white hover:border-white hover:bg-white/5 transition-all whitespace-nowrap"
 
@@ -29,7 +32,7 @@ export async function CategoriesNav() {
             </svg>
           </Link>
         ))}
-        <Link href="/bespoke" className={linkCls}>Bespoke Orders</Link>
+        {showBespoke && <Link href="/bespoke" className={linkCls}>Bespoke Orders</Link>}
         <Link href="/trade" className={linkCls}>Trade Accounts</Link>
         <div className="flex-1" />
         <Link href="/products?sale=true" className="text-accent text-[13px] font-semibold px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-accent-hover hover:border-accent-hover hover:bg-white/5 transition-all whitespace-nowrap">

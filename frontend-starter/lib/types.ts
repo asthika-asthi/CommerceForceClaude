@@ -40,7 +40,10 @@ export interface BrandingConfig {
   store_name: string
   show_store_name?: boolean
   enable_cash_on_delivery?: boolean
+  show_bespoke_enquiry?: boolean
   tagline?: string
+  hero_heading?: string
+  hero_heading_highlight?: string
   logo_url?: string
   favicon_url?: string
   catalogue_url?: string
@@ -398,4 +401,7 @@ export interface LandingRuntimeData {
   products: Product[]
   categories: Category[]
   showBestSellersCard: boolean
+  /** Homepage hero H1 — line 1 / line 2 (highlight). From branding, blank ⇒ block default. */
+  heroHeading?: string
+  heroHeadingHighlight?: string
 }

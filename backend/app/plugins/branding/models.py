@@ -9,6 +9,11 @@ class BrandingConfig(BaseModel):
 
     store_name: Mapped[str] = mapped_column(String(255), default="My Store", nullable=False)
     tagline: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    # Homepage hero H1, rendered as two lines. The second (highlight) line is
+    # shown in the brand-highlight colour; leaving it blank collapses the hero
+    # to a single line with no empty gap.
+    hero_heading: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    hero_heading_highlight: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     logo_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     favicon_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     # When false, the site header/footer show neither the store-name text nor the
@@ -20,6 +25,12 @@ class BrandingConfig(BaseModel):
     # When false, "Cash on Delivery" is not offered at checkout.
     enable_cash_on_delivery: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default="1", nullable=False
+    )
+    # Off by default — a client opts in to expose the bespoke enquiry form and
+    # its links (main nav, footer, price-list page). When false the /bespoke
+    # route 404s.
+    show_bespoke_enquiry: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", nullable=False
     )
     catalogue_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     primary_color: Mapped[str] = mapped_column(String(20), default="#000000", nullable=False)
