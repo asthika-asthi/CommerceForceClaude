@@ -63,6 +63,7 @@ export function ProductGridSection({
             const price = parseFloat(product.price)
             const effectivePrice = product.effective_price ? parseFloat(product.effective_price) : price
             const isOnSale = effectivePrice < price
+            const inStock = product.stock_quantity > 0
 
             return (
               <div
@@ -76,8 +77,16 @@ export function ProductGridSection({
                   ) : (
                     EMOJIS[idx]
                   )}
-                  <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isOnSale ? "bg-brand text-on-brand" : "bg-brand-dark text-white"}`}>
-                    {isOnSale ? "Sale" : "In Stock"}
+                  <span
+                    className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                      !inStock
+                        ? "bg-[#FEE2E2] text-[#DC2626]"
+                        : isOnSale
+                          ? "bg-brand text-on-brand"
+                          : "bg-[#D1FAE5] text-[#059669]"
+                    }`}
+                  >
+                    {!inStock ? "Out of stock" : isOnSale ? "Sale" : "In stock"}
                   </span>
                   <button className="absolute top-2.5 right-2.5 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-[14px] border border-border hover:bg-brand-tint hover:border-brand transition-all">
                     🤍
