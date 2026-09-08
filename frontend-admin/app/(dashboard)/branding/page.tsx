@@ -407,10 +407,10 @@ export default function BrandingPage() {
             onChange={(e) => setForm((f) => ({ ...f, show_best_sellers_card: e.target.checked ? "true" : "" }))}
             className="mt-0.5 rounded border-slate-300" />
           <span>
-            Show the homepage &ldquo;Best selling products&rdquo; card
+            Show the homepage &ldquo;Featured products&rdquo; card
             <span className="block text-xs text-slate-500">
-              The four badges (Best seller, Trade fave, In stock, New range) are fixed placeholders —
-              not based on real sales or stock figures yet. Off by default until that&rsquo;s fixed.
+              A compact list of up to four featured products in the hero, each with a live
+              in&nbsp;stock / sale / out&nbsp;of&nbsp;stock badge. Off by default.
             </span>
           </span>
         </label>

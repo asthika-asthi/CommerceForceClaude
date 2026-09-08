@@ -10,7 +10,6 @@ function resolveImageUrl(url: string): string {
   return url
 }
 
-const PRODUCT_TAGS = ["Best seller", "Trade fave", "In stock", "New range"]
 const PRODUCT_ICONS = ["🛡️", "🧹", "🪣", "🖌️"]
 const PRODUCT_ICON_BGS = ["#E8F4FD", "#FFF8E1", "#F3E5F5", "#E8F5E9"]
 
@@ -39,13 +38,23 @@ export function Hero({
 
   const displayProducts = bestSellers.slice(0, 4).map((p, i) => {
     const rawImage = p.primary_image ?? p.images?.[0]?.url ?? null
+    const price = parseFloat(p.price)
+    const effectivePrice = p.effective_price ? parseFloat(p.effective_price) : price
+    const inStock = p.stock_quantity > 0
+    const onSale = effectivePrice < price
     return {
       name: p.name,
       meta: p.description?.slice(0, 45) ?? "",
       image: rawImage ? resolveImageUrl(rawImage) : null,
       icon: PRODUCT_ICONS[i % 4],
       iconBg: PRODUCT_ICON_BGS[i % 4],
-      tag: PRODUCT_TAGS[i % 4],
+      // Live status, not a fixed label: out of stock wins over a sale.
+      tag: !inStock ? "Out of stock" : onSale ? "Sale" : "In stock",
+      tagClass: !inStock
+        ? "bg-[#FEE2E2] text-[#DC2626]"
+        : onSale
+          ? "bg-brand text-on-brand"
+          : "bg-[#D1FAE5] text-[#059669]",
       slug: p.slug,
     }
   })
@@ -103,11 +112,11 @@ export function Hero({
           </div>
         </div>
 
-        {/* Right: best sellers card (superadmin switch: homepage.showBestSellersCard) */}
+        {/* Right: featured products card (toggle: branding.show_best_sellers_card) */}
         {showBestSellersCard && (
         <div className="bg-white rounded-xl p-7 shadow-[0_8px_40px_rgba(0,0,0,0.25)]">
           <div className="text-[13px] font-bold text-muted uppercase tracking-[0.6px] mb-4 pb-3 border-b border-border">
-            🔥 Best selling products
+            ⭐ Featured products
           </div>
 
           {displayProducts.length > 0 ? (
@@ -128,7 +137,7 @@ export function Hero({
                   <div className="text-[14px] font-semibold text-brand-dark leading-tight">{p.name}</div>
                   {p.meta && <div className="text-[12px] text-muted truncate">{p.meta}</div>}
                 </div>
-                <span className="text-[11px] font-semibold text-brand bg-brand-tint px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">{p.tag}</span>
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${p.tagClass}`}>{p.tag}</span>
               </Link>
             ))
           ) : (

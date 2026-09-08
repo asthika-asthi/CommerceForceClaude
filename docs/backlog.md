@@ -667,13 +667,19 @@ superadmin `homepage.showBestSellersCard` key in `landing-page.config.json` rema
 AND-ed structural kill-switch. **Behaviour change:** the Tri Star homepage no longer shows
 this card until an admin re-enables it on the Branding page.
 
-**Proper fix options (not done):**
-1. Drive the labels from real data — order-line aggregation for "best seller",
-   `stock_quantity > 0` for "in stock", a `created_at` window for "new range" — and hide a
-   badge when no product qualifies.
-2. Add a per-product admin-assignable badge field and render that.
-3. Drop the per-row tags entirely and relabel the card "Featured products" (honest about
-   what it actually is — the `is_featured` list).
+**Honest-labels fix shipped (2026-09-09):** `hero.tsx` retitled to "⭐ Featured products";
+the per-row badge is now derived per product — `stock_quantity <= 0` → "Out of stock",
+else on sale (`effective_price < price`) → "Sale", else "In stock" — same green/red/brand
+styling as the product grids. The fabricated "Best seller / Trade fave / New range" strings
+and the `PRODUCT_TAGS` array are gone. Admin Branding checkbox + helper text updated to
+match. Card stays default-off via `show_best_sellers_card`.
+
+**Still not done (only if a client asks):**
+1. Real best-seller ranking — a public endpoint over paid `order_items` (the
+   `orders/router.py` `/analytics` `top_products` query is the pattern), so the card can
+   genuinely rank by units sold instead of showing the `is_featured` set.
+2. A per-product admin-assignable badge field, if arbitrary marketing tags are wanted.
+3. Expose `created_at` on `ProductListOut` to add a real "New in" badge.
 
 ### Storefront lint debt (2026-07-18)
 
