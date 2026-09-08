@@ -32,6 +32,12 @@ class BrandingConfig(BaseModel):
     show_bespoke_enquiry: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="0", nullable=False
     )
+    # Off by default — opt-in to the homepage "Best selling products" hero card.
+    # Its four badges (Best seller / Trade fave / In stock / New range) are
+    # positional placeholders, not real sales/stock data — see docs/backlog.md.
+    show_best_sellers_card: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", nullable=False
+    )
     catalogue_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     primary_color: Mapped[str] = mapped_column(String(20), default="#000000", nullable=False)
     secondary_color: Mapped[str] = mapped_column(String(20), default="#ffffff", nullable=False)

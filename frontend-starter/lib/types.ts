@@ -41,6 +41,7 @@ export interface BrandingConfig {
   show_store_name?: boolean
   enable_cash_on_delivery?: boolean
   show_bespoke_enquiry?: boolean
+  show_best_sellers_card?: boolean
   tagline?: string
   hero_heading?: string
   hero_heading_highlight?: string

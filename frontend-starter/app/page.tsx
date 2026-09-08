@@ -27,7 +27,12 @@ export default async function HomePage() {
   const data: LandingRuntimeData = {
     products,
     categories: (categories ?? []).filter(c => c.is_active),
-    showBestSellersCard: getHomepageConfig().showBestSellersCard !== false,
+    // Client opt-in via Branding (default off — the card's badges are not real
+    // sales/stock data yet, see docs/backlog.md). The superadmin config key stays
+    // as an AND-ed structural kill-switch.
+    showBestSellersCard:
+      branding?.show_best_sellers_card === true &&
+      getHomepageConfig().showBestSellersCard !== false,
     // `?.trim()` keeps the difference between "unset" (undefined ⇒ Hero default)
     // and "explicitly cleared" ("" ⇒ that line is dropped, no empty gap).
     heroHeading: branding?.hero_heading?.trim(),

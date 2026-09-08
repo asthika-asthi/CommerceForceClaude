@@ -28,6 +28,7 @@ class BrandingConfigOut(BaseModel):
     show_store_name: bool = True
     enable_cash_on_delivery: bool = True
     show_bespoke_enquiry: bool = False
+    show_best_sellers_card: bool = False
     tagline: Optional[str] = None
     hero_heading: Optional[str] = None
     hero_heading_highlight: Optional[str] = None
@@ -73,6 +74,7 @@ class BrandingConfigUpdate(BaseModel):
     show_store_name: Optional[bool] = None
     enable_cash_on_delivery: Optional[bool] = None
     show_bespoke_enquiry: Optional[bool] = None
+    show_best_sellers_card: Optional[bool] = None
     tagline: Optional[str] = None
     hero_heading: Optional[str] = None
     hero_heading_highlight: Optional[str] = None

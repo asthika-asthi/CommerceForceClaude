@@ -1,6 +1,6 @@
 # CommerceForce — Live Backlog
 
-Last updated: 2026-07-21. This is the single source of truth for build status.
+Last updated: 2026-09-08. This is the single source of truth for build status.
 Bug-review findings and their fix status live in `docs/bugs-log.md`.
 Forward-looking gaps, per-profile coverage, and the multi-tenant question live in
 `docs/gap-analysis-and-roadmap.md`.
@@ -634,6 +634,46 @@ HTTPS is not blocking development but IS required before any client goes live.
 ---
 
 ## Tech debt — needs a focused session
+
+### Hero "Best selling products" card shows fabricated, position-based labels (2026-09-08)
+
+**Symptom:** the homepage hero card titled "🔥 Best selling products" lists four products
+badged **Best seller / Trade fave / In stock / New range**. None of these labels reflect
+reality — a product with `stock_quantity = 0` still reads "In stock", and nothing shown is
+actually a top seller.
+
+**Investigation:**
+
+- The four products are just the first four `is_featured` products, ordered
+  `is_featured DESC, created_at DESC`, padded with the newest active products when fewer
+  than four are flagged — `frontend-starter/app/page.tsx` (`/api/products?featured_only=true`),
+  `backend/app/plugins/products/service.py:139-158`.
+- `frontend-starter/components/landing/hero.tsx:13,48` assigns the badge **purely by list
+  position**: `PRODUCT_TAGS = ["Best seller", "Trade fave", "In stock", "New range"]` then
+  `tag: PRODUCT_TAGS[i % 4]`. The emoji icon and icon-background colour are assigned the
+  same positional way. No sales aggregation, no `stock_quantity` check, no `created_at`
+  recency window.
+- The `theme.badges` / `theme.heroCard` tokens in `landing-page.config.json:253-266`
+  (properly-capitalised "Best Seller" etc. with colours) are **dead code for this
+  component** — `hero.tsx` never imports them and uses its own hardcoded lowercase strings.
+  They are still consumed elsewhere (product cards / range table).
+
+**Interim mitigation shipped (2026-09-08):** the card's visibility is now the client-editable
+Branding toggle `show_best_sellers_card`, **default off**, so the misleading card is hidden
+until a client explicitly opts in. Added end-to-end: `branding_config` column + migration
+`b8e1d4a7f3c2`, `BrandingConfigOut`/`Update`, storefront `BrandingConfig` type +
+`app/page.tsx` resolution, admin `BrandingConfig` type + Branding-page checkbox. The
+superadmin `homepage.showBestSellersCard` key in `landing-page.config.json` remains an
+AND-ed structural kill-switch. **Behaviour change:** the Tri Star homepage no longer shows
+this card until an admin re-enables it on the Branding page.
+
+**Proper fix options (not done):**
+1. Drive the labels from real data — order-line aggregation for "best seller",
+   `stock_quantity > 0` for "in stock", a `created_at` window for "new range" — and hide a
+   badge when no product qualifies.
+2. Add a per-product admin-assignable badge field and render that.
+3. Drop the per-row tags entirely and relabel the card "Featured products" (honest about
+   what it actually is — the `is_featured` list).
 
 ### Storefront lint debt (2026-07-18)
 

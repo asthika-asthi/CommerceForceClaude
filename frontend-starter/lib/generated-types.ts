@@ -1725,6 +1725,11 @@ export interface components {
              * @default false
              */
             show_bespoke_enquiry: boolean;
+            /**
+             * Show Best Sellers Card
+             * @default false
+             */
+            show_best_sellers_card: boolean;
             /** Tagline */
             tagline?: string | null;
             /** Hero Heading */
@@ -1797,6 +1802,8 @@ export interface components {
             enable_cash_on_delivery?: boolean | null;
             /** Show Bespoke Enquiry */
             show_bespoke_enquiry?: boolean | null;
+            /** Show Best Sellers Card */
+            show_best_sellers_card?: boolean | null;
             /** Tagline */
             tagline?: string | null;
             /** Hero Heading */

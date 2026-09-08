@@ -235,6 +235,7 @@ export default function BrandingPage() {
       f.show_store_name = config.show_store_name === false ? "" : "true"
       f.enable_cash_on_delivery = config.enable_cash_on_delivery === false ? "" : "true"
       f.show_bespoke_enquiry = config.show_bespoke_enquiry === true ? "true" : ""
+      f.show_best_sellers_card = config.show_best_sellers_card === true ? "true" : ""
       f.hero_heading = config.hero_heading ?? ""
       f.hero_heading_highlight = config.hero_heading_highlight ?? ""
       f.custom_css = config.custom_css ?? ""
@@ -276,6 +277,7 @@ export default function BrandingPage() {
       payload.show_store_name = (d.show_store_name ?? "") !== ""
       payload.enable_cash_on_delivery = (d.enable_cash_on_delivery ?? "") !== ""
       payload.show_bespoke_enquiry = (d.show_bespoke_enquiry ?? "") !== ""
+      payload.show_best_sellers_card = (d.show_best_sellers_card ?? "") !== ""
       payload.hero_heading = (d.hero_heading ?? "").trim()
       payload.hero_heading_highlight = (d.hero_heading_highlight ?? "").trim()
       return api.put("/api/branding", payload)
@@ -395,6 +397,20 @@ export default function BrandingPage() {
               Adds a &ldquo;Bespoke Orders&rdquo; page with a custom-spec enquiry form, linked from
               the main nav, the footer and the price-list page. When off, that page is removed and
               its links disappear.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+          <input type="checkbox"
+            checked={(form.show_best_sellers_card ?? "") !== ""}
+            onChange={(e) => setForm((f) => ({ ...f, show_best_sellers_card: e.target.checked ? "true" : "" }))}
+            className="mt-0.5 rounded border-slate-300" />
+          <span>
+            Show the homepage &ldquo;Best selling products&rdquo; card
+            <span className="block text-xs text-slate-500">
+              The four badges (Best seller, Trade fave, In stock, New range) are fixed placeholders —
+              not based on real sales or stock figures yet. Off by default until that&rsquo;s fixed.
             </span>
           </span>
         </label>
