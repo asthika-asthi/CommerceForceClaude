@@ -36,7 +36,39 @@ async def _create_customer(client: AsyncClient) -> str:
     return r.json()["user"]["id"]
 
 
+async def _create_superadmin_target(client: AsyncClient, db) -> str:
+    """Register an account and promote it to superadmin in the DB; return its id."""
+    r = await client.post(REGISTER_URL, json={**CUSTOMER_DATA, "email": "sa_target@example.com"})
+    uid = r.json()["user"]["id"]
+    from app.plugins.auth.models import User, UserRole
+    await db.execute(update(User).where(User.id == uid).values(role=UserRole.superadmin))
+    await db.flush()
+    return uid
+
+
 # ── B4 — role changes require superadmin ────────────────────────────────────────
+
+async def test_admin_cannot_modify_superadmin_account(client: AsyncClient, db):
+    """A plain admin cannot change anything on a superadmin row — role, active
+    status or trade status all return 403."""
+    admin_token = await make_admin(client, db)
+    sa_id = await _create_superadmin_target(client, db)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    for body in ({"is_active": False}, {"role": "admin"}, {"trade_status": "approved"}):
+        r = await client.patch(f"/api/auth/users/{sa_id}", json=body, headers=headers)
+        assert r.status_code == 403, body
+
+
+async def test_superadmin_can_modify_superadmin_account(client: AsyncClient, db):
+    super_token = await make_superadmin(client, db)
+    sa_id = await _create_superadmin_target(client, db)
+    r = await client.patch(
+        f"/api/auth/users/{sa_id}",
+        json={"is_active": False},
+        headers={"Authorization": f"Bearer {super_token}"},
+    )
+    assert r.status_code == 200
+    assert r.json()["is_active"] is False
 
 async def test_admin_cannot_escalate_user_to_superadmin(client: AsyncClient, db):
     admin_token = await make_admin(client, db)

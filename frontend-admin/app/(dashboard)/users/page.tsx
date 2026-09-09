@@ -5,6 +5,7 @@ import { api } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Pagination } from "@/components/ui/pagination"
+import { useAuthStore } from "@/store/auth"
 import type { User, Paginated } from "@/lib/types"
 
 function downloadCsv(path: string, filename: string) {
@@ -29,6 +30,9 @@ const TRADE_STATUS_STYLES: Record<string, string> = {
 export default function UsersPage() {
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
+  // A superadmin account is read-only to a plain admin — the API rejects any
+  // change to it (403), so don't render editable controls for those rows.
+  const isSuperadmin = useAuthStore((s) => s.user?.role === "superadmin")
 
   const { data, isLoading } = useQuery<Paginated<User>>({
     queryKey: ["users", page],
@@ -147,7 +151,9 @@ export default function UsersPage() {
               {users.length === 0 && (
                 <tr><td colSpan={5} className="text-center py-10 text-slate-400">No users found</td></tr>
               )}
-              {users.map((u) => (
+              {users.map((u) => {
+                const locked = u.role === "superadmin" && !isSuperadmin
+                return (
                 <tr key={u.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium text-slate-800">
                     {u.first_name} {u.last_name}
@@ -158,32 +164,41 @@ export default function UsersPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-600">{u.email}</td>
                   <td className="px-4 py-3">
-                    <select
-                      value={u.role}
-                      onChange={(e) => patch.mutate({ id: u.id, body: { role: e.target.value } })}
-                      className="border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="customer">customer</option>
-                      <option value="admin">admin</option>
-                      <option value="superadmin">superadmin</option>
-                    </select>
+                    {locked ? (
+                      <span className="text-xs text-slate-500">{u.role}</span>
+                    ) : (
+                      <select
+                        value={u.role}
+                        onChange={(e) => patch.mutate({ id: u.id, body: { role: e.target.value } })}
+                        className="border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="customer">customer</option>
+                        <option value="admin">admin</option>
+                        <option value="superadmin">superadmin</option>
+                      </select>
+                    )}
                   </td>
                   <td className="px-4 py-3"><StatusBadge value={u.is_active ? "active" : "inactive"} /></td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => patch.mutate({ id: u.id, body: { is_active: !u.is_active } })}
-                      disabled={patch.isPending}
-                      className={`text-xs px-3 py-1 rounded-lg font-medium transition-colors disabled:opacity-50 ${
-                        u.is_active
-                          ? "bg-red-50 text-red-600 hover:bg-red-100"
-                          : "bg-green-50 text-green-700 hover:bg-green-100"
-                      }`}
-                    >
-                      {u.is_active ? "Deactivate" : "Activate"}
-                    </button>
+                    {locked ? (
+                      <span className="text-xs text-slate-400" title="Only a superadmin can change a superadmin account">Read-only</span>
+                    ) : (
+                      <button
+                        onClick={() => patch.mutate({ id: u.id, body: { is_active: !u.is_active } })}
+                        disabled={patch.isPending}
+                        className={`text-xs px-3 py-1 rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                          u.is_active
+                            ? "bg-red-50 text-red-600 hover:bg-red-100"
+                            : "bg-green-50 text-green-700 hover:bg-green-100"
+                        }`}
+                      >
+                        {u.is_active ? "Deactivate" : "Activate"}
+                      </button>
+                    )}
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>

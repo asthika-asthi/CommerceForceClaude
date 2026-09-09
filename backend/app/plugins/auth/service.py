@@ -376,6 +376,13 @@ async def patch_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    # A superadmin account is read-only to everyone but another superadmin. A
+    # plain admin cannot change its role, active status, trade status — anything.
+    if user.role == UserRole.superadmin and not actor_is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only a superadmin can modify a superadmin account",
+        )
     if "is_active" in data and data["is_active"] is not None:
         # Toggling is_active on a privileged account is itself a privilege operation:
         # otherwise a regular admin could disable the superadmin (locking the platform
@@ -659,6 +666,12 @@ async def approve_deletion_request(request_id: str, admin_user: User, db: AsyncS
     if req.status != DeletionRequestStatus.pending:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Request is already {req.status}")
     if req.user_id:
+        target = (await db.execute(select(User).where(User.id == req.user_id))).scalar_one_or_none()
+        if target and target.role == UserRole.superadmin and admin_user.role != UserRole.superadmin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only a superadmin can action a superadmin account's deletion request",
+            )
         await anonymize_user(req.user_id, db)
     req.status = DeletionRequestStatus.completed
     req.reviewed_at = datetime.now(timezone.utc)
