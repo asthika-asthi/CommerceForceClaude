@@ -681,6 +681,99 @@ match. Card stays default-off via `show_best_sellers_card`.
 2. A per-product admin-assignable badge field, if arbitrary marketing tags are wanted.
 3. Expose `created_at` on `ProductListOut` to add a real "New in" badge.
 
+### Storefront shows default (theme-file) colours for ~1 min after a rebuild (2026-09-02)
+
+**Symptom (reported):** after `docker compose up --build -d` on the VPS, the storefront
+briefly reverted to the old Tri Star red/navy scheme. Re-saving Branding → Colours in the
+admin panel "fixed" it — but so does simply waiting/hard-refreshing; the save just
+coincided with the cache catching up. The DB is **not** being wiped.
+
+**Investigation:**
+
+- Colours have two layers: theme-file **defaults** baked into the storefront image
+  (`frontend-starter/themes/default/globals.css`, still Tri Star `#C8102E` / `#1B2A4A`),
+  and DB **overrides** (`branding_config.theme_colors`) injected as an inline `style` on
+  `<html>` by `frontend-starter/app/layout.tsx` at request time.
+- The DB is SQLite on the `cf_data` named volume (`docker-compose.yml`), so `--build` does
+  not touch it. `deploy.sh` never runs `seed.py`, and `seed_branding()` bails out when
+  `store_name != "My Store"` and never writes `theme_colors`. The saved override survives
+  the rebuild.
+- Root cause is the **default layer** in the freshly built image: `npm run build` in
+  `frontend-starter/Dockerfile` prerenders the root layout while the backend container is
+  down, so `serverFetch("/api/branding")` fails → `null` → `deriveTheme(undefined)` → `{}`
+  → the prerendered HTML carries no overrides and falls back to `globals.css`.
+- `serverFetch` uses `next: { revalidate: 60 }` (`frontend-starter/lib/api.ts`), so after
+  boot Next serves that stale prerendered shell and only revalidates against the live DB in
+  the background — a request or two later, up to ~60 s+ (plus any nginx/browser caching).
+  The layout has no `force-dynamic`.
+
+**Expected going forward:** a brief flash of the `globals.css` default colours after most
+rebuilds, self-healing within ~a minute. It is a real bug only if it does **not** self-heal.
+
+**Confirmed live (2026-09-08):** reproduced on the VPS after a full `docker compose up
+--build -d`. Verified over SSH: `branding_config.theme_colors` in the DB was **fully
+intact** (`brand #4d6699` etc.), `GET /api/branding` returned the correct colours, and the
+storefront container self-healed to the right `<html style>` within a few minutes — no data
+loss, exactly the transient described above. The user still saw red/navy afterwards purely
+from **browser cache** (`stale-while-revalidate` is ~1 year); a hard refresh cleared it.
+
+**Effective workaround, used for every deploy since:** rebuild only the container that
+actually changed and leave `backend` running, e.g. `docker compose up -d --build
+frontend-starter` (add `frontend-admin` / `backend` only when those changed). With the
+backend up, the fresh Next container revalidates against the live `/api/branding` on its
+first request and **no colour flash is visible**. `deploy.sh`'s blanket `up --build -d` is
+what triggers the flash.
+
+**Fix options (not done — logged per request):**
+1. *Preferred* — commit the client's real colours into `themes/default/globals.css` so the
+   build-time shell matches the DB and there is no visible flash (the primary path in
+   `frontend-starter/CLAUDE.md`, "Step 1 — Update CSS tokens").
+2. Make branding always-live: `export const dynamic = "force-dynamic"` on the root layout
+   (or `revalidate: 0` on the branding fetch) — one API call per request, no staleness.
+3. Change `deploy.sh` to rebuild only changed services (or restart `frontend-starter` /
+   hit `revalidatePath("/", "layout")` once the backend is healthy) instead of a blanket
+   `docker compose up --build -d`.
+
+### Changing `ADMIN_EMAIL` in `.env` does not move the existing admin after a rebuild (2026-09-02)
+
+**Symptom (reported):** updated `ADMIN_EMAIL` in `.env` and ran `docker compose up --build
+-d` on the VPS; the admin account kept its **old** email address.
+
+**Investigation:**
+
+- `deploy.sh` / `docker compose up --build -d` **never runs `seed.py`** — the backend
+  `Dockerfile` `CMD` is just `uvicorn …`, there is no entrypoint seed, and `deploy.sh` only
+  prints `python seed.py` as a "useful command". So a plain rebuild does not touch the
+  users table at all; the `.env` change has no effect until the seed is run manually.
+- Even when `seed.py` **is** run, `seed_admin()` (`backend/seed.py`) selects `User` by the
+  **new** `ADMIN_EMAIL`, finds nothing, and **creates a fresh admin row** with
+  `ADMIN_TEMP_PASSWORD`. It never renames or deactivates the old-email row — you end up
+  with two admin users, the old one still active. This is the same "seed only acts on first
+  create, skips existing accounts" class documented in
+  `docs/accounts-and-passwords.md` §"How credentials actually work" and worked around for
+  passwords by `scripts/reset-superadmin-password.sh`.
+- The SQLite DB is on the persistent `cf_data` volume, so the old admin row survives every
+  rebuild. There is no reconcile/rename path anywhere — `.env` `ADMIN_EMAIL` is only ever
+  consulted at first-create.
+
+**Confirm on the VPS which state you're in** — run `docs/accounts-and-passwords.md` §1
+("Check which accounts exist"). One admin with the old email = seed never re-ran; two
+admins = seed ran and added the new one alongside the old.
+
+**Workarounds today:**
+- Rename in place: `docs/accounts-and-passwords.md` §4 pattern, but `UPDATE user SET email
+  = …` on the old row (then re-hash the password if needed).
+- Or create the new admin (§3) and deactivate/delete the old row manually.
+
+**Fix options (not done — logged per request):**
+1. Give `seed_admin()` / `seed_superadmin()` a documented "primary admin" reconcile: if
+   exactly one admin exists with a different email and the new email is free, update it in
+   place rather than adding a second.
+2. Ship a `scripts/reset-admin-email.sh` companion to `reset-superadmin-password.sh` that
+   syncs the existing admin row's email + password from the current `backend/.env`.
+3. At minimum, document in `deploy.sh` output and `docs/accounts-and-passwords.md` that
+   `ADMIN_EMAIL` changes require a manual rename, not just a re-seed.
+
 ### Storefront lint debt (2026-07-18)
 
 `frontend-starter` had a **pre-existing** red `npm run lint` on master (17 errors,
