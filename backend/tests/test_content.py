@@ -6,6 +6,7 @@ REGISTER_URL = "/api/auth/register"
 LOGIN_URL = "/api/auth/login"
 
 ADMIN_DATA = {"email": "content_admin@example.com", "password": "adminpass1", "first_name": "Admin", "last_name": "Content"}
+SUPERADMIN_DATA = {"email": "content_super@example.com", "password": "superpass1", "first_name": "Super", "last_name": "Content"}
 CUSTOMER_DATA = {"email": "content_cust@example.com", "password": "custpass1", "first_name": "Cust", "last_name": "Content"}
 
 
@@ -15,14 +16,24 @@ async def register_and_token(client: AsyncClient, data: dict) -> str:
     return r.json()["access_token"]
 
 
-async def make_admin(client: AsyncClient, db) -> str:
-    await register_and_token(client, ADMIN_DATA)
+async def _make_with_role(client: AsyncClient, db, data: dict, role) -> str:
+    await register_and_token(client, data)
     from sqlalchemy import update
-    from app.plugins.auth.models import User, UserRole
-    await db.execute(update(User).where(User.email == ADMIN_DATA["email"]).values(role=UserRole.admin))
+    from app.plugins.auth.models import User
+    await db.execute(update(User).where(User.email == data["email"]).values(role=role))
     await db.flush()
-    r = await client.post(LOGIN_URL, json={"email": ADMIN_DATA["email"], "password": ADMIN_DATA["password"]})
+    r = await client.post(LOGIN_URL, json={"email": data["email"], "password": data["password"]})
     return r.json()["access_token"]
+
+
+async def make_admin(client: AsyncClient, db) -> str:
+    from app.plugins.auth.models import UserRole
+    return await _make_with_role(client, db, ADMIN_DATA, UserRole.admin)
+
+
+async def make_superadmin(client: AsyncClient, db) -> str:
+    from app.plugins.auth.models import UserRole
+    return await _make_with_role(client, db, SUPERADMIN_DATA, UserRole.superadmin)
 
 
 # ── BRANDING ──────────────────────────────────────────────────────────────────
@@ -45,7 +56,7 @@ async def test_branding_get_creates_singleton(client: AsyncClient, db):
 
 
 async def test_admin_update_branding(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     r = await client.put(
         "/api/branding",
         json={
@@ -67,7 +78,7 @@ async def test_admin_update_branding(client: AsyncClient, db):
 
 
 async def test_branding_update_is_idempotent(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     await client.put(
         "/api/branding",
         json={"store_name": "First Name"},
@@ -86,13 +97,22 @@ async def test_branding_update_is_idempotent(client: AsyncClient, db):
     assert r2.json()["store_name"] == "Second Name"
 
 
-async def test_non_admin_cannot_update_branding(client: AsyncClient, db):
-    await make_admin(client, db)
+async def test_non_superadmin_cannot_update_branding(client: AsyncClient, db):
+    # A customer is refused.
     cust_token = await register_and_token(client, CUSTOMER_DATA)
     r = await client.put(
         "/api/branding",
         json={"store_name": "Hacked"},
         headers={"Authorization": f"Bearer {cust_token}"},
+    )
+    assert r.status_code == 403
+
+    # A plain admin is also refused — branding is superadmin-only.
+    admin_token = await make_admin(client, db)
+    r = await client.put(
+        "/api/branding",
+        json={"store_name": "Hacked"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 403
 
@@ -110,7 +130,7 @@ async def test_branding_theme_colors_default_empty(client: AsyncClient, db):
 
 
 async def test_admin_update_theme_colors(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     payload = {
         "core": {"brand": "#D4A017", "dark": "#1B2A4A"},
         "overrides": {"brand-tint": "#FFF8E1"},
@@ -137,8 +157,7 @@ async def test_admin_update_theme_colors(client: AsyncClient, db):
     assert r3.json()["theme_colors"] == {}
 
 
-async def test_non_admin_cannot_update_theme_colors(client: AsyncClient, db):
-    await make_admin(client, db)
+async def test_non_superadmin_cannot_update_theme_colors(client: AsyncClient, db):
     cust_token = await register_and_token(client, CUSTOMER_DATA)
     r = await client.put(
         "/api/branding",
@@ -147,9 +166,17 @@ async def test_non_admin_cannot_update_theme_colors(client: AsyncClient, db):
     )
     assert r.status_code == 403
 
+    admin_token = await make_admin(client, db)
+    r = await client.put(
+        "/api/branding",
+        json={"theme_colors": {"core": {"brand": "#000000"}}},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert r.status_code == 403
+
 
 async def test_branding_blank_store_name_roundtrips(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     r = await client.put(
         "/api/branding",
         json={"store_name": ""},
@@ -163,7 +190,7 @@ async def test_branding_blank_store_name_roundtrips(client: AsyncClient, db):
 
 
 async def test_admin_sets_valid_analytics_ids(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     r = await client.put(
         "/api/branding",
         json={"ga4_measurement_id": "G-ABC1234567", "meta_pixel_id": "1234567890123"},
@@ -181,7 +208,7 @@ async def test_admin_sets_valid_analytics_ids(client: AsyncClient, db):
 
 
 async def test_analytics_ids_reject_garbage(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     bad_ga4 = await client.put("/api/branding", json={"ga4_measurement_id": "<script>alert(1)</script>"}, headers=headers)
@@ -198,7 +225,7 @@ async def test_analytics_ids_reject_garbage(client: AsyncClient, db):
 
 
 async def test_analytics_ids_can_be_cleared(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     headers = {"Authorization": f"Bearer {admin_token}"}
     await client.put("/api/branding", json={"ga4_measurement_id": "G-ABC1234567"}, headers=headers)
 
@@ -289,12 +316,13 @@ async def test_ai_chat_history_empty_for_unknown_session(client: AsyncClient, db
 
 
 async def test_ai_chat_uses_branding_context(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
-    await client.put(
+    admin_token = await make_superadmin(client, db)
+    r = await client.put(
         "/api/branding",
         json={"store_name": "GadgetWorld", "tagline": "Best gadgets at best prices"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
+    assert r.status_code == 200
 
     captured_payload = {}
 

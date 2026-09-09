@@ -10,6 +10,7 @@ from httpx import AsyncClient
 
 from tests.test_commerce import (
     make_admin,
+    make_superadmin,
     register_and_token,
     _create_product,
     _get_default_variant_id,
@@ -88,7 +89,7 @@ async def test_product_list_includes_description(client: AsyncClient, db):
 # ── Branding — social_links string handling (was 422 on every save) ─────────────
 
 async def test_branding_social_links_empty_string(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     r = await client.put("/api/branding", json={"store_name": "Shop A", "social_links": ""}, headers=headers)
@@ -100,7 +101,7 @@ async def test_branding_social_links_empty_string(client: AsyncClient, db):
 
 
 async def test_branding_social_links_valid_json_string(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     r = await client.put(
@@ -115,7 +116,7 @@ async def test_branding_social_links_valid_json_string(client: AsyncClient, db):
 
 
 async def test_branding_social_links_invalid_string_is_ignored(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     r = await client.put("/api/branding", json={"social_links": "not json at all"}, headers=headers)

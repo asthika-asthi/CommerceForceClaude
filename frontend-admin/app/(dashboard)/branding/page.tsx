@@ -1,9 +1,11 @@
 "use client"
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type { BrandingConfig } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
+import { useAuthStore } from "@/store/auth"
 import { Upload, X, RotateCcw, AlertTriangle, FileText } from "lucide-react"
 import {
   CORE_COLOR_META,
@@ -215,9 +217,19 @@ function contrastWarnings(core: CoreState): string[] {
 
 export default function BrandingPage() {
   const qc = useQueryClient()
+  const router = useRouter()
+  const user = useAuthStore((s) => s.user)
+
+  // Branding is superadmin-only; the API enforces this too (403 for admins).
+  const isSuperadmin = user?.role === "superadmin"
+  useEffect(() => {
+    if (user && !isSuperadmin) router.replace("/products")
+  }, [user, isSuperadmin, router])
+
   const { data: config, isLoading } = useQuery<BrandingConfig>({
     queryKey: ["branding"],
     queryFn: () => api.get("/api/branding"),
+    enabled: isSuperadmin,
   })
   const [form, setForm] = useState<FormState>({})
   const [core, setCore] = useState<CoreState>({})

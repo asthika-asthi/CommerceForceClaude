@@ -9,11 +9,13 @@ ADMIN_DATA = {"email": "pdp_admin@example.com", "password": "adminpass1", "first
 CUSTOMER_DATA = {"email": "pdp_cust@example.com", "password": "custpass1", "first_name": "Cust", "last_name": "Pdp"}
 
 
-async def make_admin(client: AsyncClient, db) -> str:
+async def make_superadmin(client: AsyncClient, db) -> str:
+    # Branding writes are superadmin-only; every other endpoint this file hits
+    # (products, categories, reviews) accepts a superadmin too.
     await client.post(REGISTER_URL, json=ADMIN_DATA)
     from sqlalchemy import update
     from app.plugins.auth.models import User, UserRole
-    await db.execute(update(User).where(User.email == ADMIN_DATA["email"]).values(role=UserRole.admin))
+    await db.execute(update(User).where(User.email == ADMIN_DATA["email"]).values(role=UserRole.superadmin))
     await db.flush()
     r = await client.post(LOGIN_URL, json={"email": ADMIN_DATA["email"], "password": ADMIN_DATA["password"]})
     return r.json()["access_token"]
@@ -26,7 +28,7 @@ def _auth(token: str) -> dict:
 # ── Product short_description + specifications ────────────────────────────────
 
 async def test_product_short_description_and_specifications_roundtrip(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     payload = {
         "name": "Heavy Duty Dust Sheet",
         "price": "9.84",
@@ -67,7 +69,7 @@ async def test_product_short_description_and_specifications_roundtrip(client: As
 
 
 async def test_product_specifications_default_empty(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     r = await client.post(
         "/api/products", json={"name": "Plain Product", "price": "1.00"}, headers=_auth(token)
     )
@@ -79,7 +81,7 @@ async def test_product_specifications_default_empty(client: AsyncClient, db):
 # ── Branding legal + delivery fields ────────────────────────────────────────
 
 async def test_branding_legal_and_delivery_fields_roundtrip(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     r = await client.put(
         "/api/branding",
         json={
@@ -111,7 +113,7 @@ async def test_branding_legal_and_delivery_fields_roundtrip(client: AsyncClient,
 
 
 async def test_branding_rejects_transit_min_greater_than_max(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     r = await client.put(
         "/api/branding",
         json={"transit_days_min": 5, "transit_days_max": 2},
@@ -121,7 +123,7 @@ async def test_branding_rejects_transit_min_greater_than_max(client: AsyncClient
 
 
 async def test_branding_rejects_negative_delivery_days(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     r = await client.put(
         "/api/branding", json={"dispatch_days": -1}, headers=_auth(token)
     )
@@ -129,7 +131,7 @@ async def test_branding_rejects_negative_delivery_days(client: AsyncClient, db):
 
 
 async def test_branding_show_store_name_defaults_true_and_toggles(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
 
     r = await client.get("/api/branding")
     assert r.json()["show_store_name"] is True  # default
@@ -145,7 +147,7 @@ async def test_branding_show_store_name_defaults_true_and_toggles(client: AsyncC
 
 
 async def test_branding_enable_cash_on_delivery_defaults_true_and_toggles(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
 
     assert (await client.get("/api/branding")).json()["enable_cash_on_delivery"] is True
 
@@ -156,7 +158,7 @@ async def test_branding_enable_cash_on_delivery_defaults_true_and_toggles(client
 
 
 async def test_checkout_rejects_cash_when_disabled(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     await client.put("/api/branding", json={"enable_cash_on_delivery": False}, headers=_auth(token))
 
     prod = await client.post(
@@ -179,7 +181,7 @@ async def test_checkout_rejects_cash_when_disabled(client: AsyncClient, db):
 # ── Category ancestor-path endpoint ─────────────────────────────────────────
 
 async def test_category_path_returns_root_to_leaf(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     root = await client.post("/api/categories", json={"name": "Cotton Dust Sheets"}, headers=_auth(token))
     root_id = root.json()["id"]
     mid = await client.post(
@@ -203,7 +205,7 @@ async def test_category_path_returns_root_to_leaf(client: AsyncClient, db):
 
 
 async def test_category_path_root_is_single_item(client: AsyncClient, db):
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     root = await client.post("/api/categories", json={"name": "Standalone"}, headers=_auth(token))
     root_id = root.json()["id"]
     r = await client.get(f"/api/categories/{root_id}/path")
@@ -221,7 +223,7 @@ async def test_category_path_unknown_id_is_404(client: AsyncClient, db):
 async def test_reviews_list_serialises_null_user_id(client: AsyncClient, db):
     """A GDPR-deleted author leaves user_id NULL; the storefront reviews list
     (response_model=list[ReviewOut]) must still serialise it, not 500."""
-    token = await make_admin(client, db)
+    token = await make_superadmin(client, db)
     prod = await client.post(
         "/api/products", json={"name": "Reviewed Widget", "price": "5.00", "stock_quantity": 1},
         headers=_auth(token),

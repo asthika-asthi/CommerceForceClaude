@@ -21,7 +21,7 @@ from app.plugins.orders.models import PaymentMethod, PaymentStatus
 from app.plugins.products.models import Product
 from app.plugins.coupons.models import Coupon
 
-from tests.test_commerce import make_admin, register_and_token, _create_product_and_variant, CUSTOMER_DATA
+from tests.test_commerce import make_admin, make_superadmin, register_and_token, _create_product_and_variant, CUSTOMER_DATA
 
 
 async def _make_product(client: AsyncClient, token: str, name: str, stock: int) -> str:
@@ -273,7 +273,7 @@ async def test_bank_transfer_checkout_503_when_not_configured(client: AsyncClien
 # ── HTTP-level tests — mark-paid endpoint + branding round-trip ────────────────
 
 async def test_mark_paid_endpoint_via_http(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     admin_h = {"Authorization": f"Bearer {admin_token}"}
     r = await client.put(
         "/api/branding",
@@ -309,7 +309,7 @@ async def test_mark_paid_endpoint_via_http(client: AsyncClient, db):
 
 
 async def test_mark_paid_endpoint_requires_admin(client: AsyncClient, db):
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     admin_h = {"Authorization": f"Bearer {admin_token}"}
     await client.put("/api/branding", json={"paypal_email": "pay@example.com"}, headers=admin_h)
 
@@ -350,7 +350,7 @@ async def test_mark_paid_endpoint_rejects_non_manual_order(client: AsyncClient, 
 
 async def test_branding_round_trip_payment_fields(client: AsyncClient, db):
     """PUT then GET /api/branding — bank/PayPal fields persist through a real request cycle."""
-    admin_token = await make_admin(client, db)
+    admin_token = await make_superadmin(client, db)
     admin_h = {"Authorization": f"Bearer {admin_token}"}
 
     details = "Bank: Test Bank\nAccount name: Test Shop Ltd\nAccount number: 12345678\nSort code: 00-00-00"
@@ -370,11 +370,20 @@ async def test_branding_round_trip_payment_fields(client: AsyncClient, db):
     assert r.json()["paypal_email"] == "payments@teststore.com"
 
 
-async def test_branding_put_requires_admin(client: AsyncClient, db):
+async def test_branding_put_requires_superadmin(client: AsyncClient, db):
     cust_token = await register_and_token(client, CUSTOMER_DATA)
     r = await client.put(
         "/api/branding",
         json={"bank_transfer_details": "should not be allowed"},
         headers={"Authorization": f"Bearer {cust_token}"},
+    )
+    assert r.status_code == 403
+
+    # A plain admin is also refused — branding is superadmin-only.
+    admin_token = await make_admin(client, db)
+    r = await client.put(
+        "/api/branding",
+        json={"bank_transfer_details": "still not allowed"},
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 403

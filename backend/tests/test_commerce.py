@@ -8,6 +8,7 @@ REGISTER_URL = "/api/auth/register"
 LOGIN_URL = "/api/auth/login"
 
 ADMIN_DATA = {"email": "admin@example.com", "password": "adminpass1", "first_name": "Admin", "last_name": "User"}
+SUPERADMIN_DATA = {"email": "superadmin@example.com", "password": "superpass1", "first_name": "Super", "last_name": "User"}
 CUSTOMER_DATA = {"email": "cust@example.com", "password": "custpass1", "first_name": "Cust", "last_name": "User"}
 
 
@@ -16,16 +17,25 @@ async def register_and_token(client: AsyncClient, data: dict) -> str:
     return r.json()["access_token"]
 
 
-async def make_admin(client: AsyncClient, db) -> str:
-    """Register a user then promote them to admin directly via DB."""
-    await register_and_token(client, ADMIN_DATA)
+async def _make_with_role(client: AsyncClient, db, data: dict, role) -> str:
+    """Register a user then promote them to `role` directly via DB, and re-login."""
+    await register_and_token(client, data)
     from sqlalchemy import update
-    from app.plugins.auth.models import User, UserRole
-    await db.execute(update(User).where(User.email == ADMIN_DATA["email"]).values(role=UserRole.admin))
+    from app.plugins.auth.models import User
+    await db.execute(update(User).where(User.email == data["email"]).values(role=role))
     await db.flush()
-    # Re-login to get fresh token with admin role
-    r = await client.post(LOGIN_URL, json={"email": ADMIN_DATA["email"], "password": ADMIN_DATA["password"]})
+    r = await client.post(LOGIN_URL, json={"email": data["email"], "password": data["password"]})
     return r.json()["access_token"]
+
+
+async def make_admin(client: AsyncClient, db) -> str:
+    from app.plugins.auth.models import UserRole
+    return await _make_with_role(client, db, ADMIN_DATA, UserRole.admin)
+
+
+async def make_superadmin(client: AsyncClient, db) -> str:
+    from app.plugins.auth.models import UserRole
+    return await _make_with_role(client, db, SUPERADMIN_DATA, UserRole.superadmin)
 
 
 # ── CATEGORIES ─────────────────────────────────────────────────────────────────
