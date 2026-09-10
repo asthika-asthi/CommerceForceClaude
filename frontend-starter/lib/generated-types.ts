@@ -1742,6 +1742,31 @@ export interface components {
             favicon_url?: string | null;
             /** Catalogue Url */
             catalogue_url?: string | null;
+            /**
+             * Base Font Size
+             * @default default
+             */
+            base_font_size: string;
+            /**
+             * Header Size
+             * @default standard
+             */
+            header_size: string;
+            /**
+             * Header Elevated
+             * @default false
+             */
+            header_elevated: boolean;
+            /**
+             * Header Filled
+             * @default false
+             */
+            header_filled: boolean;
+            /**
+             * Header Shrink On Scroll
+             * @default false
+             */
+            header_shrink_on_scroll: boolean;
             /** Primary Color */
             primary_color: string;
             /** Secondary Color */
@@ -1816,6 +1841,16 @@ export interface components {
             favicon_url?: string | null;
             /** Catalogue Url */
             catalogue_url?: string | null;
+            /** Base Font Size */
+            base_font_size?: string | null;
+            /** Header Size */
+            header_size?: string | null;
+            /** Header Elevated */
+            header_elevated?: boolean | null;
+            /** Header Filled */
+            header_filled?: boolean | null;
+            /** Header Shrink On Scroll */
+            header_shrink_on_scroll?: boolean | null;
             /** Primary Color */
             primary_color?: string | null;
             /** Secondary Color */

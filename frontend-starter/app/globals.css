@@ -28,6 +28,8 @@
   --font-sans: var(--font-poppins), system-ui, sans-serif;
   --font-heading: var(--heading-family, var(--font-sans));
   --color-emphasis-surface: var(--emphasis-surface, var(--brand-dark));
+  /* Storefront-wide text scale — set from branding.base_font_size in app/layout.tsx. */
+  --text-base: var(--font-size-base, 16px);
 
   /* shadcn-compatible aliases — lets third-party components using
      bg-background / text-primary / border-border etc. work out of the box */
@@ -36,6 +38,11 @@
   --color-primary: var(--brand-dark);
   --color-muted: var(--muted);
   --color-border: var(--border);
+}
+
+html {
+  /* Branding-driven root size; all rem-based Tailwind text-* utilities scale with it. */
+  font-size: var(--font-size-base, 16px);
 }
 
 body {

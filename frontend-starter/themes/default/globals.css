@@ -40,6 +40,16 @@
   --border-subtle: #F0EEEA;
   --card-bg: #FFFFFF;
 
+  /* Sizing defaults — overridden at runtime from branding.base_font_size /
+     branding.header_size via an inline style on <html> (app/layout.tsx). */
+  --font-size-base: 16px;
+  --header-height: 72px;
+  --header-logo-h: 40px;
+  --header-brand-size: 18px;
+  --header-pad-x: 2.5rem;
+  --header-icon-size: 22px;
+  --header-monogram: 2.75rem;
+
   /* Optional per-client extensions (fall back automatically when unset):
      --heading-family: font stack for headings (defaults to the body font)
      --emphasis-surface: selected/emphasis surface (defaults to --brand-dark) */

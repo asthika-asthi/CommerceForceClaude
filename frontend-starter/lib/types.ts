@@ -48,6 +48,11 @@ export interface BrandingConfig {
   logo_url?: string
   favicon_url?: string
   catalogue_url?: string
+  base_font_size: string
+  header_size: string
+  header_elevated: boolean
+  header_filled: boolean
+  header_shrink_on_scroll: boolean
   primary_color: string
   secondary_color: string
   font_family: string

@@ -39,6 +39,30 @@ class BrandingConfig(BaseModel):
         Boolean, default=False, server_default="0", nullable=False
     )
     catalogue_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    # Storefront-wide text scale. One of: compact | default | comfortable | large | xlarge.
+    # Maps to an <html> root font-size on the storefront, so all rem-based text scales.
+    base_font_size: Mapped[str] = mapped_column(
+        String(20), default="default", server_default="default", nullable=False
+    )
+    # Top header (navbar) sizing. One of: compact | standard | large | xlarge.
+    # "standard" reproduces the historical 72px bar. Scales bar height, logo,
+    # store name, search, and action icons together.
+    header_size: Mapped[str] = mapped_column(
+        String(20), default="standard", server_default="standard", nullable=False
+    )
+    # Header look-and-feel toggles, all off by default (current flat white bar).
+    # elevated: drop shadow + thicker border + brand accent line.
+    header_elevated: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", nullable=False
+    )
+    # filled: brand-dark background with light text/icons.
+    header_filled: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", nullable=False
+    )
+    # shrink_on_scroll: header condenses one size step once the page is scrolled.
+    header_shrink_on_scroll: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", nullable=False
+    )
     primary_color: Mapped[str] = mapped_column(String(20), default="#000000", nullable=False)
     secondary_color: Mapped[str] = mapped_column(String(20), default="#ffffff", nullable=False)
     font_family: Mapped[str] = mapped_column(String(100), default="Inter", nullable=False)

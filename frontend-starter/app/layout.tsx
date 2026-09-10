@@ -13,6 +13,7 @@ import { serverFetch } from "@/lib/api"
 import { deriveTheme } from "@/lib/theme-colors"
 import { getStoreConfig } from "@/lib/landing-config"
 import { resolveFont } from "@/lib/fonts"
+import { fontSizeValue, headerSizeVars } from "@/lib/header-config"
 import type { BrandingConfig, Category } from "@/lib/types"
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -41,12 +42,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   // Admin-chosen colours override the theme-file defaults. Inline style on
   // <html> beats stylesheet :root declarations regardless of head ordering.
-  const themeVars = deriveTheme(branding?.theme_colors) as React.CSSProperties
+  // The non-colour branding sizing vars (base font size, header size) ride the
+  // same path so they win over themes/default/globals.css too.
+  const rootStyle = {
+    ...deriveTheme(branding?.theme_colors),
+    "--font-size-base": fontSizeValue(branding?.base_font_size),
+    ...headerSizeVars(branding?.header_size),
+  } as React.CSSProperties
   const storeAddress = getStoreConfig().address?.display_short
   const activeFont = resolveFont(branding?.font_family)
 
   return (
-    <html lang="en" className={`${activeFont.variable} h-full`} style={themeVars}>
+    <html lang="en" className={`${activeFont.variable} h-full`} style={rootStyle}>
       <head>
         {branding?.favicon_url && <link rel="icon" href={branding.favicon_url} />}
         {branding?.custom_css && <style>{branding.custom_css}</style>}

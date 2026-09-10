@@ -17,6 +17,12 @@ import {
   type CoreKey,
 } from "@/lib/theme-colors"
 import { FONT_OPTIONS } from "@/lib/font-options"
+import {
+  FONT_SIZE_OPTIONS,
+  HEADER_SIZE_OPTIONS,
+  DEFAULT_FONT_SIZE,
+  DEFAULT_HEADER_SIZE,
+} from "@/lib/branding-options"
 
 const TEXT_FIELDS = [
   { key: "store_name", label: "Store Name", placeholder: "My Store" },
@@ -244,6 +250,11 @@ export default function BrandingPage() {
       IMAGE_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       DOCUMENT_FIELDS.forEach(({ key }) => { f[key] = (config as unknown as Record<string, string>)[key] ?? "" })
       f.font_family = config.font_family || FONT_OPTIONS[0].value
+      f.base_font_size = config.base_font_size || DEFAULT_FONT_SIZE
+      f.header_size = config.header_size || DEFAULT_HEADER_SIZE
+      f.header_elevated = config.header_elevated === true ? "true" : ""
+      f.header_filled = config.header_filled === true ? "true" : ""
+      f.header_shrink_on_scroll = config.header_shrink_on_scroll === true ? "true" : ""
       f.show_store_name = config.show_store_name === false ? "" : "true"
       f.enable_cash_on_delivery = config.enable_cash_on_delivery === false ? "" : "true"
       f.show_bespoke_enquiry = config.show_bespoke_enquiry === true ? "true" : ""
@@ -290,6 +301,9 @@ export default function BrandingPage() {
       payload.enable_cash_on_delivery = (d.enable_cash_on_delivery ?? "") !== ""
       payload.show_bespoke_enquiry = (d.show_bespoke_enquiry ?? "") !== ""
       payload.show_best_sellers_card = (d.show_best_sellers_card ?? "") !== ""
+      payload.header_elevated = (d.header_elevated ?? "") !== ""
+      payload.header_filled = (d.header_filled ?? "") !== ""
+      payload.header_shrink_on_scroll = (d.header_shrink_on_scroll ?? "") !== ""
       payload.hero_heading = (d.hero_heading ?? "").trim()
       payload.hero_heading_highlight = (d.hero_heading_highlight ?? "").trim()
       return api.put("/api/branding", payload)
@@ -355,6 +369,28 @@ export default function BrandingPage() {
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Base font size</label>
+            <select value={form.base_font_size || DEFAULT_FONT_SIZE}
+              onChange={(e) => setForm((f) => ({ ...f, base_font_size: e.target.value }))}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+              {FONT_SIZE_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-slate-400 mt-1">Scales all storefront text proportionally.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Header bar size</label>
+            <select value={form.header_size || DEFAULT_HEADER_SIZE}
+              onChange={(e) => setForm((f) => ({ ...f, header_size: e.target.value }))}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+              {HEADER_SIZE_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-slate-400 mt-1">Bar height plus logo, store name and icons.</p>
+          </div>
         </div>
 
         <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
@@ -371,6 +407,56 @@ export default function BrandingPage() {
             </span>
           </span>
         </label>
+
+        {/* ── Header appearance ───────────────────────────────────── */}
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Header appearance</h3>
+          <p className="text-xs text-slate-500 mb-3">
+            Make the storefront's top bar (logo, search, account, cart) more prominent.
+            Combine these freely — all off is the plain white bar.
+          </p>
+          <div className="space-y-3">
+            <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+              <input type="checkbox"
+                checked={(form.header_elevated ?? "") !== ""}
+                onChange={(e) => setForm((f) => ({ ...f, header_elevated: e.target.checked ? "true" : "" }))}
+                className="mt-0.5 rounded border-slate-300" />
+              <span>
+                Elevated
+                <span className="block text-xs text-slate-500">
+                  Drop shadow, thicker bottom border and a thin brand-colour accent line so the
+                  header separates cleanly from the page.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+              <input type="checkbox"
+                checked={(form.header_filled ?? "") !== ""}
+                onChange={(e) => setForm((f) => ({ ...f, header_filled: e.target.checked ? "true" : "" }))}
+                className="mt-0.5 rounded border-slate-300" />
+              <span>
+                Brand-coloured bar
+                <span className="block text-xs text-slate-500">
+                  Fill the header with the dark brand colour and use light text and icons — a bolder,
+                  more assertive look.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+              <input type="checkbox"
+                checked={(form.header_shrink_on_scroll ?? "") !== ""}
+                onChange={(e) => setForm((f) => ({ ...f, header_shrink_on_scroll: e.target.checked ? "true" : "" }))}
+                className="mt-0.5 rounded border-slate-300" />
+              <span>
+                Shrink on scroll
+                <span className="block text-xs text-slate-500">
+                  Once the visitor scrolls down, the sticky header condenses one size step and gains
+                  a stronger shadow.
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
 
         {/* ── Homepage hero heading ───────────────────────────────── */}
         <div className="pt-4 border-t border-slate-100">

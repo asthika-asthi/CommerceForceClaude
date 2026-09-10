@@ -126,6 +126,68 @@ async def test_branding_social_links_invalid_string_is_ignored(client: AsyncClie
     assert g.json()["social_links"] is None
 
 
+# ── Branding — base font size + header sizing / look-and-feel ──────────────────
+
+async def test_branding_header_and_fontsize_defaults(client: AsyncClient, db):
+    """A fresh config reports the historical appearance."""
+    g = await client.get("/api/branding")
+    assert g.status_code == 200, g.text
+    body = g.json()
+    assert body["base_font_size"] == "default"
+    assert body["header_size"] == "standard"
+    assert body["header_elevated"] is False
+    assert body["header_filled"] is False
+    assert body["header_shrink_on_scroll"] is False
+
+
+async def test_branding_header_and_fontsize_round_trip(client: AsyncClient, db):
+    admin_token = await make_superadmin(client, db)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    r = await client.put(
+        "/api/branding",
+        json={
+            "base_font_size": "large",
+            "header_size": "xlarge",
+            "header_elevated": True,
+            "header_filled": True,
+            "header_shrink_on_scroll": True,
+        },
+        headers=headers,
+    )
+    assert r.status_code == 200, r.text
+
+    g = await client.get("/api/branding")
+    body = g.json()
+    assert body["base_font_size"] == "large"
+    assert body["header_size"] == "xlarge"
+    assert body["header_elevated"] is True
+    assert body["header_filled"] is True
+    assert body["header_shrink_on_scroll"] is True
+
+
+async def test_branding_rejects_invalid_base_font_size(client: AsyncClient, db):
+    admin_token = await make_superadmin(client, db)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    r = await client.put("/api/branding", json={"base_font_size": "huge"}, headers=headers)
+    assert r.status_code == 422, r.text
+
+
+async def test_branding_rejects_invalid_header_size(client: AsyncClient, db):
+    admin_token = await make_superadmin(client, db)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    r = await client.put("/api/branding", json={"header_size": "tiny"}, headers=headers)
+    assert r.status_code == 422, r.text
+
+
+async def test_branding_header_fields_require_superadmin(client: AsyncClient, db):
+    """Plain admins cannot touch branding (the whole storefront look)."""
+    admin_token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    r = await client.put("/api/branding", json={"header_filled": True}, headers=headers)
+    assert r.status_code == 403, r.text
+
+
 # ── F9 dependencies — coupon validate amount + loyalty config rate ──────────────
 
 async def test_coupon_validate_returns_discount_amount(client: AsyncClient, db):

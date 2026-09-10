@@ -2,11 +2,12 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useAuthStore } from "@/store/auth"
 import { useCartStore } from "@/store/cart"
 import { usePlugin } from "@/lib/plugins-context"
 import { getStoreInitials } from "@/lib/store-initials"
+import { headerSizeVars } from "@/lib/header-config"
 import type { BrandingConfig } from "@/lib/types"
 
 interface Props {
@@ -24,6 +25,7 @@ export function Navbar({ branding }: Props) {
   const itemCount = cart?.item_count ?? 0
   const [query, setQuery] = useState("")
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const storeName = (branding?.store_name ?? "").trim()
@@ -35,6 +37,24 @@ export function Navbar({ branding }: Props) {
   const logoUrl = branding?.logo_url
   const initials = showName && storeName ? (getStoreInitials(storeName) || "ST") : ""
 
+  // Branding-driven header look & feel (all default off / "standard").
+  const headerSize = branding?.header_size ?? "standard"
+  const elevated = branding?.header_elevated === true
+  const filled = branding?.header_filled === true
+  const shrinkOnScroll = branding?.header_shrink_on_scroll === true
+  const shrunk = shrinkOnScroll && scrolled
+
+  useEffect(() => {
+    if (!shrinkOnScroll) {
+      setScrolled(false)
+      return
+    }
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [shrinkOnScroll])
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     if (query.trim()) router.push(`/products?q=${encodeURIComponent(query.trim())}`)
@@ -45,9 +65,30 @@ export function Navbar({ branding }: Props) {
     router.push("/")
   }
 
+  // Theme-token class sets that flip when the header is filled with --brand-dark.
+  const headerBg = filled ? "bg-brand-dark" : "bg-card-bg"
+  const borderCls = filled ? "border-dark-border" : "border-border"
+  const brandText = filled ? "text-on-dark-strong" : "text-brand-dark"
+  const labelText = filled ? "text-on-dark-muted" : "text-muted"
+  const hoverBg = filled ? "hover:bg-white/10" : "hover:bg-bg"
+  const searchCls = filled
+    ? "border-white/25 bg-white/10 text-on-dark-strong placeholder:text-on-dark-muted focus:border-white/60 focus:bg-white/15"
+    : "border-border bg-bg text-fg placeholder:text-text-placeholder focus:border-brand-dark focus:bg-card-bg"
+  const shadowCls = shrunk
+    ? "shadow-[0_6px_24px_rgba(0,0,0,0.14)]"
+    : elevated
+      ? "shadow-[0_4px_20px_rgba(0,0,0,0.10)]"
+      : ""
+  const accentCls = elevated
+    ? "border-b-2 after:absolute after:inset-x-0 after:-bottom-[2px] after:h-[2px] after:bg-brand after:content-['']"
+    : "border-b"
+
   return (
-    <header className="bg-card-bg border-b border-border sticky top-0 z-50">
-      <div className="max-w-[1280px] mx-auto px-10 flex items-center h-[72px] gap-6">
+    <header
+      className={`relative ${headerBg} ${borderCls} ${accentCls} ${shadowCls} sticky top-0 z-50 transition-shadow duration-200`}
+      style={shrunk ? (headerSizeVars(headerSize, { shrunk: true }) as React.CSSProperties) : undefined}
+    >
+      <div className="max-w-[1280px] mx-auto px-[var(--header-pad-x,2.5rem)] flex items-center h-[var(--header-height,72px)] gap-6 transition-[height,padding] duration-200">
 
         {/* Logo */}
         <Link href="/" aria-label={storeName || "Home"} className="flex items-center gap-3 flex-shrink-0">
@@ -58,17 +99,17 @@ export function Navbar({ branding }: Props) {
               width={160}
               height={40}
               unoptimized
-              style={{ width: "auto", height: "40px" }}
+              style={{ width: "auto", height: "var(--header-logo-h, 40px)" }}
             />
           ) : initials ? (
-            <div className="w-11 h-11 bg-brand rounded-lg flex items-center justify-center text-on-brand font-bold text-lg leading-none">
+            <div className={`w-[var(--header-monogram,2.75rem)] h-[var(--header-monogram,2.75rem)] bg-brand rounded-lg flex items-center justify-center text-on-brand font-bold text-lg leading-none`}>
               {initials}
             </div>
           ) : null}
           {showName && storeName && (
             <div className="leading-tight">
-              <div className="text-[18px] font-bold text-brand-dark">{storeName}</div>
-              {tagline && <div className="text-[10px] text-muted tracking-[0.5px] uppercase">{tagline}</div>}
+              <div className={`text-[length:var(--header-brand-size,18px)] font-bold ${brandText}`}>{storeName}</div>
+              {tagline && <div className={`text-[10px] ${labelText} tracking-[0.5px] uppercase`}>{tagline}</div>}
             </div>
           )}
         </Link>
@@ -81,9 +122,9 @@ export function Navbar({ branding }: Props) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search products…"
-            className="w-full border-[1.5px] border-border rounded-lg px-4 py-[10px] pr-11 text-sm text-fg bg-bg focus:border-brand-dark focus:bg-card-bg outline-none transition-colors placeholder:text-text-placeholder"
+            className={`w-full border-[1.5px] rounded-lg px-4 py-[10px] pr-11 text-sm outline-none transition-colors ${searchCls}`}
           />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-lg bg-transparent border-none cursor-pointer">
+          <button type="submit" className={`absolute right-3 top-1/2 -translate-y-1/2 ${labelText} text-lg bg-transparent border-none cursor-pointer`}>
             🔍
           </button>
         </form>
@@ -92,23 +133,23 @@ export function Navbar({ branding }: Props) {
         <div className="flex items-center gap-1.5 ml-auto">
           {user ? (
             <div className="hidden md:flex items-center gap-2">
-              <Link href="/account" className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg hover:bg-bg transition-colors">
-                <span className="text-[22px] text-brand-dark">👤</span>
-                <span className="text-[10px] text-muted whitespace-nowrap">{user.first_name}</span>
+              <Link href="/account" className={`flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg ${hoverBg} transition-colors`}>
+                <span className={`text-[length:var(--header-icon-size,22px)] ${brandText}`}>👤</span>
+                <span className={`text-[10px] ${labelText} whitespace-nowrap`}>{user.first_name}</span>
               </Link>
-              <button onClick={handleLogout} className="text-xs text-muted hover:text-fg px-2">Sign out</button>
+              <button onClick={handleLogout} className={`text-xs ${labelText} ${filled ? "hover:text-on-dark-strong" : "hover:text-fg"} px-2`}>Sign out</button>
             </div>
           ) : (
-            <Link href="/login" className="hidden md:flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg hover:bg-bg transition-colors">
-              <span className="text-[22px] text-brand-dark">👤</span>
-              <span className="text-[10px] text-muted">Account</span>
+            <Link href="/login" className={`hidden md:flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg ${hoverBg} transition-colors`}>
+              <span className={`text-[length:var(--header-icon-size,22px)] ${brandText}`}>👤</span>
+              <span className={`text-[10px] ${labelText}`}>Account</span>
             </Link>
           )}
 
           {cartEnabled && (
-            <Link href="/cart" className="relative flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg hover:bg-bg transition-colors">
-              <span className="text-[22px] text-brand-dark">🛒</span>
-              <span className="text-[10px] text-muted">Cart</span>
+            <Link href="/cart" className={`relative flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg ${hoverBg} transition-colors`}>
+              <span className={`text-[length:var(--header-icon-size,22px)] ${brandText}`}>🛒</span>
+              <span className={`text-[10px] ${labelText}`}>Cart</span>
               {itemCount > 0 && (
                 <span className="absolute top-0.5 right-1.5 bg-brand text-on-brand text-[9px] font-bold w-[15px] h-[15px] rounded-full flex items-center justify-center leading-none">
                   {itemCount > 9 ? "9+" : itemCount}
@@ -118,7 +159,7 @@ export function Navbar({ branding }: Props) {
           )}
 
           {schedulingEnabled && (
-            <Link href="/book" className="hidden md:block text-sm font-medium text-brand-dark hover:underline px-2 whitespace-nowrap">
+            <Link href="/book" className={`hidden md:block text-sm font-medium ${brandText} hover:underline px-2 whitespace-nowrap`}>
               Book
             </Link>
           )}
@@ -128,7 +169,7 @@ export function Navbar({ branding }: Props) {
           </a>
 
           {/* Mobile hamburger */}
-          <button className="md:hidden p-2 text-fg" onClick={() => setMenuOpen(v => !v)} aria-label="Menu">
+          <button className={`md:hidden p-2 ${filled ? "text-on-dark-strong" : "text-fg"}`} onClick={() => setMenuOpen(v => !v)} aria-label="Menu">
             {menuOpen ? "✕" : "☰"}
           </button>
         </div>
@@ -136,26 +177,26 @@ export function Navbar({ branding }: Props) {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-border bg-card-bg px-6 py-4 space-y-3">
-          <Link href="/products" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-fg py-1">All Products</Link>
+        <div className={`md:hidden border-t ${borderCls} ${headerBg} px-6 py-4 space-y-3`}>
+          <Link href="/products" onClick={() => setMenuOpen(false)} className={`block text-sm font-medium ${filled ? "text-on-dark-strong" : "text-fg"} py-1`}>All Products</Link>
           {schedulingEnabled && (
-            <Link href="/book" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-fg py-1">Book</Link>
+            <Link href="/book" onClick={() => setMenuOpen(false)} className={`block text-sm font-medium ${filled ? "text-on-dark-strong" : "text-fg"} py-1`}>Book</Link>
           )}
           {cartEnabled && (
-            <Link href="/cart" onClick={() => setMenuOpen(false)} className="block text-sm text-fg py-1">Cart</Link>
+            <Link href="/cart" onClick={() => setMenuOpen(false)} className={`block text-sm ${filled ? "text-on-dark-strong" : "text-fg"} py-1`}>Cart</Link>
           )}
           {user ? (
             <>
-              <Link href="/account" onClick={() => setMenuOpen(false)} className="block text-sm text-fg py-1">My Account</Link>
-              <button onClick={handleLogout} className="block text-sm text-muted py-1 w-full text-left">Sign out</button>
+              <Link href="/account" onClick={() => setMenuOpen(false)} className={`block text-sm ${filled ? "text-on-dark-strong" : "text-fg"} py-1`}>My Account</Link>
+              <button onClick={handleLogout} className={`block text-sm ${labelText} py-1 w-full text-left`}>Sign out</button>
             </>
           ) : (
             <>
-              <Link href="/login" onClick={() => setMenuOpen(false)} className="block text-sm text-fg py-1">Sign in</Link>
-              <Link href="/register" onClick={() => setMenuOpen(false)} className="block text-sm text-brand py-1">Register</Link>
+              <Link href="/login" onClick={() => setMenuOpen(false)} className={`block text-sm ${filled ? "text-on-dark-strong" : "text-fg"} py-1`}>Sign in</Link>
+              <Link href="/register" onClick={() => setMenuOpen(false)} className={`block text-sm ${filled ? "text-brand-highlight" : "text-brand"} py-1`}>Register</Link>
             </>
           )}
-          <a href="/contact" className="block text-sm font-semibold text-brand py-1">Get a Quote</a>
+          <a href="/contact" className={`block text-sm font-semibold ${filled ? "text-brand-highlight" : "text-brand"} py-1`}>Get a Quote</a>
         </div>
       )}
     </header>
