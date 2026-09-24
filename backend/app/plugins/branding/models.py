@@ -14,6 +14,10 @@ class BrandingConfig(BaseModel):
     # to a single line with no empty gap.
     hero_heading: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     hero_heading_highlight: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    # Picture filling the slanted panel on the right of the homepage hero.
+    # Empty = the panel stays a plain brand-colour block.
+    hero_image_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    hero_image_alt: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     logo_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     favicon_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     # When false, the site header/footer show neither the store-name text nor the

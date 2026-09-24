@@ -37,6 +37,8 @@ export default async function HomePage() {
     // and "explicitly cleared" ("" ⇒ that line is dropped, no empty gap).
     heroHeading: branding?.hero_heading?.trim(),
     heroHeadingHighlight: branding?.hero_heading_highlight?.trim(),
+    heroImageUrl: branding?.hero_image_url?.trim() || undefined,
+    heroImageAlt: branding?.hero_image_alt?.trim() || undefined,
   }
 
   const sections = mergeContentOverrides(getFilteredSections(), overridesMap ?? {})

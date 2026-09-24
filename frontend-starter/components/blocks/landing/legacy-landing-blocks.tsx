@@ -29,9 +29,11 @@ interface LandingHeroProps extends DataProps {
   title?: string
   titleHighlight?: string
   subtitle?: string
+  imageUrl?: string
+  imageAlt?: string
 }
 
-export function LandingHeroBlock({ data, title, titleHighlight, subtitle }: LandingHeroProps) {
+export function LandingHeroBlock({ data, title, titleHighlight, subtitle, imageUrl, imageAlt }: LandingHeroProps) {
   // A superadmin prop on the config section wins; otherwise the client's
   // branding drives the hero heading, falling back to the Hero block default.
   return (
@@ -41,6 +43,8 @@ export function LandingHeroBlock({ data, title, titleHighlight, subtitle }: Land
       title={title ?? data?.heroHeading}
       titleHighlight={titleHighlight ?? data?.heroHeadingHighlight}
       subtitle={subtitle}
+      imageUrl={imageUrl ?? data?.heroImageUrl}
+      imageAlt={imageAlt ?? data?.heroImageAlt}
     />
   )
 }

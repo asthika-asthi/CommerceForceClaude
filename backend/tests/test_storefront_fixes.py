@@ -188,6 +188,41 @@ async def test_branding_header_fields_require_superadmin(client: AsyncClient, db
     assert r.status_code == 403, r.text
 
 
+# ── Branding — homepage hero side image ─────────────────────────────────────────
+
+async def test_branding_hero_image_defaults_to_none(client: AsyncClient, db):
+    body = (await client.get("/api/branding")).json()
+    assert body["hero_image_url"] is None
+    assert body["hero_image_alt"] is None
+
+
+async def test_branding_hero_image_round_trip(client: AsyncClient, db):
+    admin_token = await make_superadmin(client, db)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    r = await client.put(
+        "/api/branding",
+        json={"hero_image_url": "/uploads/hero.jpg", "hero_image_alt": "Tarpaulins stacked in a warehouse"},
+        headers=headers,
+    )
+    assert r.status_code == 200, r.text
+    body = (await client.get("/api/branding")).json()
+    assert body["hero_image_url"] == "/uploads/hero.jpg"
+    assert body["hero_image_alt"] == "Tarpaulins stacked in a warehouse"
+
+    # Clearing it (the admin sends an empty string) is persisted too.
+    r = await client.put("/api/branding", json={"hero_image_url": ""}, headers=headers)
+    assert r.status_code == 200, r.text
+    assert (await client.get("/api/branding")).json()["hero_image_url"] == ""
+
+
+async def test_branding_hero_image_requires_superadmin(client: AsyncClient, db):
+    admin_token = await make_admin(client, db)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    r = await client.put("/api/branding", json={"hero_image_url": "/uploads/x.jpg"}, headers=headers)
+    assert r.status_code == 403, r.text
+
+
 # ── F9 dependencies — coupon validate amount + loyalty config rate ──────────────
 
 async def test_coupon_validate_returns_discount_amount(client: AsyncClient, db):

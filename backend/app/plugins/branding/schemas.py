@@ -37,6 +37,8 @@ class BrandingConfigOut(BaseModel):
     tagline: Optional[str] = None
     hero_heading: Optional[str] = None
     hero_heading_highlight: Optional[str] = None
+    hero_image_url: Optional[str] = None
+    hero_image_alt: Optional[str] = None
     logo_url: Optional[str] = None
     favicon_url: Optional[str] = None
     catalogue_url: Optional[str] = None
@@ -88,6 +90,8 @@ class BrandingConfigUpdate(BaseModel):
     tagline: Optional[str] = None
     hero_heading: Optional[str] = None
     hero_heading_highlight: Optional[str] = None
+    hero_image_url: Optional[str] = None
+    hero_image_alt: Optional[str] = None
     logo_url: Optional[str] = None
     favicon_url: Optional[str] = None
     catalogue_url: Optional[str] = None

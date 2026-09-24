@@ -321,6 +321,8 @@ export interface BrandingConfig {
   tagline?: string
   hero_heading?: string
   hero_heading_highlight?: string
+  hero_image_url?: string | null
+  hero_image_alt?: string | null
   logo_url?: string
   favicon_url?: string
   catalogue_url?: string

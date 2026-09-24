@@ -21,6 +21,9 @@ interface Props {
   title?: string
   titleHighlight?: string
   subtitle?: string
+  /** Picture filling the slanted right-hand panel (Branding → Homepage hero). Unset ⇒ plain panel. */
+  imageUrl?: string
+  imageAlt?: string
 }
 
 export function Hero({
@@ -29,6 +32,8 @@ export function Hero({
   title = "Quality protective",
   titleHighlight = "covers at trade prices",
   subtitle = "Tri Star UK Ltd — Hertfordshire's leading importer and distributor of tarpaulins, cotton dust sheets, sacks, bags, and decorating supplies. Trade and retail welcome.",
+  imageUrl,
+  imageAlt,
 }: Props) {
   // Two independent heading lines. An empty line 2 collapses the <br> and the
   // highlight span so the hero never renders a blank line or dangling markup.
@@ -64,11 +69,27 @@ export function Hero({
       className="relative overflow-hidden min-h-[500px] flex items-center"
       style={{ backgroundColor: "var(--brand-dark)", backgroundImage: svgBg }}
     >
-      {/* Diagonal red bar */}
+      {/* Diagonal brand panel — optionally filled with the branding hero image.
+          The clip-path slants the image with it; object-cover crops any upload to fit.
+          Image is md+ only so it never sits behind the headline on phones. */}
       <div
-        className="absolute right-0 top-0 bottom-0 w-[38%] bg-brand"
+        className="absolute right-0 top-0 bottom-0 w-[38%] bg-brand overflow-hidden"
         style={{ clipPath: "polygon(12% 0, 100% 0, 100% 100%, 0 100%)" }}
-      />
+      >
+        {imageUrl && (
+          <div className="hidden md:block absolute inset-0">
+            <Image
+              src={resolveImageUrl(imageUrl)}
+              alt={imageAlt ?? ""}
+              fill
+              priority
+              unoptimized
+              sizes="38vw"
+              className="object-cover object-center"
+            />
+          </div>
+        )}
+      </div>
 
       <div className={`max-w-[1280px] mx-auto px-10 py-[60px] relative z-10 grid gap-[60px] items-center w-full ${showBestSellersCard ? "grid-cols-[1fr_420px]" : "grid-cols-1"}`}>
 

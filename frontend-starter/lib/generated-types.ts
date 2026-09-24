@@ -1736,6 +1736,10 @@ export interface components {
             hero_heading?: string | null;
             /** Hero Heading Highlight */
             hero_heading_highlight?: string | null;
+            /** Hero Image Url */
+            hero_image_url?: string | null;
+            /** Hero Image Alt */
+            hero_image_alt?: string | null;
             /** Logo Url */
             logo_url?: string | null;
             /** Favicon Url */
@@ -1835,6 +1839,10 @@ export interface components {
             hero_heading?: string | null;
             /** Hero Heading Highlight */
             hero_heading_highlight?: string | null;
+            /** Hero Image Url */
+            hero_image_url?: string | null;
+            /** Hero Image Alt */
+            hero_image_alt?: string | null;
             /** Logo Url */
             logo_url?: string | null;
             /** Favicon Url */

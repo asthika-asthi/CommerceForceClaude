@@ -261,6 +261,8 @@ export default function BrandingPage() {
       f.show_best_sellers_card = config.show_best_sellers_card === true ? "true" : ""
       f.hero_heading = config.hero_heading ?? ""
       f.hero_heading_highlight = config.hero_heading_highlight ?? ""
+      f.hero_image_url = config.hero_image_url ?? ""
+      f.hero_image_alt = config.hero_image_alt ?? ""
       f.custom_css = config.custom_css ?? ""
       f.bank_transfer_details = config.bank_transfer_details ?? ""
       f.paypal_email = config.paypal_email ?? ""
@@ -306,6 +308,8 @@ export default function BrandingPage() {
       payload.header_shrink_on_scroll = (d.header_shrink_on_scroll ?? "") !== ""
       payload.hero_heading = (d.hero_heading ?? "").trim()
       payload.hero_heading_highlight = (d.hero_heading_highlight ?? "").trim()
+      payload.hero_image_url = (d.hero_image_url ?? "").trim()
+      payload.hero_image_alt = (d.hero_image_alt ?? "").trim()
       return api.put("/api/branding", payload)
     },
     onSuccess: () => {
@@ -458,9 +462,9 @@ export default function BrandingPage() {
           </div>
         </div>
 
-        {/* ── Homepage hero heading ───────────────────────────────── */}
+        {/* ── Homepage hero ───────────────────────────────────────── */}
         <div className="pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">Homepage hero heading</h3>
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Homepage hero</h3>
           <p className="text-xs text-slate-500 mb-3">
             The large headline on the homepage hero. Line&nbsp;2 is shown in the brand highlight
             colour. Leave line&nbsp;2 blank for a single-line headline — the layout closes up
@@ -480,6 +484,21 @@ export default function BrandingPage() {
                 onChange={(e) => setForm((f) => ({ ...f, hero_heading_highlight: e.target.value }))}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="covers at trade prices" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-5 mt-5">
+            <ImageUploadField
+              label="Hero image"
+              hint="Fills the slanted panel on the right of the homepage hero. Landscape JPG/WebP, at least 1200×1000px. Keep the subject centred — the left edge is cut diagonally and the image is cropped to fit. Hidden on phones. Leave empty for a plain colour panel."
+              value={form.hero_image_url ?? ""}
+              onChange={(url) => setForm((f) => ({ ...f, hero_image_url: url }))} />
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Hero image description</label>
+              <input value={form.hero_image_alt || ""}
+                onChange={(e) => setForm((f) => ({ ...f, hero_image_alt: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. Tarpaulins and dust sheets stacked in our warehouse" />
+              <p className="text-xs text-slate-400 mt-1">Read aloud by screen readers. Leave blank if the image is purely decorative.</p>
             </div>
           </div>
         </div>

@@ -45,6 +45,8 @@ export interface BrandingConfig {
   tagline?: string
   hero_heading?: string
   hero_heading_highlight?: string
+  hero_image_url?: string | null
+  hero_image_alt?: string | null
   logo_url?: string
   favicon_url?: string
   catalogue_url?: string
@@ -410,4 +412,7 @@ export interface LandingRuntimeData {
   /** Homepage hero H1 — line 1 / line 2 (highlight). From branding, blank ⇒ block default. */
   heroHeading?: string
   heroHeadingHighlight?: string
+  /** Picture for the hero's slanted right-hand panel. From branding; unset ⇒ plain panel. */
+  heroImageUrl?: string
+  heroImageAlt?: string
 }
