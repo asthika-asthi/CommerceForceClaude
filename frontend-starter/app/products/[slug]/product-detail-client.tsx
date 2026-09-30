@@ -124,6 +124,7 @@ export function ProductDetailClient({
           selectedVariantId={selectedVariantId}
           onVariantSelect={setSelectedVariantId}
           variantDisplay={branding?.variant_display}
+          stockQuantity={product.stock_quantity}
         />
 
         <PaymentButtons branding={branding} />

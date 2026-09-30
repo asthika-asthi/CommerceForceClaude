@@ -181,17 +181,20 @@ async def add_item(
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
 
-    # Stock check: variant's own stock if it's a real (option-linked) variant,
-    # else the product-level number (warehouse stock check added in Task 6).
-    if vs.effective_stock_for(variant, product) < quantity:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient stock")
-
     cart = await _get_or_create_cart(db, user_id=user_id, session_id=session_id)
 
     item_row = await db.execute(
         select(CartItem).where(CartItem.cart_id == cart.id, CartItem.variant_id == variant_id)
     )
     item = item_row.scalar_one_or_none()
+
+    # Stock check: variant's own stock if it's a real (option-linked) variant,
+    # else the product-level number (warehouse stock check added in Task 6).
+    # Counts what is already in the cart, so repeated adds can't exceed stock.
+    already_in_cart = item.quantity if item else 0
+    if vs.effective_stock_for(variant, product) < already_in_cart + quantity:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient stock")
+
     if item:
         item.quantity += quantity
     else:
