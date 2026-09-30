@@ -46,6 +46,9 @@ class Order(BaseModel):
     discount_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
     tax_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
     shipping_cost: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    # Parcel weight (kg) the delivery charge was quoted on; None when the
+    # shipping plugin is off or for orders placed before weights were tracked.
+    total_weight_kg: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 3), nullable=True)
     total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     shipping_address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

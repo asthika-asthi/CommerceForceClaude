@@ -421,4 +421,5 @@ def build_variant_out(variant: ProductVariant, product: Product) -> dict:
         "direct_price": str(variant.direct_price) if variant.direct_price is not None else None,
         "effective_price": str(effective_price_for(variant, product)),
         "stock_quantity": variant.stock_quantity,
+        "weight": str(variant.weight) if variant.weight is not None else None,
     }

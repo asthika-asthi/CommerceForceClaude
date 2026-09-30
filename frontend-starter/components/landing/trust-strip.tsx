@@ -1,12 +1,19 @@
-const TRUST_ITEMS = [
-  { icon: "🚚", strong: "Free UK Delivery", sub: "On all orders over £500 ex VAT" },
+import { describeBands } from "@/lib/delivery-bands"
+import type { DeliveryBands } from "@/lib/types"
+
+const BASE_ITEMS = [
   { icon: "📦", strong: "Same Day Despatch", sub: "Orders placed before 2pm" },
   { icon: "🏭", strong: "Direct Importing", sub: "Europe, India & Far East" },
   { icon: "💼", strong: "Trade Accounts", sub: "Wholesale prices available" },
   { icon: "📅", strong: "Est. 1995", sub: "30 years of reliable supply" },
 ]
 
-export function TrustStrip() {
+export function TrustStrip({ delivery }: { delivery?: DeliveryBands }) {
+  // Delivery message comes from the admin-set bands; omitted if the shipping plugin is off.
+  const copy = delivery ? describeBands(delivery) : null
+  const TRUST_ITEMS = copy
+    ? [{ icon: "🚚", strong: copy.freeTitle, sub: copy.freeSub }, ...BASE_ITEMS]
+    : BASE_ITEMS
   return (
     <div className="bg-white border-b border-border">
       <div className="max-w-[1280px] mx-auto px-10 py-[18px] flex justify-between items-center flex-wrap gap-3">

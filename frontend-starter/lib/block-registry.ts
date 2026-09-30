@@ -93,14 +93,14 @@ export const BLOCK_REGISTRY: Record<string, BlockRegistryEntry> = {
   'enquiry-form': { component: EnquiryForm, requiredPlugin: 'contact' },
 
   // Coarse-wrapped originals of the hardcoded Tri Star landing sections
-  'landing-promo-banner': { component: LandingPromoBannerBlock },
+  'landing-promo-banner': { component: LandingPromoBannerBlock, acceptsData: true },
   'landing-hero': { component: LandingHeroBlock, acceptsData: true },
-  'landing-trust-strip': { component: LandingTrustStripBlock },
+  'landing-trust-strip': { component: LandingTrustStripBlock, acceptsData: true },
   'landing-category-grid': { component: LandingCategoryGridBlock, acceptsData: true },
   'landing-product-grid': { component: LandingProductGridBlock, acceptsData: true },
   'landing-split-cards': { component: LandingSplitCardsBlock },
-  'landing-stats-band': { component: LandingStatsBandBlock },
-  'landing-how-to-order': { component: LandingHowToOrderBlock },
+  'landing-stats-band': { component: LandingStatsBandBlock, acceptsData: true },
+  'landing-how-to-order': { component: LandingHowToOrderBlock, acceptsData: true },
   'landing-range-table': { component: LandingRangeTableBlock, acceptsData: true },
   'landing-testimonials': { component: LandingTestimonialsBlock },
   'landing-newsletter': { component: LandingNewsletterBlock },

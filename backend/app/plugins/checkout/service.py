@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -87,6 +88,7 @@ async def _items_from_cart(cart: Cart, db: AsyncSession) -> list[dict]:
             "quantity": cart_item.quantity,
             "variant_id": variant.id,
             "variant_label": variant_label,
+            "weight": variant.weight if variant.weight is not None else product.weight,
         })
     return items
 
@@ -142,6 +144,7 @@ async def _items_from_explicit(checkout_items: list[CheckoutItem], db: AsyncSess
             "quantity": ci.quantity,
             "variant_id": variant.id,
             "variant_label": variant_label,
+            "weight": variant.weight if variant.weight is not None else product.weight,
         })
     return items
 
@@ -210,6 +213,107 @@ async def _apply_paid_order_effects(
             pass
 
 
+async def _resolve_discount(
+    subtotal: Decimal,
+    coupon_code: Optional[str],
+    redeem_points: int,
+    user_id: Optional[str],
+    db: AsyncSession,
+    lenient: bool = False,
+) -> tuple[Decimal, int]:
+    """(total discount, loyalty points to redeem) for a cart worth ``subtotal``.
+
+    Shared by checkout and the shipping quote so the delivery band is chosen on
+    the same discounted value in both. Validation happens up front so an invalid
+    coupon fails the checkout, but usage is only *recorded* once paid. ``lenient``
+    (used by the quote preview) ignores a bad coupon/points request instead of
+    raising, since the checkout form validates those on its own.
+    """
+    discount_amount = Decimal("0")
+    if coupon_code:
+        try:
+            from app.plugins.coupons import service as coupon_service
+            _, coupon_discount = await coupon_service.validate_coupon(coupon_code, subtotal, db, user_id=user_id)
+            discount_amount += coupon_discount
+        except ImportError:
+            if not lenient:
+                raise HTTPException(status_code=400, detail="Coupon codes are not enabled on this platform")
+        except HTTPException:
+            if not lenient:
+                raise
+
+    points_to_redeem = 0
+    if redeem_points > 0 and user_id:
+        try:
+            from app.plugins.loyalty import service as loyalty_service
+            discount_amount += await loyalty_service.validate_redemption(user_id, redeem_points, db)
+            points_to_redeem = redeem_points
+        except ImportError:
+            if not lenient:
+                raise HTTPException(status_code=400, detail="Loyalty program is not enabled on this platform")
+        except HTTPException:
+            if not lenient:
+                raise
+
+    # Auto discount rules (only when no explicit coupon code)
+    if not coupon_code:
+        try:
+            from app.plugins.discount_rules import service as rules_service
+            discount_amount += await rules_service.evaluate_rules(subtotal, db)
+        except ImportError:
+            pass
+
+    # Cap discount at subtotal
+    return min(discount_amount, subtotal), points_to_redeem
+
+
+@dataclass
+class ShippingResult:
+    zone_name: Optional[str] = None
+    cost: Decimal = Decimal("0")
+    weight_kg: Optional[Decimal] = None
+    order_value: Decimal = Decimal("0")
+    next_threshold: Optional[Decimal] = None
+    amount_to_next_band: Optional[Decimal] = None
+    next_charge: Optional[Decimal] = None
+
+
+async def _quote_shipping(
+    items: list[dict], country: Optional[str], order_value: Decimal, db: AsyncSession,
+) -> ShippingResult:
+    """Delivery quote for these checkout lines; ``order_value`` is goods after
+    discounts, ex VAT (the band basis).
+
+    Weight is only known when the shipping plugin is enabled (it owns the
+    default weight for items without one); without it delivery is free and the
+    weight is None.
+    """
+    try:
+        from app.plugins.shipping import service as shipping_service
+    except ImportError:
+        return ShippingResult(order_value=order_value)
+    weight = await shipping_service.parcel_weight([(i["weight"], i["quantity"]) for i in items], db)
+    if not country:
+        return ShippingResult(weight_kg=weight, order_value=order_value)
+    q = await shipping_service.quote(country, weight, order_value, db)
+    return ShippingResult(q.zone_name, q.cost, weight, order_value, q.next_threshold, q.amount_to_next_band, q.next_charge)
+
+
+async def shipping_quote(
+    country: Optional[str],
+    db: AsyncSession,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    coupon_code: Optional[str] = None,
+    redeem_points: int = 0,
+) -> ShippingResult:
+    """Delivery quote for the caller's current cart — the same figure checkout charges."""
+    items = await _resolve_cart_items(user_id, session_id, db)
+    subtotal = sum((Decimal(str(i["unit_price"])) * i["quantity"] for i in items), Decimal("0"))
+    discount, _ = await _resolve_discount(subtotal, coupon_code, redeem_points, user_id, db, lenient=True)
+    return await _quote_shipping(items, country, subtotal - discount, db)
+
+
 async def checkout(
     data: CheckoutRequest,
     db: AsyncSession,
@@ -245,49 +349,14 @@ async def checkout(
     # Calculate subtotal for discount validation
     subtotal = sum(Decimal(str(i["unit_price"])) * i["quantity"] for i in items)
 
-    # Resolve coupon discount (if coupon plugin active). Validation happens up front so an
-    # invalid coupon fails the checkout, but the usage is only *recorded* once paid.
-    discount_amount = Decimal("0")
-    if data.coupon_code:
-        try:
-            from app.plugins.coupons import service as coupon_service
-            _, coupon_discount = await coupon_service.validate_coupon(data.coupon_code, subtotal, db, user_id=user_id)
-            discount_amount += coupon_discount
-        except ImportError:
-            raise HTTPException(status_code=400, detail="Coupon codes are not enabled on this platform")
+    discount_amount, _points_to_redeem = await _resolve_discount(
+        subtotal, data.coupon_code, data.redeem_points, user_id, db,
+    )
 
-    # Resolve loyalty points redemption (if loyalty plugin active and user is authenticated)
-    _points_to_redeem = 0
-    _points_discount = Decimal("0")
-    if data.redeem_points > 0 and user_id:
-        try:
-            from app.plugins.loyalty import service as loyalty_service
-            _points_discount = await loyalty_service.validate_redemption(user_id, data.redeem_points, db)
-            _points_to_redeem = data.redeem_points
-            discount_amount += _points_discount
-        except ImportError:
-            raise HTTPException(status_code=400, detail="Loyalty program is not enabled on this platform")
-
-    # Auto discount rules (only when no explicit coupon code)
-    if not data.coupon_code:
-        try:
-            from app.plugins.discount_rules import service as rules_service
-            auto_discount = await rules_service.evaluate_rules(subtotal, db)
-            discount_amount += auto_discount
-        except ImportError:
-            pass
-
-    # Cap discount at subtotal
-    discount_amount = min(discount_amount, subtotal)
-
-    # Resolve shipping cost (optional shipping plugin)
-    shipping_cost = Decimal("0")
-    if data.delivery_country:
-        try:
-            from app.plugins.shipping import service as shipping_service
-            _zone_name, shipping_cost = await shipping_service.get_rate(data.delivery_country, db)
-        except ImportError:
-            pass
+    # Resolve shipping cost (optional shipping plugin): the order-value band, on goods
+    # after discounts and before VAT.
+    shipping = await _quote_shipping(items, data.delivery_country, subtotal - discount_amount, db)
+    shipping_cost, total_weight_kg = shipping.cost, shipping.weight_kg
 
     # Resolve tax/VAT (optional tax plugin). Taxable base is subtotal minus
     # discount — shipping is not taxed.
@@ -309,6 +378,7 @@ async def checkout(
         discount_amount=discount_amount,
         tax_amount=tax_amount,
         shipping_cost=shipping_cost,
+        total_weight_kg=total_weight_kg,
         pending_coupon_code=data.coupon_code,
         pending_redeem_points=_points_to_redeem,
     )
@@ -511,8 +581,7 @@ async def _send_order_confirmation_email(
         body += f"Discount:  -{format_money(order.discount_amount)}\n"
     if order.tax_amount > 0:
         body += f"Tax (VAT): {format_money(order.tax_amount)}\n"
-    if order.shipping_cost > 0:
-        body += f"Shipping:  {format_money(order.shipping_cost)}\n"
+    body += f"Delivery:  {format_money(order.shipping_cost) if order.shipping_cost > 0 else 'Free'}\n"
     body += (
         f"Total:     {format_money(order.total)}\n\n"
         f"Payment:   {payment_label}\n"

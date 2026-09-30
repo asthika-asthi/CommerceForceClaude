@@ -1,11 +1,17 @@
-const STATS = [
+import { describeBands } from "@/lib/delivery-bands"
+import type { DeliveryBands } from "@/lib/types"
+
+const BASE_STATS = [
   { num: "30", suffix: "+", label: "Years supplying UK trade & retail" },
   { num: "79", suffix: "+", label: "Products across 4 categories" },
   { num: "3", suffix: "", label: "Sourcing continents — Europe, India, Far East" },
-  { num: "£500", suffix: "", label: "Free UK delivery threshold ex VAT" },
 ]
 
-export function StatsBand() {
+export function StatsBand({ delivery }: { delivery?: DeliveryBands }) {
+  const threshold = delivery ? describeBands(delivery).freeThresholdLabel : null
+  const STATS = threshold
+    ? [...BASE_STATS, { num: threshold, suffix: "", label: "Free delivery threshold ex VAT" }]
+    : BASE_STATS
   return (
     <div className="bg-brand-dark py-12 px-10">
       <div className="max-w-[1280px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-5">

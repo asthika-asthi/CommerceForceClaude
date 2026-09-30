@@ -12,7 +12,7 @@ import { useCartStore } from "@/store/cart"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import Link from "next/link"
-import type { Address, BrandingConfig } from "@/lib/types"
+import type { Address, BrandingConfig, ShippingQuote } from "@/lib/types"
 import { formatMoney } from "@/lib/currency"
 import { enabledStorefrontPaymentMethods, type PaymentMethodKey } from "@/lib/payment-methods"
 
@@ -77,6 +77,9 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail, cashEnabled 
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [shippingCost, setShippingCost] = useState<number>(0)
+  // null until the first quote for the current country comes back; drives the
+  // "calculated once you enter your country" state and the spend-more nudge.
+  const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null)
   const shippingDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [taxAmount, setTaxAmount] = useState<number>(0)
   const taxDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -121,16 +124,28 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail, cashEnabled 
     }
   }, [cashEnabled, stripeEnabled, bankDetails, paypalEmail, hasCreditAccount, form.payment_method])
 
+  // Delivery is quoted server-side on the order value after discounts (the delivery
+  // band), so re-quote when the destination, cart contents or applied discounts change
+  // — it's the figure checkout charges. Only an *applied* coupon / redeemed points
+  // count; the server ignores anything it can't validate.
+  const cartSignature = (cart?.items ?? []).map((i) => `${i.variant_id}:${i.quantity}`).join(",")
+  const appliedCoupon = couponDiscount > 0 ? form.coupon_code.trim() : ""
+  const appliedPoints =
+    loyaltyRate?.active && form.redeem_points >= loyaltyRate.min ? form.redeem_points : 0
   useEffect(() => {
-    if (!form.country) return
+    if (!form.country || !cartSignature) return
     if (shippingDebounce.current) clearTimeout(shippingDebounce.current)
     shippingDebounce.current = setTimeout(() => {
-      api.get<{ flat_rate: number }>(`/api/shipping/rate?country=${encodeURIComponent(form.country)}`)
-        .then((r) => setShippingCost(Number(r.flat_rate) ?? 0))
-        .catch(() => setShippingCost(0))
+      api.post<ShippingQuote>("/api/checkout/shipping-quote", {
+        delivery_country: form.country,
+        coupon_code: appliedCoupon || null,
+        redeem_points: appliedPoints,
+      })
+        .then((r) => { setShippingCost(Number(r.cost) || 0); setShippingQuote(r) })
+        .catch(() => { setShippingCost(0); setShippingQuote(null) })
     }, 400)
     return () => { if (shippingDebounce.current) clearTimeout(shippingDebounce.current) }
-  }, [form.country])
+  }, [form.country, cartSignature, appliedCoupon, appliedPoints])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- correct guard-clause reset when country cleared; proper refactor tracked in backlog "Storefront lint debt"
@@ -592,8 +607,20 @@ function CheckoutContent({ stripeEnabled, bankDetails, paypalEmail, cashEnabled 
               )}
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Shipping</span>
-                <span>{shippingCost > 0 ? <>{formatMoney(shippingCost.toFixed(2))}</> : "Free"}</span>
+                <span>
+                  {!form.country
+                    ? "Enter your country"
+                    : !shippingQuote
+                      ? "Calculating…"
+                      : shippingCost > 0 ? formatMoney(shippingCost.toFixed(2)) : "Free"}
+                </span>
               </div>
+              {form.country && shippingQuote?.amount_to_next_band && (
+                <p className="text-xs text-brand-dark -mt-1">
+                  Spend {formatMoney(shippingQuote.amount_to_next_band)} more (ex VAT) to get{" "}
+                  {Number(shippingQuote.next_charge) > 0 ? `delivery for ${formatMoney(shippingQuote.next_charge ?? 0)}` : "free delivery"}.
+                </p>
+              )}
               {taxAmount > 0 && (
                 <div className="flex justify-between text-sm text-slate-600">
                   <span>Tax (VAT)</span>

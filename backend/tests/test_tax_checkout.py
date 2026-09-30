@@ -96,6 +96,10 @@ async def test_order_detail_exposes_tax_and_shipping(client: AsyncClient, db):
     await client.post("/api/shipping/zones", json={
         "name": "UK", "countries": "GB", "flat_rate": 5.00, "is_active": True,
     }, headers={"Authorization": f"Bearer {admin_token}"})
+    # Delivery is charged from the order-value bands, not the zone's flat rate.
+    await client.put("/api/shipping/bands", json={"bands": [
+        {"min_order_value": "0", "charge": "5.00"},
+    ]}, headers={"Authorization": f"Bearer {admin_token}"})
     product_id = await _make_product(client, admin_token, "Detail Widget", price="100.00")
 
     r = await client.post("/api/checkout", json={

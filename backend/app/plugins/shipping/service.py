@@ -1,10 +1,13 @@
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from app.plugins.shipping.models import ShippingZone
-from app.plugins.shipping.schemas import ShippingZoneCreate, ShippingZoneUpdate
+from app.plugins.shipping.models import ShippingBand, ShippingSettings, ShippingZone
+from app.plugins.shipping.schemas import (
+    ShippingBandsUpdate, ShippingSettingsUpdate, ShippingZoneCreate, ShippingZoneUpdate,
+)
 import uuid
 
 
@@ -35,6 +38,103 @@ async def get_rate(country: str, db: AsyncSession) -> tuple[Optional[str], Decim
         return catch_all.name, catch_all.flat_rate
 
     return None, Decimal("0")
+
+
+@dataclass
+class Quote:
+    zone_name: Optional[str]
+    cost: Decimal
+    # Nearest higher band that would cost less, and how much more to spend to reach it.
+    next_threshold: Optional[Decimal] = None
+    amount_to_next_band: Optional[Decimal] = None
+    next_charge: Optional[Decimal] = None
+
+
+async def list_bands(db: AsyncSession) -> list[ShippingBand]:
+    result = await db.execute(select(ShippingBand).order_by(ShippingBand.min_order_value))
+    return list(result.scalars().all())
+
+
+def band_for(order_value: Decimal, bands: list[ShippingBand]) -> Optional[ShippingBand]:
+    """The band an order of ``order_value`` falls in (highest min not above it)."""
+    match: Optional[ShippingBand] = None
+    for band in bands:  # ascending by min_order_value
+        if band.min_order_value <= order_value:
+            match = band
+    return match
+
+
+async def replace_bands(data: ShippingBandsUpdate, db: AsyncSession) -> list[ShippingBand]:
+    """Replace the whole band list. Exactly one band must start at 0 and mins must be unique."""
+    mins = [b.min_order_value for b in data.bands]
+    if len(set(mins)) != len(mins):
+        raise HTTPException(status_code=422, detail="Each band must start at a different order value")
+    if min(mins) != 0:
+        raise HTTPException(status_code=422, detail="The first band must start at £0 so every order has a charge")
+    for existing in await list_bands(db):
+        await db.delete(existing)
+    await db.flush()
+    for b in sorted(data.bands, key=lambda x: x.min_order_value):
+        db.add(ShippingBand(id=str(uuid.uuid4()), min_order_value=b.min_order_value, charge=b.charge))
+    await db.flush()
+    return await list_bands(db)
+
+
+async def quote(country: str, weight_kg: Decimal, order_value: Decimal, db: AsyncSession) -> Quote:
+    """Delivery charge for an order worth ``order_value`` (goods after discounts,
+    ex VAT) going to ``country``.
+
+    This is the single entry point checkout uses to price delivery. The country's
+    zone decides whether we deliver there; the charge comes from the order-value
+    band. ``weight_kg`` is not used for pricing yet; a weight-based or live-carrier
+    provider (Royal Mail etc.) replaces the body of this function without checkout
+    or the storefront changing.
+    """
+    zone_name, _flat_rate = await get_rate(country, db)
+    if zone_name is None:
+        return Quote(None, Decimal("0"))
+    bands = await list_bands(db)
+    band = band_for(order_value, bands)
+    if band is None:
+        return Quote(zone_name, Decimal("0"))
+    cheaper = [b for b in bands if b.min_order_value > order_value and b.charge < band.charge]
+    if not cheaper:
+        return Quote(zone_name, band.charge)
+    nxt = cheaper[0]
+    return Quote(zone_name, band.charge, nxt.min_order_value, nxt.min_order_value - order_value, nxt.charge)
+
+
+async def get_settings(db: AsyncSession) -> ShippingSettings:
+    result = await db.execute(select(ShippingSettings))
+    settings = result.scalar_one_or_none()
+    if not settings:
+        settings = ShippingSettings(default_weight_kg=Decimal("1.000"))
+        db.add(settings)
+        await db.flush()
+    return settings
+
+
+async def update_settings(data: ShippingSettingsUpdate, db: AsyncSession) -> ShippingSettings:
+    settings = await get_settings(db)
+    settings.default_weight_kg = data.default_weight_kg
+    await db.flush()
+    return settings
+
+
+async def parcel_weight(lines: list[tuple[Optional[Decimal], int]], db: AsyncSession) -> Decimal:
+    """Total parcel weight in kg for (item weight, quantity) lines.
+
+    An item with no weight (None) counts as the store's default weight.
+    """
+    default: Optional[Decimal] = None
+    total = Decimal("0")
+    for weight, quantity in lines:
+        if weight is None:
+            if default is None:
+                default = (await get_settings(db)).default_weight_kg
+            weight = default
+        total += Decimal(weight) * quantity
+    return total.quantize(Decimal("0.001"))
 
 
 async def list_zones(db: AsyncSession) -> list[ShippingZone]:

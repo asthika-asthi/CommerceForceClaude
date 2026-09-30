@@ -35,6 +35,7 @@ interface ProductVariant {
   direct_price: string | null
   effective_price: string | null
   stock_quantity: number
+  weight: string | null
 }
 
 // ── Page entry (async server component wrapper) ───────────────────────────────
@@ -65,7 +66,7 @@ function EditProduct({ id }: { id: string }) {
 
   const [form, setForm] = useState({
     name: "", short_description: "", description: "", sku: "", barcode: "",
-    price: "", sale_price: "", sale_percent: "", stock_quantity: "0",
+    price: "", sale_price: "", sale_percent: "", stock_quantity: "0", weight: "",
     category_id: "", is_active: true, is_featured: false, is_on_sale: false,
   })
   const [specs, setSpecs] = useState<ProductSpec[]>([])
@@ -96,6 +97,7 @@ function EditProduct({ id }: { id: string }) {
         sale_price: product.sale_price ?? "",
         sale_percent: product.sale_percent ?? "",
         stock_quantity: String(product.stock_quantity),
+        weight: product.weight ?? "",
         category_id: product.category_id ?? "",
         is_active: product.is_active,
         is_featured: product.is_featured ?? false,
@@ -118,6 +120,7 @@ function EditProduct({ id }: { id: string }) {
         is_on_sale: data.is_on_sale,
         category_id: data.category_id || undefined,
         barcode: data.barcode || undefined,
+        weight: data.weight.trim() === "" ? null : data.weight,
         specifications: specs,
       }),
     onSuccess: () => {
@@ -197,6 +200,7 @@ function EditProduct({ id }: { id: string }) {
   const [variantAdjustments, setVariantAdjustments] = useState<Record<string, string>>({})
   const [variantDirectPrices, setVariantDirectPrices] = useState<Record<string, string>>({})
   const [variantStocks, setVariantStocks] = useState<Record<string, string>>({})
+  const [variantWeights, setVariantWeights] = useState<Record<string, string>>({})
   // Stock the product had *before* variants were generated — captured right before
   // calling generate so the migration banner can tell the admin what happened to it.
   const [preGenerateStock, setPreGenerateStock] = useState<number | null>(null)
@@ -232,6 +236,11 @@ function EditProduct({ id }: { id: string }) {
         stockMap[v.id] = String(v.stock_quantity)
       }
       setVariantStocks(stockMap)
+      const weightMap: Record<string, string> = {}
+      for (const v of vars) {
+        weightMap[v.id] = v.weight ?? ""
+      }
+      setVariantWeights(weightMap)
     } catch (err) {
       setVariantsError(err instanceof Error ? err.message : "Failed to load variant data")
     } finally {
@@ -369,6 +378,23 @@ function EditProduct({ id }: { id: string }) {
           v.id === variantId ? { ...v, direct_price: raw || null, effective_price: updated.effective_price } : v
         )
       )
+    } catch (err) {
+      setVariantsError(err instanceof Error ? err.message : "Failed to update variant")
+    }
+  }
+
+  async function handleVariantWeightBlur(variantId: string) {
+    const raw = (variantWeights[variantId] ?? "").trim()
+    const current = variants.find((v) => v.id === variantId)
+    if (!current) return
+    if (raw === "" && current.weight == null) return
+    if (raw !== "" && current.weight != null && parseFloat(raw) === parseFloat(current.weight)) return
+    if (raw !== "" && (isNaN(parseFloat(raw)) || parseFloat(raw) < 0)) return
+    const weight = raw === "" ? null : raw
+    setVariantsError("")
+    try {
+      await api.patch(`/api/products/${id}/variants/${variantId}`, { weight })
+      setVariants((prev) => prev.map((v) => (v.id === variantId ? { ...v, weight } : v)))
     } catch (err) {
       setVariantsError(err instanceof Error ? err.message : "Failed to update variant")
     }
@@ -636,6 +662,15 @@ function EditProduct({ id }: { id: string }) {
               )}
             </Field>
           </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Field label="Weight (kg)">
+              <input value={form.weight} onChange={(e) => set("weight", e.target.value)}
+                className={input} placeholder="e.g. 1.25" type="number" step="0.001" min="0" />
+              <p className="text-xs text-slate-400 mt-1">
+                Packed weight (kg), recorded on orders for parcel and carrier use.{hasRealVariants && " Variants can override it on the Variants tab."}
+              </p>
+            </Field>
+          </div>
           <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
             <input type="checkbox" checked={form.is_active}
               onChange={(e) => set("is_active", e.target.checked)} className="rounded" />
@@ -813,6 +848,7 @@ function EditProduct({ id }: { id: string }) {
                             </th>
                             <th className="text-left py-2 pr-4 font-medium text-slate-600">Effective price</th>
                             <th className="text-left py-2 pr-4 font-medium text-slate-600">Stock</th>
+                            <th className="text-left py-2 pr-4 font-medium text-slate-600">Weight (kg)</th>
                             <th className="text-left py-2 font-medium text-slate-600">Active</th>
                             <th className="px-2 py-2" />
                           </tr>
@@ -878,6 +914,21 @@ function EditProduct({ id }: { id: string }) {
                                       ? "border-red-300 bg-red-50 text-red-700"
                                       : "border-slate-300"
                                   }`}
+                                />
+                              </td>
+                              <td className="py-2 pr-4">
+                                <input
+                                  type="number"
+                                  step="0.001"
+                                  min="0"
+                                  value={variantWeights[variant.id] ?? ""}
+                                  onChange={(e) =>
+                                    setVariantWeights((prev) => ({ ...prev, [variant.id]: e.target.value }))
+                                  }
+                                  onBlur={() => handleVariantWeightBlur(variant.id)}
+                                  placeholder={form.weight ? `${form.weight} (product)` : "Product weight"}
+                                  title="Leave blank to use the product's weight"
+                                  className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-32"
                                 />
                               </td>
                               <td className="py-2">

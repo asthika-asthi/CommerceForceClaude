@@ -1,8 +1,13 @@
+import { describeBands, getDeliveryBands } from "@/lib/delivery-bands"
+
 export const metadata = { title: "Terms & Conditions — Tri Star UK Ltd" }
 
 const LAST_UPDATED = "June 2026"
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  // Delivery charges come from the admin-set bands so the terms match checkout.
+  const bands = await getDeliveryBands()
+  const delivery = bands ? describeBands(bands) : null
   return (
     <div className="max-w-[860px] mx-auto px-6 py-14">
       <h1 className="text-[32px] font-bold text-brand-dark mb-2">Terms &amp; Conditions</h1>
@@ -40,7 +45,17 @@ export default function TermsPage() {
           <ul className="list-disc pl-6 space-y-1">
             <li>We aim to despatch all in-stock orders placed before 2pm on the same business day.</li>
             <li>Standard delivery is to UK mainland addresses only unless agreed otherwise.</li>
-            <li>Free standard delivery is offered on orders over £75 ex VAT. Orders below this threshold are subject to a delivery charge shown at checkout.</li>
+            {delivery ? (
+              <li>
+                Delivery charges depend on the value of your order (after discounts, excluding VAT):
+                <ul className="list-[circle] pl-6 mt-1">
+                  {delivery.lines.map(line => <li key={line}>{line}.</li>)}
+                </ul>
+                The charge that applies is shown at checkout before you pay.
+              </li>
+            ) : (
+              <li>Any delivery charge that applies is shown at checkout before you pay.</li>
+            )}
             <li>Delivery timescales are estimates; we are not liable for delays caused by couriers or circumstances outside our control.</li>
             <li>Risk in the goods passes to you upon delivery.</li>
           </ul>

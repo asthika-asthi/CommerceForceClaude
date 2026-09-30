@@ -79,7 +79,7 @@ class ProductUpdate(BaseModel):
     low_stock_threshold: Optional[int] = None
     is_active: Optional[bool] = None
     is_featured: Optional[bool] = None
-    weight: Optional[Decimal] = None
+    weight: Optional[Decimal] = Field(None, ge=0)
     tags: Optional[str] = None
     barcode: Optional[str] = Field(None, max_length=100)
 
@@ -137,6 +137,7 @@ class ProductListOut(BaseModel):
     is_featured: bool
     primary_image: Optional[str] = None
     has_variants: bool = False
+    weight: Optional[Decimal] = None
     model_config = {"from_attributes": True}
 
 
@@ -217,6 +218,7 @@ class ProductVariantOut(BaseModel):
     direct_price: Optional[Decimal] = None
     effective_price: Optional[Decimal] = None
     stock_quantity: int = 0
+    weight: Optional[Decimal] = None
     model_config = {"from_attributes": True}
 
 
@@ -226,6 +228,8 @@ class VariantUpdate(BaseModel):
     price_adjustment: Optional[Decimal] = None
     direct_price: Optional[Decimal] = Field(None, ge=0)
     stock_quantity: Optional[int] = None
+    # kg; null clears the override so the variant inherits the product weight.
+    weight: Optional[Decimal] = Field(None, ge=0)
 
 
 class VariantCsvImportError(BaseModel):

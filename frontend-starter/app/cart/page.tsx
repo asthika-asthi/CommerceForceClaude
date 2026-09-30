@@ -7,6 +7,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { Trash2, Plus, Minus, X } from "lucide-react"
 import { formatMoney } from "@/lib/currency"
+import { chargeFor } from "@/lib/delivery-bands"
+import type { DeliveryBands } from "@/lib/types"
 
 function RecoveryEmailPrompt() {
   const [dismissed, setDismissed] = useState(false)
@@ -58,6 +60,12 @@ export default function CartPage() {
   const [busyItems, setBusyItems] = useState<Set<string>>(new Set())
 
   useEffect(() => { fetch() }, [fetch])
+
+  // Order-value delivery bands (null when the shipping plugin is off).
+  const [bands, setBands] = useState<DeliveryBands | null>(null)
+  useEffect(() => {
+    api.get<DeliveryBands>("/api/shipping/bands").then(setBands).catch(() => setBands(null))
+  }, [])
 
   async function handleUpdate(variantId: string, quantity: number) {
     if (busyItems.has(variantId)) return
@@ -156,12 +164,31 @@ export default function CartPage() {
               <span>Subtotal ({cart?.item_count ?? 0} items)</span>
               <span>{formatMoney(subtotal.toFixed(2))}</span>
             </div>
-            <div className="flex justify-between text-sm text-slate-400 mb-4">
-              <span>Shipping</span>
-              <span>Calculated at checkout</span>
+            <div className="flex justify-between text-sm text-slate-400 mb-1">
+              <span>Delivery</span>
+              <span>
+                {bands
+                  ? (chargeFor(bands, subtotal) > 0 ? formatMoney(chargeFor(bands, subtotal)) : "Free")
+                  : "Calculated at checkout"}
+              </span>
             </div>
+            {bands && (() => {
+              // Next band that costs less than the current one (bands are ascending).
+              const current = chargeFor(bands, subtotal)
+              const next = bands.bands.find(
+                b => parseFloat(b.min_order_value) > subtotal && parseFloat(b.charge) < current,
+              )
+              return (
+                <p className="text-xs text-brand-dark mb-4">
+                  {next
+                    ? `Spend ${formatMoney(parseFloat(next.min_order_value) - subtotal)} more (ex VAT) to get ${parseFloat(next.charge) > 0 ? `delivery for ${formatMoney(next.charge)}` : "free delivery"}.`
+                    : "Delivery confirmed at checkout."}
+                </p>
+              )
+            })()}
+            {!bands && <div className="mb-3" />}
             <div className="border-t border-slate-100 pt-4 flex justify-between font-semibold text-slate-900 mb-6">
-              <span>Total</span>
+              <span>Total before delivery</span>
               <span>{formatMoney(subtotal.toFixed(2))}</span>
             </div>
             <Link href="/checkout"

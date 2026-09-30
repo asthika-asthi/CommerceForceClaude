@@ -97,6 +97,7 @@ export interface Product {
   stock_quantity: number
   is_active: boolean
   is_featured?: boolean
+  weight?: string | null
   category_id?: string
   primary_image?: string | null
   images: ProductImage[]
@@ -143,6 +144,7 @@ export interface Order {
   discount_amount: string
   tax_amount: string
   shipping_cost: string
+  total_weight_kg?: string | null
   total: string
   shipping_address?: string
   notes?: string

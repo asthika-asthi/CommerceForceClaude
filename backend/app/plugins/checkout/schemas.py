@@ -77,6 +77,26 @@ class PaymentMethodOut(BaseModel):
     description: str
 
 
+class ShippingQuoteRequest(BaseModel):
+    delivery_country: Optional[str] = Field(None, min_length=2, max_length=2)
+    # Discounts change the order value the delivery band is chosen on.
+    coupon_code: Optional[str] = None
+    redeem_points: int = Field(0, ge=0)
+
+
+class ShippingQuoteOut(BaseModel):
+    zone_name: Optional[str] = None
+    cost: Decimal = Decimal("0")
+    weight_kg: Optional[Decimal] = None
+    # Goods after discounts, ex VAT: what the band was chosen on.
+    order_value: Decimal = Decimal("0")
+    # Nearest cheaper band and how much more to spend to reach it.
+    next_threshold: Optional[Decimal] = None
+    amount_to_next_band: Optional[Decimal] = None
+    # What delivery would cost in that cheaper band (0 = free).
+    next_charge: Optional[Decimal] = None
+
+
 class CheckoutSummary(BaseModel):
     order_id: str
     order_number: str

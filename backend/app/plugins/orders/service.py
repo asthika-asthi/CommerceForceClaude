@@ -84,6 +84,7 @@ async def create_order(
     discount_amount: Decimal = Decimal("0"),
     tax_amount: Decimal = Decimal("0"),
     shipping_cost: Decimal = Decimal("0"),
+    total_weight_kg: Optional[Decimal] = None,
     pending_coupon_code: Optional[str] = None,
     pending_redeem_points: int = 0,
 ) -> Order:
@@ -111,6 +112,7 @@ async def create_order(
         discount_amount=discount_amount,
         tax_amount=tax_amount,
         shipping_cost=shipping_cost,
+        total_weight_kg=total_weight_kg,
         total=total,
         shipping_address=shipping_address,
         notes=notes,

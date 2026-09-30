@@ -377,6 +377,27 @@ async def import_variants_from_csv(
                 ))
                 continue
 
+        # f3. Parse weight (kg, optional; blank = inherit the product weight)
+        raw_weight = row.get("weight", "").strip()
+        weight: Decimal | None = None
+        if raw_weight:
+            try:
+                weight = Decimal(raw_weight)
+            except InvalidOperation:
+                errors.append(VariantCsvImportError(
+                    row=row_num,
+                    field="weight",
+                    message=f"'{raw_weight}' is not a valid decimal",
+                ))
+                continue
+            if weight < 0:
+                errors.append(VariantCsvImportError(
+                    row=row_num,
+                    field="weight",
+                    message=f"'{raw_weight}' must not be negative",
+                ))
+                continue
+
         # g. Parse is_active
         raw_active = row.get("is_active", "").strip()
         if not raw_active:
@@ -437,6 +458,10 @@ async def import_variants_from_csv(
             # Update mutable fields
             existing_variant.price_adjustment = price_adjustment
             existing_variant.direct_price = direct_price
+            # Only touch weight when the file carries the column, so older
+            # CSVs without it don't wipe weights entered in the admin.
+            if "weight" in fieldnames:
+                existing_variant.weight = weight
             existing_variant.is_active = is_active
             await db.flush()
             variants_updated += 1
@@ -465,6 +490,7 @@ async def import_variants_from_csv(
                 is_active=is_active,
                 price_adjustment=price_adjustment,
                 direct_price=direct_price,
+                weight=weight,
             )
             db.add(new_v)
             await db.flush()
@@ -599,7 +625,7 @@ async def export_variants_to_csv(db: AsyncSession) -> str:
         "option1_name", "option1_value",
         "option2_name", "option2_value",
         "option3_name", "option3_value",
-        "price_adjustment", "direct_price", "is_active",
+        "price_adjustment", "direct_price", "weight", "is_active",
     ] + [f"stock_{wh.code}" for wh in active_warehouses]
 
     # 8. Write CSV
@@ -636,6 +662,7 @@ async def export_variants_to_csv(db: AsyncSession) -> str:
             "direct_price": (
                 str(variant.direct_price) if variant.direct_price is not None else ""
             ),
+            "weight": str(variant.weight) if variant.weight is not None else "",
             "is_active": "true" if variant.is_active else "false",
         }
 

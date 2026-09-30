@@ -454,7 +454,17 @@ function ProductsPageInner() {
                   </td>
                   <td className="px-4 py-3 text-slate-700">{p.stock_quantity}</td>
                   <td className="px-4 py-3">
-                    <StatusBadge value={p.is_active ? "active" : "inactive"} />
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <StatusBadge value={p.is_active ? "active" : "inactive"} />
+                      {p.weight == null && (
+                        <span
+                          title="No weight entered — the Shipping default weight is used for the parcel weight"
+                          className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap"
+                        >
+                          No weight
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div

@@ -77,7 +77,8 @@ export default function BulkVariantsPage() {
           Upload a CSV to create or update variants across multiple products. Required columns:
           product_sku, variant_sku, option1_name, option1_value … option3_name, option3_value,
           price_adjustment, direct_price, is_active. Add warehouse stock columns as stock_WAREHOUSE_CODE
-          (e.g. stock_MAIN).
+          (e.g. stock_MAIN). Optional: weight (kg) — blank inherits the product&apos;s weight; leave the
+          column out entirely to keep existing variant weights unchanged.
         </p>
 
         {/* Stock mode selector */}

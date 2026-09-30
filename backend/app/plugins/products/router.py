@@ -117,7 +117,7 @@ async def list_products(
             is_on_sale=p.is_on_sale, effective_price=p.effective_price,
             stock_quantity=p.stock_quantity, in_stock=p.in_stock,
             is_active=p.is_active, is_featured=p.is_featured, primary_image=primary,
-            has_variants=p.id in variant_product_ids,
+            has_variants=p.id in variant_product_ids, weight=p.weight,
         ))
     return paginate(list_items, total, page, page_size)
 

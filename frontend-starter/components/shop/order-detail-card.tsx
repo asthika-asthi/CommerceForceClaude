@@ -54,12 +54,12 @@ export function OrderDetailCard({ order }: { order: Order }) {
             <span className="text-slate-900">{formatMoney(parseFloat(order.tax_amount).toFixed(2))}</span>
           </div>
         )}
-        {parseFloat(order.shipping_cost) > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Shipping</span>
-            <span className="text-slate-900">{formatMoney(parseFloat(order.shipping_cost).toFixed(2))}</span>
-          </div>
-        )}
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-500">Delivery</span>
+          <span className="text-slate-900">
+            {parseFloat(order.shipping_cost) > 0 ? formatMoney(parseFloat(order.shipping_cost).toFixed(2)) : "Free"}
+          </span>
+        </div>
         <div className="flex justify-between font-semibold text-slate-900 pt-2 border-t border-slate-100">
           <span>Total</span>
           <span>{formatMoney(parseFloat(order.total).toFixed(2))}</span>

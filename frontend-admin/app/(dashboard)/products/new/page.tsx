@@ -17,7 +17,7 @@ export default function NewProductPage() {
   const qc = useQueryClient()
   const [form, setForm] = useState({
     name: "", short_description: "", description: "", sku: "", barcode: "",
-    price: "", sale_price: "", sale_percent: "", stock_quantity: "0",
+    price: "", sale_price: "", sale_percent: "", stock_quantity: "0", weight: "",
     category_id: "", is_active: true, is_featured: false, is_on_sale: false,
   })
   const [images, setImages] = useState<ProductImageCreate[]>([])
@@ -43,6 +43,7 @@ export default function NewProductPage() {
         is_on_sale: data.is_on_sale,
         category_id: data.category_id || undefined,
         barcode: data.barcode || undefined,
+        weight: data.weight.trim() === "" ? null : data.weight,
         specifications: specs,
         images: images.map(img => img),
       }),
@@ -196,6 +197,13 @@ export default function NewProductPage() {
           <Field label="Stock">
             <input value={form.stock_quantity} onChange={(e) => set("stock_quantity", e.target.value)}
               className={input} type="number" min="0" />
+          </Field>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="Weight (kg)">
+            <input value={form.weight} onChange={(e) => set("weight", e.target.value)}
+              className={input} placeholder="e.g. 1.25" type="number" step="0.001" min="0" />
+            <p className="text-xs text-slate-400 mt-1">Packed weight (kg), recorded on orders for parcel and carrier use.</p>
           </Field>
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">

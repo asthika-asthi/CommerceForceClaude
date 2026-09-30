@@ -123,6 +123,8 @@ export interface ProductVariant {
   direct_price?: string | null
   effective_price?: string | null
   stock_quantity: number
+  /** kg; null = inherits the product's weight */
+  weight?: string | null
 }
 
 export interface ProductOptionTypeValue {
@@ -234,6 +236,7 @@ export interface Order {
   discount_amount: string
   tax_amount: string
   shipping_cost: string
+  total_weight_kg?: string | null
   total: string
   shipping_address?: string
   notes?: string
@@ -242,6 +245,33 @@ export interface Order {
 }
 
 // ── Checkout ──────────────────────────────────────────────────────────────────
+/** POST /api/checkout/shipping-quote — delivery charge for the current cart. */
+export interface ShippingQuote {
+  zone_name: string | null
+  cost: string
+  weight_kg: string | null
+  /** Goods after discounts, ex VAT — what the band was chosen on. */
+  order_value: string
+  /** Nearest cheaper band and how much more to spend to reach it (null = already cheapest). */
+  next_threshold: string | null
+  amount_to_next_band: string | null
+  /** What delivery costs in that cheaper band ("0.00" = free). */
+  next_charge: string | null
+}
+
+/** GET /api/shipping/bands — order-value delivery bands. */
+export interface DeliveryBand {
+  min_order_value: string
+  charge: string
+}
+
+export interface DeliveryBands {
+  bands: DeliveryBand[]
+  /** Lowest order value that ships free; null if no band is free. */
+  free_threshold: string | null
+  currency: string
+}
+
 export interface CheckoutSummary {
   order_id: string
   order_number: string
@@ -415,4 +445,6 @@ export interface LandingRuntimeData {
   /** Picture for the hero's slanted right-hand panel. From branding; unset ⇒ plain panel. */
   heroImageUrl?: string
   heroImageAlt?: string
+  /** Order-value delivery bands; unset when the shipping plugin is off. */
+  deliveryBands?: DeliveryBands
 }

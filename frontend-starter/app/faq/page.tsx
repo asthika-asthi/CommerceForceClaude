@@ -1,12 +1,13 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { describeBands, getDeliveryBands } from "@/lib/delivery-bands"
 
 export const metadata: Metadata = {
   title: "FAQs",
   description: "Frequently asked questions about our products, trade accounts, and delivery.",
 }
 
-const FAQS = [
+const BASE_FAQS = [
   {
     q: "Do you offer trade accounts?",
     a: "Yes — we offer 30-day credit terms for registered trade customers. Apply via the Register for Trade link in the footer or contact our sales team.",
@@ -18,6 +19,10 @@ const FAQS = [
   {
     q: "How long does delivery take?",
     a: "Standard orders are dispatched within 1–2 working days. Next-day delivery is available on most stock items when ordered before 2 pm.",
+  },
+  {
+    q: "How much does delivery cost?",
+    a: "", // filled from the admin-set delivery bands at render time
   },
   {
     q: "Do you deliver throughout the UK?",
@@ -41,7 +46,15 @@ const FAQS = [
   },
 ]
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  // Delivery charges come from the admin-set bands so the answer matches checkout.
+  const bands = await getDeliveryBands()
+  const delivery = bands ? describeBands(bands) : null
+  const FAQS = BASE_FAQS
+    .map(f => f.q === "How much does delivery cost?"
+      ? { ...f, a: delivery ? `${delivery.lines.join(". ")}. Order value is measured after discounts and excluding VAT, and the exact charge is shown at checkout before you pay.` : "" }
+      : f)
+    .filter(f => f.a)
   return (
     <div className="max-w-3xl mx-auto px-4 py-16">
       <h1 className="text-3xl font-bold text-brand-dark mb-2">Frequently Asked Questions</h1>

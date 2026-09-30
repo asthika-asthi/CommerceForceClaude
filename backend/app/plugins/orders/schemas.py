@@ -30,6 +30,7 @@ class OrderOut(BaseModel):
     discount_amount: Decimal
     tax_amount: Decimal
     shipping_cost: Decimal
+    total_weight_kg: Optional[Decimal] = None
     total: Decimal
     shipping_address: Optional[str] = None
     notes: Optional[str] = None

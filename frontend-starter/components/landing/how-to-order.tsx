@@ -1,3 +1,6 @@
+import { describeBands } from "@/lib/delivery-bands"
+import type { DeliveryBands } from "@/lib/types"
+
 const STEPS = [
   {
     n: 1,
@@ -24,9 +27,13 @@ const STEPS = [
 interface Props {
   title?: string
   titleHighlight?: string
+  delivery?: DeliveryBands
 }
 
-export function HowToOrder({ title = "How to", titleHighlight = "order from us" }: Props) {
+export function HowToOrder({ title = "How to", titleHighlight = "order from us", delivery }: Props) {
+  // Step 4 spells out the admin-set delivery charges so they match checkout exactly.
+  const bandLines = delivery ? describeBands(delivery).lines : []
+  const steps = STEPS.map(s => (s.n === 4 && bandLines.length ? { ...s, extra: bandLines } : s))
   return (
     <div className="bg-white py-14">
       <div className="max-w-[1280px] mx-auto px-10">
@@ -41,13 +48,18 @@ export function HowToOrder({ title = "How to", titleHighlight = "order from us" 
             className="absolute top-8 hidden md:block h-0.5 rounded"
             style={{ left: "12%", right: "12%", background: "linear-gradient(90deg, var(--brand), var(--brand-dark))" }}
           />
-          {STEPS.map(({ n, title, desc }) => (
+          {steps.map(({ n, title, desc, extra }: { n: number; title: string; desc: string; extra?: string[] }) => (
             <div key={n} className="text-center px-4 relative">
               <div className="w-16 h-16 rounded-full bg-white border-[3px] border-brand flex items-center justify-center text-[22px] font-bold text-brand mx-auto mb-5 relative z-10">
                 {n}
               </div>
               <div className="text-[15px] font-bold text-brand-dark mb-2">{title}</div>
               <div className="text-[13px] text-muted leading-[1.55]">{desc}</div>
+              {extra && (
+                <ul className="mt-2 text-[12px] text-muted leading-[1.5] list-none p-0">
+                  {extra.map(line => <li key={line}>{line}</li>)}
+                </ul>
+              )}
             </div>
           ))}
         </div>

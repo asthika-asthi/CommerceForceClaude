@@ -310,6 +310,44 @@ No stock checks. Customers can add unlimited quantity of any product. Risk of ov
 
 ---
 
+## Shipping: order-value bands, parcel weight and the carrier hook
+
+Delivery is charged from **order-value bands**; the shipping plugin owns them:
+
+- **Bands** — `shipping_bands` (`min_order_value`, `charge`), global, edited in Admin → Shipping →
+  "Delivery charges by order value". An order pays the charge of the highest band whose minimum it
+  reaches; charge 0 = free. The first band must start at 0 (so every order has a charge) and minimums
+  are unique. `PUT /api/shipping/bands` replaces the whole list; `GET /api/shipping/bands` is public and
+  also returns `free_threshold`. The migration seeds 0 / 250 / 500 with all charges at 0, so delivery is
+  free until an admin enters real amounts.
+- **Band basis** — goods **after discounts, ex VAT** (`subtotal - discount_amount`, the tax base).
+  Checkout and the quote endpoint share `_resolve_discount()` so a coupon that drops an order into a
+  costlier band changes the preview and the charge identically.
+- **Zones** only decide *where* we deliver (`shipping_zones.countries`); a country with no zone is not
+  charged. `flat_rate` is retired from pricing (column kept, hidden in admin) and `GET /api/shipping/rate`
+  is deprecated.
+- **Storefront copy** — home page (trust strip, stats band, how-to-order, promo banner), cart, terms and
+  FAQ are built from `GET /api/shipping/bands` via `lib/delivery-bands.ts`, so they can't disagree with
+  checkout. With the shipping plugin off the delivery wording is simply omitted.
+
+Parcel weight is still recorded (not used for pricing):
+
+- **Weights** — `Product.weight` (kg) with an optional per-variant override `ProductVariant.weight`
+  (blank = inherit). Both are edited in the admin product form / Variants tab; the bulk-variant CSV
+  accepts an optional `weight` column. Items with no weight count as the store-wide **default parcel
+  weight** (`shipping_settings.default_weight_kg`, Admin → Shipping, default 1 kg); the admin
+  product list flags them "No weight".
+- **Hook** — checkout sums weight × qty via `shipping.service.parcel_weight()` and prices the order with
+  `shipping.service.quote(country, weight_kg, order_value, db)`, which returns a `Quote` (zone, cost, and
+  the next cheaper band for the "spend £X more" nudge). `quote()` is the single seam a weight-band table
+  or live carrier (Royal Mail Click & Drop, EasyPost, Shippo, …) replaces.
+- **Storefront** — the checkout page shows `POST /api/checkout/shipping-quote`
+  (`{delivery_country, coupon_code?, redeem_points?}` → `{zone_name, cost, weight_kg, order_value,
+  next_threshold, amount_to_next_band, next_charge}`), resolved from the same cart as checkout.
+- **Orders** record `total_weight_kg` (shown on the admin order page and in the orders CSV export).
+
+---
+
 ## Plugin Dependency Map
 
 The backend enforces plugin dependencies at startup (`app/core/plugin_registry.py`) — if a plugin's `depends_on` isn't also present in `ENABLED_PLUGINS`, the app refuses to boot with a `RuntimeError` naming the missing dependency. This is the authoritative, code-derived dependency graph for every plugin (read from each plugin's `manifest.py`):

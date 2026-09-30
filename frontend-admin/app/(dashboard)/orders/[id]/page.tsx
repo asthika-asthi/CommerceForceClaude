@@ -215,8 +215,12 @@ function OrderDetail({ id }: { id: string }) {
             {parseFloat(order.tax_amount) > 0 && (
               <Row label="Tax (VAT)" value={`${CURRENCY_SYMBOL}${order.tax_amount}`} />
             )}
-            {parseFloat(order.shipping_cost) > 0 && (
-              <Row label="Shipping" value={`${CURRENCY_SYMBOL}${order.shipping_cost}`} />
+            <Row
+              label="Delivery"
+              value={parseFloat(order.shipping_cost) > 0 ? `${CURRENCY_SYMBOL}${order.shipping_cost}` : "Free"}
+            />
+            {order.total_weight_kg != null && (
+              <Row label="Parcel weight" value={`${parseFloat(order.total_weight_kg)} kg`} />
             )}
             <Row label="Total" value={`${CURRENCY_SYMBOL}${order.total}`} />
           </dl>

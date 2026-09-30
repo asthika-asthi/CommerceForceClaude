@@ -133,7 +133,7 @@ export const BLOCK_DEFAULTS: Record<string, Record<string, unknown>> = {
   },
   'marquee-ticker': {
     items: [
-      'Free delivery over £150',
+      'Fast, tracked UK delivery',
       'UK-stocked products',
       '30-day returns',
       'Rated 4.9 ★ by 2,000+ customers',
