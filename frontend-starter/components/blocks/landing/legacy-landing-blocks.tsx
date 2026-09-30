@@ -22,7 +22,7 @@ interface DataProps {
 }
 
 export function LandingPromoBannerBlock({ data }: DataProps) {
-  return <PromoBanner delivery={data?.deliveryBands} />
+  return <PromoBanner delivery={data?.deliveryBands} dispatch={data?.dispatch} />
 }
 
 interface LandingHeroProps extends DataProps {
@@ -50,7 +50,7 @@ export function LandingHeroBlock({ data, title, titleHighlight, subtitle, imageU
 }
 
 export function LandingTrustStripBlock({ data }: DataProps) {
-  return <TrustStrip delivery={data?.deliveryBands} />
+  return <TrustStrip delivery={data?.deliveryBands} dispatch={data?.dispatch} />
 }
 
 interface LandingCategoryGridProps extends DataProps {
@@ -104,7 +104,7 @@ interface LandingHowToOrderProps extends DataProps {
 }
 
 export function LandingHowToOrderBlock({ data, title, titleHighlight }: LandingHowToOrderProps) {
-  return <HowToOrder title={title} titleHighlight={titleHighlight} delivery={data?.deliveryBands} />
+  return <HowToOrder title={title} titleHighlight={titleHighlight} delivery={data?.deliveryBands} dispatch={data?.dispatch} />
 }
 
 interface LandingRangeTableProps extends DataProps {

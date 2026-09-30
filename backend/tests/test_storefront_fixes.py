@@ -280,3 +280,31 @@ async def test_branding_variant_display_round_trip_and_validation(client: AsyncC
     admin = {"Authorization": f"Bearer {await make_admin(client, db)}"}
     r = await client.put("/api/branding", json={"variant_display": "dropdown"}, headers=admin)
     assert r.status_code == 403, r.text
+
+
+# ── Branding — homepage dispatch message ───────────────────────────────────────
+
+async def test_branding_dispatch_message_defaults_and_round_trip(client: AsyncClient, db):
+    body = (await client.get("/api/branding")).json()
+    assert body["dispatch_title"] == "Same Day Despatch"
+    assert body["dispatch_subtitle"] == "Orders placed before 2pm"
+
+    superadmin = {"Authorization": f"Bearer {await make_superadmin(client, db)}"}
+    r = await client.put("/api/branding", json={
+        "dispatch_title": "  Fast Despatch ", "dispatch_subtitle": "Usually within 2 working days",
+    }, headers=superadmin)
+    assert r.status_code == 200, r.text
+    body = (await client.get("/api/branding")).json()
+    assert body["dispatch_title"] == "Fast Despatch"  # trimmed
+    assert body["dispatch_subtitle"] == "Usually within 2 working days"
+
+    # An empty string is allowed: it hides the message. null is not.
+    r = await client.put("/api/branding", json={"dispatch_title": "", "dispatch_subtitle": ""}, headers=superadmin)
+    assert r.status_code == 200, r.text
+    body = (await client.get("/api/branding")).json()
+    assert body["dispatch_title"] == "" and body["dispatch_subtitle"] == ""
+    assert (await client.put("/api/branding", json={"dispatch_title": None}, headers=superadmin)).status_code == 422
+    assert (await client.put("/api/branding", json={"dispatch_subtitle": "x" * 201}, headers=superadmin)).status_code == 422
+
+    admin = {"Authorization": f"Bearer {await make_admin(client, db)}"}
+    assert (await client.put("/api/branding", json={"dispatch_title": "Hi"}, headers=admin)).status_code == 403

@@ -1,5 +1,6 @@
 import { describeBands } from "@/lib/delivery-bands"
 import type { DeliveryBands } from "@/lib/types"
+import { dispatchCopy, type DispatchCopy } from "@/lib/dispatch"
 
 const STEPS = [
   {
@@ -20,7 +21,7 @@ const STEPS = [
   {
     n: 4,
     title: "Fast UK delivery",
-    desc: "Orders placed before 2pm despatched same day. Track your delivery online or call 01438 880 178.",
+    desc: "Track your delivery online or call 01438 880 178.",
   },
 ]
 
@@ -28,12 +29,18 @@ interface Props {
   title?: string
   titleHighlight?: string
   delivery?: DeliveryBands
+  dispatch?: DispatchCopy
 }
 
-export function HowToOrder({ title = "How to", titleHighlight = "order from us", delivery }: Props) {
+export function HowToOrder({ title = "How to", titleHighlight = "order from us", delivery, dispatch = dispatchCopy() }: Props) {
   // Step 4 spells out the admin-set delivery charges so they match checkout exactly.
   const bandLines = delivery ? describeBands(delivery).lines : []
-  const steps = STEPS.map(s => (s.n === 4 && bandLines.length ? { ...s, extra: bandLines } : s))
+  // The dispatch promise (admin-editable) leads step 4; blank means we don't make one.
+  const promise = (dispatch.subtitle || dispatch.title).replace(/\.$/, "")
+  const steps = STEPS.map(s =>
+    s.n === 4
+      ? { ...s, desc: promise ? `${promise}. ${s.desc}` : s.desc, extra: bandLines.length ? bandLines : undefined }
+      : s)
   return (
     <div className="bg-white py-14">
       <div className="max-w-[1280px] mx-auto px-10">

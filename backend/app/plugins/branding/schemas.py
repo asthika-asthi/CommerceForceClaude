@@ -1,7 +1,7 @@
 import json
 import re
 from typing import Optional
-from pydantic import BaseModel, field_validator, field_serializer, model_validator
+from pydantic import BaseModel, Field, field_validator, field_serializer, model_validator
 
 # Allowed values for the storefront text scale and the header sizing preset.
 # Kept in sync with frontend-starter/lib/header-config.ts.
@@ -67,6 +67,8 @@ class BrandingConfigOut(BaseModel):
     trademark_number: Optional[str] = None
     delivery_promo_text: Optional[str] = None
     dispatch_days: Optional[int] = None
+    dispatch_title: str = "Same Day Despatch"
+    dispatch_subtitle: str = "Orders placed before 2pm"
     transit_days_min: Optional[int] = None
     transit_days_max: Optional[int] = None
     theme_colors: dict = {}
@@ -121,6 +123,8 @@ class BrandingConfigUpdate(BaseModel):
     trademark_number: Optional[str] = None
     delivery_promo_text: Optional[str] = None
     dispatch_days: Optional[int] = None
+    dispatch_title: Optional[str] = Field(None, max_length=100)
+    dispatch_subtitle: Optional[str] = Field(None, max_length=200)
     transit_days_min: Optional[int] = None
     transit_days_max: Optional[int] = None
     theme_colors: Optional[dict] = None
@@ -152,6 +156,14 @@ class BrandingConfigUpdate(BaseModel):
         if v is not None and v not in _HEADER_SIZES:
             raise ValueError(f"header_size must be one of {sorted(_HEADER_SIZES)}")
         return v
+
+    @field_validator("dispatch_title", "dispatch_subtitle")
+    @classmethod
+    def validate_dispatch_text(cls, v: Optional[str]) -> Optional[str]:
+        # Columns are NOT NULL: "" means "hide the message", null is not allowed.
+        if v is None:
+            raise ValueError("must be a string (use an empty string to hide it)")
+        return v.strip()
 
     @field_validator("variant_display")
     @classmethod

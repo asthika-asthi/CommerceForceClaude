@@ -75,6 +75,9 @@ export interface BrandingConfig {
   trademark_number?: string
   delivery_promo_text?: string
   dispatch_days?: number | null
+  /** Homepage dispatch message. "" hides it; unset falls back to the default copy. */
+  dispatch_title?: string
+  dispatch_subtitle?: string
   transit_days_min?: number | null
   transit_days_max?: number | null
   theme_colors?: { core?: Record<string, string>; overrides?: Record<string, string> }
@@ -449,4 +452,6 @@ export interface LandingRuntimeData {
   heroImageAlt?: string
   /** Order-value delivery bands; unset when the shipping plugin is off. */
   deliveryBands?: DeliveryBands
+  /** Homepage dispatch message from branding (see lib/dispatch.ts). */
+  dispatch?: { title: string; subtitle: string }
 }

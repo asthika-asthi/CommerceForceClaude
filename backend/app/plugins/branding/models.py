@@ -93,6 +93,14 @@ class BrandingConfig(BaseModel):
     # Delivery / dispatch — drive the "Estimated delivery dates" range on product pages.
     delivery_promo_text: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     dispatch_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    # Dispatch promise shown on the homepage (trust strip, "how to order", promo banner).
+    # Defaults reproduce the historical copy; an empty string hides the message.
+    dispatch_title: Mapped[str] = mapped_column(
+        String(100), default="Same Day Despatch", server_default="Same Day Despatch", nullable=False
+    )
+    dispatch_subtitle: Mapped[str] = mapped_column(
+        String(200), default="Orders placed before 2pm", server_default="Orders placed before 2pm", nullable=False
+    )
     transit_days_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     transit_days_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     # Theme colour overrides chosen in the admin panel:

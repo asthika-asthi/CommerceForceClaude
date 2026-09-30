@@ -1,8 +1,9 @@
 import Link from "next/link"
 import { describeBands } from "@/lib/delivery-bands"
 import type { DeliveryBands } from "@/lib/types"
+import { dispatchCopy, type DispatchCopy } from "@/lib/dispatch"
 
-export function PromoBanner({ delivery }: { delivery?: DeliveryBands }) {
+export function PromoBanner({ delivery, dispatch = dispatchCopy() }: { delivery?: DeliveryBands; dispatch?: DispatchCopy }) {
   const headline = delivery ? describeBands(delivery).headline : null
   return (
     <div className="py-3.5 px-10" style={{ background: "linear-gradient(90deg, var(--brand) 0%, var(--brand-hover) 100%)" }}>
@@ -11,7 +12,7 @@ export function PromoBanner({ delivery }: { delivery?: DeliveryBands }) {
           Limited Time
         </span>
         <span className="text-white text-[14px] font-medium">
-          Order before 2pm for same-day despatch{headline ? ` — ${headline.charAt(0).toLowerCase()}${headline.slice(1)}` : ""}
+          {[[dispatch.title, dispatch.subtitle].filter(Boolean).join(" — "), headline].filter(Boolean).join(" — ")}
         </span>
         <Link href="/products" className="text-brand-highlight text-[14px] font-semibold border-b border-brand-highlight pb-px cursor-pointer hover:text-white hover:border-white transition-colors">
           Shop now →

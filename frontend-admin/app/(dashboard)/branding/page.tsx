@@ -266,6 +266,9 @@ export default function BrandingPage() {
       f.base_font_size = config.base_font_size || DEFAULT_FONT_SIZE
       f.header_size = config.header_size || DEFAULT_HEADER_SIZE
       f.variant_display = config.variant_display || DEFAULT_VARIANT_DISPLAY
+      // "" is meaningful here (hides the homepage message), so only fall back when unset.
+      f.dispatch_title = config.dispatch_title ?? "Same Day Despatch"
+      f.dispatch_subtitle = config.dispatch_subtitle ?? "Orders placed before 2pm"
       f.header_elevated = config.header_elevated === true ? "true" : ""
       f.header_filled = config.header_filled === true ? "true" : ""
       f.header_shrink_on_scroll = config.header_shrink_on_scroll === true ? "true" : ""
@@ -753,6 +756,34 @@ export default function BrandingPage() {
             The dispatch/transit days drive the estimated-delivery range shown on product pages.
             Leave all three blank to hide that line.
           </p>
+          <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h4 className="text-sm font-medium text-slate-800 mb-1">Homepage dispatch message</h4>
+            <p className="text-xs text-slate-500 mb-3">
+              Shown on the homepage trust strip, &ldquo;How to order&rdquo; and promo banner. Not every customer
+              can be despatched same-day, so set this to something you can always honour.
+              Clear the headline to hide the message completely.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Headline</label>
+                <input value={form.dispatch_title ?? ""} maxLength={100}
+                  onChange={(e) => setForm((f) => ({ ...f, dispatch_title: e.target.value }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  placeholder="Fast Despatch" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Detail</label>
+                <input value={form.dispatch_subtitle ?? ""} maxLength={200}
+                  onChange={(e) => setForm((f) => ({ ...f, dispatch_subtitle: e.target.value }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  placeholder="Despatched within 1–2 working days" />
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 mt-2">
+              Examples: &ldquo;Fast Despatch&rdquo; / &ldquo;Despatched within 1–2 working days&rdquo; &middot;
+              &ldquo;Same Day Despatch&rdquo; / &ldquo;Orders placed before 2pm&rdquo; (the default).
+            </p>
+          </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-slate-700 mb-1">Delivery promo text</label>
             <input value={form.delivery_promo_text || ""}

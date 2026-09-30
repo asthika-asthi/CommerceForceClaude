@@ -1,6 +1,7 @@
 import { serverFetch } from "@/lib/api"
 import { getFilteredSections, getHomepageConfig, mergeContentOverrides, type ContentOverrideMap } from "@/lib/landing-config"
 import { getDeliveryBands } from "@/lib/delivery-bands"
+import { dispatchCopy } from "@/lib/dispatch"
 import type { BrandingConfig, Category, LandingRuntimeData, PaginatedResponse, Product } from "@/lib/types"
 import { LandingSectionRenderer } from "@/components/shop/landing-section"
 
@@ -42,6 +43,7 @@ export default async function HomePage() {
     heroImageUrl: branding?.hero_image_url?.trim() || undefined,
     heroImageAlt: branding?.hero_image_alt?.trim() || undefined,
     deliveryBands: deliveryBands ?? undefined,
+    dispatch: dispatchCopy(branding),
   }
 
   const sections = mergeContentOverrides(getFilteredSections(), overridesMap ?? {})

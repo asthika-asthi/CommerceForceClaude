@@ -352,6 +352,8 @@ export interface BrandingConfig {
   trademark_number?: string
   delivery_promo_text?: string
   dispatch_days?: number | null
+  dispatch_title?: string
+  dispatch_subtitle?: string
   transit_days_min?: number | null
   transit_days_max?: number | null
   theme_colors?: { core?: Record<string, string>; overrides?: Record<string, string> }
