@@ -80,19 +80,21 @@ async def replace_bands(data: ShippingBandsUpdate, db: AsyncSession) -> list[Shi
     return await list_bands(db)
 
 
-async def quote(country: str, weight_kg: Decimal, order_value: Decimal, db: AsyncSession) -> Quote:
+async def quote(country: Optional[str], weight_kg: Decimal, order_value: Decimal, db: AsyncSession) -> Quote:
     """Delivery charge for an order worth ``order_value`` (goods after discounts,
     ex VAT) going to ``country``.
 
-    This is the single entry point checkout uses to price delivery. The country's
-    zone decides whether we deliver there; the charge comes from the order-value
-    band. ``weight_kg`` is not used for pricing yet; a weight-based or live-carrier
-    provider (Royal Mail etc.) replaces the body of this function without checkout
-    or the storefront changing.
+    This is the single entry point checkout uses to price delivery. The charge
+    comes from the order-value band and always applies: bands are global, so it
+    does not depend on a zone existing or on a country being supplied (otherwise
+    a store with no zones, or a request that omits the country, would ship free).
+    The country's zone, if any, is only reported as a label. ``weight_kg`` is not
+    used for pricing yet; a weight-based or live-carrier provider (Royal Mail etc.)
+    replaces the body of this function without checkout or the storefront changing.
     """
-    zone_name, _flat_rate = await get_rate(country, db)
-    if zone_name is None:
-        return Quote(None, Decimal("0"))
+    zone_name: Optional[str] = None
+    if country:
+        zone_name, _flat_rate = await get_rate(country, db)
     bands = await list_bands(db)
     band = band_for(order_value, bands)
     if band is None:

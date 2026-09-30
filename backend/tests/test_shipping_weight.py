@@ -138,8 +138,9 @@ async def test_shipping_quote_for_guest_cart(client: AsyncClient, db):
     assert Decimal(body["cost"]) == Decimal("5")
     assert body["zone_name"] == "UK"
 
-    # No country yet: weight is still reported, no charge.
+    # No country yet: weight is still reported and the order-value band still applies
+    # (bands are global, so omitting the country must not make delivery free).
     r = await client.post("/api/checkout/shipping-quote", json={})
     assert r.status_code == 200, r.text
-    assert Decimal(r.json()["cost"]) == Decimal("0")
+    assert Decimal(r.json()["cost"]) == Decimal("5")
     assert Decimal(r.json()["weight_kg"]) == Decimal("9.5")

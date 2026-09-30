@@ -293,8 +293,6 @@ async def _quote_shipping(
     except ImportError:
         return ShippingResult(order_value=order_value)
     weight = await shipping_service.parcel_weight([(i["weight"], i["quantity"]) for i in items], db)
-    if not country:
-        return ShippingResult(weight_kg=weight, order_value=order_value)
     q = await shipping_service.quote(country, weight, order_value, db)
     return ShippingResult(q.zone_name, q.cost, weight, order_value, q.next_threshold, q.amount_to_next_band, q.next_charge)
 

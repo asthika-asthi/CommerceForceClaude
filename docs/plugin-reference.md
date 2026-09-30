@@ -323,9 +323,10 @@ Delivery is charged from **order-value bands**; the shipping plugin owns them:
 - **Band basis** — goods **after discounts, ex VAT** (`subtotal - discount_amount`, the tax base).
   Checkout and the quote endpoint share `_resolve_discount()` so a coupon that drops an order into a
   costlier band changes the preview and the charge identically.
-- **Zones** only decide *where* we deliver (`shipping_zones.countries`); a country with no zone is not
-  charged. `flat_rate` is retired from pricing (column kept, hidden in admin) and `GET /api/shipping/rate`
-  is deprecated.
+- **Zones** (`shipping_zones.countries`) only label the destination; they do **not** gate the charge. The
+  band always applies, even with no zones configured or no `delivery_country` sent (otherwise a store
+  with no zones, or a request that omits the country, would ship free). `flat_rate` is retired from
+  pricing (column kept, hidden in admin) and `GET /api/shipping/rate` is deprecated.
 - **Storefront copy** — home page (trust strip, stats band, how-to-order, promo banner), cart, terms and
   FAQ are built from `GET /api/shipping/bands` via `lib/delivery-bands.ts`, so they can't disagree with
   checkout. With the shipping plugin off the delivery wording is simply omitted.

@@ -279,7 +279,7 @@ export default function ShippingPage() {
     <div className="max-w-3xl">
       <PageHeader
         title="Shipping"
-        description="Set delivery charges by order value, and choose which countries you deliver to. Enter country codes (e.g. GB,IE) or * for a catch-all zone."
+        description="Set delivery charges by order value. Shipping zones (country codes such as GB,IE, or * for a catch-all) label destinations and do not change the charge."
       />
 
       <DeliveryBandsCard />
@@ -326,7 +326,7 @@ export default function ShippingPage() {
       <div className="mt-4 p-4 bg-slate-50 rounded-xl text-xs text-slate-500 space-y-1">
         <p><strong>Country codes:</strong> Use ISO 3166-1 alpha-2 codes, comma-separated (e.g. <code className="bg-white px-1 rounded">GB,IE</code>).</p>
         <p><strong>Catch-all:</strong> Use <code className="bg-white px-1 rounded">*</code> to match any country not covered by a specific zone.</p>
-        <p><strong>Priority:</strong> Exact country match wins over catch-all. Zones only decide where you deliver; the charge comes from the delivery bands above. Countries with no zone are not charged.</p>
+        <p><strong>Priority:</strong> Exact country match wins over catch-all. The delivery charge comes from the delivery bands above and applies to every order, with or without a zone. Zones just label destinations (and are where country-specific rates would be added later).</p>
       </div>
     </div>
   )

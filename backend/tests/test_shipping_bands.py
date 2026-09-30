@@ -140,12 +140,33 @@ async def test_discount_can_drop_order_into_a_costlier_band(client: AsyncClient,
     assert r.status_code == 200 and Decimal(r.json()["cost"]) == Decimal("0")
 
 
-async def test_no_zone_means_no_charge(client: AsyncClient, db):
+async def test_band_applies_without_a_matching_zone_or_country(client: AsyncClient, db):
+    """Regression: with no shipping zone for the destination (or no zones at all, or no
+    delivery_country sent) delivery used to be free even though bands were set."""
     token = await _setup(client, db)
     pid = await _product(client, token, "100.00")
+
+    # Destination with no zone (only GB has one).
     r = await client.post("/api/checkout", json={
         **GUEST, "use_cart": False, "delivery_country": "FR",
         "items": [{"product_id": pid, "quantity": 1}],
     })
     assert r.status_code == 201, r.text
-    assert Decimal(r.json()["shipping_cost"]) == Decimal("0")
+    assert Decimal(r.json()["shipping_cost"]) == Decimal("9.95")
+
+    # No delivery_country at all.
+    r = await client.post("/api/checkout", json={
+        **GUEST, "use_cart": False, "items": [{"product_id": pid, "quantity": 1}],
+    })
+    assert r.status_code == 201, r.text
+    assert Decimal(r.json()["shipping_cost"]) == Decimal("9.95")
+
+    # No zones configured whatsoever.
+    for z in (await client.get("/api/shipping/zones", headers=_auth(token))).json():
+        await client.delete(f"/api/shipping/zones/{z['id']}", headers=_auth(token))
+    r = await client.post("/api/checkout", json={
+        **GUEST, "use_cart": False, "delivery_country": "GB",
+        "items": [{"product_id": pid, "quantity": 1}],
+    })
+    assert r.status_code == 201, r.text
+    assert Decimal(r.json()["shipping_cost"]) == Decimal("9.95")
