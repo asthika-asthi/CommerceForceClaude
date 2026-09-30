@@ -56,6 +56,16 @@ const DELIVERY_DAY_FIELDS = [
   { key: "transit_days_max", label: "Transit days (max)", hint: "Slowest courier delivery time" },
 ]
 
+type TabId = "general" | "appearance" | "homepage" | "shop" | "analytics"
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: "general", label: "General" },
+  { id: "appearance", label: "Appearance" },
+  { id: "homepage", label: "Homepage" },
+  { id: "shop", label: "Shop" },
+  { id: "analytics", label: "Analytics" },
+]
+
 const GA4_ID_RE = /^G-[A-Z0-9]+$/
 const PIXEL_ID_RE = /^\d{5,20}$/
 
@@ -243,6 +253,7 @@ export default function BrandingPage() {
   const [core, setCore] = useState<CoreState>({})
   const [overrides, setOverrides] = useState<OverrideState>({})
   const [saved, setSaved] = useState(false)
+  const [tab, setTab] = useState<TabId>("general")
   const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -341,9 +352,18 @@ export default function BrandingPage() {
   const transitRangeInvalid =
     transitMin !== "" && transitMax !== "" && Number(transitMin) > Number(transitMax)
 
+  // Sections with a problem show a red dot on their tab, since the fields may be hidden.
+  const analyticsInvalid =
+    (!!form.ga4_measurement_id && !GA4_ID_RE.test(form.ga4_measurement_id.trim())) ||
+    (!!form.meta_pixel_id && !PIXEL_ID_RE.test(form.meta_pixel_id.trim()))
+  const tabHasError: Record<TabId, boolean> = {
+    general: false, appearance: false, homepage: false, shop: transitRangeInvalid, analytics: analyticsInvalid,
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (transitRangeInvalid) {
+      setTab("shop")
       setSaveError("Transit days (min) must not be greater than transit days (max).")
       return
     }
@@ -353,11 +373,29 @@ export default function BrandingPage() {
   return (
     <div className="max-w-2xl">
       <PageHeader title="Branding" description="Storefront identity and visual settings" />
+      <div role="tablist" aria-label="Branding sections"
+        className="flex gap-1 border-b border-slate-200 mb-4 overflow-x-auto">
+        {TABS.map(({ id, label }) => (
+          <button key={id} type="button" role="tab" id={`branding-tab-${id}`}
+            aria-selected={tab === id} aria-controls={`branding-panel-${id}`}
+            onClick={() => setTab(id)}
+            className={`relative px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              tab === id
+                ? "border-blue-600 text-blue-700"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+            }`}>
+            {label}
+            {tabHasError[id] && (
+              <span aria-label="has an error" className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-red-500" />
+            )}
+          </button>
+        ))}
+      </div>
       <form onSubmit={handleSubmit}
         className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
-
+        <div role="tabpanel" id="branding-panel-general" aria-labelledby="branding-tab-general" hidden={tab !== "general"} className="space-y-5">
         <div className="grid grid-cols-2 gap-5">
-          {TEXT_FIELDS.map(({ key, label, placeholder }) => (
+          {TEXT_FIELDS.filter((f) => f.key !== "stripe_publishable_key").map(({ key, label, placeholder }) => (
             <div key={key}>
               <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
               <input value={form[key] || ""}
@@ -366,6 +404,69 @@ export default function BrandingPage() {
                 placeholder={placeholder} />
             </div>
           ))}
+        </div>
+
+        <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+          <input type="checkbox"
+            checked={(form.show_store_name ?? "") !== ""}
+            onChange={(e) => setForm((f) => ({ ...f, show_store_name: e.target.checked ? "true" : "" }))}
+            className="mt-0.5 rounded border-slate-300" />
+          <span>
+            Show store name in the header &amp; footer
+            <span className="block text-xs text-slate-500">
+              When off, the site header and footer show neither the store-name text, the tagline,
+              nor the initials badge that stands in for a missing logo — leave off for a logo-only
+              (or blank) brand lockup.
+            </span>
+          </span>
+        </label>
+
+        <div className="grid grid-cols-2 gap-5 pt-1 border-t border-slate-100">
+          {IMAGE_FIELDS.map(({ key, label, hint }) => (
+            <ImageUploadField key={key} label={label} hint={hint}
+              value={form[key] ?? ""}
+              onChange={(url) => setForm((f) => ({ ...f, [key]: url }))} />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-5 pt-1 border-t border-slate-100">
+          {DOCUMENT_FIELDS.map(({ key, label, hint }) => (
+            <FileUploadField key={key} label={label} hint={hint}
+              value={form[key] ?? ""}
+              onChange={(url) => setForm((f) => ({ ...f, [key]: url }))} />
+          ))}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Social Links (JSON)</label>
+          <input value={form.social_links || ""}
+            onChange={(e) => setForm((f) => ({ ...f, social_links: e.target.value }))}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder='{"twitter": "https://...", "instagram": "https://..."}' />
+        </div>
+
+        {/* ── Legal / Company ─────────────────────────────────────── */}
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Legal / Company</h3>
+          <p className="text-xs text-slate-500 mb-4">
+            Shown in the storefront footer. Leave a field blank to hide it.
+          </p>
+          <div className="grid grid-cols-2 gap-5">
+            {LEGAL_FIELDS.map(({ key, label, placeholder }) => (
+              <div key={key}>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+                <input value={form[key] || ""}
+                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={placeholder} />
+              </div>
+            ))}
+          </div>
+        </div>
+        </div>
+
+        <div role="tabpanel" id="branding-panel-appearance" aria-labelledby="branding-tab-appearance" hidden={tab !== "appearance"} className="space-y-5">
+        <div className="grid grid-cols-2 gap-5">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Font Family</label>
             <select value={form.font_family || FONT_OPTIONS[0].value}
@@ -399,21 +500,6 @@ export default function BrandingPage() {
             <p className="text-xs text-slate-400 mt-1">Bar height plus logo, store name and icons.</p>
           </div>
         </div>
-
-        <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
-          <input type="checkbox"
-            checked={(form.show_store_name ?? "") !== ""}
-            onChange={(e) => setForm((f) => ({ ...f, show_store_name: e.target.checked ? "true" : "" }))}
-            className="mt-0.5 rounded border-slate-300" />
-          <span>
-            Show store name in the header &amp; footer
-            <span className="block text-xs text-slate-500">
-              When off, the site header and footer show neither the store-name text, the tagline,
-              nor the initials badge that stands in for a missing logo — leave off for a logo-only
-              (or blank) brand lockup.
-            </span>
-          </span>
-        </label>
 
         {/* ── Header appearance ───────────────────────────────────── */}
         <div className="pt-4 border-t border-slate-100">
@@ -463,93 +549,6 @@ export default function BrandingPage() {
               </span>
             </label>
           </div>
-        </div>
-
-        {/* ── Homepage hero ───────────────────────────────────────── */}
-        <div className="pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">Homepage hero</h3>
-          <p className="text-xs text-slate-500 mb-3">
-            The large headline on the homepage hero. Line&nbsp;2 is shown in the brand highlight
-            colour. Leave line&nbsp;2 blank for a single-line headline — the layout closes up
-            with no empty gap.
-          </p>
-          <div className="grid grid-cols-2 gap-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Line 1</label>
-              <input value={form.hero_heading || ""}
-                onChange={(e) => setForm((f) => ({ ...f, hero_heading: e.target.value }))}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Quality protective" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Line 2 (emphasised)</label>
-              <input value={form.hero_heading_highlight || ""}
-                onChange={(e) => setForm((f) => ({ ...f, hero_heading_highlight: e.target.value }))}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="covers at trade prices" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-5 mt-5">
-            <ImageUploadField
-              label="Hero image"
-              hint="Fills the slanted panel on the right of the homepage hero. Landscape JPG/WebP, at least 1200×1000px. Keep the subject centred — the left edge is cut diagonally and the image is cropped to fit. Hidden on phones. Leave empty for a plain colour panel."
-              value={form.hero_image_url ?? ""}
-              onChange={(url) => setForm((f) => ({ ...f, hero_image_url: url }))} />
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Hero image description</label>
-              <input value={form.hero_image_alt || ""}
-                onChange={(e) => setForm((f) => ({ ...f, hero_image_alt: e.target.value }))}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g. Tarpaulins and dust sheets stacked in our warehouse" />
-              <p className="text-xs text-slate-400 mt-1">Read aloud by screen readers. Leave blank if the image is purely decorative.</p>
-            </div>
-          </div>
-        </div>
-
-        <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
-          <input type="checkbox"
-            checked={(form.show_bespoke_enquiry ?? "") !== ""}
-            onChange={(e) => setForm((f) => ({ ...f, show_bespoke_enquiry: e.target.checked ? "true" : "" }))}
-            className="mt-0.5 rounded border-slate-300" />
-          <span>
-            Show the bespoke enquiry form
-            <span className="block text-xs text-slate-500">
-              Adds a &ldquo;Bespoke Orders&rdquo; page with a custom-spec enquiry form, linked from
-              the main nav, the footer and the price-list page. When off, that page is removed and
-              its links disappear.
-            </span>
-          </span>
-        </label>
-
-        <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
-          <input type="checkbox"
-            checked={(form.show_best_sellers_card ?? "") !== ""}
-            onChange={(e) => setForm((f) => ({ ...f, show_best_sellers_card: e.target.checked ? "true" : "" }))}
-            className="mt-0.5 rounded border-slate-300" />
-          <span>
-            Show the homepage &ldquo;Featured products&rdquo; card
-            <span className="block text-xs text-slate-500">
-              A compact list of up to four featured products in the hero, each with a live
-              in&nbsp;stock / sale / out&nbsp;of&nbsp;stock badge. Off by default.
-            </span>
-          </span>
-        </label>
-
-        {/* ── Product page ────────────────────────────────────────── */}
-        <div className="pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-800">Product page</h3>
-          <p className="text-xs text-slate-500 mb-3">How customers choose product options such as size or colour.</p>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Variant options</label>
-          <select value={form.variant_display || DEFAULT_VARIANT_DISPLAY}
-            onChange={(e) => setForm((f) => ({ ...f, variant_display: e.target.value }))}
-            className="w-full max-w-sm border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-            {VARIANT_DISPLAY_OPTIONS.map(({ value, label }) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-          <p className="text-xs text-slate-400 mt-1">
-            Buttons show every value of each option (e.g. S, M, L) side by side; unavailable values are dimmed and struck through.
-          </p>
         </div>
 
         {/* ── Colours ─────────────────────────────────────────────── */}
@@ -648,115 +647,103 @@ export default function BrandingPage() {
           </details>
         </div>
 
-        <div className="grid grid-cols-2 gap-5 pt-1 border-t border-slate-100">
-          {IMAGE_FIELDS.map(({ key, label, hint }) => (
-            <ImageUploadField key={key} label={label} hint={hint}
-              value={form[key] ?? ""}
-              onChange={(url) => setForm((f) => ({ ...f, [key]: url }))} />
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-5 pt-1 border-t border-slate-100">
-          {DOCUMENT_FIELDS.map(({ key, label, hint }) => (
-            <FileUploadField key={key} label={label} hint={hint}
-              value={form[key] ?? ""}
-              onChange={(url) => setForm((f) => ({ ...f, [key]: url }))} />
-          ))}
-        </div>
-
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Social Links (JSON)</label>
-          <input value={form.social_links || ""}
-            onChange={(e) => setForm((f) => ({ ...f, social_links: e.target.value }))}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder='{"twitter": "https://...", "instagram": "https://..."}' />
+          <label className="block text-sm font-medium text-slate-700 mb-1">Custom CSS</label>
+          <textarea value={form.custom_css || ""}
+            onChange={(e) => setForm((f) => ({ ...f, custom_css: e.target.value }))}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 h-28 resize-none"
+            placeholder=":root { --brand: #1d4ed8; }" />
+        </div>
         </div>
 
-        {/* ── Payment Methods ─────────────────────────────────────── */}
-        <div className="pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">Payment Methods</h3>
-          <p className="text-xs text-slate-500 mb-4">
-            Bank Transfer and PayPal only appear at checkout once their details below are filled in.
-            Orders paid this way stay pending until you confirm the payment arrived (Orders → Mark as Paid).
+        <div role="tabpanel" id="branding-panel-homepage" aria-labelledby="branding-tab-homepage" hidden={tab !== "homepage"} className="space-y-5">
+        {/* ── Homepage hero ───────────────────────────────────────── */}
+        <div className="">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Homepage hero</h3>
+          <p className="text-xs text-slate-500 mb-3">
+            The large headline on the homepage hero. Line&nbsp;2 is shown in the brand highlight
+            colour. Leave line&nbsp;2 blank for a single-line headline — the layout closes up
+            with no empty gap.
           </p>
-          <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer mb-4">
-            <input type="checkbox"
-              checked={(form.enable_cash_on_delivery ?? "") !== ""}
-              onChange={(e) => setForm((f) => ({ ...f, enable_cash_on_delivery: e.target.checked ? "true" : "" }))}
-              className="mt-0.5 rounded border-slate-300" />
-            <span>
-              Offer Cash on Delivery at checkout
-              <span className="block text-xs text-slate-500">
-                When off, customers cannot choose &ldquo;pay on delivery&rdquo; — make sure at least one
-                other method (card, bank transfer or PayPal) is configured.
-              </span>
-            </span>
-          </label>
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Bank Transfer Details</label>
-              <textarea value={form.bank_transfer_details || ""}
-                onChange={(e) => setForm((f) => ({ ...f, bank_transfer_details: e.target.value }))}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
-                placeholder={"Bank name: ...\nAccount name: ...\nAccount number: ...\nSort code: ..."} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">PayPal Email</label>
-              <input value={form.paypal_email || ""}
-                onChange={(e) => setForm((f) => ({ ...f, paypal_email: e.target.value }))}
+              <label className="block text-sm font-medium text-slate-700 mb-1">Line 1</label>
+              <input value={form.hero_heading || ""}
+                onChange={(e) => setForm((f) => ({ ...f, hero_heading: e.target.value }))}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="payments@yourstore.com" />
+                placeholder="Quality protective" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Line 2 (emphasised)</label>
+              <input value={form.hero_heading_highlight || ""}
+                onChange={(e) => setForm((f) => ({ ...f, hero_heading_highlight: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="covers at trade prices" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-5 mt-5">
+            <ImageUploadField
+              label="Hero image"
+              hint="Fills the slanted panel on the right of the homepage hero. Landscape JPG/WebP, at least 1200×1000px. Keep the subject centred — the left edge is cut diagonally and the image is cropped to fit. Hidden on phones. Leave empty for a plain colour panel."
+              value={form.hero_image_url ?? ""}
+              onChange={(url) => setForm((f) => ({ ...f, hero_image_url: url }))} />
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Hero image description</label>
+              <input value={form.hero_image_alt || ""}
+                onChange={(e) => setForm((f) => ({ ...f, hero_image_alt: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. Tarpaulins and dust sheets stacked in our warehouse" />
+              <p className="text-xs text-slate-400 mt-1">Read aloud by screen readers. Leave blank if the image is purely decorative.</p>
             </div>
           </div>
         </div>
 
-        {/* ── Analytics ───────────────────────────────────────────── */}
-        <div className="pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">Analytics</h3>
-          <p className="text-xs text-slate-500 mb-4">
-            Optional. Loaded on the storefront only after a visitor accepts cookies in the consent banner.
-          </p>
-          <div className="grid grid-cols-2 gap-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">GA4 Measurement ID</label>
-              <input value={form.ga4_measurement_id || ""}
-                onChange={(e) => setForm((f) => ({ ...f, ga4_measurement_id: e.target.value }))}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="G-ABC1234567" />
-              {form.ga4_measurement_id && !GA4_ID_RE.test(form.ga4_measurement_id.trim()) && (
-                <p className="text-xs text-red-600 mt-1">Expected format: G- followed by letters/numbers (e.g. G-ABC1234567)</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Meta Pixel ID</label>
-              <input value={form.meta_pixel_id || ""}
-                onChange={(e) => setForm((f) => ({ ...f, meta_pixel_id: e.target.value }))}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="1234567890123" />
-              {form.meta_pixel_id && !PIXEL_ID_RE.test(form.meta_pixel_id.trim()) && (
-                <p className="text-xs text-red-600 mt-1">Expected format: numbers only (5–20 digits)</p>
-              )}
-            </div>
-          </div>
+        <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+          <input type="checkbox"
+            checked={(form.show_bespoke_enquiry ?? "") !== ""}
+            onChange={(e) => setForm((f) => ({ ...f, show_bespoke_enquiry: e.target.checked ? "true" : "" }))}
+            className="mt-0.5 rounded border-slate-300" />
+          <span>
+            Show the bespoke enquiry form
+            <span className="block text-xs text-slate-500">
+              Adds a &ldquo;Bespoke Orders&rdquo; page with a custom-spec enquiry form, linked from
+              the main nav, the footer and the price-list page. When off, that page is removed and
+              its links disappear.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+          <input type="checkbox"
+            checked={(form.show_best_sellers_card ?? "") !== ""}
+            onChange={(e) => setForm((f) => ({ ...f, show_best_sellers_card: e.target.checked ? "true" : "" }))}
+            className="mt-0.5 rounded border-slate-300" />
+          <span>
+            Show the homepage &ldquo;Featured products&rdquo; card
+            <span className="block text-xs text-slate-500">
+              A compact list of up to four featured products in the hero, each with a live
+              in&nbsp;stock / sale / out&nbsp;of&nbsp;stock badge. Off by default.
+            </span>
+          </span>
+        </label>
         </div>
 
-        {/* ── Legal / Company ─────────────────────────────────────── */}
-        <div className="pt-4 border-t border-slate-100">
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">Legal / Company</h3>
-          <p className="text-xs text-slate-500 mb-4">
-            Shown in the storefront footer. Leave a field blank to hide it.
-          </p>
-          <div className="grid grid-cols-2 gap-5">
-            {LEGAL_FIELDS.map(({ key, label, placeholder }) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-                <input value={form[key] || ""}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder={placeholder} />
-              </div>
+        <div role="tabpanel" id="branding-panel-shop" aria-labelledby="branding-tab-shop" hidden={tab !== "shop"} className="space-y-5">
+        {/* ── Product page ────────────────────────────────────────── */}
+        <div className="">
+          <h3 className="text-sm font-semibold text-slate-800">Product page</h3>
+          <p className="text-xs text-slate-500 mb-3">How customers choose product options such as size or colour.</p>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Variant options</label>
+          <select value={form.variant_display || DEFAULT_VARIANT_DISPLAY}
+            onChange={(e) => setForm((f) => ({ ...f, variant_display: e.target.value }))}
+            className="w-full max-w-sm border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            {VARIANT_DISPLAY_OPTIONS.map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
             ))}
-          </div>
+          </select>
+          <p className="text-xs text-slate-400 mt-1">
+            Buttons show every value of each option (e.g. S, M, L) side by side; unavailable values are dimmed and struck through.
+          </p>
         </div>
 
         {/* ── Delivery & Dispatch ─────────────────────────────────── */}
@@ -789,12 +776,83 @@ export default function BrandingPage() {
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Custom CSS</label>
-          <textarea value={form.custom_css || ""}
-            onChange={(e) => setForm((f) => ({ ...f, custom_css: e.target.value }))}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 h-28 resize-none"
-            placeholder=":root { --brand: #1d4ed8; }" />
+        {/* ── Payment Methods ─────────────────────────────────────── */}
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Payment Methods</h3>
+          <p className="text-xs text-slate-500 mb-4">
+            Bank Transfer and PayPal only appear at checkout once their details below are filled in.
+            Orders paid this way stay pending until you confirm the payment arrived (Orders → Mark as Paid).
+          </p>
+          <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer mb-4">
+            <input type="checkbox"
+              checked={(form.enable_cash_on_delivery ?? "") !== ""}
+              onChange={(e) => setForm((f) => ({ ...f, enable_cash_on_delivery: e.target.checked ? "true" : "" }))}
+              className="mt-0.5 rounded border-slate-300" />
+            <span>
+              Offer Cash on Delivery at checkout
+              <span className="block text-xs text-slate-500">
+                When off, customers cannot choose &ldquo;pay on delivery&rdquo; — make sure at least one
+                other method (card, bank transfer or PayPal) is configured.
+              </span>
+            </span>
+          </label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Stripe Publishable Key</label>
+            <input value={form.stripe_publishable_key || ""}
+              onChange={(e) => setForm((f) => ({ ...f, stripe_publishable_key: e.target.value }))}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="pk_live_..." />
+            <p className="text-xs text-slate-400 mt-1">Card payments appear at checkout once this is set.</p>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Bank Transfer Details</label>
+              <textarea value={form.bank_transfer_details || ""}
+                onChange={(e) => setForm((f) => ({ ...f, bank_transfer_details: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
+                placeholder={"Bank name: ...\nAccount name: ...\nAccount number: ...\nSort code: ..."} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">PayPal Email</label>
+              <input value={form.paypal_email || ""}
+                onChange={(e) => setForm((f) => ({ ...f, paypal_email: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="payments@yourstore.com" />
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <div role="tabpanel" id="branding-panel-analytics" aria-labelledby="branding-tab-analytics" hidden={tab !== "analytics"} className="space-y-5">
+        {/* ── Analytics ───────────────────────────────────────────── */}
+        <div className="">
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">Analytics</h3>
+          <p className="text-xs text-slate-500 mb-4">
+            Optional. Loaded on the storefront only after a visitor accepts cookies in the consent banner.
+          </p>
+          <div className="grid grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">GA4 Measurement ID</label>
+              <input value={form.ga4_measurement_id || ""}
+                onChange={(e) => setForm((f) => ({ ...f, ga4_measurement_id: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="G-ABC1234567" />
+              {form.ga4_measurement_id && !GA4_ID_RE.test(form.ga4_measurement_id.trim()) && (
+                <p className="text-xs text-red-600 mt-1">Expected format: G- followed by letters/numbers (e.g. G-ABC1234567)</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Meta Pixel ID</label>
+              <input value={form.meta_pixel_id || ""}
+                onChange={(e) => setForm((f) => ({ ...f, meta_pixel_id: e.target.value }))}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="1234567890123" />
+              {form.meta_pixel_id && !PIXEL_ID_RE.test(form.meta_pixel_id.trim()) && (
+                <p className="text-xs text-red-600 mt-1">Expected format: numbers only (5–20 digits)</p>
+              )}
+            </div>
+          </div>
+        </div>
         </div>
 
         <div className="space-y-2">
