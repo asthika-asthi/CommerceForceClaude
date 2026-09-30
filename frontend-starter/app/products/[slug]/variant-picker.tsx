@@ -28,9 +28,12 @@ interface VariantPickerProps {
   optionTypes: OptionType[]
   variants: Variant[]
   onSelect: (variantId: string | null) => void
+  /** Branding "Variant options" setting; anything but "buttons" renders the drop-down. */
+  variantDisplay?: string
 }
 
-export function VariantPicker({ optionTypes, variants, onSelect }: VariantPickerProps) {
+export function VariantPicker({ optionTypes, variants, onSelect, variantDisplay }: VariantPickerProps) {
+  const asButtons = variantDisplay === "buttons"
   const [selections, setSelections] = useState<Record<string, string>>({})
 
   // Per-combination availability: a value is available if there exists at least one
@@ -87,12 +90,60 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
           const available = availableValues.get(optionType.name)
           return (
             <div key={optionType.id}>
-              <label
-                htmlFor={`opt-${optionType.id}`}
-                className="block text-sm font-semibold text-fg mb-1.5"
-              >
-                {optionType.name}
-              </label>
+              {asButtons ? (
+                <span id={`opt-label-${optionType.id}`} className="block text-sm font-semibold text-fg mb-1.5">
+                  {optionType.name}
+                </span>
+              ) : (
+                <label
+                  htmlFor={`opt-${optionType.id}`}
+                  className="block text-sm font-semibold text-fg mb-1.5"
+                >
+                  {optionType.name}
+                </label>
+              )}
+              {asButtons ? (
+                <div
+                  role="group"
+                  aria-labelledby={`opt-label-${optionType.id}`}
+                  className="flex flex-wrap gap-2"
+                >
+                  {[...optionType.values]
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map(val => {
+                      const isAvailable = available?.has(val.label) ?? false
+                      const isSelected = selections[optionType.name] === val.label
+                      // Unavailable values stay clickable (same as the drop-down) but are
+                      // dimmed and struck through; clicking the selected one deselects it.
+                      return (
+                        <button
+                          key={val.id}
+                          type="button"
+                          aria-pressed={isSelected}
+                          onClick={() =>
+                            setSelections(prev => {
+                              const next = { ...prev }
+                              if (isSelected) delete next[optionType.name]
+                              else next[optionType.name] = val.label
+                              return next
+                            })
+                          }
+                          // Raised "3D" keys with a dark-accent border and a solid ledge shadow.
+                          // Selected keys are pushed in and filled dark; unavailable ones keep
+                          // the dark border (still clearly a button) but are dimmed + struck.
+                          className={`min-w-[3rem] px-4 py-2 rounded-lg border-2 border-brand-dark text-sm font-semibold transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-dark ${
+                            isSelected
+                              ? "bg-brand-dark text-on-dark-strong translate-y-[3px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)]"
+                              : "bg-card-bg text-brand-dark shadow-[0_3px_0_0_var(--brand-dark)] hover:-translate-y-px hover:shadow-[0_4px_0_0_var(--brand-dark)] active:translate-y-[3px] active:shadow-none"
+                          } ${isAvailable ? "" : "opacity-60 line-through"}`}
+                        >
+                          {val.label}
+                          {!isAvailable && <span className="sr-only"> (unavailable)</span>}
+                        </button>
+                      )
+                    })}
+                </div>
+              ) : (
               <select
                 id={`opt-${optionType.id}`}
                 value={selections[optionType.name] ?? ""}
@@ -118,6 +169,7 @@ export function VariantPicker({ optionTypes, variants, onSelect }: VariantPicker
                     )
                   })}
               </select>
+              )}
             </div>
           )
         })}

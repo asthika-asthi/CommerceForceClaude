@@ -7,6 +7,7 @@ from pydantic import BaseModel, field_validator, field_serializer, model_validat
 # Kept in sync with frontend-starter/lib/header-config.ts.
 _BASE_FONT_SIZES = {"compact", "default", "comfortable", "large", "xlarge"}
 _HEADER_SIZES = {"compact", "standard", "large", "xlarge"}
+_VARIANT_DISPLAYS = {"dropdown", "buttons"}
 
 # GA4 measurement IDs look like "G-XXXXXXXXXX"; Meta Pixel IDs are numeric.
 # These render into a <script> tag on the storefront (see analytics-scripts.tsx),
@@ -44,6 +45,7 @@ class BrandingConfigOut(BaseModel):
     catalogue_url: Optional[str] = None
     base_font_size: str = "default"
     header_size: str = "standard"
+    variant_display: str = "dropdown"
     header_elevated: bool = False
     header_filled: bool = False
     header_shrink_on_scroll: bool = False
@@ -97,6 +99,7 @@ class BrandingConfigUpdate(BaseModel):
     catalogue_url: Optional[str] = None
     base_font_size: Optional[str] = None
     header_size: Optional[str] = None
+    variant_display: Optional[str] = None
     header_elevated: Optional[bool] = None
     header_filled: Optional[bool] = None
     header_shrink_on_scroll: Optional[bool] = None
@@ -148,6 +151,13 @@ class BrandingConfigUpdate(BaseModel):
     def validate_header_size(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and v not in _HEADER_SIZES:
             raise ValueError(f"header_size must be one of {sorted(_HEADER_SIZES)}")
+        return v
+
+    @field_validator("variant_display")
+    @classmethod
+    def validate_variant_display(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in _VARIANT_DISPLAYS:
+            raise ValueError(f"variant_display must be one of {sorted(_VARIANT_DISPLAYS)}")
         return v
 
     @field_validator("ga4_measurement_id")

@@ -21,3 +21,12 @@ export const HEADER_SIZE_OPTIONS = [
 
 export const DEFAULT_FONT_SIZE = "default"
 export const DEFAULT_HEADER_SIZE = "standard"
+
+// Storefront product-page variant style. The backend (branding/schemas.py)
+// validates against the same values.
+export const VARIANT_DISPLAY_OPTIONS = [
+  { value: "dropdown", label: "Drop-down list (default)" },
+  { value: "buttons", label: "Buttons — one per option" },
+] as const
+
+export const DEFAULT_VARIANT_DISPLAY = "dropdown"

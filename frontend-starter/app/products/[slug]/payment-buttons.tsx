@@ -50,7 +50,9 @@ export function PaymentButtons({ branding }: Props) {
             <Link
               key={m.value}
               href="/checkout"
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border text-sm font-semibold text-brand-dark hover:border-brand-dark hover:bg-brand/5 transition-colors"
+              // Same raised "3D" look as the variant buttons: dark-accent border and a solid
+              // ledge shadow that lifts on hover and presses in on click.
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border-2 border-brand-dark bg-card-bg text-sm font-semibold text-brand-dark shadow-[0_3px_0_0_var(--brand-dark)] transition-all duration-100 hover:-translate-y-px hover:shadow-[0_4px_0_0_var(--brand-dark)] active:translate-y-[3px] active:shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-dark"
             >
               <Icon size={16} aria-hidden="true" />
               {CTA_LABELS[m.value]}

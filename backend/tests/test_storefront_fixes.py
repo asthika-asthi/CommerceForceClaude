@@ -257,3 +257,26 @@ async def test_loyalty_config_exposes_redemption_rate(client: AsyncClient, db):
     assert "redemption_rate" in body
     assert "min_redemption" in body
     assert "is_active" in body
+
+
+# ── Branding — variant display style (dropdown / buttons) ──────────────────────
+
+async def test_branding_variant_display_defaults_to_dropdown(client: AsyncClient, db):
+    g = await client.get("/api/branding")
+    assert g.status_code == 200, g.text
+    assert g.json()["variant_display"] == "dropdown"
+
+
+async def test_branding_variant_display_round_trip_and_validation(client: AsyncClient, db):
+    superadmin = {"Authorization": f"Bearer {await make_superadmin(client, db)}"}
+    r = await client.put("/api/branding", json={"variant_display": "buttons"}, headers=superadmin)
+    assert r.status_code == 200, r.text
+    assert (await client.get("/api/branding")).json()["variant_display"] == "buttons"
+
+    r = await client.put("/api/branding", json={"variant_display": "swatches"}, headers=superadmin)
+    assert r.status_code == 422, r.text
+    assert (await client.get("/api/branding")).json()["variant_display"] == "buttons"
+
+    admin = {"Authorization": f"Bearer {await make_admin(client, db)}"}
+    r = await client.put("/api/branding", json={"variant_display": "dropdown"}, headers=admin)
+    assert r.status_code == 403, r.text

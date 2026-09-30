@@ -123,6 +123,7 @@ export function ProductDetailClient({
           variants={variants}
           selectedVariantId={selectedVariantId}
           onVariantSelect={setSelectedVariantId}
+          variantDisplay={branding?.variant_display}
         />
 
         <PaymentButtons branding={branding} />

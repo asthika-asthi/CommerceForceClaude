@@ -22,6 +22,8 @@ import {
   HEADER_SIZE_OPTIONS,
   DEFAULT_FONT_SIZE,
   DEFAULT_HEADER_SIZE,
+  VARIANT_DISPLAY_OPTIONS,
+  DEFAULT_VARIANT_DISPLAY,
 } from "@/lib/branding-options"
 
 const TEXT_FIELDS = [
@@ -252,6 +254,7 @@ export default function BrandingPage() {
       f.font_family = config.font_family || FONT_OPTIONS[0].value
       f.base_font_size = config.base_font_size || DEFAULT_FONT_SIZE
       f.header_size = config.header_size || DEFAULT_HEADER_SIZE
+      f.variant_display = config.variant_display || DEFAULT_VARIANT_DISPLAY
       f.header_elevated = config.header_elevated === true ? "true" : ""
       f.header_filled = config.header_filled === true ? "true" : ""
       f.header_shrink_on_scroll = config.header_shrink_on_scroll === true ? "true" : ""
@@ -531,6 +534,23 @@ export default function BrandingPage() {
             </span>
           </span>
         </label>
+
+        {/* ── Product page ────────────────────────────────────────── */}
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-800">Product page</h3>
+          <p className="text-xs text-slate-500 mb-3">How customers choose product options such as size or colour.</p>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Variant options</label>
+          <select value={form.variant_display || DEFAULT_VARIANT_DISPLAY}
+            onChange={(e) => setForm((f) => ({ ...f, variant_display: e.target.value }))}
+            className="w-full max-w-sm border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            {VARIANT_DISPLAY_OPTIONS.map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <p className="text-xs text-slate-400 mt-1">
+            Buttons show every value of each option (e.g. S, M, L) side by side; unavailable values are dimmed and struck through.
+          </p>
+        </div>
 
         {/* ── Colours ─────────────────────────────────────────────── */}
         <div className="pt-4 border-t border-slate-100">

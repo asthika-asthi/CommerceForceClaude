@@ -54,6 +54,12 @@ class BrandingConfig(BaseModel):
     header_size: Mapped[str] = mapped_column(
         String(20), default="standard", server_default="standard", nullable=False
     )
+    # How product-page variant options are shown. One of: dropdown | buttons.
+    # "dropdown" is the historical <select> per option type; "buttons" shows one
+    # button per option value.
+    variant_display: Mapped[str] = mapped_column(
+        String(20), default="dropdown", server_default="dropdown", nullable=False
+    )
     # Header look-and-feel toggles, all off by default (current flat white bar).
     # elevated: drop shadow + thicker border + brand accent line.
     header_elevated: Mapped[bool] = mapped_column(

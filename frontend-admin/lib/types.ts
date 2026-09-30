@@ -330,6 +330,7 @@ export interface BrandingConfig {
   catalogue_url?: string
   base_font_size: string
   header_size: string
+  variant_display?: "dropdown" | "buttons"
   header_elevated: boolean
   header_filled: boolean
   header_shrink_on_scroll: boolean
