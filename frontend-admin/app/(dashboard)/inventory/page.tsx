@@ -90,7 +90,7 @@ export default function InventoryPage() {
   const STOCK_PAGE_SIZE = 20
   const { data: productsData } = useQuery<{ items: Product[]; total: number }>({
     queryKey: ["products-stock", stockPage, stockSearch],
-    queryFn: () => api.get(`/api/products?page=${stockPage}&page_size=${STOCK_PAGE_SIZE}&search=${encodeURIComponent(stockSearch)}`),
+    queryFn: () => api.get(`/api/products?page=${stockPage}&page_size=${STOCK_PAGE_SIZE}&search=${encodeURIComponent(stockSearch)}&include_inactive=true`),
   })
   const stockItems = productsData?.items ?? []
   const stockTotal = productsData?.total ?? 0

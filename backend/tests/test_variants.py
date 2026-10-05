@@ -253,6 +253,32 @@ async def test_product_list_has_variants_flag(client: AsyncClient, db: AsyncSess
     assert items_by_id[multi["id"]]["has_variants"] is True
 
 
+# ── inactive products are visible to admins only ──────────────────────────────
+
+@pytest.mark.asyncio
+async def test_product_list_inactive_visible_to_admin_only(client: AsyncClient, db: AsyncSession):
+    token = await _admin_token(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    product = await _make_product(client, token)
+    r = await client.put(f"/api/products/{product['id']}", json={"is_active": False}, headers=headers)
+    assert r.status_code == 200
+
+    def ids(resp):
+        return {i["id"] for i in resp.json()["items"]}
+
+    # Public / storefront: hidden, even when asking for inactive.
+    assert product["id"] not in ids(await client.get("/api/products", params={"page_size": 50}))
+    assert product["id"] not in ids(
+        await client.get("/api/products", params={"page_size": 50, "include_inactive": "true"})
+    )
+    # Admin: hidden by default (storefront-style call), shown when requested.
+    assert product["id"] not in ids(await client.get("/api/products", params={"page_size": 50}, headers=headers))
+    shown = await client.get(
+        "/api/products", params={"page_size": 50, "include_inactive": "true"}, headers=headers
+    )
+    assert product["id"] in ids(shown)
+
+
 # ── product list exposes a price range for cards ──────────────────────────────
 
 @pytest.mark.asyncio

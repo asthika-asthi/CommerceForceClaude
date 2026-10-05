@@ -136,7 +136,7 @@ function ProductsPageInner() {
   const { data, isLoading } = useQuery<ProductsResponse>({
     queryKey: ["products", page, debouncedSearch],
     queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), page_size: "20" })
+      const params = new URLSearchParams({ page: String(page), page_size: "20", include_inactive: "true" })
       if (debouncedSearch) params.set("search", debouncedSearch)
       return api.get(`/api/products?${params}`)
     },

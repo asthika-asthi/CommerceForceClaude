@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
-from app.core.dependencies import require_admin
+from app.core.dependencies import get_current_user_optional, require_admin
 from app.plugins.products.models import Product, ProductOptionType
 from app.plugins.products.schemas import (
     ProductCreate, ProductUpdate, ProductOut, ProductListOut, ProductImageCreate, ProductImageOut,
@@ -86,11 +86,17 @@ async def list_products(
     page_size: int = Query(20, ge=1, le=50),
     min_price: Optional[Decimal] = Query(None, ge=0),
     max_price: Optional[Decimal] = Query(None, ge=0),
+    include_inactive: bool = False,
     db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user_optional),
 ):
+    # Inactive products are for the admin panel only: the flag is ignored unless the
+    # caller is a logged-in admin/superadmin, so the public storefront never sees them.
+    show_inactive = include_inactive and current_user is not None and current_user.role in ("admin", "superadmin")
     items, total = await service.list_products(
         db, category_id=category_id, search=search,
         in_stock_only=in_stock_only, featured_only=featured_only,
+        active_only=not show_inactive,
         sort_by=sort_by, sort_dir=sort_dir,
         page=page, page_size=page_size,
         min_price=min_price, max_price=max_price,
