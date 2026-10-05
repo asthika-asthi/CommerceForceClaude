@@ -1,11 +1,11 @@
-import { getContactEmail } from "@/lib/contact-email"
+import { getContactDetails } from "@/lib/contact-details"
 
 export const metadata = { title: "Privacy Policy — Tri Star UK Ltd" }
 
 const LAST_UPDATED = "June 2026"
 
 export default async function PrivacyPage() {
-  const email = await getContactEmail()
+  const { email, phone, address } = await getContactDetails()
   return (
     <div className="max-w-[860px] mx-auto px-6 py-14">
       <h1 className="text-[32px] font-bold text-brand-dark mb-2">Privacy Policy</h1>
@@ -108,9 +108,9 @@ export default async function PrivacyPage() {
           <p>If you have questions about this Privacy Policy or wish to exercise your rights, please contact us:</p>
           <div className="mt-3 bg-bg rounded-lg p-4 text-[14px]">
             <p><strong>Tri Star UK Ltd</strong><br />
-            Stevenage, Hertfordshire<br />
+            {address && <>{address}<br /></>}
             {email && <>Email: <a href={`mailto:${email}`} className="text-brand hover:underline">{email}</a><br /></>}
-            Phone: 01438 880 178</p>
+            {phone && <>Phone: {phone}</>}</p>
           </div>
           <p className="mt-3">You also have the right to complain to the <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Information Commissioner&apos;s Office (ICO)</a> if you believe we are not handling your data correctly.</p>
         </section>

@@ -31,6 +31,8 @@ const TEXT_FIELDS = [
   { key: "tagline", label: "Tagline", placeholder: "Your store tagline" },
   { key: "contact_email", label: "Contact Email", placeholder: "hello@store.com" },
   { key: "contact_phone", label: "Contact Phone", placeholder: "+1 555-0100" },
+  { key: "contact_address", label: "Address", placeholder: "Stevenage, Hertfordshire" },
+  { key: "opening_hours", label: "Opening Hours", placeholder: "Mon–Fri 8:30 am – 5:00 pm" },
   { key: "stripe_publishable_key", label: "Stripe Publishable Key", placeholder: "pk_live_..." },
 ]
 

@@ -1,5 +1,5 @@
 import { describeBands, getDeliveryBands } from "@/lib/delivery-bands"
-import { getContactEmail } from "@/lib/contact-email"
+import { getContactDetails } from "@/lib/contact-details"
 
 export const metadata = { title: "Terms & Conditions — Tri Star UK Ltd" }
 
@@ -9,7 +9,7 @@ export default async function TermsPage() {
   // Delivery charges come from the admin-set bands so the terms match checkout.
   const bands = await getDeliveryBands()
   const delivery = bands ? describeBands(bands) : null
-  const email = await getContactEmail()
+  const { email, phone, address } = await getContactDetails()
   return (
     <div className="max-w-[860px] mx-auto px-6 py-14">
       <h1 className="text-[32px] font-bold text-brand-dark mb-2">Terms &amp; Conditions</h1>
@@ -102,9 +102,9 @@ export default async function TermsPage() {
           <h2 className="text-[20px] font-bold text-brand-dark mb-3">10. Contact</h2>
           <div className="bg-bg rounded-lg p-4 text-[14px]">
             <p><strong>Tri Star UK Ltd</strong><br />
-            Stevenage, Hertfordshire<br />
+            {address && <>{address}<br /></>}
             {email && <>Email: <a href={`mailto:${email}`} className="text-brand hover:underline">{email}</a><br /></>}
-            Phone: 01438 880 178</p>
+            {phone && <>Phone: {phone}</>}</p>
           </div>
         </section>
 

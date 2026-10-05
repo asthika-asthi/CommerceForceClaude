@@ -350,6 +350,8 @@ export interface BrandingConfig {
   vat_number?: string
   eori_number?: string
   trademark_number?: string
+  contact_address?: string
+  opening_hours?: string
   delivery_promo_text?: string
   dispatch_days?: number | null
   dispatch_title?: string

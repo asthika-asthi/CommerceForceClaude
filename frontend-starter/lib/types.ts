@@ -63,6 +63,8 @@ export interface BrandingConfig {
   custom_css?: string
   contact_email?: string
   contact_phone?: string
+  contact_address?: string
+  opening_hours?: string
   social_links?: string
   stripe_publishable_key?: string
   bank_transfer_details?: string

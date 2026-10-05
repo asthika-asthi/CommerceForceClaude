@@ -1,11 +1,11 @@
-import { getContactEmail } from "@/lib/contact-email"
+import { getContactDetails } from "@/lib/contact-details"
 
 export const metadata = { title: "Cookie Policy — Tri Star UK Ltd" }
 
 const LAST_UPDATED = "June 2026"
 
 export default async function CookiesPage() {
-  const email = await getContactEmail()
+  const { email } = await getContactDetails()
   return (
     <div className="max-w-[860px] mx-auto px-6 py-14">
       <h1 className="text-[32px] font-bold text-brand-dark mb-2">Cookie Policy</h1>

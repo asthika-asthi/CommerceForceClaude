@@ -308,3 +308,19 @@ async def test_branding_dispatch_message_defaults_and_round_trip(client: AsyncCl
 
     admin = {"Authorization": f"Bearer {await make_admin(client, db)}"}
     assert (await client.put("/api/branding", json={"dispatch_title": "Hi"}, headers=admin)).status_code == 403
+
+
+# ── Branding — contact address and opening hours ───────────────────────────────
+
+async def test_branding_contact_address_and_hours_round_trip(client: AsyncClient, db):
+    body = (await client.get("/api/branding")).json()
+    assert body["contact_address"] is None and body["opening_hours"] is None
+
+    superadmin = {"Authorization": f"Bearer {await make_superadmin(client, db)}"}
+    r = await client.put("/api/branding", json={
+        "contact_address": "1 High Street, Stevenage", "opening_hours": "Mon–Fri 9–5",
+    }, headers=superadmin)
+    assert r.status_code == 200, r.text
+    body = (await client.get("/api/branding")).json()
+    assert body["contact_address"] == "1 High Street, Stevenage"
+    assert body["opening_hours"] == "Mon–Fri 9–5"

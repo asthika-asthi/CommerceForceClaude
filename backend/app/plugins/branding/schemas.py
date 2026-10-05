@@ -55,6 +55,8 @@ class BrandingConfigOut(BaseModel):
     custom_css: Optional[str] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
+    contact_address: Optional[str] = None
+    opening_hours: Optional[str] = None
     social_links: Optional[dict] = None
     stripe_publishable_key: Optional[str] = None
     bank_transfer_details: Optional[str] = None
@@ -111,6 +113,8 @@ class BrandingConfigUpdate(BaseModel):
     custom_css: Optional[str] = None
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
+    contact_address: Optional[str] = None
+    opening_hours: Optional[str] = None
     social_links: Optional[dict] = None
     stripe_publishable_key: Optional[str] = None
     bank_transfer_details: Optional[str] = None

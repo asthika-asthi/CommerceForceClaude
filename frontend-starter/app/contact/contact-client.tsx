@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { api } from "@/lib/api"
+import type { ContactDetails } from "@/lib/contact-details"
 
 const SUBJECTS = [
   "General enquiry",
@@ -14,7 +15,7 @@ const SUBJECTS = [
 const inputCls =
   "w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-dark text-slate-800 placeholder:text-slate-400"
 
-export function ContactClient({ email }: { email: string | null }) {
+export function ContactClient({ details }: { details: ContactDetails }) {
   const [form, setForm] = useState({
     name: "", email: "", phone: "", subject: SUBJECTS[0], message: "",
   })
@@ -74,7 +75,7 @@ export function ContactClient({ email }: { email: string | null }) {
                   <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.5 10.81a19.79 19.79 0 01-3.07-8.64A2 2 0 012.41 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.18 6.18l.77-.77a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
                 </svg>
               ),
-              label: "Phone", value: "01438 880 178",
+              label: "Phone", value: details.phone,
             },
             {
               icon: (
@@ -83,7 +84,7 @@ export function ContactClient({ email }: { email: string | null }) {
                   <polyline points="22,6 12,13 2,6"/>
                 </svg>
               ),
-              label: "Email", value: email,
+              label: "Email", value: details.email,
             },
             {
               icon: (
@@ -92,7 +93,7 @@ export function ContactClient({ email }: { email: string | null }) {
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
               ),
-              label: "Address", value: "Stevenage, Hertfordshire",
+              label: "Address", value: details.address,
             },
             {
               icon: (
@@ -101,7 +102,7 @@ export function ContactClient({ email }: { email: string | null }) {
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
               ),
-              label: "Hours", value: "Mon–Fri  8:30 am – 5:00 pm",
+              label: "Hours", value: details.hours,
             },
           ].filter((row) => row.value).map(({ icon, label, value }) => (
             <div key={label} className="flex items-start gap-4">

@@ -79,6 +79,8 @@ class BrandingConfig(BaseModel):
     custom_css: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     contact_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    contact_address: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    opening_hours: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     social_links: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string
     stripe_publishable_key: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     bank_transfer_details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
