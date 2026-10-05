@@ -164,6 +164,10 @@ export function Navbar({ branding }: Props) {
             </Link>
           )}
 
+          <Link href="/contact" className={`hidden md:block text-sm font-medium ${brandText} hover:underline px-2 whitespace-nowrap`}>
+            Contact Us
+          </Link>
+
           <a href="/contact" className="hidden md:block bg-brand hover:bg-brand-hover text-on-brand text-sm font-semibold px-5 py-[10px] rounded-lg transition-colors whitespace-nowrap">
             Get a Quote
           </a>
@@ -196,6 +200,7 @@ export function Navbar({ branding }: Props) {
               <Link href="/register" onClick={() => setMenuOpen(false)} className={`block text-sm ${filled ? "text-brand-highlight" : "text-brand"} py-1`}>Register</Link>
             </>
           )}
+          <Link href="/contact" onClick={() => setMenuOpen(false)} className={`block text-sm ${filled ? "text-on-dark-strong" : "text-fg"} py-1`}>Contact Us</Link>
           <a href="/contact" className={`block text-sm font-semibold ${filled ? "text-brand-highlight" : "text-brand"} py-1`}>Get a Quote</a>
         </div>
       )}
