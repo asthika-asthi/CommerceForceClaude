@@ -1,5 +1,6 @@
 import { describeBands, getDeliveryBands } from "@/lib/delivery-bands"
 import { getContactDetails } from "@/lib/contact-details"
+import { FAULTY_GOODS_DAYS } from "@/lib/returns-policy"
 
 export const metadata = { title: "Terms & Conditions — Tri Star UK Ltd" }
 
@@ -69,7 +70,7 @@ export default async function TermsPage() {
             <li>You have the right to cancel your order within 14 days of receiving goods (Consumer Contracts Regulations 2013), unless goods are bespoke or made to your specification.</li>
             <li>To return goods, contact us within 14 days of receipt. Items must be returned unused, in original packaging, at your own cost unless the item is faulty.</li>
             <li>Refunds will be processed within 14 days of receiving the returned goods, to the original payment method.</li>
-            <li>Faulty or incorrectly supplied goods will be replaced or refunded at our cost.</li>
+            <li>Faulty or incorrectly supplied goods will be replaced or refunded at our cost. Report faulty goods within {FAULTY_GOODS_DAYS} days of purchase and we will collect them from your delivery location — see our <a href="/returns" className="text-brand hover:underline">Returns policy</a>.</li>
             <li>Trade account customers should report any shortages or damaged goods within 48 hours of delivery.</li>
           </ul>
         </section>

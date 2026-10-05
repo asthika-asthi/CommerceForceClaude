@@ -91,8 +91,8 @@ export function Footer({ branding, categories }: Props) {
           <div>
             <h4 className="text-[12px] font-bold text-on-dark-strong uppercase tracking-[0.8px] mb-4">Help</h4>
             {[
-              { label: "Delivery information", href: "/contact" },
-              { label: "Returns policy", href: "/contact" },
+              { label: "Delivery information", href: "/delivery" },
+              { label: "Returns policy", href: "/returns" },
               { label: "Track your order", href: "/track-order" },
               { label: "FAQs", href: "/faq" },
               { label: "Contact us", href: "/contact" },
