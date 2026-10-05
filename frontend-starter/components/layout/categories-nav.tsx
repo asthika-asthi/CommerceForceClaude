@@ -34,6 +34,7 @@ export async function CategoriesNav() {
         ))}
         {showBespoke && <Link href="/bespoke" className={linkCls}>Bespoke Orders</Link>}
         <Link href="/trade" className={linkCls}>Trade Accounts</Link>
+        <Link href="/contact" className={linkCls}>Contact Us</Link>
         <div className="flex-1" />
         <Link href="/products?sale=true" className="text-accent text-[13px] font-semibold px-[18px] py-[14px] border-b-[3px] border-transparent -mb-[3px] hover:text-accent-hover hover:border-accent-hover hover:bg-white/5 transition-all whitespace-nowrap">
           🏷️ Special Offers
