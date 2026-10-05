@@ -1,8 +1,11 @@
+import { getContactEmail } from "@/lib/contact-email"
+
 export const metadata = { title: "Cookie Policy — Tri Star UK Ltd" }
 
 const LAST_UPDATED = "June 2026"
 
-export default function CookiesPage() {
+export default async function CookiesPage() {
+  const email = await getContactEmail()
   return (
     <div className="max-w-[860px] mx-auto px-6 py-14">
       <h1 className="text-[32px] font-bold text-brand-dark mb-2">Cookie Policy</h1>
@@ -79,7 +82,7 @@ export default function CookiesPage() {
           <p>If you have questions about our use of cookies, please contact us:</p>
           <div className="bg-bg rounded-lg p-4 text-[14px] mt-3">
             <p><strong>Tri Star UK Ltd</strong><br />
-            Email: <a href="mailto:info@tristarukltd.co.uk" className="text-brand hover:underline">info@tristarukltd.co.uk</a></p>
+            {email && <>Email: <a href={`mailto:${email}`} className="text-brand hover:underline">{email}</a></>}</p>
           </div>
         </section>
 
