@@ -30,7 +30,7 @@ export function Hero({
   bestSellers = [],
   showBestSellersCard = true,
   title = "Quality protective",
-  titleHighlight = "covers at trade prices",
+  titleHighlight = "covers at wholesale prices",
   subtitle = "Tri Star UK Ltd — Hertfordshire's leading importer and distributor of tarpaulins, cotton dust sheets, sacks, bags, and decorating supplies. Trade and retail welcome.",
   imageUrl,
   imageAlt,

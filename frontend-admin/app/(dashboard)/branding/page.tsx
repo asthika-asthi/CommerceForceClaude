@@ -681,7 +681,7 @@ export default function BrandingPage() {
               <input value={form.hero_heading_highlight || ""}
                 onChange={(e) => setForm((f) => ({ ...f, hero_heading_highlight: e.target.value }))}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="covers at trade prices" />
+                placeholder="covers at wholesale prices" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-5 mt-5">
