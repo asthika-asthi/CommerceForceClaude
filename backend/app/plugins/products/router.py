@@ -104,12 +104,16 @@ async def list_products(
             .distinct()
         )
         variant_product_ids = set(option_type_result.scalars().all())
+    price_ranges = await variant_service.price_ranges_for(
+        [p for p in items if p.id in variant_product_ids], db
+    )
 
     list_items = []
     for p in items:
         primary = next((img.url for img in p.images if img.is_primary), None)
         if not primary and p.images:
             primary = p.images[0].url
+        price_min, price_max = price_ranges.get(p.id, (None, None))
         list_items.append(ProductListOut(
             id=p.id, name=p.name, slug=p.slug, sku=p.sku, description=p.description,
             category_id=p.category_id, price=p.price, sale_price=p.sale_price,
@@ -117,7 +121,8 @@ async def list_products(
             is_on_sale=p.is_on_sale, effective_price=p.effective_price,
             stock_quantity=p.stock_quantity, in_stock=p.in_stock,
             is_active=p.is_active, is_featured=p.is_featured, primary_image=primary,
-            has_variants=p.id in variant_product_ids, weight=p.weight,
+            has_variants=p.id in variant_product_ids,
+            price_min=price_min, price_max=price_max, weight=p.weight,
         ))
     return paginate(list_items, total, page, page_size)
 

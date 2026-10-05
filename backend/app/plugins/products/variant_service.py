@@ -396,6 +396,34 @@ def effective_price_for(variant: ProductVariant, product: Product) -> Decimal:
     return product.effective_price + (variant.price_adjustment or Decimal("0"))
 
 
+async def price_ranges_for(
+    products: list[Product], db: AsyncSession
+) -> dict[str, tuple[Decimal, Decimal]]:
+    """Min/max purchasable price per product, for listing cards. One query for the whole
+    page. Mirrors the product page: only active, non-default variants count, and a product
+    only appears in the result when its variants actually differ in price."""
+    by_id = {p.id: p for p in products}
+    if not by_id:
+        return {}
+    result = await db.execute(
+        select(ProductVariant).where(
+            ProductVariant.product_id.in_(list(by_id)),
+            ProductVariant.is_active.is_(True),
+            ProductVariant.is_default.is_(False),
+        )
+    )
+    prices: dict[str, list[Decimal]] = {}
+    for variant in result.scalars().all():
+        prices.setdefault(variant.product_id, []).append(
+            effective_price_for(variant, by_id[variant.product_id])
+        )
+    return {
+        pid: (min(vals), max(vals))
+        for pid, vals in prices.items()
+        if max(vals) - min(vals) > Decimal("0.005")
+    }
+
+
 def build_variant_out(variant: ProductVariant, product: Product) -> dict:
     option_values = []
     for link in sorted(

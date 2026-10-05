@@ -7,6 +7,7 @@ import { useCartStore } from "@/store/cart"
 import { WishlistButton } from "@/components/shop/wishlist-button"
 import type { Product } from "@/lib/types"
 import { formatMoney } from "@/lib/currency"
+import { formatPriceRange } from "@/lib/price-range"
 
 export function ProductCard({ product }: { product: Product }) {
   const addProduct = useCartStore((s) => s.addProduct)
@@ -18,7 +19,8 @@ export function ProductCard({ product }: { product: Product }) {
 
   const price = parseFloat(product.price)
   const displayPrice = product.effective_price ? parseFloat(product.effective_price) : price
-  const isOnSale = displayPrice < price
+  const priceRange = formatPriceRange(product)
+  const isOnSale = !priceRange && displayPrice < price
 
   async function handleAdd() {
     if (adding) return
@@ -73,7 +75,7 @@ export function ProductCard({ product }: { product: Product }) {
 
         <div className="flex items-center justify-between mt-3">
           <div>
-            <span className="font-bold text-slate-900">{formatMoney(displayPrice.toFixed(2))}</span>
+            <span className="font-bold text-slate-900">{priceRange ?? formatMoney(displayPrice.toFixed(2))}</span>
             {isOnSale && (
               <span className="ml-2 text-xs text-slate-400 line-through">{formatMoney(price.toFixed(2))}</span>
             )}

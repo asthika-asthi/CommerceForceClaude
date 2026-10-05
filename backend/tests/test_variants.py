@@ -253,6 +253,39 @@ async def test_product_list_has_variants_flag(client: AsyncClient, db: AsyncSess
     assert items_by_id[multi["id"]]["has_variants"] is True
 
 
+# ── product list exposes a price range for cards ──────────────────────────────
+
+@pytest.mark.asyncio
+async def test_product_list_price_range(client: AsyncClient, db: AsyncSession, monkeypatch):
+    """Variants priced £20 (S) and £25 (XL) -> the list item carries price_min/price_max;
+    deactivating XL collapses it back to no range; simple products never have one."""
+    monkeypatch.setattr(settings, "VARIANT_PRICING_MODE", "adjustment")
+    token = await _admin_token(client, db)
+    headers = {"Authorization": f"Bearer {token}"}
+    product, xl = await _setup_product_with_adjusted_variant(client, token)
+    simple = await _make_product(client, token)
+
+    async def list_items():
+        r = await client.get("/api/products", params={"page_size": 50})
+        assert r.status_code == 200
+        return {i["id"]: i for i in r.json()["items"]}
+
+    items = await list_items()
+    assert float(items[product["id"]]["price_min"]) == 20.00
+    assert float(items[product["id"]]["price_max"]) == 25.00
+    assert items[simple["id"]]["price_min"] is None
+    assert items[simple["id"]]["price_max"] is None
+
+    r = await client.patch(
+        f"/api/products/{product['id']}/variants/{xl['id']}",
+        json={"is_active": False}, headers=headers,
+    )
+    assert r.status_code == 200
+    items = await list_items()
+    assert items[product["id"]]["price_min"] is None
+    assert items[product["id"]]["price_max"] is None
+
+
 # ── price adjustment ──────────────────────────────────────────────────────────
 
 async def _setup_product_with_adjusted_variant(

@@ -137,6 +137,9 @@ class ProductListOut(BaseModel):
     is_featured: bool
     primary_image: Optional[str] = None
     has_variants: bool = False
+    # Set only when active variants differ in price; cards show "min – max".
+    price_min: Optional[Decimal] = None
+    price_max: Optional[Decimal] = None
     weight: Optional[Decimal] = None
     model_config = {"from_attributes": True}
 

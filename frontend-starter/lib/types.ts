@@ -163,6 +163,8 @@ export interface Product {
   sale_price?: string
   sale_percent?: string
   effective_price?: string
+  price_min?: string | null
+  price_max?: string | null
   stock_quantity: number
   weight?: string
   tags?: string

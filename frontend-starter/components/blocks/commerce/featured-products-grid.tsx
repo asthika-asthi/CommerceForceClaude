@@ -8,6 +8,7 @@ import { api } from '@/lib/api'
 import { useCartStore } from '@/store/cart'
 import type { Product, ProductsResponse } from '@/lib/types'
 import { formatMoney } from "@/lib/currency"
+import { formatPriceRange } from "@/lib/price-range"
 
 interface FeaturedProductsGridProps {
   title?: string
@@ -37,7 +38,8 @@ function ProductGridCard({ product }: { product: Product }) {
   const imageUrl = product.primary_image ?? product.images?.[0]?.url ?? null
   const price = parseFloat(product.price)
   const effectivePrice = product.effective_price ? parseFloat(product.effective_price) : price
-  const isOnSale = effectivePrice < price
+  const priceRange = formatPriceRange(product)
+  const isOnSale = !priceRange && effectivePrice < price
 
   async function handleAdd() {
     if (adding) return
@@ -92,7 +94,7 @@ function ProductGridCard({ product }: { product: Product }) {
         <div className="mt-auto pt-3 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-brand-dark text-base">
-              {formatMoney(effectivePrice.toFixed(2))}
+              {priceRange ?? formatMoney(effectivePrice.toFixed(2))}
             </span>
             {isOnSale && (
               <span className="text-xs text-muted line-through">{formatMoney(price.toFixed(2))}</span>
