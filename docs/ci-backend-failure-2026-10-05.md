@@ -53,7 +53,23 @@ and stops the whole backend job on any finding, so the mypy and test steps never
   the past (`scheduling/service.py` → 400 "cannot book an appointment in the past"), so
   these failed from 2026-08-03 onward. They failed identically with the day's changes removed.
 
+## Cause 3 — `stripe` was never declared as a dependency (found only after 1 and 2 were fixed)
+- After causes 1 and 2 were fixed, CI's lint and mypy passed and the **Run tests** step
+  then failed in 4 seconds with **exit code 2** (pytest "interrupted": collection errors,
+  not test failures). Reproduced locally with a clean virtualenv and a fresh
+  `pip install -e ".[dev]"`: `ModuleNotFoundError: No module named 'stripe'` in
+  `tests/test_checkout_deferral.py` and `tests/test_currency.py`.
+- `stripe` was installed on the dev laptop but is **not in `backend/pyproject.toml`**.
+  `app/plugins/checkout/service.py` and `orders/service.py` import it lazily, so nothing
+  failed until a card payment or the Stripe webhook is used.
+- **This is also a production bug, not just a CI one:** the VPS backend image is built from
+  `pyproject.toml` only, and `import stripe` there fails (`No module named 'stripe'`,
+  checked 2026-10-06). Card payments are currently off (no Stripe keys), so nobody hit it,
+  but turning them on would have failed. The fix reaches the VPS the next time the backend
+  image is rebuilt.
+
 ## Fix
+0. `backend/pyproject.toml`: added `stripe>=15.0.0` to the dependencies.
 1. `backend/pyproject.toml`: pinned `ruff==0.16.2`, so CI no longer changes underneath us.
    Upgrade deliberately (change the pin, run `ruff check .`, fix any new findings).
 2. `backend/reconcile_variant_stock.py`: `input()` now runs via `asyncio.to_thread(input, …)`
@@ -62,7 +78,7 @@ and stops the whole backend job on any finding, so the mypy and test steps never
    (first Monday ≥ 14 days away, plus Tuesday and a range end). `test_scheduling.py` and
    `test_scheduling_concurrent.py` use it instead of the `2026-08-*` literals.
 
-Verified locally with CI's exact commands: `ruff check .` clean, mypy clean (171 files),
+Verified in a clean virtualenv with a fresh `pip install -e ".[dev]"` (what CI does): `ruff check .` clean, mypy clean (171 files),
 pytest **470 passed**.
 
 ## Lessons / how to avoid a repeat

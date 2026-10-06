@@ -26,6 +26,9 @@ dependencies = [
     "slowapi>=0.1.9",
     "apscheduler>=3.10.0",
     "httpx>=0.27.0",
+    # Card payments + webhook (checkout/orders services import it lazily, so a missing
+    # install only fails at the first card payment, and in CI test collection).
+    "stripe>=15.0.0",
 ]
 
 [project.optional-dependencies]

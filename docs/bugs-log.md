@@ -4,7 +4,7 @@ Created: 2026-07-04. Findings from a full-codebase bug review (backend + storefr
 
 ---
 
-> **2026-10-05 — CI backend job red since 2026-07-08** (ruff lint finding + hardcoded
+> **2026-10-05 — CI backend job red since 2026-07-08** (ruff lint finding, missing `stripe` dependency + hardcoded
 > 2026-08-03 test dates; unrelated to that day's changes). Fixed; full write-up in
 > [`ci-backend-failure-2026-10-05.md`](ci-backend-failure-2026-10-05.md).
 
