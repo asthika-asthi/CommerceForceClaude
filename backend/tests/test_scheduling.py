@@ -1,9 +1,10 @@
 """Scheduling plugin — Task 1: plugin skeleton registers and appears in the menu."""
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.scheduling_dates import MONDAY, MONDAY_D, RANGE_END, TUESDAY, monday_at
 from tests.test_commerce import CUSTOMER_DATA, make_admin, register_and_token
 
 
@@ -315,7 +316,7 @@ async def test_exception_crud(client: AsyncClient, db: AsyncSession):
 
     r = await client.post(
         f"/api/scheduling/providers/{provider_id}/exceptions",
-        json={"date": "2026-08-03", "is_available": False},
+        json={"date": MONDAY, "is_available": False},
         headers=headers,
     )
     assert r.status_code == 201
@@ -323,7 +324,7 @@ async def test_exception_crud(client: AsyncClient, db: AsyncSession):
 
     r = await client.post(
         f"/api/scheduling/providers/{provider_id}/exceptions",
-        json={"date": "2026-08-04", "is_available": True},
+        json={"date": TUESDAY, "is_available": True},
         headers=headers,
     )
     assert r.status_code == 422
@@ -331,7 +332,7 @@ async def test_exception_crud(client: AsyncClient, db: AsyncSession):
     r = await client.post(
         f"/api/scheduling/providers/{provider_id}/exceptions",
         json={
-            "date": "2026-08-04",
+            "date": TUESDAY,
             "is_available": True,
             "start_time": "10:00:00",
             "end_time": "12:00:00",
@@ -343,13 +344,13 @@ async def test_exception_crud(client: AsyncClient, db: AsyncSession):
 
     r = await client.get(
         f"/api/scheduling/providers/{provider_id}/exceptions"
-        "?from=2026-08-04&to=2026-08-04",
+        f"?from={TUESDAY}&to={TUESDAY}",
         headers=headers,
     )
     assert r.status_code == 200
     items = r.json()
     assert len(items) == 1
-    assert items[0]["date"] == "2026-08-04"
+    assert items[0]["date"] == TUESDAY
 
     r = await client.delete(
         f"/api/scheduling/exceptions/{block_id}", headers=headers
@@ -425,7 +426,7 @@ async def _setup_basic_availability(
 
 
 async def test_slots_basic(client: AsyncClient, db: AsyncSession):
-    assert date(2026, 8, 3).weekday() == 0  # Monday — deterministic fixture date
+    assert MONDAY_D.weekday() == 0  # Monday — deterministic fixture date
 
     token = await make_admin(client, db)
     headers = {"Authorization": f"Bearer {token}"}
@@ -436,8 +437,8 @@ async def test_slots_basic(client: AsyncClient, db: AsyncSession):
         params={
             "provider_id": provider_id,
             "appointment_type_id": type_id,
-            "date_from": "2026-08-03",
-            "date_to": "2026-08-03",
+            "date_from": MONDAY,
+            "date_to": MONDAY,
         },
     )
     assert r.status_code == 200
@@ -462,8 +463,8 @@ async def test_slots_excludes_booked(client: AsyncClient, db: AsyncSession):
         provider_id=provider_id,
         client_id=client_obj.id,
         appointment_type_id=type_id,
-        start_at=datetime(2026, 8, 3, 9, 30, tzinfo=timezone.utc),
-        end_at=datetime(2026, 8, 3, 10, 0, tzinfo=timezone.utc),
+        start_at=monday_at(9, 30),
+        end_at=monday_at(10, 0),
         status=AppointmentStatus.confirmed,
     )
     db.add(appt)
@@ -474,8 +475,8 @@ async def test_slots_excludes_booked(client: AsyncClient, db: AsyncSession):
         params={
             "provider_id": provider_id,
             "appointment_type_id": type_id,
-            "date_from": "2026-08-03",
-            "date_to": "2026-08-03",
+            "date_from": MONDAY,
+            "date_to": MONDAY,
         },
     )
     assert r.status_code == 200
@@ -493,7 +494,7 @@ async def test_slots_respects_block_exception(client: AsyncClient, db: AsyncSess
 
     r = await client.post(
         f"/api/scheduling/providers/{provider_id}/exceptions",
-        json={"date": "2026-08-03", "is_available": False},
+        json={"date": MONDAY, "is_available": False},
         headers=headers,
     )
     assert r.status_code == 201
@@ -503,8 +504,8 @@ async def test_slots_respects_block_exception(client: AsyncClient, db: AsyncSess
         params={
             "provider_id": provider_id,
             "appointment_type_id": type_id,
-            "date_from": "2026-08-03",
-            "date_to": "2026-08-03",
+            "date_from": MONDAY,
+            "date_to": MONDAY,
         },
     )
     assert r.status_code == 200
@@ -519,7 +520,7 @@ async def test_slots_timed_block_exception(client: AsyncClient, db: AsyncSession
     r = await client.post(
         f"/api/scheduling/providers/{provider_id}/exceptions",
         json={
-            "date": "2026-08-03",
+            "date": MONDAY,
             "is_available": False,
             "start_time": "09:30:00",
             "end_time": "10:00:00",
@@ -533,8 +534,8 @@ async def test_slots_timed_block_exception(client: AsyncClient, db: AsyncSession
         params={
             "provider_id": provider_id,
             "appointment_type_id": type_id,
-            "date_from": "2026-08-03",
-            "date_to": "2026-08-03",
+            "date_from": MONDAY,
+            "date_to": MONDAY,
         },
     )
     assert r.status_code == 200
@@ -556,7 +557,7 @@ async def test_exception_partial_block_rejected(client: AsyncClient, db: AsyncSe
 
     r = await client.post(
         f"/api/scheduling/providers/{provider_id}/exceptions",
-        json={"date": "2026-08-03", "is_available": False, "start_time": "09:00:00"},
+        json={"date": MONDAY, "is_available": False, "start_time": "09:00:00"},
         headers=headers,
     )
     assert r.status_code == 422
@@ -572,8 +573,8 @@ async def test_slots_range_cap(client: AsyncClient, db: AsyncSession):
         params={
             "provider_id": provider_id,
             "appointment_type_id": type_id,
-            "date_from": "2026-08-03",
-            "date_to": "2026-09-30",
+            "date_from": MONDAY,
+            "date_to": RANGE_END,
         },
     )
     assert r.status_code == 400
@@ -590,8 +591,8 @@ async def test_slots_public_no_auth(client: AsyncClient, db: AsyncSession):
         params={
             "provider_id": provider_id,
             "appointment_type_id": type_id,
-            "date_from": "2026-08-03",
-            "date_to": "2026-08-03",
+            "date_from": MONDAY,
+            "date_to": MONDAY,
         },
     )
     assert r.status_code == 200
@@ -749,7 +750,7 @@ async def test_get_or_create_client_for_user_idempotent(client: AsyncClient, db:
 
 # ── APPOINTMENT BOOKING + LIFECYCLE (Task 9) ───────────────────────────────────
 
-BOOKING_START = "2026-08-03T09:00:00+00:00"  # Monday — matches slot-test fixture date
+BOOKING_START = f"{MONDAY}T09:00:00+00:00"  # Monday — matches slot-test fixture date
 
 
 async def _setup_booking_fixture(client: AsyncClient, headers: dict) -> tuple[str, str]:
@@ -882,7 +883,7 @@ async def test_guest_books_with_email(client: AsyncClient, db: AsyncSession):
         json={
             "provider_id": provider_id,
             "appointment_type_id": type_id,
-            "start_at": "2026-08-03T10:00:00+00:00",
+            "start_at": f"{MONDAY}T10:00:00+00:00",
             "first_name": "NoEmail",
             "last_name": "Guest",
         },
@@ -920,7 +921,7 @@ async def test_double_booking_rejected(client: AsyncClient, db: AsyncSession):
             "provider_id": provider_id,
             "appointment_type_id": type_id,
             "client_id": client_id,
-            "start_at": "2026-08-03T09:15:00+00:00",
+            "start_at": f"{MONDAY}T09:15:00+00:00",
         },
         headers=admin_headers,
     )
@@ -1074,7 +1075,7 @@ async def test_reschedule_moves_slot(client: AsyncClient, db: AsyncSession):
 
     r = await client.post(
         f"/api/scheduling/appointments/{appt_id}/reschedule",
-        json={"start_at": "2026-08-03T10:00:00+00:00"},
+        json={"start_at": f"{MONDAY}T10:00:00+00:00"},
         headers=headers,
     )
     assert r.status_code == 200
@@ -1125,7 +1126,7 @@ async def test_reschedule_into_occupied_slot_rejected(client: AsyncClient, db: A
             "provider_id": provider_id,
             "appointment_type_id": type_id,
             "client_id": client_id,
-            "start_at": "2026-08-03T10:00:00+00:00",
+            "start_at": f"{MONDAY}T10:00:00+00:00",
         },
         headers=headers,
     )
@@ -1204,7 +1205,7 @@ async def test_customer_list_excludes_others(client: AsyncClient, db: AsyncSessi
         json={
             "provider_id": provider_id,
             "appointment_type_id": type_id,
-            "start_at": "2026-08-03T10:00:00+00:00",
+            "start_at": f"{MONDAY}T10:00:00+00:00",
         },
         headers=cust2_headers,
     )

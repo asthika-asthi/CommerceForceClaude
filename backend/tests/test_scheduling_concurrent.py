@@ -15,18 +15,18 @@ creation) also goes through ``concurrent_client`` so the racing requests
 matches test_concurrent.py's approach.
 """
 import asyncio
-from datetime import datetime, timezone
 
 from httpx import AsyncClient
 from sqlalchemy import select
 
 from tests.conftest import TestSessionLocal
+from tests.scheduling_dates import MONDAY, monday_at
 
 ADMIN_EMAIL = "sched_race_admin@example.com"
 ADMIN_PASSWORD = "adminpass1"
 
-BOOKING_START = "2026-08-03T09:00:00+00:00"  # Monday — future fixed slot
-BOOKING_START_DT = datetime(2026, 8, 3, 9, 0, tzinfo=timezone.utc)
+BOOKING_START = f"{MONDAY}T09:00:00+00:00"  # Monday — future fixed slot
+BOOKING_START_DT = monday_at(9, 0)
 
 
 # ── helpers (mirrors tests/test_concurrent.py's helper style) ─────────────────

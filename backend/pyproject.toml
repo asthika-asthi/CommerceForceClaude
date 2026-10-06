@@ -32,7 +32,9 @@ dependencies = [
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
-    "ruff>=0.5.0",
+    # Pinned: CI installs fresh on every run, and a new ruff release can add rules to the
+    # enabled families (ASYNC, RUF) and fail old code overnight. Upgrade on purpose.
+    "ruff==0.16.2",
     "mypy>=1.10.0",
 ]
 

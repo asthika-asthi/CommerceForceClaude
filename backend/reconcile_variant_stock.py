@@ -58,7 +58,10 @@ async def main() -> None:
             print("\nDry run - no changes made. Re-run with --apply to recompute these totals.")
             return
 
-        confirm = input(f"\nRecompute stock_quantity for these {len(drifted)} product(s)? Type 'yes' to confirm: ")
+        # input() blocks, so run it off the event loop thread.
+        confirm = await asyncio.to_thread(
+            input, f"\nRecompute stock_quantity for these {len(drifted)} product(s)? Type 'yes' to confirm: "
+        )
         if confirm.strip().lower() != "yes":
             print("Aborted.")
             return
