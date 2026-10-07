@@ -73,6 +73,16 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = "noreply@commerceforce.app"
     SMTP_TLS: bool = True
+    # "basic" = username + SMTP_PASSWORD (default, unchanged behaviour).
+    # "xoauth2" = Microsoft 365 app-only OAuth2 (client credentials): no password, no
+    # user sign-in. SMTP_USER must then be the mailbox the app is allowed to send as.
+    # Setup process: docs/microsoft365-oauth2-smtp-setup.md
+    SMTP_AUTH_MODE: str = "basic"
+    MS_OAUTH_AUTHORITY: str = "https://login.microsoftonline.com"
+    MS_OAUTH_TENANT_ID: str = ""
+    MS_OAUTH_CLIENT_ID: str = ""
+    MS_OAUTH_CLIENT_SECRET: str = ""
+    MS_OAUTH_SCOPE: str = "https://outlook.office365.com/.default"
 
     # AI (OpenRouter)
     OPENROUTER_API_KEY: str = ""

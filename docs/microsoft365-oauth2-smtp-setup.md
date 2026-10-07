@@ -7,10 +7,14 @@ submission, when the client's tenant is managed by a **third‑party email/IT bu
 Use this whenever a client says "our email is Microsoft 365 / Outlook, managed by
 \<someone else\>". Keep it as the checklist you hand that managing business.
 
-> **Status of the code:** as of this writing `backend/app/shared/email.py` only does
-> **Basic auth** SMTP (`aiosmtplib.send` with username + password). The XOAUTH2 code
-> change is a separate, later step — see [§10](#10-code-change-later--do-not-start-without-instruction).
-> This document is the infrastructure/process side, which can proceed independently.
+> **New to the Microsoft tools?** Start with the beginner walkthrough
+> [`microsoft365-oauth2-new-client-guide.md`](microsoft365-oauth2-new-client-guide.md)
+> (Parts A–J, click-by-click). This runbook is the deeper reference.
+>
+> **Status of the code (2026-10-06):** XOAUTH2 is **implemented** in
+> `backend/app/shared/email.py`. Set `SMTP_AUTH_MODE=xoauth2` plus the `MS_OAUTH_*` values
+> (see [§10](#10-code-change-implemented-2026-10-06)); the default stays `basic`, so nothing
+> changes until you switch it. This document is the infrastructure/process side.
 
 ---
 
@@ -264,16 +268,17 @@ curl -s -X POST "https://login.microsoftonline.com/<TENANT_ID>/oauth2/v2.0/token
 
 ---
 
-## 10. Code change (LATER — do not start without instruction)
+## 10. Code change (IMPLEMENTED 2026-10-06)
 
-Planned, not yet done. Lands in:
+Done. Lives in:
 
 - `backend/app/core/config.py` — new settings (below).
 - `backend/app/shared/email.py` — branch on auth mode; acquire + cache a bearer token;
   authenticate the SMTP session with `XOAUTH2` instead of `username`/`password`.
-- `backend/pyproject.toml` — add `msal` (token acquisition + built‑in in‑memory cache).
-  `aiosmtplib` stays; it has no XOAUTH2 helper, so build the auth string manually and
-  issue `AUTH XOAUTH2` on the connection.
+- `backend/pyproject.toml` — `msal` (token acquisition + built‑in in‑memory cache) and
+  `aiosmtplib>=5.1.2`, which has built‑in XOAUTH2: `send(..., username=<mailbox>,
+  oauth_token_generator=<async fn returning the token>)`. No hand-built auth string.
+- `backend/tests/test_email_oauth.py` — mocks both Microsoft and SMTP (no network).
 
 Proposed env vars (superset — keep Basic working as the default):
 ```
