@@ -167,6 +167,13 @@ and no other". You run them in **Exchange Online PowerShell** on your Windows co
    A browser window opens. Sign in with the client admin login and approve on the
    authenticator app. When the PowerShell prompt returns you're connected.
 
+> **Run Part F on your own Windows PC, not on the VPS.** It talks to Microsoft's cloud
+> and the sign-in needs a web browser (the server has none).
+>
+> `<OBJECT_ID>` below is the **Enterprise application's** Object ID from Part E. The
+> App-registration Object ID looks similar but gives the error "no service principal with
+> that client id and object id is registered".
+
 ### F2. Allow the app to use the mailbox
 
 Replace the three `<…>` values, then paste the commands. Each prints a small table, or
@@ -293,6 +300,7 @@ Details: runbook section 8.
 | `535 5.7.3 Authentication unsuccessful` | Permission, consent or Exchange link missing | Check Part C shows "Granted", re-run F2 (`New-ServicePrincipal`) |
 | `535 5.7.139 … SmtpClientAuthentication is disabled` | SMTP sending off for that mailbox | Run the `Set-CASMailbox …` line in F2 |
 | `550 5.7.60 … send as this sender` | `SMTP_FROM` isn't the mailbox, or the mailbox is outside the policy group | Make `SMTP_FROM` = the mailbox; check F3 group membership |
+| `430 4.2.0 STOREDRV; mailbox logon failure … MapiExceptionLogonFailed` (the long text contains "AuthenticationContext has no rights on this session") | The app signed in fine, but Microsoft **hasn't applied the `FullAccess` mailbox permission yet**. Seen on Tri Star: it cleared by itself about **1 hour** after F2 | First prove the rest is right: `Get-MailboxPermission -Identity <MAILBOX> -User <OBJECT_ID>` shows `FullAccess, Deny: False`; `Get-ServicePrincipal` shows the right AppId; `Get-Mailbox <MAILBOX>` shows `UserMailbox`, enabled, not inactive. Then **just wait** (up to ~1–2 h) and retry. Don't keep changing settings. |
 | `Test-ApplicationAccessPolicy` says **Denied** | Policy not applied yet, or mailbox not in the group | Wait 30 min; recheck group members |
 | Worked, then stopped about 2 years later | Secret expired | Part I |
 
@@ -334,11 +342,17 @@ SPF / DKIM / DMARC:            ____ / ____ / ____
 Client:                        Tri Star UK Ltd (VPS 191.215.38.69, /opt/commerceforce)
 Tenant (Directory) ID:         ec185f8f-0cf2-4693-af94-7067bee010b0
 Application (client) ID:       3060a6d8-b1a5-4892-8381-63b47bce6866
-Enterprise app Object ID:      (fill in after Part E)
+Enterprise app Object ID:      a97c7f5e-7b10-47f9-9c51-b307aec41cfe
+                               (NOT c39c7703-… — that is the App registration's Object ID and
+                               makes New-ServicePrincipal fail: "no service principal … registered")
 Sending mailbox:               kamlesh@tristarltd.co.uk   (note spelling: "kamlesh", not "kamelesh")
 Mailbox type:                  existing user mailbox
 Secret stored:                 /opt/commerceforce/backend/.env  (MS_OAUTH_CLIENT_SECRET) — never in git
 Secret expires:                (fill in from Part D — set reminder one month before)
-Status 2026-10-07:             A–D done, G done (.env has the secret). Remaining: E, F,
-                               code deploy (H), SPF/DKIM check (J).
+Status 2026-10-07:             A–E, F2, G, H done. Code deployed (commit 3f8f8f5); real OAuth2
+                               test email accepted by Microsoft at 12:31 — after the first
+                               attempts failed with 430 STOREDRV for ~1 h (permission still
+                               propagating; see troubleshooting). Remaining: F3 (access policy
+                               + Test-ApplicationAccessPolicy = Granted), chmod 600 on the
+                               .env, secret expiry date + calendar reminder, SPF/DKIM/DMARC (J).
 ```
