@@ -349,10 +349,10 @@ Sending mailbox:               kamlesh@tristarltd.co.uk   (note spelling: "kamle
 Mailbox type:                  existing user mailbox
 Secret stored:                 /opt/commerceforce/backend/.env  (MS_OAUTH_CLIENT_SECRET) — never in git
 Secret expires:                (fill in from Part D — set reminder one month before)
-Status 2026-10-07:             A–E, F2, G, H done. Code deployed (commit 3f8f8f5); real OAuth2
-                               test email accepted by Microsoft at 12:31 — after the first
-                               attempts failed with 430 STOREDRV for ~1 h (permission still
-                               propagating; see troubleshooting). Remaining: F3 (access policy
-                               + Test-ApplicationAccessPolicy = Granted), chmod 600 on the
-                               .env, secret expiry date + calendar reminder, SPF/DKIM/DMARC (J).
+Status 2026-10-07:             A-H done. Code deployed (commit 3f8f8f5). OAuth2 test email accepted by
+                               Microsoft at 12:31 after ~1 h of 430 STOREDRV (permission still
+                               propagating; see troubleshooting). F3 done: access policy created,
+                               Test-ApplicationAccessPolicy = Granted for the mailbox; a second
+                               test email was accepted afterwards. Remaining: confirm inbox/spam,
+                               secret-expiry calendar reminder, SPF/DKIM/DMARC check (Part J).
 ```
